@@ -21,17 +21,18 @@ from requests import get, post, put, delete
 from csv import DictReader, reader, writer
 from json import dumps
 from io import StringIO
-from sys import exc_info
+from sys import exc_info, maxsize, path
 from collections import OrderedDict
 from markdown import markdown
 from importlib import import_module
-from urllib.parse import parse_qs, urlparse, quote
+from urllib.parse import parse_qs, urlsplit, quote
 from operator import itemgetter, gt, eq, lt
 from dateutil.parser import parse
 from datetime import datetime
 from isodate import parse_duration
 from argparse import ArgumentParser
-from sys import maxsize
+from os.path import abspath, dirname, basename
+from os import sep
 
 FIELD_TYPE_RE = "([^\(\s]+)\(([^\)]+)\)"
 PARAM_NAME = "{([^{}\(\)]+)}"
@@ -376,7 +377,9 @@ The operations that this API implements are:
                     self.website = item["base"]
                     self.tp = "%s?query=" % item["endpoint"]
                     if "addon" in item:
-                        self.addon = import_module(item["addon"])
+                        addon_abspath = abspath(dirname(conf_file) + sep + item["addon"])
+                        path.append(dirname(addon_abspath))
+                        self.addon = import_module(basename(addon_abspath))
                 else:
                     self.conf[APIManager.nor_api_url(item, self.base_url)] = item
 
@@ -746,7 +749,7 @@ The operations that this API implements are:
         7. the conversion in the format requested by the user."""
         str_method = method.lower()
 
-        url_parsed = urlparse(op_complete_url)
+        url_parsed = urlsplit(op_complete_url)
         op_url = url_parsed.path
 
         op = self.best_match(op_url)
