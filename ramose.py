@@ -105,7 +105,7 @@ class APIManager(object):
 <br />
 **API URL:** [%s](%s)
 <br />
-**Contacts:** %s
+**Contact:** %s
 <br />
 **License:** %s
 
@@ -129,7 +129,7 @@ class APIManager(object):
     def __parameters(self):
         result = """## <a id="parameters"></a>2. Parameters [back to toc](#toc)
 
-Parameters can be used to filter and control the results returned by the API. They are passed as normal HTTP paramenters in the URL of the call. They are:
+Parameters can be used to filter and control the results returned by the API. They are passed as normal HTTP parameters in the URL of the call. They are:
 
 1. `exclude=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are removed from the result set - e.g. `exclude=doi` remove all the rows that do not have any string specified in the `doi` field.
 
