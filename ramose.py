@@ -775,6 +775,7 @@ The operations that this API implements are:
                         query = query.replace("[[%s]]" % par[idx], str(par_value))
 
                     r = get(self.tp + quote(query), headers={"Accept": "text/csv"})
+                    r.encoding = "utf-8"
                     sc = r.status_code
                     if sc == 200:
                         res = self.type_fields(list(reader(r.text.splitlines())), i)
