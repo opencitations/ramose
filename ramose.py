@@ -131,13 +131,13 @@ class APIManager(object):
 
 Parameters can be used to filter and control the results returned by the API. They are passed as normal HTTP parameters in the URL of the call. They are:
 
-1. `exclude=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are removed from the result set - e.g. `exclude=doi` remove all the rows that do not have any string specified in the `doi` field.
+1. `exclude=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are removed from the result set - e.g. `exclude=given_name` remove all the rows that do not have any string specified in the `given_name` field.
 
-2. `filter=<field_name>:<operator><value>`: only the rows compliant with `<value>` are kept in the result set. The parameter `<operation>` is not mandatory. If it is not specified, `<value>` is interpreted as a regular expression, otherwise it is compared according to the particular type associated `<field_name>`, as declared in the API specification - see the definition of the *fields* in the [permitted operations](#operations). Possible operators are "=", "<", and ">". For instance, `filter=title:semantics?` returns all the rows that contain the string "semantic" or "semantics" in the field `title`, while `filter=date:>2016-05` returns all the rows that have a `date` greater than May 2016.
+2. `filter=<field_name>:<operator><value>`: only the rows compliant with `<value>` are kept in the result set. The parameter `<operation>` is not mandatory. If `<operation>` is not specified, `<value>` is interpreted as a regular expression, otherwise it is compared by means of the specified operation. Possible operators are "=", "<", and ">". For instance, `filter=title:semantics?` returns all the rows that contain the string "semantic" or "semantics" in the field `title`, while `filter=date:>2016-05` returns all the rows that have a `date` greater than May 2016.
 
 3. `sort=<order>(<field_name>)`: sort in ascending (`<order>` set to "asc") or descending (`<order>` set to "desc") order the rows in the result set according to the values in `<field_name>`. For instance, `sort=desc(date)` sorts all the rows according to the value specified in the field `date` in descending order.
 
-It is possible to specify one or more filtering operation of the same kind (e.g. `exclude=doi&exclude=title`). In addition, these filtering operations are applied in the order presented above - first all the `exclude` operation, then all the `filter` operations, and finally all the `sort` operation.
+It is possible to specify one or more filtering operation of the same kind (e.g. `exclude=given_name&exclude=family_name`). In addition, these filtering operations are applied in the order presented above - first all the `exclude` operation, then all the `filter` operations, and finally all the `sort` operation.
 
 Example: `<api_operation_url>?exclude=doi&filter=date:>2015&sort=desc(date)`."""
         return markdown(result)
