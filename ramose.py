@@ -268,6 +268,7 @@ The operations that this API implements are:
             
             h1, h2, h3, h4, h5, h6 {
                 font-weight: normal;
+                line-height: 1.2em;
             }
             
             h2 ~ h2, section > h2 {
