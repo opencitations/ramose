@@ -47,7 +47,7 @@ class APIManager(object):
         https://github.com/opencitations/hf), and returns its representation as a dictionary."""
         result = []
 
-        with open(file_path, "rU") as f:
+        with open(file_path, "r", newline=None) as f:
             first_field_name = None
             cur_object = None
             cur_field_name = None
@@ -536,6 +536,15 @@ The operations that this API implements are:
             return i[0]
         else:
             return APIManager.tv(r[i])
+
+    @staticmethod
+    def do_overlap(r1, r2):
+        """This method returns a boolean that says if the two ranges (i.e. two pairs of integers) passed as inputs
+        actually overlap one with the other."""
+        r1_s, r1_e = r1
+        r2_s, r2_e = r2
+
+        return r1_s <= r2_s <= r1_e or r2_s <= r1_s <= r2_e
     # Ancillary methods: END
 
     # Processing methods: START
@@ -563,17 +572,23 @@ The operations that this API implements are:
                 param_list = []
                 for param_name in params_name:
                     if param_name in op_item:
-                        reg_ex = sub(".+\((.+)\)", "\\1", op_item[param_name])
+                        reg_ex = sub("^[^\(]+\((.+)\)", "\\1", op_item[param_name])
                     else:
                         reg_ex = ".+"
+
                     match_url = match_url.replace("{%s}" % param_name, "(%s)" % reg_ex)
 
-                param_list = search(match_url, result).groups()
+                # Get only the groups that are not overlapping with others
+                param_list = ()
+                search_groups = search(match_url, result)
+                for i in range(1, len(search_groups.groups()) + 1):
+                    i_span = search_groups.span(i)
+                    if i_span != (-1, -1) and all(not APIManager.do_overlap(i_span, p) for p in param_list):
+                        param_list += (search_groups.group(i), )
 
                 # run function
                 func = getattr(self.addon, func_name)
                 res = func(*param_list)
-
                 # substitute res to the part considered in the url
                 for idx in range(len(param_list)):
                     result = result.replace(param_list[idx], res[idx])
@@ -602,9 +617,14 @@ The operations that this API implements are:
         result = res
 
         if "postprocess" in op_item:
-            for pre in [i.strip() for i in op_item["postprocess"].split(" --> ")]:
-                func_name = sub("^([^\(\)]+)\(.+$", "\\1", pre).strip()
-                params_values = next(reader(sub("^.+\(([^\(\)]+)\).*", "\\1", pre).splitlines(), skipinitialspace=True))
+            for post in [i.strip() for i in op_item["postprocess"].split(" --> ")]:
+                func_name = sub("^([^\(\)]+)\(.+$", "\\1", post).strip()
+                param_str = sub("^.+\(([^\(\)]*)\).*", "\\1", post)
+                if param_str == "":
+                    params_values = ()
+                else:
+                    params_values = next(reader(param_str.splitlines(), skipinitialspace=True))
+
                 func = getattr(self.addon, func_name)
                 func_params = (result,) + tuple(params_values)
                 result = func(*func_params)
