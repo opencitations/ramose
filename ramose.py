@@ -131,13 +131,17 @@ class APIManager(object):
 
 Parameters can be used to filter and control the results returned by the API. They are passed as normal HTTP parameters in the URL of the call. They are:
 
-1. `exclude=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are removed from the result set - e.g. `exclude=given_name` remove all the rows that do not have any string specified in the `given_name` field.
+1. `format=<format_type>`: the final table is returned in the format specified in `<format_type>` that can be either "csv" or "json" - e.g. `format=csv` returns the final table in CSV format. This parameter has higher priority of the type specified through the "Accept" header of the request. Thus, if the header of a request to the API specifies `Accept: text/csv` and the URL of such request includes `format=json`, the final table is returned in JSON.
+
+1. `exclude=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are removed from the result set - e.g. `exclude=given_name` removes all the rows that do not have any string specified in the `given_name` field.
 
 2. `filter=<field_name>:<operator><value>`: only the rows compliant with `<value>` are kept in the result set. The parameter `<operation>` is not mandatory. If `<operation>` is not specified, `<value>` is interpreted as a regular expression, otherwise it is compared by means of the specified operation. Possible operators are "=", "<", and ">". For instance, `filter=title:semantics?` returns all the rows that contain the string "semantic" or "semantics" in the field `title`, while `filter=date:>2016-05` returns all the rows that have a `date` greater than May 2016.
 
 3. `sort=<order>(<field_name>)`: sort in ascending (`<order>` set to "asc") or descending (`<order>` set to "desc") order the rows in the result set according to the values in `<field_name>`. For instance, `sort=desc(date)` sorts all the rows according to the value specified in the field `date` in descending order.
 
-It is possible to specify one or more filtering operation of the same kind (e.g. `exclude=given_name&exclude=family_name`). In addition, these filtering operations are applied in the order presented above - first all the `exclude` operation, then all the `filter` operations, and finally all the `sort` operation.
+4. `json=<operation_type>("<separator>",<field>,<new_field_1>,<new_field_2>,...): in case a JSON format is requested in return, tranform each row of the final JSON table according to the rule specified. If `<operation_type>` is set to "array", the string value associated to the field name '<field>' is converted into an array by splitting the various textual parts by means of `<separator>`. For instance, considering the JSON table `[ { "names": "Doe, John; Doe, Jane" }, ... ], the execution of `array("; ",names)` returns `[ { "names": [ "Doe, John", "Doe, Jane" ], ... ]`. Instead, if `<operation_type>` is set to "dict", the string value associated to the field name '<field>' is converted into a dictionary by splitting the various textual parts by means of `<separator>` and by associating the new fields '<new_field_1>', '<new_field_2>', etc., to these new parts. For instance, considering the JSON table `[ { "name": "Doe, John" }, ... ], the execution of `dict(", ",name,fname,gname)` returns `[ { "name": { "fname": "Doe", "gname": "John" }, ... ]`. 
+
+It is possible to specify one or more filtering operation of the same kind (e.g. `exclude=given_name&exclude=family_name`). In addition, these filtering operations are applied in the order presented above - first all the `exclude` operation, then all the `filter` operations followed by all the `sort` operation, and finally the `format` and the `json` operation (if applicable). It is worth mentioning that each of the aforementioned rules is applied in order, and it works on the structure returned after the execution of the previous rule.
 
 Example: `<api_operation_url>?exclude=doi&filter=date:>2015&sort=desc(date)`."""
         return markdown(result)
@@ -501,14 +505,31 @@ The operations that this API implements are:
         return result
 
     @staticmethod
-    def conv(s, content_type="text/csv"):
+    def conv(s, query_string, c_type="text/csv"):
         """This method takes a string representing a CSV document and converts it in the requested format according
         to what content type is specified as input."""
+
+        content_type = c_type
+
+        # Overrite if requesting a particular format via the URL
+        if "format" in query_string:
+            req_formats = query_string["format"]
+
+            for req_format in req_formats:
+                if req_format == "csv":
+                    content_type = "text/csv"
+                elif req_format == "json":
+                    content_type = "application/json"
+
         if "application/json" in content_type:
             with StringIO(s) as f:
                 r = []
                 for i in DictReader(f):
                     r.append(dict(i))
+
+                # See if any restructuring of the final JSON is required
+                r = APIManager.structured(query_string, r)
+
                 return dumps(r, ensure_ascii=False, indent=4)
         else:
             return s
@@ -545,6 +566,130 @@ The operations that this API implements are:
         r2_s, r2_e = r2
 
         return r1_s <= r2_s <= r1_e or r2_s <= r1_s <= r2_e
+
+    @staticmethod
+    def get_item_in_dict(d_or_l, key_list, prev=None):
+        """This method takes as input a dictionary or a list of dictionaries and browses it until the value
+        specified following the chain indicated in 'key_list' is not found. It returns a list of all the
+        values that matched with such search."""
+        if prev is None:
+            res = []
+        else:
+            res = prev.copy()
+
+        if type(d_or_l) is dict:
+            d_list = [d_or_l]
+        if type(d_or_l) is list:
+            d_list = d_or_l
+
+        for d in d_list:
+            key_list_len = len(key_list)
+
+            if key_list_len >= 1:
+                key = key_list[0]
+                if key in d:
+                    if key_list_len == 1:
+                        res.append(d[key])
+                    else:
+                        res = APIManager.get_item_in_dict(d[key], key_list[1:], res)
+
+        return res
+
+    @staticmethod
+    def add_item_in_dict(d_or_l, key_list, item, idx):
+        """This method takes as input a dictionary or a list of dictionaries, browses it until the value
+        specified following the chain indicated in 'key_list' is not found, adn then substitute it with 'item'.
+        In case the final object retrieved is a list, it selects the object in position 'idx' before the
+        substitution."""
+        key_list_len = len(key_list)
+
+        if key_list_len >= 1:
+            key = key_list[0]
+
+            if type(d_or_l) is list:
+                if key_list_len == 1:
+                    d_or_l[idx][key] = item
+                else:
+                    for i in d_or_l:
+                        APIManager.add_item_in_dict(i, key_list, item, idx)
+            else:
+                if key in d_or_l:
+                    if key_list_len == 1:
+                        d_or_l[key] = item
+                    else:
+                        APIManager.add_item_in_dict(d_or_l[key], key_list[1:], item, idx)
+
+    @staticmethod
+    def structured(params, json_table):
+        """This method checks if there are particular transformation rules specified in 'params' for a JSON output,
+        and convert each row of the input table ('json_table') according to these rules.
+        There are two specific rules that can be applied:
+
+        1. array("<separator>",<field>): it converts the string value associated to the field name '<field>' into
+        an array by splitting the various textual parts by means of '<separator>'. For instance, consider the
+        following JSON structure:
+
+        [
+            { "names": "Doe, John; Doe, Jane" },
+            { "names": "Doe, John; Smith, John" }
+        ]
+
+        Executing the rule 'array("; ",names)' returns the following new JSON structure:
+
+        [
+            { "names": [ "Doe, John", "Doe, Jane" ],
+            { "names": [ "Doe, John", "Smith, John" ]
+        ]
+
+        2. dict("separator",<field>,<new_field_1>,<new_field_2>,...): it converts the string value associated to
+        the field name '<field>' into an dictionary by splitting the various textual parts by means of
+        '<separator>' and by associating the new fields '<new_field_1>', '<new_field_2>', etc., to these new
+        parts. For instance, consider the following JSON structure:
+
+        [
+            { "name": "Doe, John" },
+            { "name": "Smith, John" }
+        ]
+
+        Executing the rule 'array(", ",name,family_name,given_name)' returns the following new JSON structure:
+
+        [
+            { "name": { "family_name": "Doe", "given_name: "John" } },
+            { "name": { "family_name": "Smith", "given_name: "John" } }
+        ]
+
+        Each of the specified rules is applied in order, and it works on the JSON structure returned after
+        the execution of the previous rule."""
+        if "json" in params:
+            fields = params["json"]
+            for field in fields:
+                ops = findall('([a-z]+)\(("[^"]+"),([^\)]+)\)', field)
+                for op_type, s, es in ops:
+                    separator = sub('"(.+)"', "\\1", s)
+                    entries = [i.strip() for i in es.split(",")]
+                    keys = entries[0].split(".")
+
+                    for row in json_table:
+                        v_list = APIManager.get_item_in_dict(row, keys)
+                        for idx, v in enumerate(v_list):
+                            if op_type == "array":
+                                if type(v) is str:
+                                    APIManager.add_item_in_dict(row, keys, v.split(separator), idx)
+                            elif op_type == "dict":
+                                print(op_type, separator, keys, entries, v)
+                                new_fields = entries[1:]
+                                new_fields_max_split = len(new_fields) - 1
+                                if type(v) is str:
+                                    new_values = v.split(separator, new_fields_max_split)
+                                    APIManager.add_item_in_dict(row, keys, dict(zip(new_fields, new_values)), idx)
+                                elif type(v) is list:
+                                    new_list = []
+                                    for i in v:
+                                        new_values = i.split(separator, new_fields_max_split)
+                                        new_list.append(dict(zip(new_fields, new_values)))
+                                    APIManager.add_item_in_dict(row, keys, new_list, idx)
+
+        return json_table
     # Ancillary methods: END
 
     # Processing methods: START
@@ -801,11 +946,12 @@ The operations that this API implements are:
                     if sc == 200:
                         res = self.type_fields(list(reader(r.text.splitlines())), i)
                         res = self.postprocess(res, i)
-                        res = self.handling_params(parse_qs(quote(url_parsed.query, safe="&=")), res)
+                        q_string = parse_qs(quote(url_parsed.query, safe="&="))
+                        res = self.handling_params(q_string, res)
                         res = self.remove_types(res)
                         s_res = StringIO()
                         writer(s_res).writerows(res)
-                        return sc, APIManager.conv(s_res.getvalue(), content_type)
+                        return sc, APIManager.conv(s_res.getvalue(), q_string, content_type)
                     else:
                         return sc, "HTTP status code %s: %s" % (sc, r.reason)
                 except TimeoutError:
