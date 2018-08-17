@@ -889,6 +889,8 @@ The operations that this API implements are:
             for idx in range(len(header)):
                 heading = header[idx]
                 cur_value = row[idx]
+                if type(cur_value) is tuple:
+                    cur_value = cur_value[1]
                 new_row.append((cast_func[heading](cur_value), cur_value))
             result.append(new_row)
 
@@ -949,6 +951,7 @@ The operations that this API implements are:
                     if sc == 200:
                         res = self.type_fields(list(reader(r.text.splitlines())), i)
                         res = self.postprocess(res, i)
+                        res = self.type_fields(res, i)
                         q_string = parse_qs(quote(url_parsed.query, safe="&="))
                         res = self.handling_params(q_string, res)
                         res = self.remove_types(res)
