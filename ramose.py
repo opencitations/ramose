@@ -674,14 +674,17 @@ The operations that this API implements are:
                         for idx, v in enumerate(v_list):
                             if op_type == "array":
                                 if type(v) is str:
-                                    APIManager.add_item_in_dict(row, keys, v.split(separator), idx)
+                                    APIManager.add_item_in_dict(row, keys,
+                                                                v.split(separator) if v != "" else [], idx)
                             elif op_type == "dict":
                                 print(op_type, separator, keys, entries, v)
                                 new_fields = entries[1:]
                                 new_fields_max_split = len(new_fields) - 1
                                 if type(v) is str:
                                     new_values = v.split(separator, new_fields_max_split)
-                                    APIManager.add_item_in_dict(row, keys, dict(zip(new_fields, new_values)), idx)
+                                    APIManager.add_item_in_dict(row, keys,
+                                                                dict(zip(new_fields, new_values)) if v != "" else {},
+                                                                idx)
                                 elif type(v) is list:
                                     new_list = []
                                     for i in v:
