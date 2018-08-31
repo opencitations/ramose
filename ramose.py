@@ -776,6 +776,7 @@ The operations that this API implements are:
                 func = getattr(self.addon, func_name)
                 func_params = (result,) + tuple(params_values)
                 result = func(*func_params)
+                result = self.type_fields(result, op_item)
 
         return result
 
@@ -874,7 +875,6 @@ The operations that this API implements are:
         with the type specified in the specification file (field 'field_type'). Note that 'str' is used as default in
         case no further specifications are provided."""
         result = []
-
         cast_func = {}
         header = res[0]
         for heading in header:
@@ -949,9 +949,11 @@ The operations that this API implements are:
                     r.encoding = "utf-8"
                     sc = r.status_code
                     if sc == 200:
-                        res = self.type_fields(list(reader(r.text.splitlines())), i)
+                        # This line has been added to avoid a strage behaviour of the 'splitlines' method in
+                        # presence of strange characters (non-UTF8).
+                        list_of_lines = [line.decode("utf-8") for line in r.text.encode("utf-8").splitlines()]
+                        res = self.type_fields(list(reader(list_of_lines)), i)
                         res = self.postprocess(res, i)
-                        res = self.type_fields(res, i)
                         q_string = parse_qs(quote(url_parsed.query, safe="&="))
                         res = self.handling_params(q_string, res)
                         res = self.remove_types(res)
