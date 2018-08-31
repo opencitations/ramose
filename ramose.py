@@ -380,7 +380,7 @@ The operations that this API implements are:
                 if self.base_url is None:
                     self.base_url = item["url"]
                     self.website = item["base"]
-                    self.tp = "%s?query=" % item["endpoint"]
+                    self.tp = item["endpoint"]
                     if "addon" in item:
                         addon_abspath = abspath(dirname(conf_file) + sep + item["addon"])
                         path.append(dirname(addon_abspath))
@@ -945,7 +945,8 @@ The operations that this API implements are:
                             par_value = par_man[idx]
                         query = query.replace("[[%s]]" % par[idx], str(par_value))
 
-                    r = get(self.tp + quote(query), headers={"Accept": "text/csv"})
+                    r = post(self.tp, data=query, headers={"Accept": "text/csv",
+                                                           "Content-Type": "application/sparql-query"})
                     r.encoding = "utf-8"
                     sc = r.status_code
                     if sc == 200:
