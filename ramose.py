@@ -385,6 +385,9 @@ The operations that this API implements are:
                         addon_abspath = abspath(dirname(conf_file) + sep + item["addon"])
                         path.append(dirname(addon_abspath))
                         self.addon = import_module(basename(addon_abspath))
+                    self.sparql_http_method = "post"
+                    if "method" in item:
+                        self.sparql_http_method = item["method"].strip().lower()
                 else:
                     self.conf[APIManager.nor_api_url(item, self.base_url)] = item
 
@@ -945,8 +948,11 @@ The operations that this API implements are:
                             par_value = par_man[idx]
                         query = query.replace("[[%s]]" % par[idx], str(par_value))
 
-                    r = post(self.tp, data=query, headers={"Accept": "text/csv",
-                                                           "Content-Type": "application/sparql-query"})
+                    if self.sparql_http_method == "get":
+                        r = get(self.tp + "?query=" + quote(query), headers={"Accept": "text/csv"})
+                    else:
+                        r = post(self.tp, data=query, headers={"Accept": "text/csv",
+                                                               "Content-Type": "application/sparql-query"})
                     r.encoding = "utf-8"
                     sc = r.status_code
                     if sc == 200:
