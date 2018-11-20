@@ -416,11 +416,12 @@ The operations that this API implements are:
     # Data type: START
     @staticmethod
     def duration(s):
-        """This method returns the data type for durations according to the XML Schema Recommendation
-        (https://www.w3.org/TR/xmlschema11-2/#duration) from the input string. In case the input string is None or
-        it is empty, an high duration value (i.e. 2000 years) is returned."""
-        if s is None and s != "":
-            d = parse_duration("PY2000")
+        """This method returns the data type for durations according to the XML Schema
+        Recommendation (https://www.w3.org/TR/xmlschema11-2/#duration) from the input string.
+        In case the input string is None or it is empty, an high duration value
+        (i.e. 2000 years) is returned."""
+        if s is None or s == "":
+            d = parse_duration("P2000Y")
         else:
             d = parse_duration(s)
 
@@ -680,7 +681,6 @@ The operations that this API implements are:
                                     APIManager.add_item_in_dict(row, keys,
                                                                 v.split(separator) if v != "" else [], idx)
                             elif op_type == "dict":
-                                print(op_type, separator, keys, entries, v)
                                 new_fields = entries[1:]
                                 new_fields_max_split = len(new_fields) - 1
                                 if type(v) is str:
