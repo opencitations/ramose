@@ -509,21 +509,29 @@ The operations that this API implements are:
         return result
 
     @staticmethod
+    def get_content_type(ct):
+        content_type = ct
+
+        if ct == "csv":
+            content_type = "text/csv"
+        elif ct == "json":
+            content_type = "application/json"
+
+        return content_type
+
+    @staticmethod
     def conv(s, query_string, c_type="text/csv"):
         """This method takes a string representing a CSV document and converts it in the requested format according
         to what content type is specified as input."""
 
-        content_type = c_type
+        content_type = APIManager.get_content_type(c_type)
 
         # Overrite if requesting a particular format via the URL
         if "format" in query_string:
             req_formats = query_string["format"]
 
             for req_format in req_formats:
-                if req_format == "csv":
-                    content_type = "text/csv"
-                elif req_format == "json":
-                    content_type = "application/json"
+                content_type = APIManager.get_content_type(req_format)
 
         if "application/json" in content_type:
             with StringIO(s) as f:
@@ -534,9 +542,9 @@ The operations that this API implements are:
                 # See if any restructuring of the final JSON is required
                 r = APIManager.structured(query_string, r)
 
-                return dumps(r, ensure_ascii=False, indent=4)
+                return dumps(r, ensure_ascii=False, indent=4), content_type
         else:
-            return s
+            return s, content_type
 
     @staticmethod
     def pv(i, r=None):
@@ -966,31 +974,31 @@ The operations that this API implements are:
                         res = self.remove_types(res)
                         s_res = StringIO()
                         writer(s_res).writerows(res)
-                        return sc, APIManager.conv(s_res.getvalue(), q_string, content_type)
+                        return (sc,) + APIManager.conv(s_res.getvalue(), q_string, content_type)
                     else:
-                        return sc, "HTTP status code %s: %s" % (sc, r.reason)
+                        return sc, "HTTP status code %s: %s" % (sc, r.reason), "text/plain"
                 except TimeoutError:
                     exc_type, exc_obj, exc_tb = exc_info()
                     sc = 408
                     return sc, "HTTP status code %s: request timeout - %s: %s (line %s)" % \
-                           (sc, exc_type.__name__, exc_obj, exc_tb.tb_lineno)
+                           (sc, exc_type.__name__, exc_obj, exc_tb.tb_lineno), "text/plain"
                 except TypeError:
                     exc_type, exc_obj, exc_tb = exc_info()
                     sc = 400
                     return sc, "HTTP status code %s: " \
                                "parameter in the request not compliant with the type specified - %s: %s (line %s)" % \
-                               (sc, exc_type.__name__, exc_obj, exc_tb.tb_lineno)
+                               (sc, exc_type.__name__, exc_obj, exc_tb.tb_lineno), "text/plain"
                 except:
                     exc_type, exc_obj, exc_tb = exc_info()
                     sc = 500
                     return sc, "HTTP status code %s: something unexpected happened - %s: %s (line %s)" % \
-                           (sc, exc_type.__name__, exc_obj, exc_tb.tb_lineno)
+                           (sc, exc_type.__name__, exc_obj, exc_tb.tb_lineno), "text/plain"
             else:
                 sc = 405
-                return sc, "HTTP status code %s: '%s' method not allowed" % (sc, str_method)
+                return sc, "HTTP status code %s: '%s' method not allowed" % (sc, str_method), "text/plain"
         else:
             sc = 404
-            return sc, "HTTP status code %s: the operation requested does not exist" % sc
+            return sc, "HTTP status code %s: the operation requested does not exist" % sc, "text/plain"
 
 
 if __name__ == "__main__":
@@ -1022,7 +1030,7 @@ if __name__ == "__main__":
         res = am.exec_op(args.call, args.method, args.format)
 
     if args.output is None:
-        print("# Response HTTP code: %s\n# Body:\n%s" % res)
+        print("# Response HTTP code: %s\n# Body:\n%s\n# Content-type: %s" % res)
     else:
         with open(args.output, "w") as f:
             f.write(res[1])
