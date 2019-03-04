@@ -786,8 +786,9 @@ The operations that this API implements are:
 
                 func = getattr(self.addon, func_name)
                 func_params = (result,) + tuple(params_values)
-                result = func(*func_params)
-                result = self.type_fields(result, op_item)
+                result, do_type_fields = func(*func_params)
+                if do_type_fields:
+                    result = self.type_fields(result, op_item)
 
         return result
 
