@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright (c) 2018, Silvio Peroni <essepuntato@gmail.com>
+# Copyright (c) 2020
+# Silvio Peroni <silvio.peroni@opencitations.net>
+# Marilena Daquino <marilena.daquino@opencitations.net>
 #
 # Permission to use, copy, modify, and/or distribute this software for any purpose
 # with or without fee is hereby granted, provided that the above copyright notice
@@ -13,8 +15,6 @@
 # DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
 # ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 # SOFTWARE.
-
-__author__ = 'essepuntato'
 
 from re import search, DOTALL, findall, sub, match, split
 from requests import get, post, put, delete
@@ -184,7 +184,7 @@ The operations that this API implements are:
 
     def __footer(self):
         """This method returns the footer of the API documentation."""
-        result = """This API and the related documentation has been created with <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE</a>, the *Restful API Manager Over SPARQL Endpoints*, developed by <a href="http://orcid.org/0000-0003-0530-4305" target="_blank">Silvio Peroni</a>."""
+        result = """This API and the related documentation has been created with <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE</a>, the *Restful API Manager Over SPARQL Endpoints*, developed by <a href="https://essepuntato.it" target="_blank">Silvio Peroni</a> and <a href="https://marilenadaquino.github.io/" target="_blank">Marilena Daquino</a>."""
         return markdown(result)
 
     def __css(self):
@@ -300,20 +300,6 @@ The operations that this API implements are:
             content: " \u2191 ";
         }
 
-        /*h3 a[href] {
-            color:white
-            background-image: none;
-            text-transform:uppercase;
-            padding: 1px 3px 1px 3px;
-            font-size: 8pt !important;
-            border: 1px solid #246375;
-            float: right;
-            position:relative;
-            top: -11px;
-            right: -11px;
-            border-radius: 0 14px 0 0;
-        }*/
-
         p {
             overflow-wrap: break-word;
             word-wrap: break-word;
@@ -365,7 +351,7 @@ The operations that this API implements are:
         }
 
         .api_calls p:nth-child(odd) {
-          background-color: 	#F8F8F8;
+          background-color: #F8F8F8;
         }
 
         .api_calls p {
@@ -417,7 +403,6 @@ The operations that this API implements are:
         .code_500::before {
           background-color: #cc0000;
         }
-
         """
 
     def __css_path(self, css_path=None):
@@ -464,7 +449,7 @@ The operations that this API implements are:
             %s
         </div>
 
-        """ % (self.__title(), self.base_url,self.base_url, self.tp, self.tp, api_logs_list)
+        """ % (self.__title(), self.base_url, self.base_url, self.tp, self.tp, api_logs_list)
         return html
 
     def get_htmldoc(self, css_path=None):
@@ -489,12 +474,12 @@ The operations that this API implements are:
         """This method generates the HTML documentation of RAMOSE as described in the ramose.html document"""
 
         return """
-            <!doctype html>
+            <!DOCTYPE html>
             <html lang="en">
             <head>
-              <meta charset="utf-8">
+              <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
               <title>RAMOSE</title>
-              <meta name="description" content="Documentation of RAMOSE API Manager">
+              <meta name="description" content="Documentation of RAMOSE API Manager"/>
               <style>%s</style>
               %s
             </head>
@@ -1204,7 +1189,8 @@ if __name__ == "__main__":
     arg_parser.add_argument("-w", "--webserver", dest="webserver", default=False,
                             help="The host:port where to deploy a Flask webserver for testing the API.")
     arg_parser.add_argument("-css", "--css", dest="css",
-                            help="The path of a .css file for styling the API documentation (to be specified either with '-w' or with '-d' and '-o' arguments).")
+                            help="The path of a .css file for styling the API documentation (to be specified "
+                                 "either with '-w' or with '-d' and '-o' arguments).")
 
     args = arg_parser.parse_args()
     am = APIManager([args.spec])
@@ -1213,11 +1199,11 @@ if __name__ == "__main__":
     if args.webserver:
         try:
             import logging
-            from flask import Flask, request , make_response, send_from_directory
+            from flask import Flask, request, make_response, send_from_directory
             from werkzeug.exceptions import HTTPException
 
-            # logs
-            logs = am.logger_ramose()
+            # set logs up
+            am.logger_ramose()
 
             # web server
             host_name = args.webserver.rsplit(':', 1)[0] if ':' in args.webserver else '127.0.0.1'
