@@ -485,7 +485,7 @@ The operations that this API implements are:
     </body>
 </html>""" % (self.__title(), self.__css(), self.__css_path(css_path), self.__header(), self.__operations(), self.__footer())
 
-    def get_htmlindex(self):
+    def get_htmlindex(self,css_path=None):
         """This method generates the HTML documentation of RAMOSE as described in the ramose.html document"""
 
         return """
