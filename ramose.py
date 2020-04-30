@@ -1284,7 +1284,6 @@ if __name__ == "__main__":
         if args.doc:
             res = am.get_htmldoc(css_path)
         else:
-            print(args.call)
             res = am.exec_op(args.call, args.method, args.format)
 
         if args.output is None:
