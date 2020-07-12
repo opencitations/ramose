@@ -1,0 +1,121 @@
+#url /api/wd
+#type api
+#base https://w3id.org/oc/wikidata
+#method post
+#title Wikidata REST API
+#description A RAMOSE API implementation for Wikidata
+#version 0.0.2
+#license This document is licensed with a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/legalcode), while the REST API itself has been created using [RAMOSE](https://github.com/opencitations/ramose), the *Restful API Manager Over SPARQL Endpoints* created by [Silvio Peroni](https://orcid.org/0000-0003-0530-4305), which is licensed with an [ISC license](https://opensource.org/licenses/ISC). All the data returned by this API are made freely available under a [Creative Commons public domain dedication (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).
+#contacts [contact@opencitations.net](mailto:contact@opencitations.net)
+#endpoint https://query.wikidata.org/sparql
+#addon wikidataapi
+
+#url /metadata/{dois}
+#type operation
+#dois str(\"?10\..+[^_\"]((__|\" \")10\..+[^_])*\"?)
+#preprocess upper(dois) --> split_dois(dois)
+#postprocess distinct()
+#method get
+#description This operation retrieves the metadata for all the articles identified by the input DOIs.
+
+It is possible to specify one or more DOIs as input of this operation. In this case, the DOI should be separated with a double underscore ("\_\_") – e.g. "10.1108/jd-12-2013-0166\_\_10.1016/j.websem.2012.08.001\_\_...". The fields returned by this operation are:
+
+* *author*: the semicolon-separated list of authors of the citing entity;
+* *year*: the year of publication of the citing entity;
+* *title*: the title of the citing entity;
+* *source_title*: the title of the venue where the citing entity has been published;
+* *source_id*: the semicolon-separated list of identifiers referring to the source where the citing entity has been published;
+* *volume*: the number of the volume in which the citing entity has been published;
+* *issue*: the number of the issue in which the citing entity has been published;
+* *page*: the starting and ending pages of the citing entity in the context of the venue where it has been published;
+* *doi*: the DOI of the citing entity;
+* *reference*: the semicolon-separated DOIs of all the entities cited by the citing ;
+* *citation_count*: the number of citations received by the citing entity;
+* *qid*: the identifier of the citing entity in Wikidata.
+
+Note: this operation strictly depends on external services (i.e. doi.org and associate applications) for gathering all the metadata of the articles requested. In fact, these metadata are not stored in COCI and are retrieved dynamically upon request.
+#call /metadata/10.1108/jd-12-2013-0166__10.1038/nature12373
+#field_type str(qid) str(author) datetime(year) str(title) str(source_title) str(source_id) str(volume) str(issue) str(page) str(doi) str(reference) int(citation_count)
+#output_json [
+    {
+        "source_title": "Journal of Documentation",
+        "page": "253-277",
+        "volume": "71",
+        "reference": "10.1136/BMJ.B2680; 10.1145/1816123.1816198; 10.1145/2362499.2362502; 10.1007/978-3-642-41242-4_6; 10.1016/J.WEBSEM.2012.08.001; 10.1371/JOURNAL.PCBI.1000361",
+        "qid": "Q24260641",
+        "citation_count": "1",
+        "issue": "2",
+        "year": "2015",
+        "doi": "10.1108/JD-12-2013-0166",
+        "author": "Dutton, Alexander; Peroni, Silvio; Shotton, David",
+        "title": "Setting our bibliographic references free: towards open citation data"
+    },
+    {
+        "source_title": "Nature",
+        "page": "54-58",
+        "volume": "500",
+        "reference": "10.1021/NN201142F; 10.1021/NL300389Y; 10.1158/0008-5472.CAN-11-3536; 10.1038/NRC3180; 10.3402/NANO.V3I0.11586; 10.1038/NCOMMS1714; 10.1038/NATURE07279; 10.1007/S10549-012-2393-X; 10.1371/JOURNAL.PONE.0049021; 10.1016/J.CELL.2009.11.006; 10.1073/PNAS.0909350107; 10.1038/NMETH.1278; 10.1021/JP073938O; 10.1016/J.CANLET.2004.02.004; 10.1038/NMETH818; 10.1038/NATURE03509",
+        "qid": "Q34460861",
+        "citation_count": "59",
+        "issue": "7460",
+        "year": "2013",
+        "doi": "10.1038/NATURE12373",
+        "author": "",
+        "title": "Nanometre-scale thermometry in a living cell."
+    }
+]
+#sparql PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+SELECT ?author ?year ?title ?source_title ?volume ?issue ?page ?doi ?reference ?citation_count ?qid {
+  VALUES ?doi { [[dois]] }
+  ?article wdt:P356 ?doi .
+
+  BIND(STRAFTER(str(?article), "http://www.wikidata.org/entity/") as ?qid) .
+
+  {
+    SELECT DISTINCT ?article (GROUP_CONCAT(?cited_doi; separator="; ") as ?reference) {
+      VALUES ?doi { [[dois]] }
+      ?article wdt:P356 ?doi .
+      OPTIONAL {
+        ?article wdt:P2860 ?cited .
+        OPTIONAL {
+          ?cited wdt:P356 ?cited_doi .
+        }
+      }
+    } GROUP BY ?article
+  }
+  {
+    SELECT ?article ?doi (count(?doi) as ?citation_count) {
+      VALUES ?doi { [[dois]] }
+      ?article wdt:P356 ?doi .
+      OPTIONAL { ?article ^wdt:P2860 ?other }
+    } GROUP BY ?article ?doi
+  }
+  OPTIONAL { ?article wdt:P1476 ?title }
+  OPTIONAL {
+    ?article wdt:P577 ?date
+    BIND(SUBSTR(str(?date), 0, 5) as ?year)
+  }
+  OPTIONAL { ?article wdt:P1433/wdt:P1476 ?source_title }
+  OPTIONAL { ?article wdt:P478 ?volume }
+  OPTIONAL { ?article wdt:P433 ?issue }
+  OPTIONAL { ?article wdt:P304 ?page }
+  {
+    SELECT ?article ?doi (GROUP_CONCAT(?a; separator="; ") as ?author) {
+      VALUES ?doi { [[dois]] }
+
+      {
+        SELECT ?article ?doi ?a {
+          VALUES ?doi { [[dois]] }
+
+          ?article wdt:P356 ?doi .
+
+          OPTIONAL {
+            ?article wdt:P50 ?author_res .
+            ?author_res wdt:P735/wdt:P1705 ?g_name ;
+                        wdt:P734/wdt:P1705 ?f_name .
+            BIND(CONCAT(?f_name, ", ",?g_name) as ?a)
+          }
+        } GROUP BY ?article ?doi ?a ORDER BY DESC(?a)}
+    } GROUP BY ?article ?doi
+  }
+} LIMIT 1000

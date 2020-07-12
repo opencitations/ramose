@@ -1,0 +1,91 @@
+#url /api/v1
+#type api
+#base https://w3id.org/oc
+#title REST API for the OpenCitations Corpus
+#description This document describe the REST API for accessing the data stored in the [OpenCitations Corpus](https://w3id.org/oc/corpus) hosted by [OpenCitations](http://opencitations.net). All the operations described in this document return either a JSON document (default) or a CSV document according to the mimetype specified in the `Accept` header of the request.
+
+If you would like to suggest an additional operation to be included in this API, please use the [issue tracker](https://github.com/opencitations/api/issues) of the OpenCitations Corpus API available on GitHub.
+#version 1.0.0
+#license This document is licensed with a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/legalcode), while the REST API itself has been created using [RAMOSE](https://github.com/opencitations/ramose), the *Restful API Manager Over SPARQL Endpoints* created by [Silvio Peroni](https://orcid.org/0000-0003-0530-4305), which is licensed with an [ISC license](https://opensource.org/licenses/ISC).
+#contacts [contact@opencitations.net](mailto:contact@opencitations.net)
+#endpoint http://opencitations.net/sparql
+#method post
+#addon occapi
+
+#url /metadata/{typ}/{doi}
+#type operation
+#typ str(journal|chapter)
+#doi str(10\..+)
+#preprocess lower(doi) --> get_type(typ)
+#method get
+#description This operation allows one to get the metadata of all the articles specified in input by means of their DOIs.
+
+It is possible to specify one or more DOIs as input of this operation. In this case, the DOI should be separated with a double underscore ("\_\_") – e.g. "10.1108/jd-12-2013-0166\_\_10.1016/j.websem.2012.08.001\_\_...". The fields returned by this operation are:
+
+* *occ_id*: the OpenCitations Corpus local identifier of the citing bibliographic resource (e.g. "br/2384552");
+* *author*: the semicolon-separated list of authors of the citing bibliographic resource;
+* *year*: the year of publication of the citing bibliographic resource;
+* *title*: the title of the citing bibliographic resource;
+* *source_title*: the title of the venue where the citing bibliographic resource has been published;
+* *volume*: the number of the volume in which the citing bibliographic resource has been published;
+* *issue*: the number of the issue in which the citing bibliographic resource has been published;
+* *page*: the starting and ending pages of the citing bibliographic resource in the context of the venue where it has been published;
+* *doi*: the DOI of the citing bibliographic resource;
+* *occ_reference*: the semicolon-separated OpenCitations Corpus local identifiers of all the bibliograhic resources cited by the citing bibliographic resource in consideration;
+* *doi_reference*: the semicolon-separated DOIs of all the cited bibliograhic resources that have such identifier associated;
+* *citation_count*: the number of citations received by the citing bibliographic resource.
+#call /metadata/10.1108/jd-12-2013-0166__10.1016/j.websem.2012.08.001
+#field_type str(occ_id) str(author) datetime(year) str(title) str(source_title) str(volume) str(issue) str(page) str(doi) str(occ_reference) str(doi_reference) int(citation_count)
+#output_json [
+    {
+        "doi_reference": "",
+        "year": "2012",
+        "citation_count": "1",
+        "page": "33-43",
+        "occ_id": "br/2384552",
+        "title": "FaBiO and CiTO: Ontologies for describing bibliographic resources and citations",
+        "source_title": "Web Semantics: Science, Services and Agents on the World Wide Web",
+        "issue": "",
+        "author": "Peroni, Silvio; Shotton, David",
+        "occ_reference": "",
+        "volume": "17",
+        "doi": "10.1016/j.websem.2012.08.001"
+    },
+    {
+        "doi_reference": "",
+        "year": "2015",
+        "citation_count": "1",
+        "page": "253-277",
+        "occ_id": "br/7295288",
+        "title": "Setting our bibliographic references free: towards open citation data",
+        "source_title": "Journal of Documentation",
+        "issue": "2",
+        "author": "Peroni, Silvio; Dutton, Alexander; Gray, Tanya; Shotton, David",
+        "occ_reference": "",
+        "volume": "71",
+        "doi": "10.1108/jd-12-2013-0166"
+    }
+]
+#sparql PREFIX cito: <http://purl.org/spar/cito/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX fabio: <http://purl.org/spar/fabio/>
+PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX pro: <http://purl.org/spar/pro/>
+PREFIX oco: <https://w3id.org/oc/ontology/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
+
+SELECT DISTINCT ?article ?occ_id ?title
+WHERE {
+	?article a [[typ]] ;
+		datacite:hasIdentifier [
+			datacite:usesIdentifierScheme datacite:doi ;
+			literal:hasLiteralValue "[[doi]]"
+		] ;
+		dcterms:title ?title .
+
+	BIND (STRAFTER(str(?article), "https://w3id.org/oc/corpus/") as ?occ_id)
+}
+LIMIT 10000

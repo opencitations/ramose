@@ -1,0 +1,347 @@
+#url /api/coci
+#type api
+#base https://w3id.org/oc/index/coci
+#title REST API for COCI, the OpenCitations Index of Crossref open DOI-to-DOI references
+#description This document describe the REST API for accessing the data stored in [COCI](https://w3id.org/oc/index/coci) hosted by [OpenCitations](http://opencitations.net). This API implements operations to retrieve the citation data for all the references to other works appearing in a particular bibliographic entity, or the citation data for all the references appearing in other works to a particular bibliographic entity, given the DOI of a bibliographic entity, or to retrieve citation data about a particular citation identified by means of its [Open Citation Identifier (OCI)](https://opencitations.wordpress.com/2018/03/12/citations-as-first-class-data-entities-open-citation-identifiers/).
+
+All the present operations return either a JSON document (default) or a CSV document according to the mimetype specified in the `Accept` header of the request. If you would like to suggest an additional operation to be included in this API, please use the [issue tracker](https://github.com/opencitations/api/issues) of the OpenCitations APIs available on GitHub.
+#version Version 1.3.0 (2020-03-25)
+#contacts [contact@opencitations.net](mailto:contact@opencitations.net)
+#license This document is licensed with a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/legalcode), while the REST API itself has been created using [RAMOSE](https://github.com/opencitations/ramose), the *Restful API Manager Over SPARQL Endpoints* created by [Silvio Peroni](https://orcid.org/0000-0003-0530-4305), which is licensed with an [ISC license](https://opensource.org/licenses/ISC).
+#endpoint http://opencitations.net/index/sparql
+#method post
+#addon indexapi
+
+#url /references/{doi}
+#type operation
+#doi str(10\..+)
+#preprocess lower(doi) --> encode(doi)
+#postprocess decode_doi(citing, cited)
+#method get
+#description This operation retrieves the citation data for all the outgoing references to other cited works appearing in the reference list of the bibliographic entity identified by the input DOI.
+
+The fields returned by this operation are:
+
+* *oci*: the Open Citation Identifier (OCI) of the citation in consideration;
+* *citing*: the DOI of the citing entity;
+* *cited*: the DOI of the cited entity;
+* *creation*: the creation date of the citation according to the [ISO date format](https://en.wikipedia.org/wiki/ISO_8601) `YYYY-MM-DD`, which corresponds to the publication date of the citing entity;
+* *timespan*: the interval between the publication date of the cited entity and the publication date of the citing entity, expressed using the [XSD duration format](https://www.w3.org/TR/xmlschema11-2/#duration) `PnYnMnD`;
+* *journal_sc*: it records whether the citation is a journal self-citations (i.e. the citing and the cited entities are published in the same journal);
+* *author_sc*: it records whether the citation is an author self-citation (i.e. the citing and the cited entities have at least one author in common).
+#call /references/10.1186/1756-8722-6-59
+#output_json [
+    {
+        "oci": "02001010806360107050663080702026306630509-0200101080636102703040309",
+        "citing": "10.1186/1756-8722-6-59",
+        "cited": "10.1186/ar3439",
+        "creation": "2013",
+        "timespan": "P2Y",
+        "journal_sc": "no",
+        "author_sc": "no"
+    },
+    {
+        "oci": "02001010806360107050663080702026306630509-0200101080636102704000806",
+        "citing": "10.1186/1756-8722-6-59",
+        "cited": "10.1186/ar4086",
+        "creation": "2013",
+        "timespan": "P1Y",
+        "journal_sc": "no",
+        "author_sc": "no"
+    },
+    {
+        "oci": "02001010806360107050663080702026306630509-020010200003619122437020001023704023707090006",
+        "citing": "10.1186/1756-8722-6-59",
+        "cited": "10.1200/jco.2012.42.7906",
+        "creation": "2013",
+        "timespan": "P0Y",
+        "journal_sc": "no",
+        "author_sc": "no"
+    },
+    {
+        "oci": "02001010806360107050663080702026306630509-02003010009360008080300010805370200010237060604070907",
+        "citing": "10.1186/1756-8722-6-59",
+        "cited": "10.3109/08830185.2012.664797",
+        "creation": "2013",
+        "timespan": "P0Y",
+        "journal_sc": "no",
+        "author_sc": "no"
+    }
+]
+#field_type str(oci) str(citing) str(cited) datetime(creation) duration(timespan) str(?journal_sc) str(?author_sc)
+#sparql PREFIX cito: <http://purl.org/spar/cito/>
+SELECT ?oci ?citing ?cited ?creation ?timespan (IF(bound(?jsc), "yes", "no") as ?journal_sc) (IF(bound(?asc), "yes", "no") as ?author_sc)
+WHERE {
+    GRAPH <https://w3id.org/oc/index/coci/> {
+        BIND(<http://dx.doi.org/[[doi]]> as ?citing_iri) .
+        ?citing_iri ^cito:hasCitingEntity ?oci_iri .
+        ?oci_iri
+            cito:hasCitedEntity ?cited_iri ;
+            cito:hasCitationCreationDate ?creation ;
+            cito:hasCitationTimeSpan ?timespan .
+
+        OPTIONAL {
+            ?oci_iri a cito:JournalSelfCitation .
+            BIND("yes" as ?jsc)
+        }
+
+        OPTIONAL {
+            ?oci_iri a cito:AuthorSelfCitation .
+            BIND("yes" as ?asc)
+        }
+
+        BIND(STRAFTER(str(?citing_iri), "http://dx.doi.org/") AS ?citing)
+        BIND(STRAFTER(str(?cited_iri), "http://dx.doi.org/") AS ?cited)
+        BIND(STRAFTER(str(?oci_iri), "/ci/") AS ?oci)
+    }
+}
+LIMIT 10000
+
+#url /citations/{doi}
+#type operation
+#doi str(10\..+)
+#preprocess lower(doi) --> encode(doi)
+#postprocess decode_doi(citing, cited)
+#method get
+#description This operation retrieves the citation data for all the references appearing in the reference lists of other citing works to the bibliographic entity identified by the input DOI, that constitute the incoming citations of that identified bibliographic entity.
+
+The fields returned by this operation are:
+
+* *oci*: the Open Citation Identifier (OCI) of the citation in consideration;
+* *citing*: the DOI of the citing entity;
+* *cited*: the DOI of the cited entity;
+* *creation*: the creation date of the citation according to the [ISO date format](https://en.wikipedia.org/wiki/ISO_8601) `YYYY-MM-DD`, which corresponds to the publication date of the citing entity;
+* *timespan*: the interval between the publication date of the cited entity and the publication date of the citing entity, expressed using the [XSD duration format](https://www.w3.org/TR/xmlschema11-2/#duration) `PnYnMnD`;
+* *journal_sc*: it records whether the citation is a journal self-citations (i.e. the citing and the cited entities are published in the same journal);
+* *author_sc*: it records whether the citation is an author self-citation (i.e. the citing and the cited entities have at least one author in common).
+#call /citations/10.1002/adfm.201505328
+#output_json [
+    {
+        "oci": "0200100030836231029271431221029283702000106370908-02001000002361013152237020001050005030208",
+        "citing": "10.1038/natrevmats.2016.98",
+        "cited": "10.1002/adfm.201505328",
+        "creation": "2017-01-17",
+        "timespan": "P11M"
+        "journal_sc": "no",
+        "author_sc": "no"
+    },
+    {
+        "oci": "02001000002361013221037020001070002060708-02001000002361013152237020001050005030208",
+        "citing": "10.1002/adma.201702678",
+        "cited": "10.1002/adfm.201505328",
+        "creation": "2017-07-25",
+        "timespan": "P1Y5M8D"
+        "journal_sc": "no",
+        "author_sc": "no"
+    },
+    {
+        "oci": "020010003083623142314271634370200010737010005-02001000002361013152237020001050005030208",
+        "citing": "10.1038/nenergy.2017.105",
+        "cited": "10.1002/adfm.201505328",
+        "creation": "2017-07-10",
+        "timespan": "P1Y4M23D"
+        "journal_sc": "no",
+        "author_sc": "no"
+    }
+]
+#field_type str(oci) str(citing) str(cited) datetime(creation) duration(timespan) str(?journal_sc) str(?author_sc)
+#sparql PREFIX cito: <http://purl.org/spar/cito/>
+SELECT ?oci ?citing ?cited ?creation ?timespan (IF(bound(?jsc), "yes", "no") as ?journal_sc) (IF(bound(?asc), "yes", "no") as ?author_sc)
+WHERE {
+    GRAPH <https://w3id.org/oc/index/coci/> {
+        BIND(<http://dx.doi.org/[[doi]]> as ?cited_iri) .
+        ?cited_iri ^cito:hasCitedEntity ?oci_iri .
+        ?oci_iri
+            cito:hasCitingEntity ?citing_iri ;
+            cito:hasCitationCreationDate ?creation ;
+            cito:hasCitationTimeSpan ?timespan .
+
+        OPTIONAL {
+            ?oci_iri a cito:JournalSelfCitation .
+            BIND("yes" as ?jsc)
+        }
+
+        OPTIONAL {
+            ?oci_iri a cito:AuthorSelfCitation .
+            BIND("yes" as ?asc)
+        }
+
+        BIND(STRAFTER(str(?citing_iri), "http://dx.doi.org/") AS ?citing)
+        BIND(STRAFTER(str(?cited_iri), "http://dx.doi.org/") AS ?cited)
+        BIND(STRAFTER(str(?oci_iri), "/ci/") AS ?oci)
+    }
+}
+LIMIT 10000
+
+#url /citation/{oci}
+#type operation
+#oci str([0-9]+-[0-9]+)
+#method get
+#postprocess decode_doi(citing, cited)
+#description This operation retrieves the citation metadata for the citation identified by the input Open Citation Identifier (OCI).
+
+The Open Citation Identifier is a globally unique persistent identifier for bibliographic citations, which has a simple structure: the lower-case letters "oci" followed by a colon, followed by two numbers separated by a dash. For example, `oci:1-18` is a valid OCI.
+
+It is worth mentioning that, in this REST operation, the prefix "oci:" **should not** be specified, and only the dash-separated numbers of the OCI should be provided, as shown in the example below.
+
+The fields returned by this operation are:
+
+* *oci*: the Open Citation Identifier (OCI) of the citation in consideration;
+* *citing*: the DOI of the citing entity;
+* *cited*: the DOI of the cited entity;
+* *creation*: the creation date of the citation according to the [ISO date format](https://en.wikipedia.org/wiki/ISO_8601) `YYYY-MM-DD`, which corresponds to the publication date of the citing entity;
+* *timespan*: the interval between the publication date of the cited entity and the publication date of the citing entity, expressed using the [XSD duration format](https://www.w3.org/TR/xmlschema11-2/#duration) `PnYnMnD`;
+* *journal_sc*: it records whether the citation is a journal self-citations (i.e. the citing and the cited entities are published in the same journal);
+* *author_sc*: it records whether the citation is an author self-citation (i.e. the citing and the cited entities have at least one author in common).
+#call /citation/02001010806360107050663080702026306630509-0200101080636102704000806
+#output_json [
+    {
+        "oci": "02001010806360107050663080702026306630509-0200101080636102704000806",
+        "citing": "10.1186/1756-8722-6-59",
+        "cited": "10.1186/ar4086",
+        "creation": "2013",
+        "timespan": "P1Y",
+        "journal_sc": "no",
+        "author_sc": "no"
+    }
+]
+#field_type str(oci) str(citing) str(cited) datetime(creation) duration(timespan) str(?journal_sc) str(?author_sc)
+#sparql PREFIX cito: <http://purl.org/spar/cito/>
+SELECT ?oci ?citing ?cited ?creation ?timespan (IF(bound(?jsc), "yes", "no") as ?journal_sc) (IF(bound(?asc), "yes", "no") as ?author_sc)
+WHERE {
+    GRAPH <https://w3id.org/oc/index/coci/> {
+        BIND(<https://w3id.org/oc/index/coci/ci/[[oci]]> as ?oci_iri) .
+        ?oci_iri
+            cito:hasCitingEntity ?citing_iri ;
+            cito:hasCitedEntity ?cited_iri ;
+            cito:hasCitationCreationDate ?creation ;
+            cito:hasCitationTimeSpan ?timespan .
+
+        OPTIONAL {
+            ?oci_iri a cito:JournalSelfCitation .
+            BIND("yes" as ?jsc)
+        }
+
+        OPTIONAL {
+            ?oci_iri a cito:AuthorSelfCitation .
+            BIND("yes" as ?asc)
+        }
+
+        BIND(STRAFTER(str(?citing_iri), "http://dx.doi.org/") AS ?citing)
+        BIND(STRAFTER(str(?cited_iri), "http://dx.doi.org/") AS ?cited)
+        BIND(STRAFTER(str(?oci_iri), "/ci/") AS ?oci)
+    }
+}
+LIMIT 10000
+
+#url /metadata/{dois}
+#type operation
+#dois str(\"?10\..+[^_\"]((__|\" \")10\..+[^_])*\"?)
+#preprocess lower(dois) --> encode(dois) --> split_dois(dois)
+#postprocess metadata() --> oalink() --> decode_doi(doi, reference, citation)
+#method get
+#description This operation retrieves the bibliographic metadata for each of the bibliographic entities identified by one or more input DOIs.
+
+It is possible to specify one or more DOIs as input of this operation. In this case, the DOI should be separated with a double underscore ("\_\_") – e.g. "10.1108/jd-12-2013-0166\_\_10.1016/j.websem.2012.08.001\_\_...". The fields returned by this operation are:
+
+* *author*: the semicolon-separated list of authors of the bibliographic entity;
+* *year*: the year of publication of the bibliographic entity;
+* *title*: the title of the bibliographic entity;
+* *source_title*: the title of the venue where the bibliographic entity has been published;
+* *source_id*: the semicolon-separated list of identifiers referring to the source where the bibliographic entity has been published;
+* *volume*: the number of the volume in which the bibliographic entity has been published;
+* *issue*: the number of the issue in which the bibliographic entity has been published;
+* *page*: the starting and ending pages of the bibliographic entity in the context of the venue where it has been published;
+* *doi*: the DOI of the bibliographic entity;
+* *reference*: the semicolon-separated DOIs of all the entities cited by the bibliographic entity;
+* *citation*: the semicolon-separated DOIs of all the entities that cite the bibliographic entity;
+* *citation_count*: the number of citations received by the bibliographic entity;
+* *oa_link*: the link to the Open Access version of the bibliographic entity, if available.
+
+Note: this operation strictly depends on external services (i.e. doi.org and associate applications) for gathering all the metadata of the articles requested. In fact, these metadata are not stored in COCI and are retrieved dynamically upon request.
+#call /metadata/10.1108/jd-12-2013-0166__10.6084/m9.figshare.3443876
+#field_type str(author) datetime(year) str(title) str(source_title) str(source_id) str(volume) str(issue) str(page) str(doi) str(reference) str(citation) int(citation_count) str(oa_link)
+#output_json [
+    {
+        "citation": "10.1177/0961000615616450; 10.7554/elife.32822; 10.1145/3197026.3197050; 10.1093/bib/bbx057; 10.1007/978-3-319-68204-4_19; 10.3346/jkms.2015.30.11.1545; 10.1007/978-3-319-73165-0_24; 10.3233/sw-160224; 10.3233/sw-180307; 10.1007/978-3-319-90548-8_7; 10.1142/s021964921850034x; 10.1007/978-3-319-58694-6_23; 10.1057/s41275-017-0070-x",
+        "reference": "10.1001/jama.295.1.90; 10.1002/asi.4630240406; 10.1002/(sici)1097-4571(198909)40:5<342::aid-asi7>3.0.co;2-u; 10.1007/bf02457980; 10.1007/s10579-012-9211-2; 10.1007/s11192-009-0021-2; 10.1016/j.websem.2012.08.001; 10.1016/j.websem.2013.05.001; 10.1023/a:1021919228368; 10.1038/35079151; 10.1038/495437a; 10.1038/502295a; 10.1038/502298a; 10.1042/bj20091474; 10.1073/pnas.0407743101; 10.1087/2009202; 10.1093/bioinformatics; 10.1101/sqb.1972.036.01.015; 10.1108/eum0000000007123; 10.1108/jd-07-2012-0082; 10.1126/science.149.3683.510; 10.1136/bmj.a568; 10.1136/bmj.b2680; 10.1145/1498765.1498780; 10.1177/030631277400400102; 10.1177/030631277500500106; 10.1371/journal.pcbi.0010034; 10.1371/journal.pcbi.1000361; 10.1371/journal.pntd.0000228; 10.1371/journal.pone.0000308; 10.1523/jneurosci.0003-08.2008; 10.1525/bio.2010.60.5.2; 10.3115/1610075.1610091; 10.5210/fm.v2i4.522; 10.5539/ass.v9n5p18; 10.7717/peerj.175",
+        "author": "Peroni, Silvio; Dutton, Alexander; Gray, Tanya; Shotton, David",
+        "volume": "71",
+        "page": "253-277",
+        "citation_count": "13",
+        "source_id": "issn:0022-0418",
+        "source_title": "Journal Of Documentation",
+        "year": "2015",
+        "oa_link": "",
+        "doi": "10.1108/jd-12-2013-0166",
+        "title": "Setting Our Bibliographic References Free: Towards Open Citation Data",
+        "issue": "2"
+    },
+    {
+        "citation": "10.1007/978-3-319-68204-4_19",
+        "reference": "",
+        "author": "Peroni, Silvio, 0000-0003-0530-4305; Shotton, David, 0000-0001-5506-523X",
+        "volume": "",
+        "page": "",
+        "citation_count": "1",
+        "source_id": "",
+        "source_title": "Figshare",
+        "year": "2018",
+        "oa_link": "",
+        "doi": "10.6084/m9.figshare.3443876",
+        "title": "The OpenCitations Data Model",
+        "issue": ""
+    }
+]
+#sparql PREFIX cito: <http://purl.org/spar/cito/>
+SELECT DISTINCT ?doi ?citation_count ?citation (GROUP_CONCAT(?cited_doi; separator="; ") as ?reference)
+WHERE {
+    GRAPH <https://w3id.org/oc/index/coci/> {
+        VALUES ?doi { [[dois]] }
+        BIND(IRI(CONCAT("http://dx.doi.org/", ?doi)) as ?citing)
+
+        OPTIONAL {
+            ?citing ^cito:hasCitingEntity / cito:hasCitedEntity ?cited .
+            BIND(STRAFTER(str(?cited), "http://dx.doi.org/") as ?cited_doi)
+        }
+
+        OPTIONAL {
+            SELECT ?citing (count(?c) as ?c_count) (GROUP_CONCAT(?citing_source; separator="; ") as ?citation) {
+                VALUES ?doi { [[dois]] }
+                BIND(IRI(CONCAT("http://dx.doi.org/", ?doi)) as ?citing)
+                ?citing ^cito:hasCitedEntity ?c .
+                ?c cito:hasCitingEntity ?source .
+                BIND(STRAFTER(str(?source), "http://dx.doi.org/") as ?citing_source)
+            } GROUP BY ?citing
+        }
+        BIND(IF(bound(?c_count), ?c_count, 0) as ?citation_count)
+    }
+
+} GROUP BY ?doi ?citation_count ?citation
+LIMIT 10000
+
+#url /citation-count/{doi}
+#type operation
+#doi str(10\..+)
+#preprocess lower(doi) --> encode(doi)
+#method get
+#description This operation retrieves the number of incoming citations to the bibliographic entity identified by the input DOI.
+
+The field returned by this operation is:
+
+* *count*: the number of incoming citations to the input bibliographic entity.
+#call /citation-count/10.1002/adfm.201505328
+#field_type int(count)
+#output_json [
+    {
+        "count": "124"
+    }
+]
+#sparql PREFIX cito: <http://purl.org/spar/cito/>
+SELECT (count(?c) as ?count)
+WHERE {
+    GRAPH <https://w3id.org/oc/index/coci/> {
+        BIND(<http://dx.doi.org/[[doi]]> as ?cited) .
+		?cited ^cito:hasCitedEntity ?c
+    }
+}
