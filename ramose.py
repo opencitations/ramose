@@ -215,7 +215,7 @@ The operations that this API implements are:
         @import url('https://fonts.googleapis.com/css2?family=Karla:wght@300;400&display=swap');
         @media screen and (max-width: 850px) {
               aside { display: none; }
-              main, #operations, footer, .dashboard {margin-left: 15% !important;}
+              main, #operations, .dashboard, body>footer {margin-left: 15% !important;}
               #operations > ul:nth-of-type(1) li { display:block !important; max-width: 100% !important; }
               h3 a[href] {display:block !important; float: none !important; font-size: 0.5em !important;}
               a {overflow: hidden; text-overflow: ellipsis;}
@@ -290,7 +290,7 @@ The operations that this API implements are:
             font-size: 0.8em;
         }
 
-        main , #operations , .dashboard {
+        main , #operations , .dashboard, body>footer {
             margin-left: 33%;
         }
         .dashboard {text-align: center;}
