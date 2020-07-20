@@ -35,7 +35,8 @@ from isodate import parse_duration
 from argparse import ArgumentParser
 from os.path import abspath, dirname, basename
 from os import sep , getcwd
-
+import pprint
+pp = pprint.PrettyPrinter(indent=1)
 
 FIELD_TYPE_RE = "([^\(\s]+)\(([^\)]+)\)"
 PARAM_NAME = "{([^{}\(\)]+)}"
@@ -211,18 +212,18 @@ The operations that this API implements are:
 
     def __css(self):
         return """
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400&display=swap');
-        @media screen and (max-width: 800px) {
+        @import url('https://fonts.googleapis.com/css2?family=Karla:wght@300;400&display=swap');
+        @media screen and (max-width: 850px) {
               aside { display: none; }
               main, #operations, footer, .dashboard {margin-left: 15% !important;}
               #operations > ul:nth-of-type(1) li { display:block !important; max-width: 100% !important; }
               h3 a[href] {display:block !important; float: none !important; font-size: 0.5em !important;}
-              a {overflow: hidden;
-              text-overflow: ellipsis;}
+              a {overflow: hidden; text-overflow: ellipsis;}
+              .info_api, .api_calls {display: block !important; max-width: 100% !important;}
             }
 
         * {
-            font-family: 'Roboto', Geneva, sans-serif;
+            font-family: 'Karla', Geneva, sans-serif;
         }
 
         body {
@@ -245,6 +246,8 @@ The operations that this API implements are:
             left: 0;
             /*background-color: #404040;*/
             overflow-x: hidden;
+            background-color: white;
+            box-shadow:0px 10px 30px 0px rgba(133,66,189,0.1);
         }
         p strong {
             text-transform: uppercase;
@@ -261,17 +264,19 @@ The operations that this API implements are:
             list-style-type: none;
             padding-left:0px !important;
             margin-top: 10px;
+
         }
 
         .sidebar_menu > li {
             padding: 2% 0px;
-            border-bottom : solid 0.7px grey;
+            border-top : solid 0.7px grey;
         }
 
         .sidebar_menu a {
             padding: 1% 9%;
             background-image: none !important;
             color: grey;
+            display: block;
         }
 
         .sidebar_menu a:hover {
@@ -285,16 +290,18 @@ The operations that this API implements are:
             font-size: 0.8em;
         }
 
-        main , #operations , footer, .dashboard {
+        main , #operations , .dashboard {
             margin-left: 33%;
         }
-
+        .dashboard {text-align: center;}
         main h1+p , .info_api{
-            border-left: solid 5px rgba(154, 49, 252,.5);
+
             padding-left: 3%;
             font-size: 0.9em;
             line-height: 1.4em;
         }
+
+        main h1+p {border-left: solid 5px rgba(154, 49, 252,.5);}
 
         #operations h3 {
             color: #9931FC;
@@ -308,6 +315,7 @@ The operations that this API implements are:
         }
 
         #operations > ul:nth-of-type(1) li {
+            background-color: white;
             text-align: left;
             display: inline-block;
             overflow: hidden;
@@ -322,6 +330,7 @@ The operations that this API implements are:
         }
 
         #operations > div {
+            background-color: white;
             margin-top: 20px;
             padding: 2%;
             border-radius: 18px;
@@ -508,52 +517,67 @@ The operations that this API implements are:
             color: grey;
             font-size: 9pt;
         }
+        /* dashboard */
+
+        .info_api {
+            max-width: 35%;
+            border-radius: 15px;
+            text-align: left;
+            vertical-align: top;
+            background-color: #9931FC;
+            color: white;
+        }
+
+        .info_api, .api_calls {
+            display: inline-block;
+            text-align: left;
+            height: 200px;
+            padding:4%;
+            margin: 1% 2% 1% 0px;
+            border-radius: 10px;
+            box-shadow: 0px 10px 30px 0px rgba(133,66,189,0.1);
+            vertical-align:top;
+        }
 
         .api_calls {
-            height : 20em;
+            max-width: 40%;
+            background-color: white;
             scroll-behavior: smooth;
             overflow: auto;
             overflow-y: scroll;
             scrollbar-color: #9931FC rgb(154, 49, 252);
+            border-radius: 10px;
         }
+        .api_calls div {padding-bottom:2%;}
 
         .api_calls:hover {
           overflow-y: scroll;
         }
-
-        .api_calls p {
-          padding: 0.2em 1em;
-        }
-
-        .api_calls p:nth-child(odd) {
-          background-color: 	#F8F8F8;
-        }
-
-        .api_calls p {
-          padding-right: 1em;
+        .api_calls h4, .info_api h2 {padding-top: 0px !important; margin-top: 0px !important;}
+        .api_calls div p {
+          padding: 0.2em 0.5em;
+          border-top: solid 1px #F8F8F8;
+          }
         }
 
         .date_log , .method_log {
-          clear:left;
-          display: block;
           color: grey;
           font-size: 0.8em;
-        }
 
-        .date_log {
-          margin-left: 2.2em;
         }
+        .method_log {margin-left: 15px;}
+        .date_log {display:inline-grid;}
 
         .group_log:nth-child(odd) {
-          width: 20%;
-          display: inline-block;
+          margin-right:5px;
+          font-size: 0.9em;
         }
 
         .group_log:nth-child(even) {
-          width: 75%;
-          display: inline-block;
+          display: inline-grid;
+          vertical-align: top;
         }
-
+        .status_log {padding-right:15px;}
         .status_log::before {
           content: '';
            display: inline-block;
@@ -601,45 +625,58 @@ The operations that this API implements are:
 
     def __parse_logger_ramose(self):
         """This method reads logging info stored into a local file, so as to be browsed in the dashboard.
-        Returns: the list of URL of current working APIs, basic logging info """
+        Returns: the html including the list of URLs of current working APIs and basic logging info """
+        # TODO conf
+
         with open("ramose.log") as l_f:
             logs = ''.join(l_f.readlines())
         rev_list = set()
         rev_list_add = rev_list.add
         rev_list = [x for x in list(reversed(logs.splitlines())) if not (x in rev_list or rev_list_add(x))]
-        clean_list = [l for l in rev_list if self.base_url in l and "debug" not in l]
-
-        api_logs_list = ''.join(["<p>"+self.clean_log(l) +"</p>" for l in clean_list if self.clean_log(l) !=''])
 
         html = """
         <p></p>
         <aside>
-            <h4>%s</h4>
-            <ul id="sidebar_menu" class="sidebar_menu">
-                <li><a class="btn active" href="%s">Documentation</a></li>
-                <li><a class="btn" href="%s">SPARQL endpoint</a></li>
+            <h4>RAMOSE API DASHBOARD</h4>
+            <ul id="sidebar_menu" class="sidebar_menu">"""
+
+        for api_url, api_dict in self.all_conf.items():
+            html +="""
+                    <li><a class="btn active" href="%s">%s</a></li>
+                """ % (api_url, api_dict["conf_json"][0]["title"])
+
+        html += """
             </ul>
         </aside>
         <header class="dashboard">
-            <h1>%s</h1>
-            <div class="info_api">
-                <strong>API Documentation</strong>: <a href="%s">%s</a><br/>
-                <strong>SPARQL Endpoint</strong>: <a href="%s">%s</a><br/>
-            </div>
-        </header>
+            <h1>API MONITORING</h1>"""
 
-        <h2 class="dashboard">Last API calls</h2>
-        <div class="api_calls dashboard">
+        for api_url, api_dict in self.all_conf.items():
+            clean_list = [l for l in rev_list if api_url in l and "debug" not in l]
+            api_logs_list = ''.join(["<p>"+self.clean_log(l,api_url) +"</p>" for l in clean_list if self.clean_log(l,api_url) !=''])
+            api_title = api_dict["conf_json"][0]["title"]
+            html += """
+                <div class="info_api">
+                    <h2>%s</h2>
+                    <a id="view_doc" href="%s">VIEW DOCUMENTATION</a><br/>
+                    <a href="%s">GO TO SPARQL ENDPOINT</a><br/>
+                </div>
+                <div class="api_calls">
+                    <h4>Last calls</h4>
+                    <div>
+                        %s
+                    </div>
 
-            %s
-        </div>
-
-        """ % ( self.__title(), self.base_url, self.tp, self.__title(), self.base_url,self.base_url, self.tp, self.tp, api_logs_list)
+                </div>
+                """ % ( api_title,api_url, api_dict["tp"], api_logs_list)
         return html
 
     def get_htmldoc(self, css_path=None, base_url=None):
         """This method generates the HTML documentation of an API described in an input Hash Format document."""
-        conf = self.all_conf.get(base_url, next(iter(self.all_conf.values())))
+        if base_url is None:
+            conf = self.all_conf[0]
+        else:
+            conf = self.all_conf['/'+base_url]
 
         return 200, """<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -679,20 +716,21 @@ The operations that this API implements are:
         """ % (self.__css(), self.__css_path(css_path), self.__parse_logger_ramose(), self.__footer())
 
     def store_htmldoc(self, file_path,css_path=None):
-        """This method stores the HTML documentation on an API in a file."""
+        """This method stores the HTML documentation of an API in a file."""
         html = self.get_htmldoc(css_path)
         with open(file_path, "w") as f:
             f.write(html)
 
-    def clean_log(self, l):
+    def clean_log(self, l, api_url):
         """This method parses logs lines into structured data"""
+
         s = l.split("- - ",1)[1]
         date = s[s.find("[")+1:s.find("]")]
         method = s.split('"')[1::2][0].split()[0]
         cur_call = s.split('"')[1::2][0].split()[1].strip()
         status = sub(r"\D+", "", s.split('"',2)[2])
-        if cur_call != self.base_url+'/':
-            full_str = "<span class='group_log'><span class='status_log code_"+status+"'>"+status+"</span>"+"<span class='date_log'>"+date+"</span></span>"+"<span class='group_log'><span class='call_log'><a href='"+cur_call+"' target='_blank'>"+cur_call+"</a></span>"+"<span class='method_log'>"+method+"</span></span>"
+        if cur_call != api_url+'/':
+            full_str = "<span class='group_log'><span class='status_log code_"+status+"'>"+status+"</span>"+"<span class='date_log'>"+date+"</span><span class='method_log'>"+method+"</span></span>"+"<span class='group_log'><span class='call_log'><a href='"+cur_call+"' target='_blank'>"+cur_call+"</a></span></span>"
         else:
             full_str = ''
         return full_str
@@ -723,7 +761,7 @@ The operations that this API implements are:
         values returned by a SPARQL query, some operations that can be used for filtering the results, and the
         HTTP methods to call for making the request to the SPARQL endpoint specified in the configuration file."""
         self.all_conf = OrderedDict()
-
+        self.base_url = []
         for conf_file in conf_files:
             conf = OrderedDict()
             tp = None
@@ -732,6 +770,7 @@ The operations that this API implements are:
             for item in conf_json:
                 if base_url is None:
                     base_url = item["url"]
+                    self.base_url.append(item["url"])
                     website = item["base"]
                     tp = item["endpoint"]
                     if "addon" in item:
@@ -774,6 +813,8 @@ The operations that this API implements are:
             "post": post,
             "delete": delete
         }
+
+
     # Constructor: END
 
     # Data type: START
@@ -1398,7 +1439,7 @@ if __name__ == "__main__":
             # web server
             host_name = args.webserver.rsplit(':', 1)[0] if ':' in args.webserver else '127.0.0.1'
             port = args.webserver.rsplit(':', 1)[1] if ':' in args.webserver else '8080'
-            api_url = am.conf_json[0]['url']
+
             app = Flask(__name__)
 
             # This is due to Flask routing rules that do not accept URLs without the starting slash
@@ -1406,47 +1447,54 @@ if __name__ == "__main__":
             if args.call:
                 args.call = args.call[1:]
 
+            # routing
             @app.route('/')
             def home():
                 index = am.get_htmlindex(css_path)
                 return index
 
-            @app.route(api_url)
-            @app.route(api_url+'/')
-            def doc():
-                status, res = am.get_htmldoc(css_path)[0] , am.get_htmldoc(css_path)[1]
-                return res , status
-
-            @app.route(api_url+'/<path:call>')
-            def ramose(call):
-                cur_call = api_url+'/'+call # put back that slash -- does not include parameters
-                format = request.args.get('format')
-                content_type = "text/csv" if format is not None and "csv" in format else "application/json"
-                status, res, c_type = am.exec_op(cur_call+'?'+unquote(request.query_string.decode('utf8')), content_type=content_type)
-                print(status, res, c_type)
-                if status == 200:
-                    response = make_response(res, status)
-                    response.headers.set('Content-Type', c_type)
-                else:
-                    # The API Manager returns a text/plain message when there is an error.
-                    # Now set to return the header requested by the user
-                    if content_type == "text/csv":
-                        si = StringIO()
-                        cw = writer(si)
-                        cw.writerows([["error","message"], [str(status),str(res)]])
-                        response = make_response(si.getvalue(), status)
-                        response.headers.set("Content-Disposition", "attachment", filename="error.csv")
+            @app.route('/<path:api_url>')
+            @app.route('/<path:api_url>/')
+            def doc(api_url):
+                """ APIs documentation page and operations """
+                res , status = am.get_htmlindex(css_path), 404
+                if any(api_u in '/'+api_url for api_u,api_dict in am.all_conf.items()):
+                    # documentation
+                    if any(api_u == '/'+api_url for api_u,api_dict in am.all_conf.items()):
+                        status, res = am.get_htmldoc(css_path, api_url)
+                        return res , status
+                    # api calls
                     else:
-                        m_res , m_res["error"] , m_res["message"] = {} , status, res
-                        mes = dumps(m_res)
-                        response = make_response(mes, status)
-                    response.headers.set('Content-Type', content_type) # overwrite text/plain
+                        cur_call = '/'+api_url
+                        format = request.args.get('format')
+                        content_type = "text/csv" if format is not None and "csv" in format else "application/json"
+                        status, res, c_type = am.exec_op(cur_call+'?'+unquote(request.query_string.decode('utf8')), content_type=content_type)
+                        print(status, res, c_type)
+                        if status == 200:
+                            response = make_response(res, status)
+                            response.headers.set('Content-Type', c_type)
+                        else:
+                            # The API Manager returns a text/plain message when there is an error.
+                            # Now set to return the header requested by the user
+                            if content_type == "text/csv":
+                                si = StringIO()
+                                cw = writer(si)
+                                cw.writerows([["error","message"], [str(status),str(res)]])
+                                response = make_response(si.getvalue(), status)
+                                response.headers.set("Content-Disposition", "attachment", filename="error.csv")
+                            else:
+                                m_res , m_res["error"] , m_res["message"] = {} , status, res
+                                mes = dumps(m_res)
+                                response = make_response(mes, status)
+                            response.headers.set('Content-Type', content_type) # overwrite text/plain
 
-                # allow CORS anyway
-                response.headers.set('Access-Control-Allow-Origin', '*')
-                response.headers.set('Access-Control-Allow-Credentials', 'true')
+                            # allow CORS anyway
+                        response.headers.set('Access-Control-Allow-Origin', '*')
+                        response.headers.set('Access-Control-Allow-Credentials', 'true')
 
-                return response
+                        return response
+                else:
+                    return res , status
 
             app.run(host=str(host_name), debug=True, port=str(port))
 
