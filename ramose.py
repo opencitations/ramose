@@ -1454,7 +1454,7 @@ if __name__ == "__main__":
                 return index
 
             @app.route('/<path:api_url>')
-            @app.route('/<path:api_url>/')
+            # @app.route('/<path:api_url>/')
             def doc(api_url):
                 """ APIs documentation page and operations """
                 res , status = am.get_htmlindex(css_path), 404
