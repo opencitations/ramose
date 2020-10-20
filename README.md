@@ -21,7 +21,7 @@ Restful API Manager Over SPARQL Endpoints (RAMOSE) is an application that allows
 
 ### Requirements
 
-RAMOSE is developed in Python 3.8. To install dependencies use: `pip3 install -r requirements.txt` (see [requirements.txt](https://github.com/opencitations/ramose/requirements.txt) for details).
+RAMOSE is developed in Python 3.8. To install dependencies use: `pip3 install -r requirements.txt` (see [requirements.txt](https://github.com/opencitations/ramose/blob/master/requirements.txt) for details).
 
 ### Arguments
 
