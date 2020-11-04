@@ -113,7 +113,7 @@ class APIManager(object):
             <li><a class="btn" href="#operations">OPERATIONS</a>
                 <ul class="sidebar_submenu">%s</ul>
             </li>
-            <li><a class="btn active" href="/">DASHBOARD</a></li>
+            <li><a class="btn active" href="/">HOME</a></li>
         </ul>
         """ % \
                     (i["title"], "".join(["<li><a class='btn' href='#%s'>%s</a></li>" % (op["url"], op["url"])
@@ -674,7 +674,10 @@ The operations that this API implements are:
     def get_htmldoc(self, css_path=None, base_url=None):
         """This method generates the HTML documentation of an API described in an input Hash Format document."""
         if base_url is None:
-            conf = self.all_conf[0]
+            #first_key = next(iter(dict(self.all_conf)))
+            first_key = next(iter(self.all_conf))
+            conf = self.all_conf[first_key]
+            #conf = self.all_conf[0]
         else:
             conf = self.all_conf['/'+base_url]
 
