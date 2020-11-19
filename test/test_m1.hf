@@ -1,6 +1,6 @@
 #url /api/coci
 #type api
-#base https://w3id.org/oc/index/coci
+#base http://localhost:8080
 #title REST API for COCI, the OpenCitations Index of Crossref open DOI-to-DOI references
 #description This document describe the REST API for accessing the data stored in [COCI](https://w3id.org/oc/index/coci) hosted by [OpenCitations](http://opencitations.net). This API implements operations to retrieve the citation data for all the references to other works appearing in a particular bibliographic entity, or the citation data for all the references appearing in other works to a particular bibliographic entity, given the DOI of a bibliographic entity, or to retrieve citation data about a particular citation identified by means of its [Open Citation Identifier (OCI)](https://opencitations.wordpress.com/2018/03/12/citations-as-first-class-data-entities-open-citation-identifiers/).
 
