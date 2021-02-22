@@ -1,6 +1,6 @@
 #url /api/v1
 #type api
-#base http://localhost:8080
+#base https://w3id.org/oc/ccc
 #title REST API of the Open Biomedical Citations in Context Corpus (CCC)
 #description This document describes the REST API of the [Open Biomedical Citations in Context Corpus (CCC)](https://w3id.org/oc/ccc) hosted by [OpenCitations](http://opencitations.net). All the operations described in this document return either a JSON document (default) or a CSV document according to the mimetype specified in the `Accept` header of the request.
 
@@ -32,7 +32,7 @@ If you would like to suggest additional operations, please use the [CCC issue tr
 #version 1.0.0
 #license This document is licensed with a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/legalcode), while the REST API itself has been created using [RAMOSE](https://github.com/opencitations/ramose), the *Restful API Manager Over SPARQL Endpoints*, which is licensed with an [ISC license](https://opensource.org/licenses/ISC).
 #contacts [marilena.daquino@opencitations.net](mailto:marilena.daquino@opencitations.net)
-#endpoint http://localhost:9999/blazegraph/sparql
+#endpoint http://opencitations.net/ccc/sparql
 #method post
 #addon ccc_addon
 
