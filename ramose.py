@@ -42,8 +42,8 @@ FIELD_TYPE_RE = "([^\(\s]+)\(([^\)]+)\)"
 PARAM_NAME = "{([^{}\(\)]+)}"
 
 class HashFormatHandler(object):
-    """This class creates an object capable to read files stored in Hash Format (see 
-    https://github.com/opencitations/ramose#Hashformat-configuration-file). A Hash Format 
+    """This class creates an object capable to read files stored in Hash Format (see
+    https://github.com/opencitations/ramose#Hashformat-configuration-file). A Hash Format
     file (.hf) is a specification file that includes information structured using the following
     syntax:
 
@@ -56,7 +56,7 @@ class HashFormatHandler(object):
     ```"""
 
     def read(self, file_path):
-        """This method takes in input a path of a file containing a document specified in 
+        """This method takes in input a path of a file containing a document specified in
         Hash Format, and returns its representation as list of dictionaries."""
         result = []
 
@@ -106,7 +106,7 @@ class HashFormatHandler(object):
 class DocumentationHandler(object):
     def __init__(self, api_manager):
         self.conf_doc = api_manager.all_conf
-    
+
     @abstractmethod
     def get_documentation(self, *args, **dargs):
         pass
@@ -720,7 +720,7 @@ The operations that this API implements are:
 </html>""" % (self.__title(conf), self.__css(), self.__css_path(css_path), self.__sidebar(conf), self.__header(conf), self.__operations(conf), self.__footer())
 
     def get_index(self, css_path=None):
-        """This method generates the index of all the HTML documentations that can be 
+        """This method generates the index of all the HTML documentations that can be
         created from the configuration file."""
 
         return """
@@ -772,11 +772,11 @@ class DataType(object):
             "duration": DataType.duration,
             "datetime": DataType.datetime
         }
-    
+
     def get_func(self, name_str):
         """This method returns the method for handling a given data type expressed as a string name."""
         return self.func.get(name_str)
-    
+
     @staticmethod
     def duration(s):
         """This method returns the data type for durations according to the XML Schema
@@ -835,7 +835,7 @@ class DataType(object):
             f = float(s)
 
         return f
-    
+
 
 class Operation(object):
     def __init__(self, op_complete_url, op_key, i, tp, sparql_http_method, addon):
@@ -1202,7 +1202,7 @@ class Operation(object):
 
                     else:
                         result = list(filter(
-                            lambda i: search(field_value.lower(), 
+                            lambda i: search(field_value.lower(),
                                              Operation.pv(field_idx, i).lower()), result))
                 except ValueError:
                     pass  # do nothing
@@ -1272,8 +1272,8 @@ class Operation(object):
         return result
 
     def exec(self, method="get", content_type="application/json"):
-        """This method takes in input the the HTTP method to use for the call 
-        and the content type to return, and execute the operation as indicated 
+        """This method takes in input the the HTTP method to use for the call
+        and the content type to return, and execute the operation as indicated
         in the specification file, by running (in the following order):
 
         1. the methods to preprocess the query;
@@ -1285,7 +1285,7 @@ class Operation(object):
         7. the conversion in the format requested by the user."""
         str_method = method.lower()
         m = self.i["method"].split()
-        
+
         if str_method in m:
             try:
                 par_dict = {}
@@ -1308,7 +1308,7 @@ class Operation(object):
                     query = query.replace("[[%s]]" % param, str(par_dict[param]))
 
                 if self.sparql_http_method == "get":
-                    r = get(self.tp + "?query=" + quote(query), 
+                    r = get(self.tp + "?query=" + quote(query),
                             headers={"Accept": "text/csv"})
                 else:
                     r = post(self.tp, data=query, headers={"Accept": "text/csv",
@@ -1318,7 +1318,7 @@ class Operation(object):
                 if sc == 200:
                     # This line has been added to avoid a strage behaviour of the 'splitlines' method in
                     # presence of strange characters (non-UTF8).
-                    list_of_lines = [line.decode("utf-8") 
+                    list_of_lines = [line.decode("utf-8")
                                      for line in r.text.encode("utf-8").splitlines()]
                     res = self.type_fields(list(reader(list_of_lines)), self.i)
                     res = self.postprocess(res, self.i, self.addon)
@@ -1456,12 +1456,12 @@ class APIManager(object):
         is returned instead."""
         url_parsed = urlsplit(op_complete_url)
         op_url = url_parsed.path
-        
+
         conf, op = self.best_match(op_url)
         if op is not None:
             return Operation(op_complete_url,
                              op,
-                             conf["conf"][op], 
+                             conf["conf"][op],
                              conf["tp"],
                              conf["sparql_http_method"],
                              conf["addon"])
@@ -1500,7 +1500,7 @@ if __name__ == "__main__":
     dh = HTMLDocumentationHandler(am)
 
     css_path = args.css if args.css else None
-    
+
     if args.webserver:
         try:
             import logging
@@ -1524,7 +1524,8 @@ if __name__ == "__main__":
             # routing
             @app.route('/')
             def home():
-                index = am.get_htmlindex(css_path)
+
+                index = dh.get_index(css_path)
                 return index
 
             @app.route('/<path:api_url>')
