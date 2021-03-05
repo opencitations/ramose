@@ -1,1 +1,2 @@
-ramose.log
+ramose.log*
+__pycache__/
