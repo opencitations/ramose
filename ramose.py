@@ -35,7 +35,8 @@ from datetime import datetime
 from isodate import parse_duration
 from argparse import ArgumentParser
 from os.path import abspath, dirname, basename
-from os import sep , getcwd
+from os import path as pt
+from os import sep, getcwd
 
 
 FIELD_TYPE_RE = "([^\(\s]+)\(([^\)]+)\)"
@@ -105,18 +106,26 @@ class HashFormatHandler(object):
 
 class DocumentationHandler(object):
     def __init__(self, api_manager):
+        """This class provides the main structure for returning a human-readable documentation of all
+        the operations described in the configuration files handled by the APIManager specified as input."""
         self.conf_doc = api_manager.all_conf
 
     @abstractmethod
     def get_documentation(self, *args, **dargs):
+        """An abstract method that returns a string defining the human-readable documentation of the operations
+        available in the input APIManager."""
         pass
 
     @abstractmethod
     def store_documentation(self, file_path, *args, **dargs):
+        """An abstract method that store in the input file path (parameter 'file_path') the human-readable
+        documentation of the operations available in the input APIManager."""
         pass
 
     @abstractmethod
     def get_index(self, *args, **dargs):
+        """An abstract method that returns a string defining the index of all the various configuration files
+        handled by the input APIManager."""
         pass
 
 class HTMLDocumentationHandler(DocumentationHandler):
@@ -860,13 +869,6 @@ class Operation(object):
             ">": gt
         }
 
-        self.http_method = {
-            "get": get,
-            "put": put,
-            "post": post,
-            "delete": delete
-        }
-
         self.dt = DataType()
 
     # START: Ancillary methods
@@ -974,7 +976,7 @@ class Operation(object):
     @staticmethod
     def add_item_in_dict(d_or_l, key_list, item, idx):
         """This method takes as input a dictionary or a list of dictionaries, browses it until the value
-        specified following the chain indicated in 'key_list' is not found, adn then substitute it with 'item'.
+        specified following the chain indicated in 'key_list' is not found, and then substitutes it with 'item'.
         In case the final object retrieved is a list, it selects the object in position 'idx' before the
         substitution."""
         key_list_len = len(key_list)
@@ -1508,7 +1510,7 @@ if __name__ == "__main__":
             from werkzeug.exceptions import HTTPException
 
             # logs
-            logs = dh.logger_ramose()
+            dh.logger_ramose()
 
             # web server
             host_name = args.webserver.rsplit(':', 1)[0] if ':' in args.webserver else '127.0.0.1'
@@ -1563,7 +1565,7 @@ if __name__ == "__main__":
                                 response = make_response(si.getvalue(), status)
                                 response.headers.set("Content-Disposition", "attachment", filename="error.csv")
                             else:
-                                m_res , m_res["error"] , m_res["message"] = {} , status, res
+                                m_res = {"error": status, "message": res}
                                 mes = dumps(m_res)
                                 response = make_response(mes, status)
                             response.headers.set('Content-Type', content_type) # overwrite text/plain
@@ -1580,7 +1582,7 @@ if __name__ == "__main__":
 
         except Exception as e:
             exc_type, exc_obj, exc_tb = exc_info()
-            fname = path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            fname = pt.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print("[ERROR]", exc_type, fname, exc_tb.tb_lineno)
 
     else:

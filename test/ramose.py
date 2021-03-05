@@ -35,7 +35,8 @@ from datetime import datetime
 from isodate import parse_duration
 from argparse import ArgumentParser
 from os.path import abspath, dirname, basename
-from os import sep , getcwd
+from os import path as pt
+from os import sep, getcwd
 
 
 FIELD_TYPE_RE = "([^\(\s]+)\(([^\)]+)\)"
@@ -105,6 +106,7 @@ class HashFormatHandler(object):
 
 class DocumentationHandler(object):
     def __init__(self, api_manager):
+        """TODO"""
         self.conf_doc = api_manager.all_conf
 
     @abstractmethod
@@ -228,7 +230,6 @@ The operations that this API implements are:
                                        ", ".join(["%s <em>(%s)</em>" % (f, t) for t, f in
                                                   findall(FIELD_TYPE_RE, op["field_type"])]),
                                        conf["website"] + conf["base_url"] + op["call"], op["call"], op["output_json"])
-        # TODO multiple params: change the listing above
         return markdown(result) + ops
 
     def __footer(self):
@@ -763,7 +764,9 @@ The operations that this API implements are:
 
 class DataType(object):
     def __init__(self):
-        """TODO"""
+        """This class implements all the possible data types that can be used within
+        the configuration file of RAMOSE. In particular, it provides methods for converting
+        a string into the related Python data type representation."""
         self.func = {
             "str": DataType.str,
             "int": DataType.int,
@@ -773,6 +776,7 @@ class DataType(object):
         }
 
     def get_func(self, name_str):
+        """This method returns the method for handling a given data type expressed as a string name."""
         return self.func.get(name_str)
 
     @staticmethod
@@ -837,7 +841,13 @@ class DataType(object):
 
 class Operation(object):
     def __init__(self, op_complete_url, op_key, i, tp, sparql_http_method, addon):
-        """This class take in input TODO"""
+        """ This class is responsible for materialising a API operation to be run against a SPARQL endpoint.
+        
+        It takes in input a full URL referring to a call to an operation (parameter 'op_complete_url'), 
+        the particular shape representing an operation (parameter 'op_key'), the definition (in JSON) of such
+        operation (parameter 'i'), the URL of the triplestore to contact (parameter 'tp'), the HTTP method
+        to use for the SPARQL request (paramenter 'sparql_http_method', set to either 'get' or 'post'), and the path
+        of the Python file which defines additional functions for use in the operation (parameter 'addon')."""
         self.url_parsed = urlsplit(op_complete_url)
         self.op_url = self.url_parsed.path
         self.op = op_key
@@ -852,18 +862,13 @@ class Operation(object):
             ">": gt
         }
 
-        self.http_method = {
-            "get": get,
-            "put": put,
-            "post": post,
-            "delete": delete
-        }
-
         self.dt = DataType()
 
     # START: Ancillary methods
     @staticmethod
     def get_content_type(ct):
+        """It returns the mime type of a given textual representation of a format, being it either
+        'csv' or 'json."""
         content_type = ct
 
         if ct == "csv":
@@ -964,7 +969,7 @@ class Operation(object):
     @staticmethod
     def add_item_in_dict(d_or_l, key_list, item, idx):
         """This method takes as input a dictionary or a list of dictionaries, browses it until the value
-        specified following the chain indicated in 'key_list' is not found, adn then substitute it with 'item'.
+        specified following the chain indicated in 'key_list' is not found, and then substitutes it with 'item'.
         In case the final object retrieved is a list, it selects the object in position 'idx' before the
         substitution."""
         key_list_len = len(key_list)
@@ -1079,7 +1084,6 @@ class Operation(object):
         if "preprocess" in op_item:
 
             for pre in [sub("\s+", "", i) for i in op_item["preprocess"].split(" --> ")]:
-                match_url = op_item["url"]
                 func_name = sub("^([^\(\)]+)\(.+$", "\\1", pre).strip()
                 params_name = sub("^.+\(([^\(\)]+)\).*", "\\1", pre).split(",")
 
@@ -1404,7 +1408,7 @@ class APIManager(object):
 
     # START: Ancillary methods
     @staticmethod
-    def nor_api_url(i, b=""):  # TODO: stay in API manager
+    def nor_api_url(i, b=""):
         """This method takes an API operation object and an optional base URL (e.g. "/api/v1") as input
         and returns the URL composed by the base URL plus the API URL normalised according to specific rules. In
         particular, these normalisation rules takes the operation URL (e.g. "#url /citations/{oci}") and the
@@ -1423,7 +1427,7 @@ class APIManager(object):
 
         return "%s%s" % (b, result)
 
-    def best_match(self, u):  # TODO: stay in API manager
+    def best_match(self, u):
         """This method takes an URL of an API call in input and find the API operation URL and the related
         configuration that best match with the API call, if any."""
         #u = u.decode('UTF8') if isinstance(u, (bytes, bytearray)) else u
@@ -1441,6 +1445,10 @@ class APIManager(object):
 
     # START: Processing methods
     def get_op(self, op_complete_url):
+        """This method returns a new object of type Operation which represent the operation specified by
+        the input URL (parameter 'op_complete_url)'. In case no operation can be found according by checking
+        the configuration files available in the APIManager, a tuple with an HTTP error code and a message
+        is returned instead."""
         url_parsed = urlsplit(op_complete_url)
         op_url = url_parsed.path
 
@@ -1495,7 +1503,7 @@ if __name__ == "__main__":
             from werkzeug.exceptions import HTTPException
 
             # logs
-            logs = dh.logger_ramose()
+            dh.logger_ramose()
 
             # web server
             host_name = args.webserver.rsplit(':', 1)[0] if ':' in args.webserver else '127.0.0.1'
@@ -1550,7 +1558,7 @@ if __name__ == "__main__":
                                 response = make_response(si.getvalue(), status)
                                 response.headers.set("Content-Disposition", "attachment", filename="error.csv")
                             else:
-                                m_res , m_res["error"] , m_res["message"] = {} , status, res
+                                m_res = {"error": status, "message": res}
                                 mes = dumps(m_res)
                                 response = make_response(mes, status)
                             response.headers.set('Content-Type', content_type) # overwrite text/plain
@@ -1567,7 +1575,7 @@ if __name__ == "__main__":
 
         except Exception as e:
             exc_type, exc_obj, exc_tb = exc_info()
-            fname = path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            fname = pt.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print("[ERROR]", exc_type, fname, exc_tb.tb_lineno)
 
     else:

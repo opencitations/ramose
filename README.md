@@ -293,7 +293,7 @@ python -m ramose -s <conf_name>.hf -w 127.0.0.1:8080 -css <path/to/file.css>
 
 RAMOSE allows developers to handle several APIs by instantiating the main class `APIManager` and initialising it with a specification file.
 
-The method `exec_op(op_complete_url, method="get", content_type="application/json")` takes in input the url of the call (i.e. the API base URL plus the operation URL), the HTTP method to use for the call, and the content type to return. It executes the operation as indicated in the specification file, by running (in the following order):
+The method `get_op(op_complete_url)` takes in input the url of the call (i.e. the API base URL plus the operation URL) and returns an object of type `Operation`. The instance of an `Operation` can be used to run the method `exec(method="get", content_type="application/json")`, which takes in input the url the HTTP method to use for the call and and the content type to return, and executes the operation as indicated in the specification file, by running (in the following order):
 
   1. the methods to preprocess the query (as defined in the specification file at `#{var}` and `#preprocess`);
   2. the SPARQL query related to the operation called, by using the parameters indicated in the URL (`#sparql`);
@@ -306,16 +306,21 @@ The method `exec_op(op_complete_url, method="get", content_type="application/jso
 For example:
 
 ```
-conf = { "api_1": "1_v1.hf", "api_2": "2_v1.hf"}
+api_manager = APIManager([ "1_v1.hf", "2_v1.hf" ])
 
-first_api_manager = APIManager(conf["api_1"])
-second_api_manager = APIManager(conf["api_2"])
+api_base_1 = "..."
+api_base_2 = "..."
+operation_url_1 = "..."
+operation_url_2 = "..."
+request = "..."
+call_1 = "%s/%s/%s" % (api_base_1, operation_url_1, request)
+call_2 = "%s/%s/%s" % (api_base_2, operation_url_2, request)
 
-call_1 = "%s/%s/%s" % (api_base_1, operation_url_1, request )
-call_2 = "%s/%s/%s" % (api_base_2, operation_url_2, request )
+op1 = api_manager.get_op(call_1)
+status1, result1 = op1.exec()
 
-first_api_manager.exec_op(call_1, content_type=%s) % content_type
-second_api_manager.exec_op(call_2, content_type=%s) % content_type
+op2 = api_manager.get_op(call_2)
+status2, result2 = op2.exec()
 ```
 
 ## Other functionalities and examples
