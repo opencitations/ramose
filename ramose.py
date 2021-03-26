@@ -1355,6 +1355,19 @@ class Operation(object):
 
 
 class APIManager(object):
+    # Fixing max size for CSV
+    @staticmethod
+    def __max_size_csv():
+        from sys import maxsize
+        import csv
+        maxInt = maxsize
+        while True:
+            try:
+                csv.field_size_limit(maxInt)
+                break
+            except OverflowError:
+                maxInt = int(maxInt/10)
+
     # Constructor: START
     def __init__(self, conf_files):
         """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
@@ -1379,6 +1392,8 @@ class APIManager(object):
         In addition, it also defines additional structure, such as the functions to be used for interpreting the
         values returned by a SPARQL query, some operations that can be used for filtering the results, and the
         HTTP methods to call for making the request to the SPARQL endpoint specified in the configuration file."""
+        APIManager.__max_size_csv()
+
         self.all_conf = OrderedDict()
         self.base_url = []
         for conf_file in conf_files:
@@ -1588,7 +1603,7 @@ if __name__ == "__main__":
     else:
         # run locally via shell
         if args.doc:
-            res = dh.get_documentation(css_path)
+            res = dh.get_documentation(css_path) + ("text/html", )
         else:
             op = am.get_op(args.call)
             if type(op) is Operation:  # Operation found
