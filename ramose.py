@@ -1303,7 +1303,8 @@ class Operation(object):
                         par_value = par_man[idx]
                     par_dict[par] = par_value
 
-                self.preprocess(par_dict, self.i, self.addon)
+                if self.addon is not None:
+                    self.preprocess(par_dict, self.i, self.addon)
 
                 query = self.i["sparql"]
                 for param in par_dict:
@@ -1323,7 +1324,8 @@ class Operation(object):
                     list_of_lines = [line.decode("utf-8")
                                      for line in r.text.encode("utf-8").splitlines()]
                     res = self.type_fields(list(reader(list_of_lines)), self.i)
-                    res = self.postprocess(res, self.i, self.addon)
+                    if self.addon is not None:
+                        res = self.postprocess(res, self.i, self.addon)
                     q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
                     res = self.handling_params(q_string, res)
                     res = self.remove_types(res)
@@ -1401,6 +1403,7 @@ class APIManager(object):
             tp = None
             conf_json = HashFormatHandler().read(conf_file)
             base_url = None
+            addon = None
             for item in conf_json:
                 if base_url is None:
                     base_url = item["url"]

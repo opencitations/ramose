@@ -1,0 +1,37 @@
+#url /api/v1
+#type api
+#base http://localhost:8080
+#title REST API for COCI, the OpenCitations Index of Crossref open DOI-to-DOI references
+#description This document describe the REST API for accessing the data stored in [COCI](https://w3id.org/oc/index/coci) hosted by [OpenCitations](http://opencitations.net). This API implements operations to retrieve the citation data for all the references to other works appearing in a particular bibliographic entity, or the citation data for all the references appearing in other works to a particular bibliographic entity, given the DOI of a bibliographic entity, or to retrieve citation data about a particular citation identified by means of its [Open Citation Identifier (OCI)](https://opencitations.wordpress.com/2018/03/12/citations-as-first-class-data-entities-open-citation-identifiers/).
+
+All the present operations return either a JSON document (default) or a CSV document according to the mimetype specified in the `Accept` header of the request. If you would like to suggest an additional operation to be included in this API, please use the [issue tracker](https://github.com/opencitations/api/issues) of the OpenCitations APIs available on GitHub.
+#version Version 1.3.0 (2020-03-25)
+#contacts [contact@opencitations.net](mailto:contact@opencitations.net)
+#license This document is licensed with a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/legalcode), while the REST API itself has been created using [RAMOSE](https://github.com/opencitations/ramose), the *Restful API Manager Over SPARQL Endpoints* created by [Silvio Peroni](https://orcid.org/0000-0003-0530-4305), which is licensed with an [ISC license](https://opensource.org/licenses/ISC).
+#endpoint http://opencitations.net/index/sparql
+#method post
+
+#url /citation-count/{doi}
+#type operation
+#doi str(10\..+)
+#method get
+#description This operation retrieves the number of incoming citations to the bibliographic entity identified by the input DOI (in lowercase).
+
+The field returned by this operation is:
+
+* *count*: the number of incoming citations to the input bibliographic entity.
+#call /citation-count/10.1002/adfm.201505328
+#field_type int(count)
+#output_json [
+    {
+        "count": "124"
+    }
+]
+#sparql PREFIX cito: <http://purl.org/spar/cito/>
+SELECT (count(?c) as ?count)
+WHERE {
+    GRAPH <https://w3id.org/oc/index/coci/> {
+        BIND(<http://dx.doi.org/[[doi]]> as ?cited) .
+		?cited ^cito:hasCitedEntity ?c
+    }
+}
