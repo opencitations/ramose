@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020
-# Silvio Peroni <essepuntato@gmail.com>
-# Marilena Daquino <marilena.daquino2@unibo.it>
+# Silvio Peroni <essepuntato@gmail.com>
+# Marilena Daquino <marilena.daquino2@unibo.it>
 #
 # Permission to use, copy, modify, and/or distribute this software for any purpose
 # with or without fee is hereby granted, provided that the above copyright notice
@@ -162,7 +162,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
         i = conf["conf_json"][0]
         result += """
 <a id='toc'></a>
-# %s
+# %s
 
 **Version:** %s <br/>
 **API URL:** <a href="%s">%s</a><br/>
@@ -757,15 +757,17 @@ The operations that this API implements are:
 
     def clean_log(self, l, api_url):
         """This method parses logs lines into structured data."""
-        s = l.split("- - ",1)[1]
-        date = s[s.find("[")+1:s.find("]")]
-        method = s.split('"')[1::2][0].split()[0]
-        cur_call = s.split('"')[1::2][0].split()[1].strip()
-        status = sub(r"\D+", "", s.split('"',2)[2])
-        if cur_call != api_url+'/':
-            full_str = "<span class='group_log'><span class='status_log code_"+status+"'>"+status+"</span>"+"<span class='date_log'>"+date+"</span><span class='method_log'>"+method+"</span></span>"+"<span class='group_log'><span class='call_log'><a href='"+cur_call+"' target='_blank'>"+cur_call+"</a></span></span>"
-        else:
-            full_str = ''
+        full_str = ''
+        if len(l.split("- - ",1)) > 1:
+            s = l.split("- - ",1)[1]
+            date = s[s.find("[")+1:s.find("]")]
+            method = s.split('"')[1::2][0].split()[0]
+            cur_call = s.split('"')[1::2][0].split()[1].strip()
+            status = sub(r"\D+", "", s.split('"',2)[2])
+
+            if cur_call != api_url+'/':
+                full_str = "<span class='group_log'><span class='status_log code_"+status+"'>"+status+"</span>"+"<span class='date_log'>"+date+"</span><span class='method_log'>"+method+"</span></span>"+"<span class='group_log'><span class='call_log'><a href='"+cur_call+"' target='_blank'>"+cur_call+"</a></span></span>"
+
         return full_str
 
 
@@ -849,8 +851,8 @@ class DataType(object):
 class Operation(object):
     def __init__(self, op_complete_url, op_key, i, tp, sparql_http_method, addon):
         """ This class is responsible for materialising a API operation to be run against a SPARQL endpoint.
-        
-        It takes in input a full URL referring to a call to an operation (parameter 'op_complete_url'), 
+
+        It takes in input a full URL referring to a call to an operation (parameter 'op_complete_url'),
         the particular shape representing an operation (parameter 'op_key'), the definition (in JSON) of such
         operation (parameter 'i'), the URL of the triplestore to contact (parameter 'tp'), the HTTP method
         to use for the SPARQL request (paramenter 'sparql_http_method', set to either 'get' or 'post'), and the path
@@ -1535,8 +1537,7 @@ if __name__ == "__main__":
             port = args.webserver.rsplit(':', 1)[1] if ':' in args.webserver else '8080'
 
             app = Flask(__name__)
-
-            # This is due to Flask routing rules that do not accept URLs without the starting slash
+            # This is due to Flask routing rules that do not accept URLs without the starting slash
             # but ramose calls start with the slash, hence we remove it if the flag args.webserver is added
             if args.call:
                 args.call = args.call[1:]
@@ -1544,7 +1545,6 @@ if __name__ == "__main__":
             # routing
             @app.route('/')
             def home():
-
                 index = dh.get_index(css_path)
                 return index
 
@@ -1595,8 +1595,7 @@ if __name__ == "__main__":
                         return response
                 else:
                     return res, status
-
-            app.run(host=str(host_name), debug=True, port=str(port))
+            app.run(host=str(host_name), debug=False, port=str(port))
 
         except Exception as e:
             exc_type, exc_obj, exc_tb = exc_info()
