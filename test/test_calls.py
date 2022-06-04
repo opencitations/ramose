@@ -24,14 +24,22 @@ import json
 class TestCalls(unittest.TestCase):
     '''This test looks at the calls to the API'''
     def setUp(self) -> None:
+        self.get_test_path = 'test.hf'
+        self.get_test_result = ''
+        with open('test_result.json', 'r') as f:
+            self.get_test_result = json.load(f)
         return super().setUp()
     
-    def test_get_calls(self, test_path:str = 'test.hf'):
+    def test_get_call(self, test_path:str = 'test.hf'):
         '''This test checks the calls to the API'''
         api = ramose.APIManager([test_path])
         dh = ramose.HTMLDocumentationHandler(api)
         op = api.get_op('http://127.0.0.1:8080/api/v1/metadata/10.1108/jd-12-2013-0166__10.1038/nature12373')
-        print(op)
+        if type(op) is ramose.Operation:  # Operation found
+            res = op.exec('GET', 'json')
+            self.assertEqual(res[1], self.get_test_result)
+        else:  # HTTP error
+            raise ConnectionError
 
 if __name__ =='__main__':
     unittest.main()
