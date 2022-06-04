@@ -60,7 +60,6 @@ class HashFormatHandler(object):
         """This method takes in input a path of a file containing a document specified in
         Hash Format, and returns its representation as list of dictionaries."""
         result = []
-
         with open(file_path, "r", newline=None) as f:
             first_field_name = None
             cur_object = None
