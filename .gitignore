@@ -3,3 +3,6 @@ __pycache__/
 test/Scripts/
 test/Include/
 test/Lib/
+Include/
+Scripts/
+Lib/
