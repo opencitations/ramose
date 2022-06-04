@@ -7,21 +7,21 @@ license = "ISC"
 repository = "https://github.com/opencitations/ramose/"
 
 [tool.poetry.dependencies]
-certifi==2019.11.28
-chardet==3.0.4
-Click==7.0
-Flask==1.1.1
-idna==2.8
-isodate==0.6.0
-itsdangerous==1.1.0
-Jinja2==2.11.3
-Markdown==3.1.1
-MarkupSafe==1.1.1
-python-dateutil==2.8.1
-requests>=2.22.0, <3.0.0
-six==1.13.0
-urllib3==1.26.5
-Werkzeug==0.16.0
+certifi="^2019.11.28"
+chardet="^3.0.4"
+Click="^7.0"
+Flask="^1.1.1"
+idna="^2.8"
+isodate="^0.6.0"
+itsdangerous="^1.1.0"
+Jinja2="^2.11.3"
+Markdown="^3.1.1"
+MarkupSafe="^1.1.1"
+python-dateutil="^2.8.1"
+requests<"3.0.0"
+six="1.13.0"
+urllib3="1.26.5"
+Werkzeug="0.16.0"
 
 
 [tool.poetry.dev-dependencies]
