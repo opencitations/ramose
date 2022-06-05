@@ -24,13 +24,13 @@ import json
 class TestCalls(unittest.TestCase):
     '''This test looks at the calls to the API'''
     def setUp(self) -> None:
-        self.get_test_path = 'test.hf'
+        self.get_test_path = 'test%stest.hf'
         self.get_test_result = ''
-        with open('test_result.json', 'r') as f:
+        with open('test%stest_result.json' %os.sep, 'r') as f:
             self.get_test_result = json.load(f)
         return super().setUp()
     
-    def test_get_call(self, test_path:str = 'test.hf'):
+    def test_get_call(self, test_path = 'test%stest.hf'  % os.sep):
         '''This test checks the calls to the API'''
         api = ramose.APIManager([test_path])
         dh = ramose.HTMLDocumentationHandler(api)
