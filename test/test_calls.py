@@ -79,6 +79,7 @@ class TestCalls(unittest.TestCase):
         if type(op) is ramose.Operation:  # Operation found
             res = op.exec('GET', 'json')
             res = op.conv(res, 'text/csv')
+            
             res = res[1].split('\r\n')[:-1]
             for i in range(len(res)): # remove newlines
                 with self.subTest(i=i):
@@ -114,7 +115,12 @@ class TestCalls(unittest.TestCase):
         op = api.get_op('http://localhost:8080/api/coci/metadata/10.1002/adfm.201505328__10.1108/jd-12-2013-0166__10.1016/j.websem.2012.08.001?require=issue')
         if type(op) is ramose.Operation:  # Operation found
             res = op.exec('GET','application/json')
-            res= json.loads(res[1])
+            tentative = 0
+            while tentative < 3 and type(res) is not list:
+                try:
+                    res = json.loads(res[1])
+                except JSONDecodeError:
+                    tentative +=1 
             for i in range(len(res)):
                 with self.subTest(i=i):
                     test = set(res[i]['citation'].split('; '))
@@ -140,7 +146,11 @@ class TestCalls(unittest.TestCase):
         op = api.get_op(query)
         if type(op) is ramose.Operation:  # Operation found
             res = op.exec('GET', 'json')
-            res = json.loads(res[1])
+            while tentative < 3 and type(res) is not list:
+                try:
+                    res = json.loads(res[1])
+                except JSONDecodeError:
+                    tentative +=1 
             self.assertEqual(res, self.get_params_json)
         else:  # HTTP error
             raise ConnectionError
