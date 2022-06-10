@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# Copyright (c) 2020
+# Copyright (c) 2022
 # Silvio Peroni <essepuntato@gmail.com>
 # Marilena Daquino <marilena.daquino2@unibo.it>
 # Davide Brembilla <davide.brembilla@studio.unibo.it>
@@ -163,6 +163,7 @@ class TestCalls(unittest.TestCase):
         am = ramose.APIManager([test_path])
         dh = ramose.HTMLDocumentationHandler(am)
         app = Flask(__name__)
+        dh.logger_ramose()
         @app.route('/')
         def home():
             index = dh.get_index(css_path)
