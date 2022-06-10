@@ -29,21 +29,21 @@ class TestCalls(unittest.TestCase):
     def setUp(self) -> None:
         self.maxDiff = None
         self.simple_get_test_result = ''
-        with open('test%stest_data%stest_result.json' % (os.sep,os.sep), 'r') as f:
+        with open('test%stest_data%stest_result.json' % (os.sep,os.sep), 'r', encoding='utf8') as f:
             self.simple_get_test_result = json.load(f)
         self.get_params_format = []
-        with open('test%stest_data%stest_csv.csv' % (os.sep,os.sep), 'r') as f:
+        with open('test%stest_data%stest_csv.csv' % (os.sep,os.sep), 'r', encoding='utf8') as f:
             reader = csv.reader(f)
             for row in reader:
                 self.get_params_format.append(row)
         self.get_params_require = dict()
-        with open('test%stest_data%stest_require.json' % (os.sep,os.sep), 'r')as r:
+        with open('test%stest_data%stest_require.json' % (os.sep,os.sep), 'r', encoding='utf8')as r:
             self.get_params_require = json.load(r)
         self.get_params_filter = dict()
-        with open('test%stest_data%stest_filter.json' % (os.sep,os.sep), 'r') as f:
+        with open('test%stest_data%stest_filter.json' % (os.sep,os.sep), 'r', encoding='utf8') as f:
             self.get_params_filter = json.load(f)
         self.get_params_json = dict()
-        with open('test%stest_data%stest_json.json' % (os.sep,os.sep), 'r') as f:
+        with open('test%stest_data%stest_json.json' % (os.sep,os.sep), 'r', encoding='utf8') as f:
             self.get_params_json = json.load(f)
         self.test_doc = ''
         with open('test%stest_data%stest_doc.html' % (os.sep,os.sep), 'r', encoding='utf8') as f:
