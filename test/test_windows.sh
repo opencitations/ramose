@@ -14,5 +14,6 @@
 # SOFTWARE.
 py -m venv .
 Scripts\activate
+pip install -upgrade pip
 pip install -r requirements.txt
-py -m ramose -s test.hf -w 127.0.0.1:8080
+py -m ramose -s test_data\test.hf -w 127.0.0.1:8080
