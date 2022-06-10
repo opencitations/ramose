@@ -75,7 +75,7 @@ class TestCalls(unittest.TestCase):
         '''This test checks a GET call to the API with parameters format and sort, as well as the conversion from and to csv'''
         api = ramose.APIManager([test_path])
         dh = ramose.HTMLDocumentationHandler(api)
-       
+        res = ''
         op = api.get_op("http://localhost:8080/api/coci/references/10.1007/s11192-019-03217-6?format=csv^&sort=desc(timespan)")
         if type(op) is ramose.Operation:  # Operation found
             res = op.exec('GET', 'json')
@@ -94,9 +94,10 @@ class TestCalls(unittest.TestCase):
         query = 'http://localhost:8080/api/coci/citations/10.1002/adfm.201505328?filter=creation:<2020&json=array("-",oci,oci1,oci2)&sort=asc(citing)'
         op = api.get_op(query)
         if type(op) is ramose.Operation:  # Operation found
-            res = op.exec('GET', 'json')
             tentative = 0
+            res = ''
             while tentative < 3 and type(res) is not list:
+                res = op.exec('GET', 'json')
                 try:
                     res = json.loads(res[1])
                 except JSONDecodeError:
@@ -115,9 +116,10 @@ class TestCalls(unittest.TestCase):
         api = ramose.APIManager([test_path])
         op = api.get_op('http://localhost:8080/api/coci/metadata/10.1002/adfm.201505328__10.1108/jd-12-2013-0166__10.1016/j.websem.2012.08.001?require=issue')
         if type(op) is ramose.Operation:  # Operation found
-            res = op.exec('GET','application/json')
             tentative = 0
+            res = ''
             while tentative < 3 and type(res) is not list:
+                res = op.exec('GET','application/json')
                 try:
                     res = json.loads(res[1])
                 except JSONDecodeError:
@@ -144,12 +146,13 @@ class TestCalls(unittest.TestCase):
     def test_get_params4(self, test_path = 'test%stest_data%stest_m1.hf'  % (os.sep,os.sep)):
         '''This test checks a GET call to the API with parameter json'''
         api = ramose.APIManager([test_path])
+        tentative = 0
         query = 'http://localhost:8080/api/coci/citation/02001000007362801000805036300010863020804016335-0200100030836231029271431221029283702000106370908?json=dict("/",citing,prefix,suffix)'
         op = api.get_op(query)
-        tentative = 0
         if type(op) is ramose.Operation:  # Operation found
-            res = op.exec('GET', 'json')
+            res = ''
             while tentative < 3 and type(res) is not list:
+                res = op.exec('GET', 'json')
                 try:
                     res = json.loads(res[1])
                 except JSONDecodeError:
