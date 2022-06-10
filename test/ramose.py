@@ -64,7 +64,7 @@ class HashFormatHandler(object):
         Hash Format, and returns its representation as list of dictionaries."""
         result = []
 
-        with open(file_path, "r", newline=None) as f:
+        with open(file_path, "r", newline=None, encoding='utf8') as f:
             first_field_name = None
             cur_object = None
             cur_field_name = None
