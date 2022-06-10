@@ -179,10 +179,7 @@ class TestCalls(unittest.TestCase):
         dh = ramose.HTMLDocumentationHandler(api)
         dh.logger_ramose()
         self.assertTrue(os.path.isfile('ramose.log'))
-        try:
-            os.remove('ramose.log')
-        except:
-            print('Please manually remove the file ramose.log')
+        
 
     def test_clean_log(self, test_path = 'test%stest_data%stest.hf' % (os.sep,os.sep)):
         '''This test checks the parsing of the log.'''
@@ -198,3 +195,4 @@ class TestCalls(unittest.TestCase):
             
 if __name__ =='__main__':
     unittest.main()
+    os.remove('ramose.log')

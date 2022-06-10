@@ -421,7 +421,9 @@
 <h2><a id="description"></a>Description <a href="#toc">back to top</a></h2>
 <p>A RAMOSE API implementation for Wikidata</p>
 <h2><a id="parameters"></a>Parameters <a href="#toc">back to top</a></h2>
+
 <p>Parameters can be used to filter and control the results returned by the API. They are passed as normal HTTP parameters in the URL of the call. They are:</p>
+
 <ol>
 <li>
 <p><code>require=&lt;field_name&gt;</code>: all the rows that have an empty value in the <code>&lt;field_name&gt;</code> specified are removed from the result set - e.g. <code>require=given_name</code> removes all the rows that do not have any string specified in the <code>given_name</code> field.</p>
@@ -439,7 +441,9 @@
 <p><code>json=&lt;operation_type&gt;("&lt;separator&gt;",&lt;field&gt;,&lt;new_field_1&gt;,&lt;new_field_2&gt;,...)</code>: in case a JSON format is requested in return, tranform each row of the final JSON table according to the rule specified. If <code>&lt;operation_type&gt;</code> is set to "array", the string value associated to the field name <code>&lt;field&gt;</code> is converted into an array by splitting the various textual parts by means of <code>&lt;separator&gt;</code>. For instance, considering the JSON table <code>[ { "names": "Doe, John; Doe, Jane" }, ... ]</code>, the execution of <code>array("; ",names)</code> returns <code>[ { "names": [ "Doe, John", "Doe, Jane" ], ... ]</code>. Instead, if <code>&lt;operation_type&gt;</code> is set to "dict", the string value associated to the field name <code>&lt;field&gt;</code> is converted into a dictionary by splitting the various textual parts by means of <code>&lt;separator&gt;</code> and by associating the new fields <code>&lt;new_field_1&gt;</code>, <code>&lt;new_field_2&gt;</code>, etc., to these new parts. For instance, considering the JSON table <code>[ { "name": "Doe, John" }, ... ]</code>, the execution of <code>dict(", ",name,fname,gname)</code> returns <code>[ { "name": { "fname": "Doe", "gname": "John" }, ... ]</code>.</p>
 </li>
 </ol>
+
 <p>It is possible to specify one or more filtering operation of the same kind (e.g. <code>require=given_name&amp;require=family_name</code>). In addition, these filtering operations are applied in the order presented above - first all the <code>require</code> operation, then all the <code>filter</code> operations followed by all the <code>sort</code> operation, and finally the <code>format</code> and the <code>json</code> operation (if applicable). It is worth mentioning that each of the aforementioned rules is applied in order, and it works on the structure returned after the execution of the previous rule.</p>
+
 <p>Example: <code>&lt;api_operation_url&gt;?require=doi&amp;filter=date:&gt;2015&amp;sort=desc(date)</code>.</p></main>
         <section id="operations"><h2>Operations <a href="#toc">back to top</a></h2>
 <p>The operations that this API implements are:</p>
