@@ -12,4 +12,4 @@
 :: ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 :: SOFTWARE.
 @echo off
-py -m venv "." & Scripts\pip.exe install -r requirements.txt & Scripts\python -m ramose -s test.hf -w 127.0.0.1:8080
+py -m venv "." & Scripts\pip.exe install --upgrade pip & Scripts\pip.exe install -r requirements.txt & Scripts\python -m ramose -s test_data\test.hf -w 127.0.0.1:8080

@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020
-# Silvio Peroni <essepuntato@gmail.com>
-# Marilena Daquino <marilena.daquino2@unibo.it>
+# Silvio Peroni <essepuntato@gmail.com>
+# Marilena Daquino <marilena.daquino2@unibo.it>
 #
 # Permission to use, copy, modify, and/or distribute this software for any purpose
 # with or without fee is hereby granted, provided that the above copyright notice
@@ -12,7 +12,7 @@
 # REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
 # FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT,
 # OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-# DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+# DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER 
 # ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 # SOFTWARE.
 
@@ -36,8 +36,11 @@ from isodate import parse_duration
 from argparse import ArgumentParser
 from os.path import abspath, dirname, basename
 from os import path as pt
+import logging
 from os import sep, getcwd
-
+import logging
+from flask import Flask, request , make_response, send_from_directory
+from werkzeug.exceptions import HTTPException
 
 FIELD_TYPE_RE = "([^\(\s]+)\(([^\)]+)\)"
 PARAM_NAME = "{([^{}\(\)]+)}"
@@ -60,7 +63,8 @@ class HashFormatHandler(object):
         """This method takes in input a path of a file containing a document specified in
         Hash Format, and returns its representation as list of dictionaries."""
         result = []
-        with open(file_path, "r", newline=None) as f:
+
+        with open(file_path, "r", newline=None, encoding='utf8') as f:
             first_field_name = None
             cur_object = None
             cur_field_name = None
@@ -105,19 +109,26 @@ class HashFormatHandler(object):
 
 class DocumentationHandler(object):
     def __init__(self, api_manager):
-        """TODO"""
+        """This class provides the main structure for returning a human-readable documentation of all
+        the operations described in the configuration files handled by the APIManager specified as input."""
         self.conf_doc = api_manager.all_conf
 
     @abstractmethod
     def get_documentation(self, *args, **dargs):
+        """An abstract method that returns a string defining the human-readable documentation of the operations
+        available in the input APIManager."""
         pass
 
     @abstractmethod
     def store_documentation(self, file_path, *args, **dargs):
+        """An abstract method that store in the input file path (parameter 'file_path') the human-readable
+        documentation of the operations available in the input APIManager."""
         pass
 
     @abstractmethod
     def get_index(self, *args, **dargs):
+        """An abstract method that returns a string defining the index of all the various configuration files
+        handled by the input APIManager."""
         pass
 
 class HTMLDocumentationHandler(DocumentationHandler):
@@ -154,7 +165,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
         i = conf["conf_json"][0]
         result += """
 <a id='toc'></a>
-# %s
+# %s
 
 **Version:** %s <br/>
 **API URL:** <a href="%s">%s</a><br/>
@@ -584,7 +595,7 @@ The operations that this API implements are:
           padding: 0.2em 0.5em;
           border-top: solid 1px #F8F8F8;
           }
-        }
+        
 
         .date_log , .method_log {
           color: grey;
@@ -743,21 +754,23 @@ The operations that this API implements are:
 
     def store_documentation(self, file_path, css_path=None):
         """This method stores the HTML documentation of an API in a file."""
-        html = self.get_documentation(css_path)
-        with open(file_path, "w") as f:
+        html = self.get_documentation(css_path)[1]
+        with open(file_path, "w+", encoding='utf8') as f:
             f.write(html)
 
     def clean_log(self, l, api_url):
         """This method parses logs lines into structured data."""
-        s = l.split("- - ",1)[1]
-        date = s[s.find("[")+1:s.find("]")]
-        method = s.split('"')[1::2][0].split()[0]
-        cur_call = s.split('"')[1::2][0].split()[1].strip()
-        status = sub(r"\D+", "", s.split('"',2)[2])
-        if cur_call != api_url+'/':
-            full_str = "<span class='group_log'><span class='status_log code_"+status+"'>"+status+"</span>"+"<span class='date_log'>"+date+"</span><span class='method_log'>"+method+"</span></span>"+"<span class='group_log'><span class='call_log'><a href='"+cur_call+"' target='_blank'>"+cur_call+"</a></span></span>"
-        else:
-            full_str = ''
+        full_str = ''
+        if len(l.split("- - ",1)) > 1:
+            s = l.split("- - ",1)[1]
+            date = s[s.find("[")+1:s.find("]")]
+            method = s.split('"')[1::2][0].split()[0]
+            cur_call = s.split('"')[1::2][0].split()[1].strip()
+            status = sub(r"\D+", "", s.split('"',2)[2])
+
+            if cur_call != api_url+'/':
+                full_str = "<span class='group_log'><span class='status_log code_"+status+"'>"+status+"</span>"+"<span class='date_log'>"+date+"</span><span class='method_log'>"+method+"</span></span>"+"<span class='group_log'><span class='call_log'><a href='"+cur_call+"' target='_blank'>"+cur_call+"</a></span></span>"
+
         return full_str
 
 
@@ -841,8 +854,8 @@ class DataType(object):
 class Operation(object):
     def __init__(self, op_complete_url, op_key, i, tp, sparql_http_method, addon):
         """ This class is responsible for materialising a API operation to be run against a SPARQL endpoint.
-        
-        It takes in input a full URL referring to a call to an operation (parameter 'op_complete_url'), 
+
+        It takes in input a full URL referring to a call to an operation (parameter 'op_complete_url'),
         the particular shape representing an operation (parameter 'op_key'), the definition (in JSON) of such
         operation (parameter 'i'), the URL of the triplestore to contact (parameter 'tp'), the HTTP method
         to use for the SPARQL request (paramenter 'sparql_http_method', set to either 'get' or 'post'), and the path
@@ -1295,7 +1308,8 @@ class Operation(object):
                         par_value = par_man[idx]
                     par_dict[par] = par_value
 
-                self.preprocess(par_dict, self.i, self.addon)
+                if self.addon is not None:
+                    self.preprocess(par_dict, self.i, self.addon)
 
                 query = self.i["sparql"]
                 for param in par_dict:
@@ -1315,7 +1329,8 @@ class Operation(object):
                     list_of_lines = [line.decode("utf-8")
                                      for line in r.text.encode("utf-8").splitlines()]
                     res = self.type_fields(list(reader(list_of_lines)), self.i)
-                    res = self.postprocess(res, self.i, self.addon)
+                    if self.addon is not None:
+                        res = self.postprocess(res, self.i, self.addon)
                     q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
                     res = self.handling_params(q_string, res)
                     res = self.remove_types(res)
@@ -1347,6 +1362,19 @@ class Operation(object):
 
 
 class APIManager(object):
+    # Fixing max size for CSV
+    @staticmethod
+    def __max_size_csv():
+        from sys import maxsize
+        import csv
+        maxInt = maxsize
+        while True:
+            try:
+                csv.field_size_limit(maxInt)
+                break
+            except OverflowError:
+                maxInt = int(maxInt/10)
+
     # Constructor: START
     def __init__(self, conf_files):
         """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
@@ -1371,6 +1399,8 @@ class APIManager(object):
         In addition, it also defines additional structure, such as the functions to be used for interpreting the
         values returned by a SPARQL query, some operations that can be used for filtering the results, and the
         HTTP methods to call for making the request to the SPARQL endpoint specified in the configuration file."""
+        APIManager.__max_size_csv()
+
         self.all_conf = OrderedDict()
         self.base_url = []
         for conf_file in conf_files:
@@ -1378,6 +1408,7 @@ class APIManager(object):
             tp = None
             conf_json = HashFormatHandler().read(conf_file)
             base_url = None
+            addon = None
             for item in conf_json:
                 if base_url is None:
                     base_url = item["url"]
@@ -1465,7 +1496,7 @@ class APIManager(object):
     # END: Processing methods
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     arg_parser = ArgumentParser("ramose.py", description="The 'Restful API Manager Over SPARQL Endpoints' (a.k.a. "
                                                          "'RAMOSE') is an application that allows one to expose a "
                                                          "Restful API interface, according to a particular "
@@ -1497,9 +1528,7 @@ if __name__ == "__main__":
 
     if args.webserver:
         try:
-            import logging
-            from flask import Flask, request , make_response, send_from_directory
-            from werkzeug.exceptions import HTTPException
+
 
             # logs
             dh.logger_ramose()
@@ -1509,8 +1538,7 @@ if __name__ == "__main__":
             port = args.webserver.rsplit(':', 1)[1] if ':' in args.webserver else '8080'
 
             app = Flask(__name__)
-
-            # This is due to Flask routing rules that do not accept URLs without the starting slash
+            # This is due to Flask routing rules that do not accept URLs without the starting slash
             # but ramose calls start with the slash, hence we remove it if the flag args.webserver is added
             if args.call:
                 args.call = args.call[1:]
@@ -1518,7 +1546,6 @@ if __name__ == "__main__":
             # routing
             @app.route('/')
             def home():
-
                 index = dh.get_index(css_path)
                 return index
 
@@ -1569,8 +1596,7 @@ if __name__ == "__main__":
                         return response
                 else:
                     return res, status
-
-            app.run(host=str(host_name), debug=True, port=str(port))
+            app.run(host=str(host_name), debug=False, port=str(port))
 
         except Exception as e:
             exc_type, exc_obj, exc_tb = exc_info()
@@ -1580,7 +1606,7 @@ if __name__ == "__main__":
     else:
         # run locally via shell
         if args.doc:
-            res = dh.get_documentation(css_path)
+            res = dh.get_documentation(css_path) + ("text/html", )
         else:
             op = am.get_op(args.call)
             if type(op) is Operation:  # Operation found
@@ -1591,5 +1617,5 @@ if __name__ == "__main__":
         if args.output is None:
             print("# Response HTTP code: %s\n# Body:\n%s\n# Content-type: %s" % res)
         else:
-            with open(args.output, "w") as f:
+            with open(args.output, "w", encoding='utf8') as f:
                 f.write(res[1])

@@ -45,7 +45,7 @@ def decode_doi(res, *args):
     return res, True
 
 
-def merge(res, *args):
+def merge(res, *args): # pragma: no cover
     final_result = []
     header = res[0]
     final_result.append(header)
