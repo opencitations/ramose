@@ -22,6 +22,7 @@ import unittest
 import os
 import json
 import csv
+import time
 from flask import Flask
 
 class TestCalls(unittest.TestCase):
@@ -99,7 +100,7 @@ class TestCalls(unittest.TestCase):
                 try:
                     res = json.loads(res[1])
                 except JSONDecodeError:
-                    
+                    time.sleep(2)
                     tentative += 1
             for el in range(len(res)):
                 with self.subTest(el=el):
@@ -120,6 +121,7 @@ class TestCalls(unittest.TestCase):
                 try:
                     res = json.loads(res[1])
                 except JSONDecodeError:
+                    time.sleep(2)
                     tentative +=1 
             for i in range(len(res)):
                 with self.subTest(i=i):
@@ -151,6 +153,7 @@ class TestCalls(unittest.TestCase):
                 try:
                     res = json.loads(res[1])
                 except JSONDecodeError:
+                    time.sleep(2)
                     tentative +=1 
             self.assertEqual(res, self.get_params_json)
         else:  # HTTP error
