@@ -144,6 +144,7 @@ class TestCalls(unittest.TestCase):
         api = ramose.APIManager([test_path])
         query = 'http://localhost:8080/api/coci/citation/02001000007362801000805036300010863020804016335-0200100030836231029271431221029283702000106370908?json=dict("/",citing,prefix,suffix)'
         op = api.get_op(query)
+        tentative = 0
         if type(op) is ramose.Operation:  # Operation found
             res = op.exec('GET', 'json')
             while tentative < 3 and type(res) is not list:
