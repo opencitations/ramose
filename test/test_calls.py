@@ -91,7 +91,7 @@ class TestCalls(unittest.TestCase):
     def test_get_params2(self, test_path = 'test%stest_data%stest_m1.hf'  % (os.sep,os.sep)): # TODO: json = dict
         '''This test checks a GET call to the API with parameters filter and json'''
         api = ramose.APIManager([test_path])
-        query = 'http://localhost:8080/api/coci/citations/10.1002/adfm.201505328?filter=creation:<2020&json=array("-",oci,oci1,oci2)&sort=asc(citing)'
+        query = 'http://127.0.0.1:8080/api/coci/citations/10.1002/adfm.201505328?filter=creation:<2020&json=array("-",oci,oci1,oci2)&sort=asc(citing)'
         op = api.get_op(query)
         if type(op) is ramose.Operation:  # Operation found
             tentative = 0

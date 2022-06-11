@@ -1251,21 +1251,27 @@ class Operation(object):
         header = res[0]
         for heading in header:
             cast_func[heading] = DataType.str
+        
 
         if "field_type" in op_item:
             for f, p in findall(FIELD_TYPE_RE, op_item["field_type"]):
                 cast_func[p] = self.dt.get_func(f)
-
+        first = True
         for row in res[1:]:
             new_row = []
             for idx in range(len(header)):
+
                 heading = header[idx]
                 cur_value = row[idx]
                 if type(cur_value) is tuple:
                     cur_value = cur_value[1]
+                if heading == 'timespan' and first:
+                    first = False
                 new_row.append((cast_func[heading](cur_value), cur_value))
-            result.append(new_row)
 
+           
+            result.append(new_row)
+        
         return [header] + result
 
     def remove_types(self, res):
@@ -1460,7 +1466,7 @@ class APIManager(object):
     def best_match(self, u):
         """This method takes an URL of an API call in input and find the API operation URL and the related
         configuration that best match with the API call, if any."""
-        #u = u.decode('UTF8') if isinstance(u, (bytes, bytearray)) else u
+        u = u.decode('UTF8') if isinstance(u, (bytes, bytearray)) else u
         cur_u = sub("\?.*$", "", u)
         result = None, None
         for base_url in self.all_conf:
