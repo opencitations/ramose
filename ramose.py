@@ -12,7 +12,7 @@
 # REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
 # FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT,
 # OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-# DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+# DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER 
 # ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 # SOFTWARE.
 
@@ -36,8 +36,11 @@ from isodate import parse_duration
 from argparse import ArgumentParser
 from os.path import abspath, dirname, basename
 from os import path as pt
+import logging
 from os import sep, getcwd
-
+import logging
+from flask import Flask, request , make_response, send_from_directory
+from werkzeug.exceptions import HTTPException
 
 FIELD_TYPE_RE = "([^\(\s]+)\(([^\)]+)\)"
 PARAM_NAME = "{([^{}\(\)]+)}"
@@ -61,7 +64,7 @@ class HashFormatHandler(object):
         Hash Format, and returns its representation as list of dictionaries."""
         result = []
 
-        with open(file_path, "r", newline=None) as f:
+        with open(file_path, "r", newline=None, encoding = 'utf8') as f:
             first_field_name = None
             cur_object = None
             cur_field_name = None
@@ -592,7 +595,7 @@ The operations that this API implements are:
           padding: 0.2em 0.5em;
           border-top: solid 1px #F8F8F8;
           }
-        }
+        
 
         .date_log , .method_log {
           color: grey;
@@ -751,8 +754,8 @@ The operations that this API implements are:
 
     def store_documentation(self, file_path, css_path=None):
         """This method stores the HTML documentation of an API in a file."""
-        html = self.get_documentation(css_path)
-        with open(file_path, "w") as f:
+        html = self.get_documentation(css_path)[1]
+        with open(file_path, "w+", encoding='utf8') as f:
             f.write(html)
 
     def clean_log(self, l, api_url):
@@ -1248,21 +1251,27 @@ class Operation(object):
         header = res[0]
         for heading in header:
             cast_func[heading] = DataType.str
+        
 
         if "field_type" in op_item:
             for f, p in findall(FIELD_TYPE_RE, op_item["field_type"]):
                 cast_func[p] = self.dt.get_func(f)
-
+        first = True
         for row in res[1:]:
             new_row = []
             for idx in range(len(header)):
+
                 heading = header[idx]
                 cur_value = row[idx]
                 if type(cur_value) is tuple:
                     cur_value = cur_value[1]
+                if heading == 'timespan' and first:
+                    first = False
                 new_row.append((cast_func[heading](cur_value), cur_value))
-            result.append(new_row)
 
+           
+            result.append(new_row)
+        
         return [header] + result
 
     def remove_types(self, res):
@@ -1457,7 +1466,7 @@ class APIManager(object):
     def best_match(self, u):
         """This method takes an URL of an API call in input and find the API operation URL and the related
         configuration that best match with the API call, if any."""
-        #u = u.decode('UTF8') if isinstance(u, (bytes, bytearray)) else u
+        u = u.decode('UTF8') if isinstance(u, (bytes, bytearray)) else u
         cur_u = sub("\?.*$", "", u)
         result = None, None
         for base_url in self.all_conf:
@@ -1493,7 +1502,7 @@ class APIManager(object):
     # END: Processing methods
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": # pragma: no cover
     arg_parser = ArgumentParser("ramose.py", description="The 'Restful API Manager Over SPARQL Endpoints' (a.k.a. "
                                                          "'RAMOSE') is an application that allows one to expose a "
                                                          "Restful API interface, according to a particular "
@@ -1525,9 +1534,7 @@ if __name__ == "__main__":
 
     if args.webserver:
         try:
-            import logging
-            from flask import Flask, request , make_response, send_from_directory
-            from werkzeug.exceptions import HTTPException
+
 
             # logs
             dh.logger_ramose()
@@ -1616,5 +1623,5 @@ if __name__ == "__main__":
         if args.output is None:
             print("# Response HTTP code: %s\n# Body:\n%s\n# Content-type: %s" % res)
         else:
-            with open(args.output, "w") as f:
+            with open(args.output, "w", encoding='utf8') as f:
                 f.write(res[1])

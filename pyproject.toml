@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "ramose"
+version = "1.0.5"
+description = "Restful API Manager Over SPARQL Endpoints (RAMOSE) is an application that allows agile development and publication of documented RESTful APIs for querying SPARQL endpoints, according to a particular specification document."
+authors = ["essepuntato <essepuntato@gmail.com>"]
+license = "ISC"
+repository = "https://github.com/opencitations/ramose/"
+
+[tool.poetry.dependencies]
+python="^3.7"
+certifi="2019.11.28"
+chardet="3.0.4"
+Click="7.0"
+Flask="1.1.1"
+idna="2.8"
+isodate="0.6.1"
+itsdangerous="1.1.0"
+Jinja2="2.11.3"
+Markdown="3.1.1"
+MarkupSafe="1.1.1"
+python-dateutil="2.8.1"
+requests="^2.22.0"
+six="1.13.0"
+urllib3="1.26.5"
+Werkzeug="0.16.0"
+rdflib= "6.1.1"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

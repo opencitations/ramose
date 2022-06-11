@@ -1,0 +1,4 @@
+[2022-06-10 11:29:37,573] [MainThread  ] [INFO ]   * Running on http://127.0.0.1:8080/ (Press CTRL+C to quit)
+[2022-06-10 11:30:00,955] [Thread-1    ] [INFO ]  127.0.0.1 - - [10/Jun/2022 11:30:00] "GET /api/v1 HTTP/1.1" 200 -
+[2022-06-10 11:30:01,301] [Thread-2    ] [INFO ]  127.0.0.1 - - [10/Jun/2022 11:30:01] "GET /favicon.ico HTTP/1.1" 404 -
+[2022-06-10 11:30:19,693] [Thread-3    ] [INFO ]  127.0.0.1 - - [10/Jun/2022 11:30:19] "GET /api/v1/metadata/doi/123 HTTP/1.1" 404 -

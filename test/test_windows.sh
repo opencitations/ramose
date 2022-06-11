@@ -1,6 +1,5 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-# Copyright (c) 2018, Silvio Peroni <essepuntato@gmail.com>
+#!/bin/bash
+# Copyright (c) 2016, Silvio Peroni <essepuntato@gmail.com>
 #
 # Permission to use, copy, modify, and/or distribute this software for any purpose
 # with or without fee is hereby granted, provided that the above copyright notice
@@ -13,16 +12,8 @@
 # DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
 # ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 # SOFTWARE.
-
-__author__ = 'essepuntato'
-import re
-
-def lower(s):
-    return s.lower(),
-
-
-def get_type(s):
-    if s == "journal":
-        return "<http://purl.org/spar/fabio/JournalArticle>",
-    elif s == "chapter":
-        return "<http://purl.org/spar/fabio/BookChapter>",
+py -m venv .
+Scripts\activate
+pip install -upgrade pip
+pip install -r requirements.txt
+py -m ramose -s test_data\test.hf -w 127.0.0.1:8080

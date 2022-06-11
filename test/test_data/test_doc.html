@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>Wikidata REST API</title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+        <meta name="viewport" content="width=device-width" />
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Karla:wght@300;400&display=swap');
+        @media screen and (max-width: 850px) {
+              aside { display: none; }
+              main, #operations, .dashboard, body>footer {margin-left: 15% !important;}
+              #operations > ul:nth-of-type(1) li { display:block !important; max-width: 100% !important; }
+              h3 a[href] {display:block !important; float: none !important; font-size: 0.5em !important;}
+              a {overflow: hidden; text-overflow: ellipsis;}
+              .info_api, .api_calls {display: block !important; max-width: 100% !important;}
+            }
+
+        * {
+            font-family: 'Karla', Geneva, sans-serif;
+        }
+
+        body {
+          margin: 3% 15% 7% 0px;
+          line-height: 1.5em;
+          letter-spacing: 0.02em;
+          font-size : 1em;
+          font-weight:300;
+          color: #303030;
+          text-align: justify;
+          background-color: #edf0f2;
+        }
+
+        aside {
+            height : 100%;
+            width: 20%;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            left: 0;
+            /*background-color: #404040;*/
+            overflow-x: hidden;
+            background-color: white;
+            box-shadow:0px 10px 30px 0px rgba(133,66,189,0.1);
+        }
+        p strong {
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        aside h4 {
+            padding: 20px 9%;
+            margin: 0px !important;
+            color: #9931FC;
+            text-align: left !important;
+        }
+
+        .sidebar_menu , .sidebar_submenu {
+            list-style-type: none;
+            padding-left:0px !important;
+            margin-top: 10px;
+
+        }
+
+        .sidebar_menu > li {
+            padding: 2% 0px;
+            border-top : solid 0.7px grey;
+        }
+
+        .sidebar_menu a {
+            padding: 1% 9%;
+            background-image: none !important;
+            color: grey;
+            display: block;
+        }
+
+        .sidebar_menu a:hover {
+            border-left: solid 5px rgba(154, 49, 252,.5);
+            font-weight: 400;
+        }
+
+        .sidebar_submenu > li {
+            padding-left:0px !important;
+            background-color:#edf0f2;
+            font-size: 0.8em;
+        }
+
+        main , #operations , .dashboard, body>footer {
+            margin-left: 33%;
+        }
+        .dashboard {text-align: center;}
+        main h1+p , .info_api{
+
+            padding-left: 3%;
+            font-size: 0.9em;
+            line-height: 1.4em;
+        }
+
+        main h1+p {border-left: solid 5px rgba(154, 49, 252,.5);}
+
+        #operations h3 {
+            color: #9931FC;
+            margin-bottom: 0px;
+            padding: 10px;
+        }
+
+        #operations > ul:nth-of-type(1) {
+            padding-left: 0px !important;
+            text-align: center;
+        }
+
+        #operations > ul:nth-of-type(1) li {
+            background-color: white;
+            text-align: left;
+            display: inline-block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 35%;
+            height: 200px;
+            padding:4%;
+            margin: 1% 2% 1% 0px;
+            border-radius: 10px;
+            box-shadow: 0px 10px 30px 0px rgba(133,66,189,0.1);
+            vertical-align:top;
+        }
+
+        #operations > div {
+            background-color: white;
+            margin-top: 20px;
+            padding: 2%;
+            border-radius: 18px;
+            box-shadow: 0px 10px 30px 0px rgba(133,66,189,0.1);
+        }
+
+        #operations > div > * {
+            padding: 0px 2%;
+        }
+
+        #operations > div ul, .params+ul{
+            list-style-type: none;
+            font-size: 0.85em;
+        }
+        #operations > div ul:nth-of-type(1) li, .params+ul li {
+            margin: 10px 0px;
+        }
+
+        #operations > div ul:nth-of-type(1) li em, .params+ul li em {
+            font-style: normal;
+            font-weight: 400;
+            color: #9931FC;
+            border-left: solid 2px #9931FC;
+            padding:5px;
+        }
+
+        .attr {
+            border-top: solid 1px rgba(133,66,189,0.1);
+            padding: 2% !important;
+            display:block;
+            vertical-align: top;
+            font-size: 0.8em;
+            text-align: left;
+        }
+
+        .attr strong {
+            width: 30%;
+            color: grey;
+            font-weight: 400;
+            font-style: normal;
+            display:inline-block;
+            vertical-align: top;
+        }
+
+        .attr_val {
+            max-width: 50%;
+            display:inline-table;
+            height: 100%;
+            vertical-align: top;
+        }
+
+        .method {
+            text-transform: uppercase;
+        }
+
+        .params {
+            margin-bottom: 0;
+        }
+
+        pre {
+            background-color: #f0f0f5;
+            padding: 10px;
+            margin-top: 0;
+            margin-bottom: 0;
+            border-radius: 0 0 14px 14px;
+            font-family: monospace !important;
+            overflow: scroll;
+            line-height: 1.2em;
+            height: 250px;
+        }
+
+        pre code {
+            font-family: monospace !important;
+        }
+
+        p.ex {
+            background-color: #f0f0f5;
+            margin-bottom: 0px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+
+        h2:first-of-type {
+            margin-bottom: 15px;
+        }
+
+        ol:first-of-type {
+            margin-top: 0;
+        }
+
+        :not(pre) > code {
+            background-color:  #f0f0f5;
+            color: #8585ad;
+            padding: 0 2px 0 2px;
+            border-radius: 3px;
+            font-family : monospace;
+            font-size: 1.2em !important;
+        }
+
+        /**:not(div) > p {
+            margin-left: 1.2%;
+        }*/
+
+        h1 {font-size: 2.5em;}
+        h1, h2 {
+            text-transform: uppercase;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            line-height: 1.2em;
+            padding-top:1em;
+            text-align: left !important;
+            font-weight:400;
+        }
+
+        h2 ~ h2, section > h2 {
+
+            padding-top: 5px;
+            margin-top: 40px;
+        }
+
+        h2 a[href], h3 a[href] {
+            background-image: none;
+            text-transform:uppercase;
+            padding: 1px 3px 1px 3px;
+            font-size: 12pt;
+            float: right;
+            position:relative;
+            top: -3px;
+        }
+
+        h2 a[href]::before , h3 a[href]::before {
+            content: " ↑";
+            width: 20px;
+            height: 20px;
+            display:inline-block;
+            color: #9931FC;
+            text-align:center;
+            margin-right: 10px;
+        }
+
+        /*h3 a[href] {
+            color:white
+            background-image: none;
+            text-transform:uppercase;
+            padding: 1px 3px 1px 3px;
+            font-size: 8pt !important;
+            border: 1px solid #9931FC;
+            float: right;
+            position:relative;
+            top: -11px;
+            right: -11px;
+            border-radius: 0 14px 0 0;
+        }*/
+
+        p {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        a {
+            color : black;
+            text-decoration: none;
+            background-image: -webkit-gradient(linear,left top, left bottom,color-stop(50%, transparent),color-stop(0, rgba(154, 49, 252,.5)));
+            background-image: linear-gradient(180deg,transparent 50%,rgba(154, 49, 252,.5) 0);
+            background-position-y: 3px;
+            background-position-x: 0px;
+            background-repeat: no-repeat;
+            -webkit-transition: .15s ease;
+            transition: .15s ease;
+        }
+
+        a:hover {
+            color: #282828;
+            background-position: top 6px right 0px;
+            background-image: -webkit-gradient(linear,left top, left bottom,color-stop(60%, transparent),color-stop(0, #9931FC));
+            background-image: linear-gradient(180deg,transparent 60%,#9931FC 0);
+        }
+
+        footer {
+            margin-top: 20px;
+            border-top: 1px solid lightgrey;
+            text-align: center;
+            color: grey;
+            font-size: 9pt;
+        }
+        /* dashboard */
+
+        .info_api {
+            max-width: 35%;
+            border-radius: 15px;
+            text-align: left;
+            vertical-align: top;
+            background-color: #9931FC;
+            color: white;
+        }
+
+        .info_api, .api_calls {
+            display: inline-block;
+            text-align: left;
+            height: 200px;
+            padding:4%;
+            margin: 1% 2% 1% 0px;
+            border-radius: 10px;
+            box-shadow: 0px 10px 30px 0px rgba(133,66,189,0.1);
+            vertical-align:top;
+        }
+
+        .api_calls {
+            max-width: 40%;
+            background-color: white;
+            scroll-behavior: smooth;
+            overflow: auto;
+            overflow-y: scroll;
+            scrollbar-color: #9931FC rgb(154, 49, 252);
+            border-radius: 10px;
+        }
+        .api_calls div {padding-bottom:2%;}
+
+        .api_calls:hover {
+          overflow-y: scroll;
+        }
+        .api_calls h4, .info_api h2 {padding-top: 0px !important; margin-top: 0px !important;}
+        .api_calls div p {
+          padding: 0.2em 0.5em;
+          border-top: solid 1px #F8F8F8;
+          }
+        
+
+        .date_log , .method_log {
+          color: grey;
+          font-size: 0.8em;
+
+        }
+        .method_log {margin-left: 15px;}
+        .date_log {display:inline-grid;}
+
+        .group_log:nth-child(odd) {
+          margin-right:5px;
+          font-size: 0.9em;
+        }
+
+        .group_log:nth-child(even) {
+          display: inline-grid;
+          vertical-align: top;
+        }
+        .status_log {padding-right:15px;}
+        .status_log::before {
+          content: '';
+           display: inline-block;
+           width: 1em;
+           height: 1em;
+           vertical-align: middle;
+           -moz-border-radius: 50%;
+           -webkit-border-radius: 50%;
+           border-radius: 50%;
+           background-color: grey;
+           margin-right: 0.8em;
+        }
+
+        .code_200::before {
+          background-color: #00cc00;
+        }
+
+        .code_404::before {
+          background-color: #cccc00;
+        }
+
+        .code_500::before {
+          background-color: #cc0000;
+        }
+
+        </style>
+        <link rel="stylesheet" type="text/css" href='test/style_test.css'>
+    </head>
+    <body>
+        <aside>
+
+        <h4>Wikidata REST API</h4>
+        <ul id="sidebar_menu" class="sidebar_menu">
+            <li><a class="btn active" href="#description">DESCRIPTION</a></li>
+            <li><a class="btn" href="#parameters">PARAMETERS</a></li>
+            <li><a class="btn" href="#operations">OPERATIONS</a>
+                <ul class="sidebar_submenu"><li><a class='btn' href='#/metadata/{dois}'>/metadata/{dois}</a></li></ul>
+            </li>
+            <li><a class="btn active" href="/">HOME</a></li>
+        </ul>
+        </aside>
+        <main><p><a id='toc'></a></p>
+<h1>Wikidata REST API</h1>
+<p><strong>Version:</strong> 0.0.2 <br/>
+<strong>API URL:</strong> <a href="https://w3id.org/oc/wikidata/api/v1">https://w3id.org/oc/wikidata/api/v1</a><br/>
+<strong>Contact:</strong> <a href="mailto:contact@opencitations.net">contact@opencitations.net</a><br/>
+<strong>License:</strong> This document is licensed with a <a href="https://creativecommons.org/licenses/by/4.0/legalcode">Creative Commons Attribution 4.0 International License</a>, while the REST API itself has been created using <a href="https://github.com/opencitations/ramose">RAMOSE</a>, the <em>Restful API Manager Over SPARQL Endpoints</em> created by <a href="https://orcid.org/0000-0003-0530-4305">Silvio Peroni</a>, which is licensed with an <a href="https://opensource.org/licenses/ISC">ISC license</a>. All the data returned by this API are made freely available under a <a href="https://creativecommons.org/publicdomain/zero/1.0/">Creative Commons public domain dedication (CC0)</a>.<br/></p>
+<h2><a id="description"></a>Description <a href="#toc">back to top</a></h2>
+<p>A RAMOSE API implementation for Wikidata</p>
+<h2><a id="parameters"></a>Parameters <a href="#toc">back to top</a></h2>
+
+<p>Parameters can be used to filter and control the results returned by the API. They are passed as normal HTTP parameters in the URL of the call. They are:</p>
+
+<ol>
+<li>
+<p><code>require=&lt;field_name&gt;</code>: all the rows that have an empty value in the <code>&lt;field_name&gt;</code> specified are removed from the result set - e.g. <code>require=given_name</code> removes all the rows that do not have any string specified in the <code>given_name</code> field.</p>
+</li>
+<li>
+<p><code>filter=&lt;field_name&gt;:&lt;operator&gt;&lt;value&gt;</code>: only the rows compliant with <code>&lt;value&gt;</code> are kept in the result set. The parameter <code>&lt;operation&gt;</code> is not mandatory. If <code>&lt;operation&gt;</code> is not specified, <code>&lt;value&gt;</code> is interpreted as a regular expression, otherwise it is compared by means of the specified operation. Possible operators are "=", "&lt;", and "&gt;". For instance, <code>filter=title:semantics?</code> returns all the rows that contain the string "semantic" or "semantics" in the field <code>title</code>, while <code>filter=date:&gt;2016-05</code> returns all the rows that have a <code>date</code> greater than May 2016.</p>
+</li>
+<li>
+<p><code>sort=&lt;order&gt;(&lt;field_name&gt;)</code>: sort in ascending (<code>&lt;order&gt;</code> set to "asc") or descending (<code>&lt;order&gt;</code> set to "desc") order the rows in the result set according to the values in <code>&lt;field_name&gt;</code>. For instance, <code>sort=desc(date)</code> sorts all the rows according to the value specified in the field <code>date</code> in descending order.</p>
+</li>
+<li>
+<p><code>format=&lt;format_type&gt;</code>: the final table is returned in the format specified in <code>&lt;format_type&gt;</code> that can be either "csv" or "json" - e.g. <code>format=csv</code> returns the final table in CSV format. This parameter has higher priority of the type specified through the "Accept" header of the request. Thus, if the header of a request to the API specifies <code>Accept: text/csv</code> and the URL of such request includes <code>format=json</code>, the final table is returned in JSON.</p>
+</li>
+<li>
+<p><code>json=&lt;operation_type&gt;("&lt;separator&gt;",&lt;field&gt;,&lt;new_field_1&gt;,&lt;new_field_2&gt;,...)</code>: in case a JSON format is requested in return, tranform each row of the final JSON table according to the rule specified. If <code>&lt;operation_type&gt;</code> is set to "array", the string value associated to the field name <code>&lt;field&gt;</code> is converted into an array by splitting the various textual parts by means of <code>&lt;separator&gt;</code>. For instance, considering the JSON table <code>[ { "names": "Doe, John; Doe, Jane" }, ... ]</code>, the execution of <code>array("; ",names)</code> returns <code>[ { "names": [ "Doe, John", "Doe, Jane" ], ... ]</code>. Instead, if <code>&lt;operation_type&gt;</code> is set to "dict", the string value associated to the field name <code>&lt;field&gt;</code> is converted into a dictionary by splitting the various textual parts by means of <code>&lt;separator&gt;</code> and by associating the new fields <code>&lt;new_field_1&gt;</code>, <code>&lt;new_field_2&gt;</code>, etc., to these new parts. For instance, considering the JSON table <code>[ { "name": "Doe, John" }, ... ]</code>, the execution of <code>dict(", ",name,fname,gname)</code> returns <code>[ { "name": { "fname": "Doe", "gname": "John" }, ... ]</code>.</p>
+</li>
+</ol>
+
+<p>It is possible to specify one or more filtering operation of the same kind (e.g. <code>require=given_name&amp;require=family_name</code>). In addition, these filtering operations are applied in the order presented above - first all the <code>require</code> operation, then all the <code>filter</code> operations followed by all the <code>sort</code> operation, and finally the <code>format</code> and the <code>json</code> operation (if applicable). It is worth mentioning that each of the aforementioned rules is applied in order, and it works on the structure returned after the execution of the previous rule.</p>
+
+<p>Example: <code>&lt;api_operation_url&gt;?require=doi&amp;filter=date:&gt;2015&amp;sort=desc(date)</code>.</p></main>
+        <section id="operations"><h2>Operations <a href="#toc">back to top</a></h2>
+<p>The operations that this API implements are:</p>
+<ul>
+<li><a href="#/metadata/{dois}">/metadata/{dois}</a>: This operation retrieves the metadata for all the articles identified by the input DOIs.</li>
+</ul>
+<div id="/metadata/{dois}">
+<h3>/metadata/{dois} <a href="#operations">back to operations</a></h3>
+
+<p>This operation retrieves the metadata for all the articles identified by the input DOIs.</p>
+<p>It is possible to specify one or more DOIs as input of this operation. In this case, the DOI should be separated with a double underscore ("__") – e.g. "10.1108/jd-12-2013-0166__10.1016/j.websem.2012.08.001__...". The fields returned by this operation are:</p>
+<ul>
+<li><em>author</em>: the semicolon-separated list of authors of the citing entity;</li>
+<li><em>year</em>: the year of publication of the citing entity;</li>
+<li><em>title</em>: the title of the citing entity;</li>
+<li><em>source_title</em>: the title of the venue where the citing entity has been published;</li>
+<li><em>source_id</em>: the semicolon-separated list of identifiers referring to the source where the citing entity has been published;</li>
+<li><em>volume</em>: the number of the volume in which the citing entity has been published;</li>
+<li><em>issue</em>: the number of the issue in which the citing entity has been published;</li>
+<li><em>page</em>: the starting and ending pages of the citing entity in the context of the venue where it has been published;</li>
+<li><em>doi</em>: the DOI of the citing entity;</li>
+<li><em>reference</em>: the semicolon-separated DOIs of all the entities cited by the citing ;</li>
+<li><em>citation_count</em>: the number of citations received by the citing entity;</li>
+<li><em>qid</em>: the identifier of the citing entity in Wikidata.</li>
+</ul>
+<p>Note: this operation strictly depends on external services (i.e. doi.org and associate applications) for gathering all the metadata of the articles requested. In fact, these metadata are not stored in COCI and are retrieved dynamically upon request.</p>
+
+<p class="attr"><strong>Accepted HTTP method(s)</strong> <span class="attr_val method">get</span></p>
+<p class="attr params"><strong>Parameter(s)</strong> <span class="attr_val"><em>dois</em>: type <em>str</em>, regular expression shape <code>\"?10\..+[^_\"]((__|\" \")10\..+[^_])*\"?</code></span></p>
+<p class="attr"><strong>Result fields type</strong><span class="attr_val">qid <em>(str)</em>, author <em>(str)</em>, year <em>(datetime)</em>, title <em>(str)</em>, source_title <em>(str)</em>, source_id <em>(str)</em>, volume <em>(str)</em>, issue <em>(str)</em>, page <em>(str)</em>, doi <em>(str)</em>, reference <em>(str)</em>, citation_count <em>(int)</em></span></p>
+<p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="https://w3id.org/oc/wikidata/api/v1/metadata/10.1108/jd-12-2013-0166__10.1038/nature12373">/metadata/10.1108/jd-12-2013-0166__10.1038/nature12373</a></span></p>
+<p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
+<pre><code>[
+    {
+        "source_title": "Journal of Documentation",
+        "page": "253-277",
+        "volume": "71",
+        "reference": "10.1136/BMJ.B2680; 10.1145/1816123.1816198; 10.1145/2362499.2362502; 10.1007/978-3-642-41242-4_6; 10.1016/J.WEBSEM.2012.08.001; 10.1371/JOURNAL.PCBI.1000361",
+        "qid": "Q24260641",
+        "citation_count": "1",
+        "issue": "2",
+        "year": "2015",
+        "doi": "10.1108/JD-12-2013-0166",
+        "author": "Dutton, Alexander; Peroni, Silvio; Shotton, David",
+        "title": "Setting our bibliographic references free: towards open citation data"
+    },
+    {
+        "source_title": "Nature",
+        "page": "54-58",
+        "volume": "500",
+        "reference": "10.1021/NN201142F; 10.1021/NL300389Y; 10.1158/0008-5472.CAN-11-3536; 10.1038/NRC3180; 10.3402/NANO.V3I0.11586; 10.1038/NCOMMS1714; 10.1038/NATURE07279; 10.1007/S10549-012-2393-X; 10.1371/JOURNAL.PONE.0049021; 10.1016/J.CELL.2009.11.006; 10.1073/PNAS.0909350107; 10.1038/NMETH.1278; 10.1021/JP073938O; 10.1016/J.CANLET.2004.02.004; 10.1038/NMETH818; 10.1038/NATURE03509",
+        "qid": "Q34460861",
+        "citation_count": "59",
+        "issue": "7460",
+        "year": "2013",
+        "doi": "10.1038/NATURE12373",
+        "author": "",
+        "title": "Nanometre-scale thermometry in a living cell."
+    }
+]</code></pre></div></section>
+        <footer><p>This API and the related documentation has been created with <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE</a>, the <em>Restful API Manager Over SPARQL Endpoints</em>, developed by <a href="http://orcid.org/0000-0003-0530-4305" target="_blank">Silvio Peroni</a> and <a href="https://marilenadaquino.github.io">Marilena Daquino</a>.</p></footer>
+    </body>
+</html>

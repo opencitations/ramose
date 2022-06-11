@@ -14,5 +14,6 @@
 # SOFTWARE.
 python3 -m venv .
 source ./bin/activate
+pip3 install -upgrade pip
 pip3 install -r requirements.txt
-python3 -m ramose -s test.hf -w 127.0.0.1:8080
+python3 -m ramose -s test_data/test.hf -w 127.0.0.1:8080
