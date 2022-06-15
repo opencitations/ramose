@@ -1384,6 +1384,7 @@ class APIManager(object):
 
     # Constructor: START
     def __init__(self, conf_files):
+
         """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
         defined according to the Hash Format and following a particular structure, and stores all the operations
         defined within a dictionary. The structure of each item in the dictionary of the operations is defined as
@@ -1405,7 +1406,10 @@ class APIManager(object):
 
         In addition, it also defines additional structure, such as the functions to be used for interpreting the
         values returned by a SPARQL query, some operations that can be used for filtering the results, and the
-        HTTP methods to call for making the request to the SPARQL endpoint specified in the configuration file."""
+        HTTP methods to call for making the request to the SPARQL endpoint specified in the configuration file.
+        
+        """
+
         APIManager.__max_size_csv()
 
         self.all_conf = OrderedDict()

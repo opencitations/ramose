@@ -1,0 +1,5 @@
+DataType
+=========
+
+.. autoclass:: ramose.DataType
+

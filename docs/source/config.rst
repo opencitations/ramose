@@ -104,7 +104,7 @@ Complete example:
 
 
 Operation Configuration
-------------------
+------------------------
 The second section of the configuration file should contain the specifications for the behaviour of the API depending on the operations that are performed over it. This section can be repeated multiple times in order to define multiple operations.
 
 .. code-block:: none

@@ -1,0 +1,4 @@
+Operation
+==========
+
+.. autoclass:: ramose.Operation

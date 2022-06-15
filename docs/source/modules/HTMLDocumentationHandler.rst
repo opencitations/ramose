@@ -1,0 +1,4 @@
+HTMLDocumentationHandler
+==========================
+
+.. autoclass:: ramose.HTMLDocumentationHandler

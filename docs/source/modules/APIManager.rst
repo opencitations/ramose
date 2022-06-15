@@ -1,0 +1,4 @@
+APIManager
+==========
+
+.. autoclass:: ramose.APIManager

@@ -1,0 +1,5 @@
+DocumentationHandler
+=====================
+
+.. autoclass:: ramose.DocumentationHandler
+

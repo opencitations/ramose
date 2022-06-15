@@ -1,0 +1,4 @@
+HashFormatHandler
+==================
+
+.. autoclass:: ramose.HashFormatHandler
