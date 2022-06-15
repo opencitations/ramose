@@ -23,7 +23,7 @@ Restful API Manager Over SPARQL Endpoints (RAMOSE) is an application that allows
 
 ### Requirements
 
-RAMOSE is developed in Python 3.8. To install dependencies use: `pip3 install -r requirements.txt` (see [requirements.txt](https://github.com/opencitations/ramose/blob/master/requirements.txt) for details).
+RAMOSE is compatible to Python 3.7 to 3.10. To install RAMOSE use: `pip install ramose` or `pip3 install ramose`. You can find the documentation [here](https://ramose.readthedocs.io/en/latest/).
 
 ### Arguments
 
@@ -107,7 +107,7 @@ In the other section(s) of the specification file is detailed the behaviour of t
 #type operation                             _the type of section_
 #<var> <var_validator>                      _optional validator of input variable_
 #preprocess <preprocess_operations>         _methods for preprocessing defined in addon file_
-#postprocess <postprocess_operations>       _methods for preprocessing defined in addon file_
+#postprocess <postprocess_operations>       _methods for postprocessing defined in addon file_
 #method <get|post>
 #description <operation_description>        
 #call <example_request_call>
