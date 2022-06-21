@@ -127,15 +127,7 @@ class TestCalls(unittest.TestCase):
                     tentative +=1 
             for i in range(len(res)):
                 with self.subTest(i=i):
-                    test = set(res[i]['citation'].split('; '))
-                    cfr = set(self.get_params_require[i]['citation'].split('; '))
-                    self.assertEqual(test, cfr)
-                with self.subTest(i=i):
-                    test = set(res[i]['reference'].split('; '))
-                    cfr = set(self.get_params_require[i]['reference'].split('; '))
-                    self.assertEqual(test, cfr)
-                with self.subTest(i=i):
-                    for el in ['citation', 'reference']:
+                    for el in ['citation', 'reference', 'citation_count']:
                         res[i].pop(el)
                         self.get_params_require[i].pop(el)
                     self.assertEqual(res[i], self.get_params_require[i])
