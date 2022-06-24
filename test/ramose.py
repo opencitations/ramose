@@ -66,6 +66,7 @@ class HashFormatHandler(object):
         This method takes in input a path of a file containing a document specified in
         Hash Format, and returns its representation as list of dictionaries.
         """
+        
         result = []
 
         with open(file_path, "r", newline=None, encoding='utf8') as f:
@@ -117,6 +118,7 @@ class DocumentationHandler(object):
         This class provides the main structure for returning a human-readable documentation of all
         the operations described in the configuration files handled by the APIManager specified as input.
         """
+
         self.conf_doc = api_manager.all_conf
 
     @abstractmethod
@@ -125,6 +127,7 @@ class DocumentationHandler(object):
         An abstract method that returns a string defining the human-readable documentation of the operations
         available in the input APIManager.
         """
+
         pass
 
     @abstractmethod
@@ -133,6 +136,7 @@ class DocumentationHandler(object):
         An abstract method that store in the input file path (parameter 'file_path') the human-readable
         documentation of the operations available in the input APIManager.
         """
+
         pass
 
     @abstractmethod
@@ -141,6 +145,7 @@ class DocumentationHandler(object):
         An abstract method that returns a string defining the index of all the various configuration files
         handled by the input APIManager.
         """
+
         pass
 
 class HTMLDocumentationHandler(DocumentationHandler):
@@ -149,12 +154,14 @@ class HTMLDocumentationHandler(DocumentationHandler):
         """
         This method returns the title string defined in the API specification.
         """
+
         return conf["conf_json"][0]["title"]
 
     def __sidebar(self, conf):
         """
         This method builds the sidebar of the API documentation
         """
+
         result = ""
 
         i = conf["conf_json"][0]
@@ -227,7 +234,10 @@ Example: `<api_operation_url>?require=doi&filter=date:>2015&sort=desc(date)`."""
         return markdown(result)
 
     def __operations(self, conf):
-        """This method returns the description of all the operations defined in the API."""
+        """
+        This method returns the description of all the operations defined in the API.
+        """
+
         result = """## Operations [back to top](#toc)
 The operations that this API implements are:
 """
@@ -264,6 +274,7 @@ The operations that this API implements are:
         """
         This method returns the footer of the API documentation.
         """
+
         result = """This API and the related documentation has been created with <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE</a>, the *Restful API Manager Over SPARQL Endpoints*, developed by <a href="http://orcid.org/0000-0003-0530-4305" target="_blank">Silvio Peroni</a> and <a href="https://marilenadaquino.github.io">Marilena Daquino</a>."""
         return markdown(result)
 
@@ -666,12 +677,14 @@ The operations that this API implements are:
         """
         Add link to a css file if specified in argument -css
         """
+
         return """<link rel="stylesheet" type="text/css" href='"""+css_path+"""'>""" if css_path else ""
 
     def logger_ramose(self):
         """
         This method adds logging info to a local file
         """
+
         # logging
         logFormatter = logging.Formatter("[%(asctime)s] [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
         rootLogger = logging.getLogger()
@@ -689,6 +702,7 @@ The operations that this API implements are:
         This method reads logging info stored into a local file, so as to be browsed in the dashboard.
         Returns: the html including the list of URLs of current working APIs and basic logging info 
         """
+
         with open("ramose.log") as l_f:
             logs = ''.join(l_f.readlines())
         rev_list = set()
@@ -736,6 +750,7 @@ The operations that this API implements are:
         """
         This method generates the HTML documentation of an API described in configuration file.
         """
+
         if base_url is None:
             first_key = next(iter(self.conf_doc))
             conf = self.conf_doc[first_key]
@@ -794,6 +809,7 @@ The operations that this API implements are:
         """
         This method parses logs lines into structured data.
         """
+
         full_str = ''
         if len(l.split("- - ",1)) > 1:
             s = l.split("- - ",1)[1]
@@ -816,6 +832,7 @@ class DataType(object):
         the configuration file of RAMOSE. In particular, it provides methods for converting
         a string into the related Python data type representation.
         """
+
         self.func = {
             "str": DataType.str,
             "int": DataType.int,
@@ -828,6 +845,7 @@ class DataType(object):
         """
         This method returns the method for handling a given data type expressed as a string name.
         """
+
         return self.func.get(name_str)
 
     @staticmethod
@@ -838,6 +856,7 @@ class DataType(object):
         In case the input string is None or it is empty, an high duration value
         (i.e. 2000 years) is returned.
         """
+
         if s is None or s == "":
             d = parse_duration("P2000Y")
         else:
@@ -852,6 +871,7 @@ class DataType(object):
            (https://en.wikipedia.org/wiki/ISO_8601) from the input string. In case the input string is None or
            it is empty, a low date value (i.e. 0001-01-01) is returned.
            """
+
         default = datetime(1, 1, 1, 0, 0)
         if s is None or s == "":
             d = parse("0001-01-01", default=default)
@@ -866,6 +886,7 @@ class DataType(object):
         This method returns the data type for strings. In case the input string is None, an empty string
         is returned.
         """
+
         if s is None:
             l = ""
         else:
@@ -879,6 +900,7 @@ class DataType(object):
         This method returns the data type for integer numbers from the input string. In case the input string is
         None or it is empty, a low integer value is returned.
         """
+
         if s is None or s == "":
             i = -maxsize
         else:
@@ -892,6 +914,7 @@ class DataType(object):
         This method returns the data type for float numbers from the input string. In case the input string is 
         None or it is empty, a low float value is returned.
         """
+
         if s is None or s == "":
             f = float(-maxsize)
         else:
@@ -911,6 +934,7 @@ class Operation(object):
         to use for the SPARQL request (paramenter 'sparql_http_method', set to either 'get' or 'post'), and the path
         of the Python file which defines additional functions for use in the operation (parameter 'addon').
         """
+
         self.url_parsed = urlsplit(op_complete_url)
         self.op_url = self.url_parsed.path
         self.op = op_key
@@ -980,6 +1004,7 @@ class Operation(object):
         In case 'r' is specified (i.e. a row containing a set of results), then 'i' must be the index of the item
         within that row.
         """
+
         if r is None:
             return i[1]
         else:
@@ -995,6 +1020,7 @@ class Operation(object):
         In case 'r' is specified (i.e. a row containing a set of results), then 'i' must be the index of the item
         within that row.
         """
+
         if r is None:
             return i[0]
         else:
@@ -1006,6 +1032,7 @@ class Operation(object):
         This method returns a boolean that says if the two ranges (i.e. two pairs of integers) passed as inputs
         actually overlap one with the other.
         """
+
         r1_s, r1_e = r1
         r2_s, r2_e = r2
 
@@ -1018,6 +1045,7 @@ class Operation(object):
         specified following the chain indicated in 'key_list' is not found. It returns a list of all the
         values that matched with such search.
         """
+
         if prev is None:
             res = []
         else:
@@ -1049,6 +1077,7 @@ class Operation(object):
         In case the final object retrieved is a list, it selects the object in position 'idx' before the
         substitution.
         """
+
         key_list_len = len(key_list)
 
         if key_list_len >= 1:
@@ -1110,6 +1139,7 @@ class Operation(object):
         Each of the specified rules is applied in order, and it works on the JSON structure returned after
         the execution of the previous rule.
         """
+
         if "json" in params:
             fields = params["json"]
             for field in fields:
