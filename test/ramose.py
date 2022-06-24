@@ -46,7 +46,8 @@ FIELD_TYPE_RE = "([^\(\s]+)\(([^\)]+)\)"
 PARAM_NAME = "{([^{}\(\)]+)}"
 
 class HashFormatHandler(object):
-    """This class creates an object capable to read files stored in Hash Format (see
+    """
+    This class creates an object capable to read files stored in Hash Format (see
     https://github.com/opencitations/ramose#Hashformat-configuration-file). A Hash Format
     file (.hf) is a specification file that includes information structured using the following
     syntax:
@@ -57,11 +58,14 @@ class HashFormatHandler(object):
     #<field_name_3> <field_value_3>
     [...]
     #<field_name_n> <field_value_n>
-    ```"""
+    ```
+    """
 
     def read(self, file_path):
-        """This method takes in input a path of a file containing a document specified in
-        Hash Format, and returns its representation as list of dictionaries."""
+        """
+        This method takes in input a path of a file containing a document specified in
+        Hash Format, and returns its representation as list of dictionaries.
+        """
         result = []
 
         with open(file_path, "r", newline=None, encoding='utf8') as f:
@@ -109,36 +113,48 @@ class HashFormatHandler(object):
 
 class DocumentationHandler(object):
     def __init__(self, api_manager):
-        """This class provides the main structure for returning a human-readable documentation of all
-        the operations described in the configuration files handled by the APIManager specified as input."""
+        """
+        This class provides the main structure for returning a human-readable documentation of all
+        the operations described in the configuration files handled by the APIManager specified as input.
+        """
         self.conf_doc = api_manager.all_conf
 
     @abstractmethod
     def get_documentation(self, *args, **dargs):
-        """An abstract method that returns a string defining the human-readable documentation of the operations
-        available in the input APIManager."""
+        """
+        An abstract method that returns a string defining the human-readable documentation of the operations
+        available in the input APIManager.
+        """
         pass
 
     @abstractmethod
     def store_documentation(self, file_path, *args, **dargs):
-        """An abstract method that store in the input file path (parameter 'file_path') the human-readable
-        documentation of the operations available in the input APIManager."""
+        """
+        An abstract method that store in the input file path (parameter 'file_path') the human-readable
+        documentation of the operations available in the input APIManager.
+        """
         pass
 
     @abstractmethod
     def get_index(self, *args, **dargs):
-        """An abstract method that returns a string defining the index of all the various configuration files
-        handled by the input APIManager."""
+        """
+        An abstract method that returns a string defining the index of all the various configuration files
+        handled by the input APIManager.
+        """
         pass
 
 class HTMLDocumentationHandler(DocumentationHandler):
     # HTML documentation: START
     def __title(self, conf):
-        """This method returns the title string defined in the API specification."""
+        """
+        This method returns the title string defined in the API specification.
+        """
         return conf["conf_json"][0]["title"]
 
     def __sidebar(self, conf):
-        """This method builds the sidebar of the API documentation"""
+        """
+        This method builds the sidebar of the API documentation
+        """
         result = ""
 
         i = conf["conf_json"][0]
@@ -159,7 +175,9 @@ class HTMLDocumentationHandler(DocumentationHandler):
         return result
 
     def __header(self, conf):
-        """This method builds the header of the API documentation"""
+        """
+        This method builds the header of the API documentation
+        """
         result = ""
 
         i = conf["conf_json"][0]
@@ -243,7 +261,9 @@ The operations that this API implements are:
         return markdown(result) + ops
 
     def __footer(self):
-        """This method returns the footer of the API documentation."""
+        """
+        This method returns the footer of the API documentation.
+        """
         result = """This API and the related documentation has been created with <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE</a>, the *Restful API Manager Over SPARQL Endpoints*, developed by <a href="http://orcid.org/0000-0003-0530-4305" target="_blank">Silvio Peroni</a> and <a href="https://marilenadaquino.github.io">Marilena Daquino</a>."""
         return markdown(result)
 
@@ -643,11 +663,15 @@ The operations that this API implements are:
         """
 
     def __css_path(self, css_path=None):
-        """Add link to a css file if specified in argument -css"""
+        """
+        Add link to a css file if specified in argument -css
+        """
         return """<link rel="stylesheet" type="text/css" href='"""+css_path+"""'>""" if css_path else ""
 
     def logger_ramose(self):
-        """This method adds logging info to a local file"""
+        """
+        This method adds logging info to a local file
+        """
         # logging
         logFormatter = logging.Formatter("[%(asctime)s] [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
         rootLogger = logging.getLogger()
@@ -661,8 +685,10 @@ The operations that this API implements are:
         rootLogger.addHandler(consoleHandler)
 
     def __parse_logger_ramose(self):
-        """This method reads logging info stored into a local file, so as to be browsed in the dashboard.
-        Returns: the html including the list of URLs of current working APIs and basic logging info """
+        """
+        This method reads logging info stored into a local file, so as to be browsed in the dashboard.
+        Returns: the html including the list of URLs of current working APIs and basic logging info 
+        """
         with open("ramose.log") as l_f:
             logs = ''.join(l_f.readlines())
         rev_list = set()
@@ -707,7 +733,9 @@ The operations that this API implements are:
         return html
 
     def get_documentation(self, css_path=None, base_url=None):
-        """This method generates the HTML documentation of an API described in configuration file."""
+        """
+        This method generates the HTML documentation of an API described in configuration file.
+        """
         if base_url is None:
             first_key = next(iter(self.conf_doc))
             conf = self.conf_doc[first_key]
@@ -732,8 +760,10 @@ The operations that this API implements are:
 </html>""" % (self.__title(conf), self.__css(), self.__css_path(css_path), self.__sidebar(conf), self.__header(conf), self.__operations(conf), self.__footer())
 
     def get_index(self, css_path=None):
-        """This method generates the index of all the HTML documentations that can be
-        created from the configuration file."""
+        """
+        This method generates the index of all the HTML documentations that can be
+        created from the configuration file.
+        """
 
         return """
             <!doctype html>
@@ -753,13 +783,17 @@ The operations that this API implements are:
         """ % (self.__css(), self.__css_path(css_path), self.__parse_logger_ramose(), self.__footer())
 
     def store_documentation(self, file_path, css_path=None):
-        """This method stores the HTML documentation of an API in a file."""
+        """
+        This method stores the HTML documentation of an API in a file.
+        """
         html = self.get_documentation(css_path)[1]
         with open(file_path, "w+", encoding='utf8') as f:
             f.write(html)
 
     def clean_log(self, l, api_url):
-        """This method parses logs lines into structured data."""
+        """
+        This method parses logs lines into structured data.
+        """
         full_str = ''
         if len(l.split("- - ",1)) > 1:
             s = l.split("- - ",1)[1]
@@ -775,10 +809,13 @@ The operations that this API implements are:
 
 
 class DataType(object):
+
     def __init__(self):
-        """This class implements all the possible data types that can be used within
+        """
+        This class implements all the possible data types that can be used within
         the configuration file of RAMOSE. In particular, it provides methods for converting
-        a string into the related Python data type representation."""
+        a string into the related Python data type representation.
+        """
         self.func = {
             "str": DataType.str,
             "int": DataType.int,
@@ -788,15 +825,19 @@ class DataType(object):
         }
 
     def get_func(self, name_str):
-        """This method returns the method for handling a given data type expressed as a string name."""
+        """
+        This method returns the method for handling a given data type expressed as a string name.
+        """
         return self.func.get(name_str)
 
     @staticmethod
     def duration(s):
-        """This method returns the data type for durations according to the XML Schema
+        """
+        This method returns the data type for durations according to the XML Schema
         Recommendation (https://www.w3.org/TR/xmlschema11-2/#duration) from the input string.
         In case the input string is None or it is empty, an high duration value
-        (i.e. 2000 years) is returned."""
+        (i.e. 2000 years) is returned.
+        """
         if s is None or s == "":
             d = parse_duration("P2000Y")
         else:
@@ -806,9 +847,11 @@ class DataType(object):
 
     @staticmethod
     def datetime(s):
-        """This method returns the data type for datetime according to the ISO 8601
+        """
+        This method returns the data type for datetime according to the ISO 8601
            (https://en.wikipedia.org/wiki/ISO_8601) from the input string. In case the input string is None or
-           it is empty, a low date value (i.e. 0001-01-01) is returned."""
+           it is empty, a low date value (i.e. 0001-01-01) is returned.
+           """
         default = datetime(1, 1, 1, 0, 0)
         if s is None or s == "":
             d = parse("0001-01-01", default=default)
@@ -819,8 +862,10 @@ class DataType(object):
 
     @staticmethod
     def str(s):
-        """This method returns the data type for strings. In case the input string is None, an empty string
-        is returned."""
+        """
+        This method returns the data type for strings. In case the input string is None, an empty string
+        is returned.
+        """
         if s is None:
             l = ""
         else:
@@ -830,8 +875,10 @@ class DataType(object):
 
     @staticmethod
     def int(s):
-        """This method returns the data type for integer numbers from the input string. In case the input string is
-        None or it is empty, a low integer value is returned."""
+        """
+        This method returns the data type for integer numbers from the input string. In case the input string is
+        None or it is empty, a low integer value is returned.
+        """
         if s is None or s == "":
             i = -maxsize
         else:
@@ -841,8 +888,10 @@ class DataType(object):
 
     @staticmethod
     def float(s):
-        """This method returns the data type for float numbers from the input string. In case the input string is
-            None or it is empty, a low float value is returned."""
+        """
+        This method returns the data type for float numbers from the input string. In case the input string is 
+        None or it is empty, a low float value is returned.
+        """
         if s is None or s == "":
             f = float(-maxsize)
         else:
@@ -853,13 +902,15 @@ class DataType(object):
 
 class Operation(object):
     def __init__(self, op_complete_url, op_key, i, tp, sparql_http_method, addon):
-        """ This class is responsible for materialising a API operation to be run against a SPARQL endpoint.
+        """ 
+        This class is responsible for materialising a API operation to be run against a SPARQL endpoint.
 
         It takes in input a full URL referring to a call to an operation (parameter 'op_complete_url'),
         the particular shape representing an operation (parameter 'op_key'), the definition (in JSON) of such
         operation (parameter 'i'), the URL of the triplestore to contact (parameter 'tp'), the HTTP method
         to use for the SPARQL request (paramenter 'sparql_http_method', set to either 'get' or 'post'), and the path
-        of the Python file which defines additional functions for use in the operation (parameter 'addon')."""
+        of the Python file which defines additional functions for use in the operation (parameter 'addon').
+        """
         self.url_parsed = urlsplit(op_complete_url)
         self.op_url = self.url_parsed.path
         self.op = op_key
@@ -879,8 +930,10 @@ class Operation(object):
     # START: Ancillary methods
     @staticmethod
     def get_content_type(ct):
-        """It returns the mime type of a given textual representation of a format, being it either
-        'csv' or 'json."""
+        """
+        It returns the mime type of a given textual representation of a format, being it either
+        'csv' or 'json.
+        """
         content_type = ct
 
         if ct == "csv":
@@ -892,8 +945,10 @@ class Operation(object):
 
     @staticmethod
     def conv(s, query_string, c_type="text/csv"):
-        """This method takes a string representing a CSV document and converts it in the requested format according
-        to what content type is specified as input."""
+        """
+        This method takes a string representing a CSV document and converts it in the requested format according
+        to what content type is specified as input.
+        """
 
         content_type = Operation.get_content_type(c_type)
 
@@ -919,10 +974,12 @@ class Operation(object):
 
     @staticmethod
     def pv(i, r=None):
-        """This method returns the plain value of a particular item 'i' of the result returned by the SPARQL query.
+        """
+        This method returns the plain value of a particular item 'i' of the result returned by the SPARQL query.
 
         In case 'r' is specified (i.e. a row containing a set of results), then 'i' must be the index of the item
-        within that row."""
+        within that row.
+        """
         if r is None:
             return i[1]
         else:
@@ -930,12 +987,14 @@ class Operation(object):
 
     @staticmethod
     def tv(i, r=None):
-        """This method returns the typed value of a particular item 'i' of the result returned by the SPARQL query.
+        """
+        This method returns the typed value of a particular item 'i' of the result returned by the SPARQL query.
         The type associated to that value is actually specified by means of the particular configuration provided
         in the specification file of the API - field 'field_type'.
 
         In case 'r' is specified (i.e. a row containing a set of results), then 'i' must be the index of the item
-        within that row."""
+        within that row.
+        """
         if r is None:
             return i[0]
         else:
@@ -943,8 +1002,10 @@ class Operation(object):
 
     @staticmethod
     def do_overlap(r1, r2):
-        """This method returns a boolean that says if the two ranges (i.e. two pairs of integers) passed as inputs
-        actually overlap one with the other."""
+        """
+        This method returns a boolean that says if the two ranges (i.e. two pairs of integers) passed as inputs
+        actually overlap one with the other.
+        """
         r1_s, r1_e = r1
         r2_s, r2_e = r2
 
@@ -952,9 +1013,11 @@ class Operation(object):
 
     @staticmethod
     def get_item_in_dict(d_or_l, key_list, prev=None):
-        """This method takes as input a dictionary or a list of dictionaries and browses it until the value
+        """
+        This method takes as input a dictionary or a list of dictionaries and browses it until the value
         specified following the chain indicated in 'key_list' is not found. It returns a list of all the
-        values that matched with such search."""
+        values that matched with such search.
+        """
         if prev is None:
             res = []
         else:
@@ -980,10 +1043,12 @@ class Operation(object):
 
     @staticmethod
     def add_item_in_dict(d_or_l, key_list, item, idx):
-        """This method takes as input a dictionary or a list of dictionaries, browses it until the value
+        """
+        This method takes as input a dictionary or a list of dictionaries, browses it until the value
         specified following the chain indicated in 'key_list' is not found, and then substitutes it with 'item'.
         In case the final object retrieved is a list, it selects the object in position 'idx' before the
-        substitution."""
+        substitution.
+        """
         key_list_len = len(key_list)
 
         if key_list_len >= 1:
@@ -1004,7 +1069,8 @@ class Operation(object):
 
     @staticmethod
     def structured(params, json_table):
-        """This method checks if there are particular transformation rules specified in 'params' for a JSON output,
+        """
+        This method checks if there are particular transformation rules specified in 'params' for a JSON output,
         and convert each row of the input table ('json_table') according to these rules.
         There are two specific rules that can be applied:
 
@@ -1042,7 +1108,8 @@ class Operation(object):
         ]
 
         Each of the specified rules is applied in order, and it works on the JSON structure returned after
-        the execution of the previous rule."""
+        the execution of the previous rule.
+        """
         if "json" in params:
             fields = params["json"]
             for field in fields:
@@ -1079,7 +1146,8 @@ class Operation(object):
 
     # START: Processing methods
     def preprocess(self, par_dict, op_item, addon):
-        """This method takes the a dictionary of parameters with the current typed values associated to them and
+        """
+        This method takes the a dictionary of parameters with the current typed values associated to them and
         the item of the API specification defining the behaviour of that operation, and preprocesses the parameters
         according to the functions specified in the '#preprocess' field (e.g. "#preprocess lower(doi)"), which is
         applied to the specified parameters as input of the function in consideration (e.g.
@@ -1090,7 +1158,8 @@ class Operation(object):
         of the function f_i+1.
 
         Finally, it is worth mentioning that all the functions specified in the "#preprocess" field must return
-        a tuple of values defining how the particular value passed in the dictionary must be changed."""
+        a tuple of values defining how the particular value passed in the dictionary must be changed.
+        """
         result = par_dict
 
         if "preprocess" in op_item:
@@ -1114,7 +1183,8 @@ class Operation(object):
         return result
 
     def postprocess(self, res, op_item, addon):
-        """This method takes the result table returned by running the SPARQL query in an API operation (specified
+        """
+        This method takes the result table returned by running the SPARQL query in an API operation (specified
         as input) and change some of such results according to the functions specified in the '#postprocess'
         field (e.g. "#postprocess remove_date("2018")"). These functions can take parameters as input, while the first
         unspecified parameters will be always the result table. It is worth mentioning that this result table (i.e.
@@ -1131,7 +1201,8 @@ class Operation(object):
         Note that the typed value and the plain value of each cell can be selected by using the methods "tv" and "pv"
         respectively. In addition, it is possible to run multiple functions sequentially by concatenating them
         with "-->" in the API specification document. In this case the output of the function f_i will becomes
-        the input result table of the function f_i+1."""
+        the input result table of the function f_i+1.
+        """
         result = res
 
         if "postprocess" in op_item:
@@ -1152,7 +1223,8 @@ class Operation(object):
         return result
 
     def handling_params(self, params, table):
-        """This method is used for filtering the results that are returned after the post-processing
+        """
+        This method is used for filtering the results that are returned after the post-processing
         phase. In particular, it is possible to:
 
         1. [require=<field_name>] exclude all the rows that have an empty value in the field specified - e.g. the
@@ -1243,9 +1315,11 @@ class Operation(object):
         return [header] + result
 
     def type_fields(self, res, op_item):
-        """It creates a version of the results 'res' that adds, to each value of the fields, the same value interpreted
+        """
+        It creates a version of the results 'res' that adds, to each value of the fields, the same value interpreted
         with the type specified in the specification file (field 'field_type'). Note that 'str' is used as default in
-        case no further specifications are provided."""
+        case no further specifications are provided.
+        """
         result = []
         cast_func = {}
         header = res[0]
@@ -1279,7 +1353,8 @@ class Operation(object):
         return result
 
     def exec(self, method="get", content_type="application/json"):
-        """This method takes in input the the HTTP method to use for the call
+        """
+        This method takes in input the the HTTP method to use for the call
         and the content type to return, and execute the operation as indicated
         in the specification file, by running (in the following order):
 
@@ -1289,7 +1364,8 @@ class Operation(object):
         4. the methods to postprocess the result;
         5. the application of the filter to remove, filter, sort the result;
         6. the removal of the types added at the step 3, so as to have a data structure ready to be returned;
-        7. the conversion in the format requested by the user."""
+        7. the conversion in the format requested by the user.
+        """
         str_method = method.lower()
         m = self.i["method"].split()
 
@@ -1377,11 +1453,11 @@ class APIManager(object):
 
     # Constructor: START
     def __init__(self, conf_files):
-        """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
+        """
+        This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
         defined according to the Hash Format and following a particular structure, and stores all the operations
         defined within a dictionary. The structure of each item in the dictionary of the operations is defined as
         follows:
-
         {
             "/api/v1/references/(.+)": {
                 "sparql": "PREFIX ...",
@@ -1390,7 +1466,6 @@ class APIManager(object):
             },
             ...
         }
-
         In particular, each key in the dictionary identifies the full URL of a particular API operation, and it is
         used so as to understand with operation should be called once an API call is done. The object associated
         as value of this key is the transformation of the related operation defined in the input Hash Format file
@@ -1398,7 +1473,9 @@ class APIManager(object):
 
         In addition, it also defines additional structure, such as the functions to be used for interpreting the
         values returned by a SPARQL query, some operations that can be used for filtering the results, and the
-        HTTP methods to call for making the request to the SPARQL endpoint specified in the configuration file."""
+        HTTP methods to call for making the request to the SPARQL endpoint specified in the configuration file.
+        """
+
         APIManager.__max_size_csv()
 
         self.all_conf = OrderedDict()
@@ -1439,13 +1516,15 @@ class APIManager(object):
     # START: Ancillary methods
     @staticmethod
     def nor_api_url(i, b=""):
-        """This method takes an API operation object and an optional base URL (e.g. "/api/v1") as input
+        """
+        This method takes an API operation object and an optional base URL (e.g. "/api/v1") as input
         and returns the URL composed by the base URL plus the API URL normalised according to specific rules. In
         particular, these normalisation rules takes the operation URL (e.g. "#url /citations/{oci}") and the
         specification of the shape of all the parameters between brackets in the URL (e.g. "#oci str([0-9]+-[0-9]+)"),
         and returns a new operation URL where the parameters have been substituted with the regular expressions
         defining them (e.g. "/citations/([0-9]+-[0-9]+)"). This URL will be used by RAMOSE for matching the
-        particular API calls with the specific operation to execute."""
+        particular API calls with the specific operation to execute.
+        """
         result = i["url"]
 
         for term in findall(PARAM_NAME, result):
@@ -1458,8 +1537,10 @@ class APIManager(object):
         return "%s%s" % (b, result)
 
     def best_match(self, u):
-        """This method takes an URL of an API call in input and find the API operation URL and the related
-        configuration that best match with the API call, if any."""
+        """
+        This method takes an URL of an API call in input and find the API operation URL and the related
+        configuration that best match with the API call, if any.
+        """
         #u = u.decode('UTF8') if isinstance(u, (bytes, bytearray)) else u
         cur_u = sub("\?.*$", "", u)
         result = None, None
@@ -1475,10 +1556,12 @@ class APIManager(object):
 
     # START: Processing methods
     def get_op(self, op_complete_url):
-        """This method returns a new object of type Operation which represent the operation specified by
+        """
+        This method returns a new object of type Operation which represent the operation specified by
         the input URL (parameter 'op_complete_url)'. In case no operation can be found according by checking
         the configuration files available in the APIManager, a tuple with an HTTP error code and a message
-        is returned instead."""
+        is returned instead.
+        """
         url_parsed = urlsplit(op_complete_url)
         op_url = url_parsed.path
 
