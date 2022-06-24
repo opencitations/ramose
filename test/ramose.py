@@ -66,7 +66,7 @@ class HashFormatHandler(object):
         This method takes in input a path of a file containing a document specified in
         Hash Format, and returns its representation as list of dictionaries.
         """
-        
+
         result = []
 
         with open(file_path, "r", newline=None, encoding='utf8') as f:
@@ -185,6 +185,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
         """
         This method builds the header of the API documentation
         """
+
         result = ""
 
         i = conf["conf_json"][0]
@@ -214,6 +215,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
         return markdown(result)
 
     def __parameters(self):
+
         result = """## <a id="parameters"></a>Parameters [back to top](#toc)
 
 Parameters can be used to filter and control the results returned by the API. They are passed as normal HTTP parameters in the URL of the call. They are:
@@ -801,6 +803,7 @@ The operations that this API implements are:
         """
         This method stores the HTML documentation of an API in a file.
         """
+
         html = self.get_documentation(css_path)[1]
         with open(file_path, "w+", encoding='utf8') as f:
             f.write(html)
