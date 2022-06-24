@@ -46,7 +46,7 @@ Example:
 
 .. code-block:: none
 
-        #type api: The type of section (it needs to be api here)
+    #type api: The type of section (it needs to be api here)
 
 Example:
 
@@ -103,7 +103,7 @@ Example:
 Example:
 
 .. code-block:: none
-
+    
     #description This API provides access to the OpenCitations Corpus.
 
 #version
