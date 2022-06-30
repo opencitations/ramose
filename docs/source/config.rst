@@ -257,9 +257,39 @@ Example:
 
 .. code-block:: none
 
-    #postprocess postprocess_oci(oci) --> another_process(oci)
+    #postprocess split_dois(dois)
     or
-    #postprocess postprocess_metadata(doi)
+    #postprocess distinct()
+
+The preprocess functions should return a tuple explain a tuple of values defining how the particular value passed in the dictionary must be changed.
+The postprocess functions should return a tuple having as second element a boolean for whether the function should return the type of value specified.
+Example of a preprocess and postprocess functions:
+
+.. code-block:: python
+    
+    #Preprocess
+    def split_dois(s):
+        return "\"%s\"" % "\" \"".join(s.split("__")),
+
+    #Postprocess
+    def distinct(res):
+        header = res[0]
+        doi_field = header.index("doi")
+        result = [header]
+
+        dois = set()
+        for row in res[1:]:
+            cur_doi = row[doi_field]
+            if cur_doi not in dois:
+                dois.add(cur_doi)
+                result.append(row)
+
+        return result, True
+
+    
+
+
+
 
 #method
 

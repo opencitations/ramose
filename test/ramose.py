@@ -1235,7 +1235,10 @@ class Operation(object):
         respectively. In addition, it is possible to run multiple functions sequentially by concatenating them
         with "-->" in the API specification document. In this case the output of the function f_i will becomes
         the input result table of the function f_i+1.
+
+        The postprocess function should output a tuple containing the result and whether the function needs to return the type of values in the result.
         """
+
         result = res
 
         if "postprocess" in op_item:
@@ -1388,7 +1391,7 @@ class Operation(object):
     def exec(self, method="get", content_type="application/json"):
         """
         This method takes in input the the HTTP method to use for the call
-        and the content type to return, and execute the operation as indicated
+        and the content type to return, and executes the operation as indicated
         in the specification file, by running (in the following order):
 
         1. the methods to preprocess the query;
@@ -1471,7 +1474,9 @@ class Operation(object):
 
 
 class APIManager(object):
+
     # Fixing max size for CSV
+
     @staticmethod
     def __max_size_csv():
         from sys import maxsize
@@ -1485,7 +1490,9 @@ class APIManager(object):
                 maxInt = int(maxInt/10)
 
     # Constructor: START
+    
     def __init__(self, conf_files):
+        
         """
         This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
         defined according to the Hash Format and following a particular structure, and stores all the operations

@@ -225,6 +225,8 @@ These functions can take parameters as input, while the first unspecified parame
 ```
 
 In addition, it is possible to run multiple functions sequentially by concatenating them with `"-->"` in the API specification document. In this case the output of the function `f_i` will becomes the input result table of the function `f_i+1`.
+ 
+The postprocess function should output a tuple containing the result and whether the function needs to return the type of values in the result.
 
 ## Run RAMOSE
 
@@ -319,10 +321,10 @@ call_1 = "%s/%s/%s" % (api_base_1, operation_url_1, request)
 call_2 = "%s/%s/%s" % (api_base_2, operation_url_2, request)
 
 op1 = api_manager.get_op(call_1)
-status1, result1 = op1.exec()
+status1, result1, result_format1  = op1.exec()
 
 op2 = api_manager.get_op(call_2)
-status2, result2 = op2.exec()
+status2, result2, result_format2 = op2.exec()
 ```
 
 ## Other functionalities and examples
