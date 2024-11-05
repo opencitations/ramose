@@ -1,9 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020
-# Silvio Peroni <essepuntato@gmail.com>
-# Marilena Daquino <marilena.daquino2@unibo.it>
-# Davide Brembilla <davide.brembilla98@gmail.com>
+# Silvio Peroni <essepuntato@gmail.com>
+# Marilena Daquino <marilena.daquino2@unibo.it>
 #
 # Permission to use, copy, modify, and/or distribute this software for any purpose
 # with or without fee is hereby granted, provided that the above copyright notice
@@ -13,11 +12,16 @@
 # REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
 # FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT,
 # OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-# DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+# DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
 # ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
 # SOFTWARE.
 
-__author__ = "essepuntato"
+# RAMOSE v1.1
+# Ivan Heibi <ivan.heibi2@unibo.it>
+# [+] The preprocessing operation can output a list of values, this means Ramose will perform multiple sequential SPARQL queries (using the SPARQL query defined for that operation).
+# The marge of the final result is performed by the post processing operation. (e.g., see /venue-citation-count in indexapi_v2.py)
+
+__author__ = 'essepuntato'
 
 from abc import abstractmethod
 from re import search, DOTALL, findall, sub, match, split
@@ -37,11 +41,9 @@ from isodate import parse_duration
 from argparse import ArgumentParser
 from os.path import abspath, dirname, basename
 from os import path as pt
-import logging
 from os import sep, getcwd
-import logging
-from flask import Flask, request, make_response, send_from_directory
-from werkzeug.exceptions import HTTPException
+from itertools import product
+
 
 FIELD_TYPE_RE = "([^\(\s]+)\(([^\)]+)\)"
 PARAM_NAME = "{([^{}\(\)]+)}"
@@ -66,7 +68,7 @@ class HashFormatHandler(object):
         Hash Format, and returns its representation as list of dictionaries."""
         result = []
 
-        with open(file_path, "r", newline=None, encoding="utf8") as f:
+        with open(file_path, "r", newline=None) as f:
             first_field_name = None
             cur_object = None
             cur_field_name = None
@@ -156,15 +158,9 @@ class HTMLDocumentationHandler(DocumentationHandler):
             </li>
             <li><a class="btn active" href="/">HOME</a></li>
         </ul>
-        """ % (
-            i["title"],
-            "".join(
-                [
-                    "<li><a class='btn' href='#%s'>%s</a></li>" % (op["url"], op["url"])
-                    for op in conf["conf_json"][1:]
-                ]
-            ),
-        )
+        """ % \
+            (i["title"], "".join(["<li><a class='btn' href='#%s'>%s</a></li>" % (op["url"], op["url"])
+                                  for op in conf["conf_json"][1:]]))
         return result
 
     def __header(self, conf):
@@ -174,7 +170,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
         i = conf["conf_json"][0]
         result += """
 <a id='toc'></a>
-# %s
+# %s
 
 **Version:** %s <br/>
 **API URL:** <a href="%s">%s</a><br/>
@@ -187,16 +183,10 @@ class HTMLDocumentationHandler(DocumentationHandler):
 
 %s
 
-%s""" % (
-            i["title"],
-            i["version"],
-            i["base"] + i["url"],
-            i["base"] + i["url"],
-            i["contacts"],
-            i["license"],
-            i["description"],
-            self.__parameters(),
-        )
+%s""" % \
+                  (i["title"], i["version"], i["base"] + i["url"], i["base"] + i["url"],  i["contacts"], i["license"],
+
+                   i["description"], self.__parameters())
         # (i["title"], i["version"], i["base"] + i["url"], i["base"] + i["url"], i["contacts"], i["contacts"], i["license"],
         #  "".join(["<li>[%s](#%s): %s</li>" % (op["url"], op["url"], op["description"].split("\n")[0])
         #           for op in self.conf_json[1:]]),
@@ -236,17 +226,13 @@ The operations that this API implements are:
                 p_type = "str"
                 p_shape = ".+"
                 if p in op:
-                    p_type, p_shape = findall("^\s*([^\(]+)\((.+)\)\s*$", op[p])[0]
+                    p_type, p_shape = findall(
+                        "^\s*([^\(]+)\((.+)\)\s*$", op[p])[0]
 
                 params.append(
-                    "<em>%s</em>: type <em>%s</em>, regular expression shape <code>%s</code>"
-                    % (p, p_type, p_shape)
-                )
-            result += "\n* [%s](#%s): %s" % (
-                op["url"],
-                op["url"],
-                op["description"].split("\n")[0],
-            )
+                    "<em>%s</em>: type <em>%s</em>, regular expression shape <code>%s</code>" % (p, p_type, p_shape))
+            result += "\n* [%s](#%s): %s" % (op["url"],
+                                             op["url"], op["description"].split("\n")[0])
             ops += """<div id="%s">
 <h3>%s <a href="#operations">back to operations</a></h3>
 
@@ -257,22 +243,12 @@ The operations that this API implements are:
 <p class="attr"><strong>Result fields type</strong><span class="attr_val">%s</span></p>
 <p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="%s">%s</a></span></p>
 <p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
-<pre><code>%s</code></pre></div>""" % (
-                op["url"],
-                op["url"],
-                markdown(op["description"]),
-                ", ".join(split("\s+", op["method"].strip())),
-                "</li><li>".join(params),
-                ", ".join(
-                    [
-                        "%s <em>(%s)</em>" % (f, t)
-                        for t, f in findall(FIELD_TYPE_RE, op["field_type"])
-                    ]
-                ),
-                conf["website"] + conf["base_url"] + op["call"],
-                op["call"],
-                op["output_json"],
-            )
+<pre><code>%s</code></pre></div>""" % (op["url"], op["url"], markdown(op["description"]),
+                                       ", ".join(
+                                           split("\s+", op["method"].strip())), "</li><li>".join(params),
+                                       ", ".join(["%s <em>(%s)</em>" % (f, t) for t, f in
+                                                  findall(FIELD_TYPE_RE, op["field_type"])]),
+                                       conf["website"] + conf["base_url"] + op["call"], op["call"], op["output_json"])
         return markdown(result) + ops
 
     def __footer(self):
@@ -628,7 +604,7 @@ The operations that this API implements are:
           padding: 0.2em 0.5em;
           border-top: solid 1px #F8F8F8;
           }
-        
+        }
 
         .date_log , .method_log {
           color: grey;
@@ -677,18 +653,13 @@ The operations that this API implements are:
 
     def __css_path(self, css_path=None):
         """Add link to a css file if specified in argument -css"""
-        return (
-            """<link rel="stylesheet" type="text/css" href='""" + css_path + """'>"""
-            if css_path
-            else ""
-        )
+        return """<link rel="stylesheet" type="text/css" href='"""+css_path+"""'>""" if css_path else ""
 
     def logger_ramose(self):
         """This method adds logging info to a local file"""
         # logging
         logFormatter = logging.Formatter(
-            "[%(asctime)s] [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s"
-        )
+            "[%(asctime)s] [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
         rootLogger = logging.getLogger()
 
         fileHandler = logging.FileHandler("ramose.log")
@@ -701,16 +672,13 @@ The operations that this API implements are:
 
     def __parse_logger_ramose(self):
         """This method reads logging info stored into a local file, so as to be browsed in the dashboard.
-        Returns: the html including the list of URLs of current working APIs and basic logging info"""
+        Returns: the html including the list of URLs of current working APIs and basic logging info """
         with open("ramose.log") as l_f:
-            logs = "".join(l_f.readlines())
+            logs = ''.join(l_f.readlines())
         rev_list = set()
         rev_list_add = rev_list.add
-        rev_list = [
-            x
-            for x in list(reversed(logs.splitlines()))
-            if not (x in rev_list or rev_list_add(x))
-        ]
+        rev_list = [x for x in list(reversed(logs.splitlines())) if not (
+            x in rev_list or rev_list_add(x))]
 
         html = """
         <p></p>
@@ -721,10 +689,7 @@ The operations that this API implements are:
         for api_url, api_dict in self.conf_doc.items():
             html += """
                     <li><a class="btn active" href="%s">%s</a></li>
-                """ % (
-                api_url,
-                api_dict["conf_json"][0]["title"],
-            )
+                """ % (api_url, api_dict["conf_json"][0]["title"])
 
         html += """
             </ul>
@@ -733,14 +698,10 @@ The operations that this API implements are:
             <h1>API MONITORING</h1>"""
 
         for api_url, api_dict in self.conf_doc.items():
-            clean_list = [l for l in rev_list if api_url in l and "debug" not in l]
-            api_logs_list = "".join(
-                [
-                    "<p>" + self.clean_log(l, api_url) + "</p>"
-                    for l in clean_list
-                    if self.clean_log(l, api_url) != ""
-                ]
-            )
+            clean_list = [
+                l for l in rev_list if api_url in l and "debug" not in l]
+            api_logs_list = ''.join(["<p>"+self.clean_log(l, api_url)
+                                    + "</p>" for l in clean_list if self.clean_log(l, api_url) != ''])
             api_title = api_dict["conf_json"][0]["title"]
             html += """
                 <div class="info_api">
@@ -755,12 +716,7 @@ The operations that this API implements are:
                     </div>
 
                 </div>
-                """ % (
-                api_title,
-                api_url,
-                api_dict["tp"],
-                api_logs_list,
-            )
+                """ % (api_title, api_url, api_dict["tp"], api_logs_list)
         return html
 
     def get_documentation(self, css_path=None, base_url=None):
@@ -769,11 +725,9 @@ The operations that this API implements are:
             first_key = next(iter(self.conf_doc))
             conf = self.conf_doc[first_key]
         else:
-            conf = self.conf_doc["/" + base_url]
+            conf = self.conf_doc['/'+base_url]
 
-        return (
-            200,
-            """<!DOCTYPE html>
+        return 200, """<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <title>%s</title>
@@ -788,17 +742,7 @@ The operations that this API implements are:
         <section id="operations">%s</section>
         <footer>%s</footer>
     </body>
-</html>"""
-            % (
-                self.__title(conf),
-                self.__css(),
-                self.__css_path(css_path),
-                self.__sidebar(conf),
-                self.__header(conf),
-                self.__operations(conf),
-                self.__footer(),
-            ),
-        )
+</html>""" % (self.__title(conf), self.__css(), self.__css_path(css_path), self.__sidebar(conf), self.__header(conf), self.__operations(conf), self.__footer())
 
     def get_index(self, css_path=None):
         """This method generates the index of all the HTML documentations that can be
@@ -819,48 +763,27 @@ The operations that this API implements are:
                 <footer>%s</footer>
             </body>
             </html>
-        """ % (
-            self.__css(),
-            self.__css_path(css_path),
-            self.__parse_logger_ramose(),
-            self.__footer(),
-        )
+        """ % (self.__css(), self.__css_path(css_path), self.__parse_logger_ramose(), self.__footer())
 
     def store_documentation(self, file_path, css_path=None):
         """This method stores the HTML documentation of an API in a file."""
-        html = self.get_documentation(css_path)[1]
-        with open(file_path, "w+", encoding="utf8") as f:
+        html = self.get_documentation(css_path)
+        with open(file_path, "w") as f:
             f.write(html)
 
     def clean_log(self, l, api_url):
         """This method parses logs lines into structured data."""
-        full_str = ""
-        if len(l.split("- - ", 1)) > 1:
-            s = l.split("- - ", 1)[1]
-            date = s[s.find("[") + 1 : s.find("]")]
-            method = s.split('"')[1::2][0].split()[0]
-            cur_call = s.split('"')[1::2][0].split()[1].strip()
-            status = sub(r"\D+", "", s.split('"', 2)[2])
-
-            if cur_call != api_url + "/":
-                full_str = (
-                    "<span class='group_log'><span class='status_log code_"
-                    + status
-                    + "'>"
-                    + status
-                    + "</span>"
-                    + "<span class='date_log'>"
-                    + date
-                    + "</span><span class='method_log'>"
-                    + method
-                    + "</span></span>"
-                    + "<span class='group_log'><span class='call_log'><a href='"
-                    + cur_call
-                    + "' target='_blank'>"
-                    + cur_call
-                    + "</a></span></span>"
-                )
-
+        s = l.split("- - ", 1)[1]
+        date = s[s.find("[")+1:s.find("]")]
+        method = s.split('"')[1::2][0].split()[0]
+        cur_call = s.split('"')[1::2][0].split()[1].strip()
+        status = sub(r"\D+", "", s.split('"', 2)[2])
+        if cur_call != api_url+'/':
+            full_str = "<span class='group_log'><span class='status_log code_"+status+"'>"+status+"</span>"+"<span class='date_log'>"+date+"</span><span class='method_log'>" + \
+                method+"</span></span>"+"<span class='group_log'><span class='call_log'><a href='" + \
+                cur_call+"' target='_blank'>"+cur_call+"</a></span></span>"
+        else:
+            full_str = ''
         return full_str
 
 
@@ -874,7 +797,7 @@ class DataType(object):
             "int": DataType.int,
             "float": DataType.float,
             "duration": DataType.duration,
-            "datetime": DataType.datetime,
+            "datetime": DataType.datetime
         }
 
     def get_func(self, name_str):
@@ -897,8 +820,8 @@ class DataType(object):
     @staticmethod
     def datetime(s):
         """This method returns the data type for datetime according to the ISO 8601
-        (https://en.wikipedia.org/wiki/ISO_8601) from the input string. In case the input string is None or
-        it is empty, a low date value (i.e. 0001-01-01) is returned."""
+           (https://en.wikipedia.org/wiki/ISO_8601) from the input string. In case the input string is None or
+           it is empty, a low date value (i.e. 0001-01-01) is returned."""
         default = datetime(1, 1, 1, 0, 0)
         if s is None or s == "":
             d = parse("0001-01-01", default=default)
@@ -932,7 +855,7 @@ class DataType(object):
     @staticmethod
     def float(s):
         """This method returns the data type for float numbers from the input string. In case the input string is
-        None or it is empty, a low float value is returned."""
+            None or it is empty, a low float value is returned."""
         if s is None or s == "":
             f = float(-maxsize)
         else:
@@ -943,9 +866,8 @@ class DataType(object):
 
 class Operation(object):
     def __init__(self, op_complete_url, op_key, i, tp, sparql_http_method, addon):
-        """This class is responsible for materialising a API operation to be run against a SPARQL endpoint.
-
-        It takes in input a full URL referring to a call to an operation (parameter 'op_complete_url'),
+        """ This class is responsible for materialising a API operation to be run against a SPARQL endpoint.
+         It takes in input a full URL referring to a call to an operation (parameter 'op_complete_url'),
         the particular shape representing an operation (parameter 'op_key'), the definition (in JSON) of such
         operation (parameter 'i'), the URL of the triplestore to contact (parameter 'tp'), the HTTP method
         to use for the SPARQL request (paramenter 'sparql_http_method', set to either 'get' or 'post'), and the path
@@ -958,7 +880,11 @@ class Operation(object):
         self.sparql_http_method = sparql_http_method
         self.addon = addon
 
-        self.operation = {"=": eq, "<": lt, ">": gt}
+        self.operation = {
+            "=": eq,
+            "<": lt,
+            ">": gt
+        }
 
         self.dt = DataType()
 
@@ -1143,40 +1069,26 @@ class Operation(object):
                         for idx, v in enumerate(v_list):
                             if op_type == "array":
                                 if type(v) is str:
-                                    Operation.add_item_in_dict(
-                                        row,
-                                        keys,
-                                        v.split(separator) if v != "" else [],
-                                        idx,
-                                    )
+                                    Operation.add_item_in_dict(row, keys,
+                                                               v.split(separator) if v != "" else [], idx)
                             elif op_type == "dict":
                                 new_fields = entries[1:]
                                 new_fields_max_split = len(new_fields) - 1
                                 if type(v) is str:
                                     new_values = v.split(
-                                        separator, new_fields_max_split
-                                    )
-                                    Operation.add_item_in_dict(
-                                        row,
-                                        keys,
-                                        dict(zip(new_fields, new_values))
-                                        if v != ""
-                                        else {},
-                                        idx,
-                                    )
+                                        separator, new_fields_max_split)
+                                    Operation.add_item_in_dict(row, keys,
+                                                               dict(
+                                                                   zip(new_fields, new_values)) if v != "" else {},
+                                                               idx)
                                 elif type(v) is list:
                                     new_list = []
                                     for i in v:
-                                        new_values = i.split(
-                                            separator, new_fields_max_split
-                                        )
-                                        new_list.append(
-                                            dict(zip(new_fields, new_values))
-                                        )
+                                        new_values = i.split(separator, new_fields_max_split)
+                                        new_list.append(dict(zip(new_fields, new_values)))
                                     Operation.add_item_in_dict(row, keys, new_list, idx)
 
         return json_table
-
     # END: Ancillary methods
 
     # START: Processing methods
@@ -1197,9 +1109,7 @@ class Operation(object):
 
         if "preprocess" in op_item:
 
-            for pre in [
-                sub("\s+", "", i) for i in op_item["preprocess"].split(" --> ")
-            ]:
+            for pre in [sub("\s+", "", i) for i in op_item["preprocess"].split(" --> ")]:
                 func_name = sub("^([^\(\)]+)\(.+$", "\\1", pre).strip()
                 params_name = sub("^.+\(([^\(\)]+)\).*", "\\1", pre).split(",")
 
@@ -1245,9 +1155,7 @@ class Operation(object):
                 if param_str == "":
                     params_values = ()
                 else:
-                    params_values = next(
-                        reader(param_str.splitlines(), skipinitialspace=True)
-                    )
+                    params_values = next(reader(param_str.splitlines(), skipinitialspace=True))
 
                 func = getattr(addon, func_name)
                 func_params = (result,) + tuple(params_values)
@@ -1307,24 +1215,16 @@ class Operation(object):
                         tmp_result = []
                         for row in result:
                             v_result = Operation.tv(field_idx, row)
-                            v_to_compare = self.dt.get_func(type(v_result).__name__)(
-                                value
-                            )
+                            v_to_compare = self.dt.get_func(type(v_result).__name__)(value)
 
                             if self.operation[flag](v_result, v_to_compare):
                                 tmp_result.append(row)
                         result = tmp_result
 
                     else:
-                        result = list(
-                            filter(
-                                lambda i: search(
-                                    field_value.lower(),
-                                    Operation.pv(field_idx, i).lower(),
-                                ),
-                                result,
-                            )
-                        )
+                        result = list(filter(
+                            lambda i: search(field_value.lower(),
+                                             Operation.pv(field_idx, i).lower()), result))
                 except ValueError:
                     pass  # do nothing
 
@@ -1350,9 +1250,7 @@ class Operation(object):
                         desc_order = True if field_order == "desc" else False
 
                     field_idx = header.index(field_name)
-                    result = sorted(
-                        result, key=itemgetter(field_idx), reverse=desc_order
-                    )
+                    result = sorted(result, key=itemgetter(field_idx), reverse=desc_order)
                 except ValueError:
                     pass  # do nothing
 
@@ -1371,19 +1269,15 @@ class Operation(object):
         if "field_type" in op_item:
             for f, p in findall(FIELD_TYPE_RE, op_item["field_type"]):
                 cast_func[p] = self.dt.get_func(f)
-        first = True
+
         for row in res[1:]:
             new_row = []
             for idx in range(len(header)):
-
                 heading = header[idx]
                 cur_value = row[idx]
                 if type(cur_value) is tuple:
                     cur_value = cur_value[1]
-                if heading == "timespan" and first:
-                    first = False
                 new_row.append((cast_func[heading](cur_value), cur_value))
-
             result.append(new_row)
 
         return [header] + result
@@ -1428,85 +1322,100 @@ class Operation(object):
                         par_value = par_man[idx]
                     par_dict[par] = par_value
 
-                if self.addon is not None:
-                    self.preprocess(par_dict, self.i, self.addon)
+                self.preprocess(par_dict, self.i, self.addon)
 
-                query = self.i["sparql"]
-                for param in par_dict:
-                    query = query.replace("[[%s]]" % param, str(par_dict[param]))
+                # Handle in case the parameters are lists, we need to generate all possible combinations
+                par_dict =  { p_k: [par_dict[p_k]] if not isinstance(par_dict[p_k], list) else par_dict[p_k] for p_k in par_dict }
+                combinations = product(*par_dict.values())
 
-                if self.sparql_http_method == "get":
-                    r = get(
-                        self.tp + "?query=" + quote(query),
-                        headers={"Accept": "text/csv"},
-                    )
-                else:
-                    r = post(
-                        self.tp,
-                        data=query,
-                        headers={
-                            "Accept": "text/csv",
-                            "Content-Type": "application/sparql-query",
-                        },
-                    )
-                r.encoding = "utf-8"
-                sc = r.status_code
-                if sc == 200:
-                    # This line has been added to avoid a strage behaviour of the 'splitlines' method in
-                    # presence of strange characters (non-UTF8).
-                    list_of_lines = [
-                        line.decode("utf-8")
-                        for line in r.text.encode("utf-8").splitlines()
-                    ]
-                    res = self.type_fields(list(reader(list_of_lines)), self.i)
-                    if self.addon is not None:
-                        res = self.postprocess(res, self.i, self.addon)
-                    q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
-                    res = self.handling_params(q_string, res)
-                    res = self.remove_types(res)
-                    s_res = StringIO()
-                    writer(s_res).writerows(res)
-                    return (sc,) + Operation.conv(
-                        s_res.getvalue(), q_string, content_type
-                    )
-                else:
-                    return sc, "HTTP status code %s: %s" % (sc, r.reason), "text/plain"
+                parameters_comb = []
+                for combination in combinations:
+                    parameters_comb.append( dict(zip(list(par_dict.keys()), list(combination))) )
+
+                # the __parameters_comb__ varaible is a list of dictionaries,
+                # each dictionary stores a possible combination of parameter values
+                #
+                # Example: {"id":"5","area":["A1","A2"]}  ->  [  {"id":"5","area":"A1"}, {"id":"5","area":"A2"} ]
+                # Example: {"id":"5","area":"A1"}  ->  [  {"id":"5","area":"A1"} ]
+
+                # iterate over __parameters_comb__
+
+                list_of_res = []
+                include_header_line = True
+                for par_dict in parameters_comb:
+
+                    list_of_lines = []
+                    query = self.i["sparql"]
+                    for param in par_dict:
+                        query = query.replace("[[%s]]" %
+                                              param, str(par_dict[param]))
+
+                    # GET and POST are sync
+                    # TODO: use threads to make it parallel
+
+                    if self.sparql_http_method == "get":
+                        r = get(self.tp + "?query=" + quote(query),
+                                headers={"Accept": "text/csv"})
+                    else:
+                        r = post(self.tp, data=query, headers={"Accept": "text/csv",
+                                                               "Content-Type": "application/sparql-query"})
+                    r.encoding = "utf-8"
+
+                    sc = r.status_code
+                    if sc == 200:
+                        # This line has been added to avoid a strage behaviour of the 'splitlines' method in
+                        # presence of strange characters (non-UTF8).
+                        list_of_lines = [line.decode("utf-8") for line in r.text.encode("utf-8").splitlines()]
+
+                    else:
+                        return sc, "HTTP status code %s: %s" % (sc, r.reason), "text/plain"
+
+                    # each res will have a list of list_of_line
+                    # include the header of the first result only
+                    if not include_header_line:
+                        list_of_lines = list_of_lines[1:]
+                    include_header_line = False
+
+                    # list_of_res Example:
+                    # [ ["id,val","01,a","02,b"] , ["id,val","05,u","08,p"] ]
+                    list_of_res += list_of_lines
+
+                #
+                #  ----- DELEGATE to POST PROCESSING operations
+                # return 200, "HTTP print for debug %s: %s" % (200, list_of_res), "text/plain"
+
+                res = self.type_fields(list(reader(list_of_res)), self.i)
+                res = self.postprocess(res, self.i, self.addon)
+                q_string = parse_qs(
+                    quote(self.url_parsed.query, safe="&="))
+                res = self.handling_params(q_string, res)
+                res = self.remove_types(res)
+                s_res = StringIO()
+                writer(s_res).writerows(res)
+                return (sc,) + Operation.conv(s_res.getvalue(), q_string, content_type)
+
             except TimeoutError:
                 exc_type, exc_obj, exc_tb = exc_info()
                 sc = 408
-                return (
-                    sc,
-                    "HTTP status code %s: request timeout - %s: %s (line %s)"
-                    % (sc, exc_type.__name__, exc_obj, exc_tb.tb_lineno),
-                    "text/plain",
-                )
+                return sc, "HTTP status code %s: request timeout - %s: %s (line %s)" % \
+                    (sc, exc_type.__name__, exc_obj,
+                     exc_tb.tb_lineno), "text/plain"
             except TypeError:
                 exc_type, exc_obj, exc_tb = exc_info()
                 sc = 400
-                return (
-                    sc,
-                    "HTTP status code %s: "
-                    "parameter in the request not compliant with the type specified - %s: %s (line %s)"
-                    % (sc, exc_type.__name__, exc_obj, exc_tb.tb_lineno),
-                    "text/plain",
-                )
+                return sc, "HTTP status code %s: " \
+                    "parameter in the request not compliant with the type specified - %s: %s (line %s)" % \
+                    (sc, exc_type.__name__, exc_obj,
+                     exc_tb.tb_lineno), "text/plain"
             except:
                 exc_type, exc_obj, exc_tb = exc_info()
                 sc = 500
-                return (
-                    sc,
-                    "HTTP status code %s: something unexpected happened - %s: %s (line %s)"
-                    % (sc, exc_type.__name__, exc_obj, exc_tb.tb_lineno),
-                    "text/plain",
-                )
+                return sc, "HTTP status code %s: something unexpected happened - %s: %s (line %s)" % \
+                    (sc, exc_type.__name__, exc_obj,
+                     exc_tb.tb_lineno), "text/plain"
         else:
             sc = 405
-            return (
-                sc,
-                "HTTP status code %s: '%s' method not allowed" % (sc, str_method),
-                "text/plain",
-            )
-
+            return sc, "HTTP status code %s: '%s' method not allowed" % (sc, str_method), "text/plain"
     # END: Processing methods
 
 
@@ -1516,18 +1425,16 @@ class APIManager(object):
     def __max_size_csv():
         from sys import maxsize
         import csv
-
         maxInt = maxsize
         while True:
             try:
                 csv.field_size_limit(maxInt)
                 break
             except OverflowError:
-                maxInt = int(maxInt / 10)
+                maxInt = int(maxInt/10)
 
     # Constructor: START
     def __init__(self, conf_files):
-
         """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
         defined according to the Hash Format and following a particular structure, and stores all the operations
         defined within a dictionary. The structure of each item in the dictionary of the operations is defined as
@@ -1549,10 +1456,7 @@ class APIManager(object):
 
         In addition, it also defines additional structure, such as the functions to be used for interpreting the
         values returned by a SPARQL query, some operations that can be used for filtering the results, and the
-        HTTP methods to call for making the request to the SPARQL endpoint specified in the configuration file.
-
-        """
-
+        HTTP methods to call for making the request to the SPARQL endpoint specified in the configuration file."""
         APIManager.__max_size_csv()
 
         self.all_conf = OrderedDict()
@@ -1562,7 +1466,6 @@ class APIManager(object):
             tp = None
             conf_json = HashFormatHandler().read(conf_file)
             base_url = None
-            addon = None
             for item in conf_json:
                 if base_url is None:
                     base_url = item["url"]
@@ -1570,9 +1473,7 @@ class APIManager(object):
                     website = item["base"]
                     tp = item["endpoint"]
                     if "addon" in item:
-                        addon_abspath = abspath(
-                            dirname(conf_file) + sep + item["addon"]
-                        )
+                        addon_abspath = abspath(dirname(conf_file) + sep + item["addon"])
                         path.append(dirname(addon_abspath))
                         addon = import_module(basename(addon_abspath))
                     sparql_http_method = "post"
@@ -1588,9 +1489,8 @@ class APIManager(object):
                 "base_url": base_url,
                 "website": website,
                 "addon": addon,
-                "sparql_http_method": sparql_http_method,
+                "sparql_http_method": sparql_http_method
             }
-
     # Constructor: END
 
     # START: Ancillary methods
@@ -1610,16 +1510,14 @@ class APIManager(object):
                 t = i[term]
             except KeyError:
                 t = "str(.+)"
-            result = result.replace(
-                "{%s}" % term, "%s" % sub("^[^\(]+(\(.+\))$", "\\1", t)
-            )
+            result = result.replace("{%s}" % term, "%s" % sub("^[^\(]+(\(.+\))$", "\\1", t))
 
         return "%s%s" % (b, result)
 
     def best_match(self, u):
         """This method takes an URL of an API call in input and find the API operation URL and the related
         configuration that best match with the API call, if any."""
-        u = u.decode("UTF8") if isinstance(u, (bytes, bytearray)) else u
+        #u = u.decode('UTF8') if isinstance(u, (bytes, bytearray)) else u
         cur_u = sub("\?.*$", "", u)
         result = None, None
         for base_url in self.all_conf:
@@ -1630,7 +1528,6 @@ class APIManager(object):
                         result = conf, pat
                         break
         return result
-
     # END: Ancillary methods
 
     # START: Processing methods
@@ -1644,84 +1541,41 @@ class APIManager(object):
 
         conf, op = self.best_match(op_url)
         if op is not None:
-            return Operation(
-                op_complete_url,
-                op,
-                conf["conf"][op],
-                conf["tp"],
-                conf["sparql_http_method"],
-                conf["addon"],
-            )
+            return Operation(op_complete_url,
+                             op,
+                             conf["conf"][op],
+                             conf["tp"],
+                             conf["sparql_http_method"],
+                             conf["addon"])
         else:
             sc = 404
-            return (
-                sc,
-                "HTTP status code %s: the operation requested does not exist" % sc,
-                "text/plain",
-            )
-
+            return sc, "HTTP status code %s: the operation requested does not exist" % sc, "text/plain"
     # END: Processing methods
 
 
-if __name__ == "__main__":  # pragma: no cover
-    arg_parser = ArgumentParser(
-        "ramose.py",
-        description="The 'Restful API Manager Over SPARQL Endpoints' (a.k.a. "
-        "'RAMOSE') is an application that allows one to expose a "
-        "Restful API interface, according to a particular "
-        "specification document, to interact with a SPARQL endpoint.",
-    )
+if __name__ == "__main__":
+    arg_parser = ArgumentParser("ramose.py", description="The 'Restful API Manager Over SPARQL Endpoints' (a.k.a. "
+                                                         "'RAMOSE') is an application that allows one to expose a "
+                                                         "Restful API interface, according to a particular "
+                                                         "specification document, to interact with a SPARQL endpoint.")
 
-    arg_parser.add_argument(
-        "-s",
-        "--spec",
-        dest="spec",
-        required=True,
-        nargs="+",
-        help="The file(s) in hash format containing the specification of the API(s).",
-    )
-    arg_parser.add_argument(
-        "-m",
-        "--method",
-        dest="method",
-        default="get",
-        help="The method to use to make a request to the API.",
-    )
-    arg_parser.add_argument(
-        "-c", "--call", dest="call", help="The URL to call for querying the API."
-    )
-    arg_parser.add_argument(
-        "-f",
-        "--format",
-        dest="format",
-        default="application/json",
-        help="The format in which to get the response.",
-    )
-    arg_parser.add_argument(
-        "-d",
-        "--doc",
-        dest="doc",
-        default=False,
-        action="store_true",
-        help="Say to generate the HTML documentation of the API (if it is specified, all "
-        "the arguments '-m', '-c', and '-f' won't be considered).",
-    )
-    arg_parser.add_argument(
-        "-o", "--output", dest="output", help="A file where to store the response."
-    )
-    arg_parser.add_argument(
-        "-w",
-        "--webserver",
-        dest="webserver",
-        default=False,
-        help="The host:port where to deploy a Flask webserver for testing the API.",
-    )
-    arg_parser.add_argument(
-        "-css",
-        "--css",
-        dest="css",
-        help="The path of a .css file for styling the API documentation (to be specified either with '-w' or with '-d' and '-o' arguments).",
-    )
+    arg_parser.add_argument("-s", "--spec", dest="spec", required=True, nargs='+',
+                            help="The file(s) in hash format containing the specification of the API(s).")
+    arg_parser.add_argument("-m", "--method", dest="method", default="get",
+                            help="The method to use to make a request to the API.")
+    arg_parser.add_argument("-c", "--call", dest="call",
+                            help="The URL to call for querying the API.")
+    arg_parser.add_argument("-f", "--format", dest="format", default="application/json",
+                            help="The format in which to get the response.")
+    arg_parser.add_argument("-d", "--doc", dest="doc", default=False, action="store_true",
+                            help="Say to generate the HTML documentation of the API (if it is specified, all "
+                                 "the arguments '-m', '-c', and '-f' won't be considered).")
+    arg_parser.add_argument("-o", "--output", dest="output",
+                            help="A file where to store the response.")
+    arg_parser.add_argument("-w", "--webserver", dest="webserver", default=False,
+                            help="The host:port where to deploy a Flask webserver for testing the API.")
+    arg_parser.add_argument("-css", "--css", dest="css",
+                            help="The path of a .css file for styling the API documentation (to be specified either with '-w' or with '-d' and '-o' arguments).")
 
     args = arg_parser.parse_args()
     am = APIManager(args.spec)
@@ -1731,60 +1585,48 @@ if __name__ == "__main__":  # pragma: no cover
 
     if args.webserver:
         try:
+            import logging
+            from flask import Flask, request, make_response, send_from_directory
+            from werkzeug.exceptions import HTTPException
 
             # logs
             dh.logger_ramose()
 
             # web server
-            host_name = (
-                args.webserver.rsplit(":", 1)[0]
-                if ":" in args.webserver
-                else "127.0.0.1"
-            )
-            port = args.webserver.rsplit(":", 1)[1] if ":" in args.webserver else "8080"
+            host_name = args.webserver.rsplit(':', 1)[0] if ':' in args.webserver else '127.0.0.1'
+            port = args.webserver.rsplit(':', 1)[1] if ':' in args.webserver else '8080'
 
             app = Flask(__name__)
-            # This is due to Flask routing rules that do not accept URLs without the starting slash
+
+            # This is due to Flask routing rules that do not accept URLs without the starting slash
             # but ramose calls start with the slash, hence we remove it if the flag args.webserver is added
             if args.call:
                 args.call = args.call[1:]
 
             # routing
-            @app.route("/")
+            @app.route('/')
             def home():
+
                 index = dh.get_index(css_path)
                 return index
 
-            @app.route("/<path:api_url>")
+            @app.route('/<path:api_url>')
             # @app.route('/<path:api_url>/')
             def doc(api_url):
-                """APIs documentation page and operations"""
+                """ APIs documentation page and operations """
                 res, status = dh.get_index(css_path), 404
-                if any(
-                    api_u in "/" + api_url for api_u, api_dict in am.all_conf.items()
-                ):
+                if any(api_u in '/'+api_url for api_u, api_dict in am.all_conf.items()):
                     # documentation
-                    if any(
-                        api_u == "/" + api_url
-                        for api_u, api_dict in am.all_conf.items()
-                    ):
+                    if any(api_u == '/'+api_url for api_u,api_dict in am.all_conf.items()):
                         status, res = dh.get_documentation(css_path, api_url)
                         return res, status
                     # api calls
                     else:
-                        cur_call = "/" + api_url
-                        format = request.args.get("format")
-                        content_type = (
-                            "text/csv"
-                            if format is not None and "csv" in format
-                            else "application/json"
-                        )
+                        cur_call = '/'+api_url
+                        format = request.args.get('format')
+                        content_type = "text/csv" if format is not None and "csv" in format else "application/json"
 
-                        op = am.get_op(
-                            cur_call
-                            + "?"
-                            + unquote(request.query_string.decode("utf8"))
-                        )
+                        op = am.get_op(cur_call+'?'+unquote(request.query_string.decode('utf8')))
                         if type(op) is Operation:  # Operation found
                             status, res, c_type = op.exec(content_type=content_type)
                         else:  # HTTP error
@@ -1792,39 +1634,31 @@ if __name__ == "__main__":  # pragma: no cover
 
                         if status == 200:
                             response = make_response(res, status)
-                            response.headers.set("Content-Type", c_type)
+                            response.headers.set('Content-Type', c_type)
                         else:
                             # The API Manager returns a text/plain message when there is an error.
                             # Now set to return the header requested by the user
                             if content_type == "text/csv":
                                 si = StringIO()
                                 cw = writer(si)
-                                cw.writerows(
-                                    [["error", "message"], [str(status), str(res)]]
-                                )
+                                cw.writerows([["error","message"], [str(status),str(res)]])
                                 response = make_response(si.getvalue(), status)
-                                response.headers.set(
-                                    "Content-Disposition",
-                                    "attachment",
-                                    filename="error.csv",
-                                )
+                                response.headers.set("Content-Disposition", "attachment", filename="error.csv")
                             else:
                                 m_res = {"error": status, "message": res}
                                 mes = dumps(m_res)
                                 response = make_response(mes, status)
-                            response.headers.set(
-                                "Content-Type", content_type
-                            )  # overwrite text/plain
+                            response.headers.set('Content-Type', content_type) # overwrite text/plain
 
                             # allow CORS anyway
-                        response.headers.set("Access-Control-Allow-Origin", "*")
-                        response.headers.set("Access-Control-Allow-Credentials", "true")
+                        response.headers.set('Access-Control-Allow-Origin', '*')
+                        response.headers.set('Access-Control-Allow-Credentials', 'true')
 
                         return response
                 else:
                     return res, status
 
-            app.run(host=str(host_name), debug=False, port=str(port))
+            app.run(host=str(host_name), debug=True, port=str(port))
 
         except Exception as e:
             exc_type, exc_obj, exc_tb = exc_info()
@@ -1834,7 +1668,7 @@ if __name__ == "__main__":  # pragma: no cover
     else:
         # run locally via shell
         if args.doc:
-            res = dh.get_documentation(css_path) + ("text/html",)
+            res = dh.get_documentation(css_path) + ("text/html", )
         else:
             op = am.get_op(args.call)
             if type(op) is Operation:  # Operation found
@@ -1845,5 +1679,5 @@ if __name__ == "__main__":  # pragma: no cover
         if args.output is None:
             print("# Response HTTP code: %s\n# Body:\n%s\n# Content-type: %s" % res)
         else:
-            with open(args.output, "w", encoding="utf8") as f:
+            with open(args.output, "w") as f:
                 f.write(res[1])
