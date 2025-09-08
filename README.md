@@ -76,11 +76,18 @@ The first section of the specification includes mandatory information about the 
 #contacts <contact_url>             _in the form [text](url)_
 #endpoint <sparql_endpoint_url>     
 #addon <addon_file_name>            _optional additional python module_
+#format <token,function;token,function;...>  _optional global mapping: format token → addon converter function_
 ```
 
 The field `#url` includes the partial URL of the API, while the field `#base` includes the URL base that can be shared with other services or APIs.
 
 [N.B. Several APIs may coexist and be handled by RAMOSE, hence the path specified in the field `#url` corresponds to the unique identifier of the API.]
+
+You can declare **additional output formats** (beyond CSV/JSON) at the **top API block** of your `.hf` file using a global `#format` line.  
+This line maps a **format token** (often a MIME type) to the **name of a converter function** implemented in your addon module (see the next section).
+
+**Important:** You **cannot** request new/custom formats using the CLI `-f/--format` flag.  
+Use `?format=<token>` in the URL **and** declare a mapping in the top‑level `#format` line
 
 For example:
 
@@ -200,6 +207,78 @@ SELECT ?author ?year ?title ?source_title ?volume ?issue ?page ?doi ?reference ?
 
 ### Addon python files
 
+
+#### Format converter functions
+
+Place your converter functions in the module specified by the top‑level `#addon` line (module name, without `.py`).  
+Each converter receives the **final CSV string** and should return a **string** in the target format.
+
+**Example (`converters_addon.py`)**
+```python
+import csv
+import io
+import xml.etree.ElementTree as ET
+import re
+
+def to_xml(csv_str):
+    """
+    Convert a CSV document (given as a string) into an XML document string.
+
+    - Wraps all rows in a <records> root element.
+    - Each row becomes a <record> element.
+    - Each header becomes a child tag under <record>, with its cell text.
+    - Invalid XML tag characters in headers are replaced with underscores.
+    - Adds an XML declaration at the top.
+    """
+    # Helper: make a valid XML tag name from a header
+    def _safe_tag(tag: str) -> str:
+        # replace any character not letter, digit, underscore, hyphen, or period with underscore
+        tag = re.sub(r'[^\w\-.]', '_', tag)
+        # ensure it doesn't start with digit or punctuation
+        if re.match(r'^[^A-Za-z_]', tag):
+            tag = '_' + tag
+        return tag
+
+    # Parse CSV
+    reader = csv.DictReader(io.StringIO(csv_str))
+    headers = reader.fieldnames or []
+
+    # Build XML tree
+    root = ET.Element('records')
+    for row in reader:
+        rec = ET.SubElement(root, 'record')
+        for h in headers:
+            # create child even if empty
+            child = ET.SubElement(rec, _safe_tag(h))
+            val = row.get(h, '').strip()
+            if val:
+                child.text = val
+
+    # Pretty‐print indentation
+    def _indent(elem, level=0):
+        i = "\n" + level*"  "
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = i + "  "
+            for c in elem:
+                _indent(c, level+1)
+            if not c.tail or not c.tail.strip():
+                c.tail = i
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
+
+    _indent(root)
+
+    # Serialize to string with declaration
+    xml_body = ET.tostring(root, encoding='unicode')
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + xml_body
+```
+
+**Error handling & fallback**
+- If a mapped converter **raises**, RAMOSE falls back to returning the **CSV payload** with `Content-Type: text/csv`.
+- If you request a **token with no mapped converter**, RAMOSE returns the **CSV payload** and sets `Content-Type` to `text/csv`.
+
 Additional python modules can be added for preprocessing variables in the API URL call, and for postprocessing responses. In the specification file, addons are specified in the `#addon` field by recording the name of the python file.
 
 **Preprocessing**
@@ -246,13 +325,14 @@ Results are streamed in the shell in the following format:
 # Content-type: <format>
 ```
 
-**Output formats.** RAMOSE returns responses in two formats, namely: `text/csv` and `application/json`. Formats can be specified as values of the argument `-f` or, alternatively, as parameters of the call. For example:
+**Output formats.** By default RAMOSE returns responses in two formats, namely: `text/csv` and `application/json`. Formats can be specified as values of the argument `-f` or, alternatively, as parameters of the call. For example:
 
 ```
 python -m ramose -f <csv|json> -s <conf_name>.hf -c '<api_base><api_operation_url>|<api_base><api_operation_url>?<parameters>'
 
 python -m ramose -s <conf_name>.hf -c '<api_base><api_operation_url>|<api_operation_url>?format=<csv|json>'
 ```
+**Additional output formats** can be declared at the **top API block** of your `.hf` file using a global `#format` line (for more details see the [Hashformat configuration file](#hashformat-configuration-file) section).
 
 If no format is specified, a JSON response is returned.
 
@@ -339,7 +419,7 @@ Parameters can be used to filter and control the results returned by the API. Th
 
  * `sort=<order>(<field_name>)`: sort in ascending (`<order>` set to `"asc"`) or `descending` (`<order>` set to `"desc"`) order the rows in the result set according to the values in `<field_name>`. For instance, `sort=desc(date)` sorts all the rows according to the value specified in the field date in descending order.
 
- * `format=<format_type>`: the final table is returned in the format specified in `<format_type>` that can be either `"csv"` or `"json"` - e.g. `format=csv` returns the final table in CSV format. This parameter has higher priority of the type specified through the "Accept" header of the request. Thus, if the header of a request to the API specifies `Accept: text/csv` and the URL of such request includes `format=json`, the final table is returned in JSON.
+ * `format=<format_type>`: the final table is returned in the format specified in `<format_type>` that can be either `"csv"` or `"json"` (or any other format specified in `#format` field of .hf file) - e.g. `format=csv` returns the final table in CSV format. This parameter has higher priority of the type specified through the "Accept" header of the request. Thus, if the header of a request to the API specifies `Accept: text/csv` and the URL of such request includes `format=json`, the final table is returned in JSON.
 
  * `json=<operation_type>("<separator>",<field>,<new_field_1>,<new_field_2>,...)`: in case a JSON format is requested in return, transform each row of the final JSON table according to the rule specified. If `<operation_type>` is set to `"array"`, the string value associated to the field name `<field>` is converted into an array by splitting the various textual parts by means of `<separator>`. For instance, considering the JSON table `[ { "names": "Doe, John; Doe, Jane" }, ... ]`, the execution of `array("; ",names)` returns `[ { "names": [ "Doe, John", "Doe, Jane" ], ... ]`. Instead, if `<operation_type`> is set to `"dict"`, the string value associated to the field name <field> is converted into a dictionary by splitting the various textual parts by means of <separator> and by associating the new fields `<new_field_1>`, `<new_field_2>`, etc., to these new parts. For instance, considering the JSON table `[ { "name": "Doe, John" }, ... ]`, the execution of `dict(", ",name,fname,gname)` returns `[ { "name": { "fname": "Doe", "gname": "John" }, ... ]`.
 
