@@ -26,6 +26,8 @@ __author__ = 'essepuntato'
 from abc import abstractmethod
 from re import search, DOTALL, findall, sub, match, split
 from requests import get, post, put, delete
+from requests import Session as _RequestsSession
+_http_session = _RequestsSession()
 from csv import DictReader, reader, writer
 from json import dumps
 from io import StringIO
@@ -45,8 +47,8 @@ from os import sep, getcwd
 from itertools import product
 
 
-FIELD_TYPE_RE = "([^\(\s]+)\(([^\)]+)\)"
-PARAM_NAME = "{([^{}\(\)]+)}"
+FIELD_TYPE_RE = r"([^\(\s]+)\(([^\)]+)\)"
+PARAM_NAME = r"{([^{}\(\)]+)}"
 
 
 class HashFormatHandler(object):
@@ -74,7 +76,7 @@ class HashFormatHandler(object):
             cur_field_name = None
             cur_field_content = None
             for line in f.readlines():
-                cur_matching = search("^#([^\s]+)\s(.+)$", line, DOTALL)
+                cur_matching = search(r"^#([^\s]+)\s(.+)$", line, DOTALL)
                 if cur_matching is not None:
                     cur_field_name = cur_matching.group(1)
                     cur_field_content = cur_matching.group(2)
@@ -141,6 +143,13 @@ class HTMLDocumentationHandler(DocumentationHandler):
     def __title(self, conf):
         """This method returns the title string defined in the API specification."""
         return conf["conf_json"][0]["title"]
+
+    def __htmlmetadescription(self, conf):
+        """This method returns the HTML meta-description tag defined in the API specification."""
+        desc = conf["conf_json"][0].get("html_meta_description")
+        if desc:
+            return '<meta name="description" content="%s"/>' % desc
+        return ""
 
     def __sidebar(self, conf):
         """This method builds the sidebar of the API documentation"""
@@ -227,7 +236,7 @@ The operations that this API implements are:
                 p_shape = ".+"
                 if p in op:
                     p_type, p_shape = findall(
-                        "^\s*([^\(]+)\((.+)\)\s*$", op[p])[0]
+                        r"^\s*([^\(]+)\((.+)\)\s*$", op[p])[0]
 
                 params.append(
                     "<em>%s</em>: type <em>%s</em>, regular expression shape <code>%s</code>" % (p, p_type, p_shape))
@@ -245,7 +254,7 @@ The operations that this API implements are:
 <p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
 <pre><code>%s</code></pre></div>""" % (op["url"], op["url"], markdown(op["description"]),
                                        ", ".join(
-                                           split("\s+", op["method"].strip())), "</li><li>".join(params),
+                                           split(r"\s+", op["method"].strip())), "</li><li>".join(params),
                                        ", ".join(["%s <em>(%s)</em>" % (f, t) for t, f in
                                                   findall(FIELD_TYPE_RE, op["field_type"])]),
                                        conf["website"] + conf["base_url"] + op["call"], op["call"], op["output_json"])
@@ -731,6 +740,7 @@ The operations that this API implements are:
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <title>%s</title>
+        %s
         <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
         <meta name="viewport" content="width=device-width" />
         <style>%s</style>
@@ -742,7 +752,16 @@ The operations that this API implements are:
         <section id="operations">%s</section>
         <footer>%s</footer>
     </body>
-</html>""" % (self.__title(conf), self.__css(), self.__css_path(css_path), self.__sidebar(conf), self.__header(conf), self.__operations(conf), self.__footer())
+</html>""" % (
+            self.__title(conf),
+            self.__htmlmetadescription(conf),
+            self.__css(),
+            self.__css_path(css_path),
+            self.__sidebar(conf),
+            self.__header(conf),
+            self.__operations(conf),
+            self.__footer()
+        )
 
     def get_index(self, css_path=None):
         """This method generates the index of all the HTML documentations that can be
@@ -1058,7 +1077,7 @@ class Operation(object):
         if "json" in params:
             fields = params["json"]
             for field in fields:
-                ops = findall('([a-z]+)\(("[^"]+"),([^\)]+)\)', field)
+                ops = findall(r'([a-z]+)\(("[^"]+"),([^\)]+)\)', field)
                 for op_type, s, es in ops:
                     separator = sub('"(.+)"', "\\1", s)
                     entries = [i.strip() for i in es.split(",")]
@@ -1109,9 +1128,9 @@ class Operation(object):
 
         if "preprocess" in op_item:
 
-            for pre in [sub("\s+", "", i) for i in op_item["preprocess"].split(" --> ")]:
-                func_name = sub("^([^\(\)]+)\(.+$", "\\1", pre).strip()
-                params_name = sub("^.+\(([^\(\)]+)\).*", "\\1", pre).split(",")
+            for pre in [sub(r"\s+", "", i) for i in op_item["preprocess"].split(" --> ")]:
+                func_name = sub(r"^([^\(\)]+)\(.+$", r"\1", pre).strip()
+                params_name = sub(r"^.+\(([^\(\)]+)\).*", r"\1", pre).split(",")
 
                 param_list = ()
                 for param_name in params_name:
@@ -1150,8 +1169,8 @@ class Operation(object):
 
         if "postprocess" in op_item:
             for post in [i.strip() for i in op_item["postprocess"].split(" --> ")]:
-                func_name = sub("^([^\(\)]+)\(.+$", "\\1", post).strip()
-                param_str = sub("^.+\(([^\(\)]*)\).*", "\\1", post)
+                func_name = sub(r"^([^\(\)]+)\(.+$", r"\1", post).strip()
+                param_str = sub(r"^.+\(([^\(\)]*)\).*", r"\1", post)
                 if param_str == "":
                     params_values = ()
                 else:
@@ -1233,7 +1252,7 @@ class Operation(object):
             field_names = []
             order = []
             for field in fields:
-                order_names = findall("^(desc|asc)\(([^\(\)]+)\)$", field)
+                order_names = findall(r"^(desc|asc)\(([^\(\)]+)\)$", field)
                 if order_names:
                     order.append(order_names[0][0])
                     field_names.append(order_names[0][1])
@@ -1354,11 +1373,11 @@ class Operation(object):
                     # TODO: use threads to make it parallel
 
                     if self.sparql_http_method == "get":
-                        r = get(self.tp + "?query=" + quote(query),
-                                headers={"Accept": "text/csv"})
+                        r = _http_session.get(self.tp + "?query=" + quote(query),
+                                headers={"Accept": "text/csv"}, timeout=60)
                     else:
-                        r = post(self.tp, data=query, headers={"Accept": "text/csv",
-                                                               "Content-Type": "application/sparql-query"})
+                        r = _http_session.post(self.tp, data=query, headers={"Accept": "text/csv",
+                                                               "Content-Type": "application/sparql-query"}, timeout=60)
                     r.encoding = "utf-8"
 
                     sc = r.status_code
@@ -1434,11 +1453,12 @@ class APIManager(object):
                 maxInt = int(maxInt/10)
 
     # Constructor: START
-    def __init__(self, conf_files):
+    def __init__(self, conf_files, endpoint_override=None):
         """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
         defined according to the Hash Format and following a particular structure, and stores all the operations
-        defined within a dictionary. The structure of each item in the dictionary of the operations is defined as
-        follows:
+        defined within a dictionary. Optionally, an endpoint_override parameter can be provided to override the
+        SPARQL endpoint defined in the configuration files (useful for staging/production environments).
+        The structure of each item in the dictionary of the operations is defined as follows:
 
         {
             "/api/v1/references/(.+)": {
@@ -1471,7 +1491,7 @@ class APIManager(object):
                     base_url = item["url"]
                     self.base_url.append(item["url"])
                     website = item["base"]
-                    tp = item["endpoint"]
+                    tp = endpoint_override if endpoint_override else item["endpoint"]
                     if "addon" in item:
                         addon_abspath = abspath(dirname(conf_file) + sep + item["addon"])
                         path.append(dirname(addon_abspath))
@@ -1510,7 +1530,7 @@ class APIManager(object):
                 t = i[term]
             except KeyError:
                 t = "str(.+)"
-            result = result.replace("{%s}" % term, "%s" % sub("^[^\(]+(\(.+\))$", "\\1", t))
+            result = result.replace("{%s}" % term, "%s" % sub(r"^[^\(]+(\(.+\))$", r"\1", t))
 
         return "%s%s" % (b, result)
 
@@ -1518,7 +1538,7 @@ class APIManager(object):
         """This method takes an URL of an API call in input and find the API operation URL and the related
         configuration that best match with the API call, if any."""
         #u = u.decode('UTF8') if isinstance(u, (bytes, bytearray)) else u
-        cur_u = sub("\?.*$", "", u)
+        cur_u = sub(r"\?.*$", "", u)
         result = None, None
         for base_url in self.all_conf:
             if u.startswith(base_url):
