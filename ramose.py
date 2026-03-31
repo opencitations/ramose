@@ -41,6 +41,7 @@ from dateutil.parser import parse
 from datetime import datetime
 from isodate import parse_duration
 from argparse import ArgumentParser
+import logging
 from os.path import abspath, dirname, basename
 from os import path as pt
 from os import sep, getcwd
@@ -612,7 +613,6 @@ The operations that this API implements are:
         .api_calls div p {
           padding: 0.2em 0.5em;
           border-top: solid 1px #F8F8F8;
-          }
         }
 
         .date_log , .method_log {
@@ -786,12 +786,14 @@ The operations that this API implements are:
 
     def store_documentation(self, file_path, css_path=None):
         """This method stores the HTML documentation of an API in a file."""
-        html = self.get_documentation(css_path)
+        _, html = self.get_documentation(css_path)
         with open(file_path, "w") as f:
             f.write(html)
 
     def clean_log(self, l, api_url):
         """This method parses logs lines into structured data."""
+        if "- - " not in l:
+            return ''
         s = l.split("- - ", 1)[1]
         date = s[s.find("[")+1:s.find("]")]
         method = s.split('"')[1::2][0].split()[0]
