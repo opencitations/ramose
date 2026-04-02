@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["Python package"]
+    branches: [master]
+    types:
+      - completed
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Check commit message
+        id: check_message
+        run: |
+          git log -1 --pretty=%B > commit_message.txt
+          if grep -q "\[release\]" commit_message.txt; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install UV
+        if: steps.check_message.outputs.should_release == 'true'
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Install Python
+        if: steps.check_message.outputs.should_release == 'true'
+        run: uv python install
+
+      - name: Install dependencies
+        if: steps.check_message.outputs.should_release == 'true'
+        run: uv sync --locked
+
+      - name: Setup Node.js
+        if: steps.check_message.outputs.should_release == 'true'
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: "lts/*"
+
+      - name: Install semantic-release
+        if: steps.check_message.outputs.should_release == 'true'
+        run: |
+          npm install -g semantic-release
+          npm install -g @semantic-release/git
+          npm install -g @semantic-release/changelog
+          npm install -g @semantic-release/exec
+
+      - name: Create Release
+        if: steps.check_message.outputs.should_release == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
+
+      - name: Build and publish to PyPI
+        if: steps.check_message.outputs.should_release == 'true' && success()
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          uv build
+          uv publish --token $UV_PUBLISH_TOKEN
