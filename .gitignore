@@ -1,11 +1,7 @@
 .coverage
+coverage-badge.svg
+coverage.xml
+htmlcov/
 ramose.log*
 __pycache__/
-test/Scripts/
-test/Include/
-test/Lib/
-test/__pycache__
-Include/
-Scripts/
-Lib/
 docs/build/*

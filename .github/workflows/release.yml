@@ -2,7 +2,7 @@ name: Release
 
 on:
   workflow_run:
-    workflows: ["Python package"]
+    workflows: ["Test"]
     branches: [master]
     types:
       - completed

@@ -1,5 +1,5 @@
-[![Python package](https://github.com/dbrembilla/ramose/actions/workflows/python-package.yml/badge.svg)](https://github.com/dbrembilla/ramose/actions/workflows/python-package.yml)
-[![Coverage](./test/coverage/coverage.svg)](https://github.com/dbrembilla/ramose/actions/workflows/python-package.yml)
+[![Tests](https://github.com/opencitations/ramose/actions/workflows/test.yml/badge.svg)](https://github.com/opencitations/ramose/actions/workflows/test.yml)
+[![Coverage](https://opencitations.github.io/ramose/coverage/coverage-badge.svg)](https://opencitations.github.io/ramose/coverage/)
 # Restful API Manager Over SPARQL Endpoints (RAMOSE)
 
 Restful API Manager Over SPARQL Endpoints (RAMOSE) is an application that allows agile development and publication of documented RESTful APIs for querying SPARQL endpoints, according to a particular specification document.
