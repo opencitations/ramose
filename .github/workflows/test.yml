@@ -30,17 +30,17 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
       - name: Install dependencies
-        run: uv sync --locked --dev
+        run: uv sync --locked --dev --python ${{ matrix.python-version }}
       - name: Run tests with coverage
         if: matrix.python-version == '3.13'
         run: |
-          uv run coverage run -m pytest
-          uv run coverage xml
-          uv run coverage html -d htmlcov
-          uv run coverage report
+          uv run --python ${{ matrix.python-version }} coverage run -m pytest
+          uv run --python ${{ matrix.python-version }} coverage xml
+          uv run --python ${{ matrix.python-version }} coverage html -d htmlcov
+          uv run --python ${{ matrix.python-version }} coverage report
       - name: Generate coverage badge
         if: matrix.python-version == '3.13'
-        run: uv run genbadge coverage -i coverage.xml -o coverage-badge.svg
+        run: uv run --python ${{ matrix.python-version }} genbadge coverage -i coverage.xml -o coverage-badge.svg
       - name: Upload coverage report
         if: matrix.python-version == '3.13' && github.ref == 'refs/heads/master'
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
@@ -55,4 +55,4 @@ jobs:
           path: coverage-badge.svg
       - name: Run tests
         if: matrix.python-version != '3.13'
-        run: uv run pytest
+        run: uv run --python ${{ matrix.python-version }} pytest
