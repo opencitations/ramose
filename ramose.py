@@ -682,8 +682,11 @@ The operations that this API implements are:
     def __parse_logger_ramose(self):
         """This method reads logging info stored into a local file, so as to be browsed in the dashboard.
         Returns: the html including the list of URLs of current working APIs and basic logging info """
-        with open("ramose.log") as l_f:
-            logs = ''.join(l_f.readlines())
+        try:
+            with open("ramose.log") as l_f:
+                logs = ''.join(l_f.readlines())
+        except FileNotFoundError:
+            logs = ""
         rev_list = set()
         rev_list_add = rev_list.add
         rev_list = [x for x in list(reversed(logs.splitlines())) if not (
