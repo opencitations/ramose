@@ -72,3 +72,10 @@ class TestCleanLog:
     def test_root_url_returns_empty(self, doc_handler):
         log_line = '192.168.1.1 - - [01/Jan/2026:12:00:00] "GET /v1/ HTTP/1.1" 200 512'
         assert doc_handler.clean_log(log_line, "/v1") == ""
+
+
+class TestGetIndexNoLogFile:
+    def test_missing_ramose_log(self, doc_handler, monkeypatch, tmp_path):
+        monkeypatch.chdir(tmp_path)
+        html = doc_handler.get_index()
+        assert "RAMOSE" in html

@@ -267,3 +267,32 @@ class TestHandlingParams:
         op = make_operation()
         result = op.handling_params({"sort": ["asc(nonexistent)"]}, typed_table)
         assert len(result) == len(typed_table)
+
+
+class TestPostprocess:
+    def test_postprocess_with_params(self, make_operation):
+        class FakeAddon:
+            @staticmethod
+            def filter_by(result, col, val):
+                header = result[0]
+                col_idx = header.index(col)
+                filtered = [row for row in result[1:] if Operation.pv(col_idx, row) == val]
+                return [header] + filtered, False
+
+        op_item = {
+            "url": "/test/{id}",
+            "sparql": "SELECT ?x WHERE { ?x ?y ?z }",
+            "method": "get",
+            "field_type": "str(name) str(city)",
+            "postprocess": "filter_by(name, alice)",
+        }
+        op = make_operation(op_item=op_item, addon=FakeAddon)
+        raw = [
+            ["name", "city"],
+            ["alice", "rome"],
+            ["bob", "milan"],
+        ]
+        typed = op.type_fields(raw, op_item)
+        result = op.postprocess(typed, op_item, FakeAddon)
+        names = [Operation.pv(0, row) for row in result[1:]]
+        assert names == ["alice"]

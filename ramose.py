@@ -124,19 +124,19 @@ class DocumentationHandler(object):
     def get_documentation(self, *args, **dargs):
         """An abstract method that returns a string defining the human-readable documentation of the operations
         available in the input APIManager."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def store_documentation(self, file_path, *args, **dargs):
         """An abstract method that store in the input file path (parameter 'file_path') the human-readable
         documentation of the operations available in the input APIManager."""
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def get_index(self, *args, **dargs):
         """An abstract method that returns a string defining the index of all the various configuration files
         handled by the input APIManager."""
-        pass
+        pass  # pragma: no cover
 
 
 class HTMLDocumentationHandler(DocumentationHandler):
@@ -150,7 +150,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
         desc = conf["conf_json"][0].get("html_meta_description")
         if desc:
             return '<meta name="description" content="%s"/>' % desc
-        return ""
+        return ""  # pragma: no cover
 
     def __sidebar(self, conf):
         """This method builds the sidebar of the API documentation"""
@@ -664,7 +664,7 @@ The operations that this API implements are:
         """Add link to a css file if specified in argument -css"""
         return """<link rel="stylesheet" type="text/css" href='"""+css_path+"""'>""" if css_path else ""
 
-    def logger_ramose(self):
+    def logger_ramose(self):  # pragma: no cover
         """This method adds logging info to a local file"""
         # logging
         logFormatter = logging.Formatter(
@@ -1454,7 +1454,7 @@ class APIManager(object):
             try:
                 csv.field_size_limit(maxInt)
                 break
-            except OverflowError:
+            except OverflowError:  # pragma: no cover
                 maxInt = int(maxInt/10)
 
     # Constructor: START

@@ -139,6 +139,22 @@ class TestExecMultipleParameterCombinations:
         assert mock_session.get.call_count == 2
 
 
+class TestExecNonStrTypedParam:
+    @patch("ramose._http_session")
+    def test_int_param_type_conversion(self, mock_session):
+        mock_session.get.return_value = _mock_response()
+        op_item = {
+            "url": "/test/{count}",
+            "count": "int([0-9]+)",
+            "sparql": "SELECT ?name WHERE { BIND('x' AS ?name) } LIMIT [[count]]",
+            "method": "get",
+            "field_type": "str(name)",
+        }
+        op = _make_op(op_url="/api/v1/test/5", op_item=op_item)
+        result = op.exec(method="get", content_type="text/csv")
+        assert result[0] == 200
+
+
 class TestExecKeyErrorFallback:
     """When an operation item does not declare a type for a URL parameter
     (e.g. missing ``"id": "str(.+)"``), exec() falls back to using the raw
