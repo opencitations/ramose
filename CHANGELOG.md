@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 NONE
+
+SPDX-License-Identifier: CC0-1.0
+-->
+
 # [2.0.0](https://github.com/opencitations/ramose/compare/v1.0.6...v2.0.0) (2026-04-03)
 
 

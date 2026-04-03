@@ -1,0 +1,32 @@
+version = 1
+
+# CC0-1.0 — no creative expression
+
+[[annotations]]
+path = [
+    ".releaserc.json",
+    "pyproject.toml",
+    "uv.lock",
+    "test/data/meta_subset.nq",
+    "test/data/meta_v1.hf",
+    "test/data/settings.json",
+    "test/data/ramose-test.**",
+]
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "CC0-1.0"
+
+# ISC — project files that cannot have inline comments
+
+[[annotations]]
+path = "eval/RAMOSE_logs.ipynb"
+SPDX-FileCopyrightText = "2020 marilena <marilena.daquino2@unibo.it>"
+SPDX-License-Identifier = "ISC"
+
+[[annotations]]
+path = [
+    "test/data/meta_v1_doc.html",
+    "test/data/meta_v1_doc_css.html",
+    "test/data/meta_v1_index.html",
+]
+SPDX-FileCopyrightText = "2026 Arcangelo Massari <arcangelo.massari@unibo.it>"
+SPDX-License-Identifier = "ISC"

@@ -1,3 +1,7 @@
+.. SPDX-FileCopyrightText: 2022 dbrembilla <davide.brembilla98@gmail.com>
+..
+.. SPDX-License-Identifier: ISC
+
 .. ramose documentation master file, created by
    sphinx-quickstart on Mon Jun 13 18:18:29 2022.
    You can adapt this file completely to your liking, but it should at least

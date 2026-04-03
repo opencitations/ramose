@@ -4,6 +4,10 @@ version = "2.0.0"
 description = "Restful API Manager Over SPARQL Endpoints (RAMOSE) is an application that allows agile development and publication of documented RESTful APIs for querying SPARQL endpoints, according to a particular specification document."
 authors = [
     { name = "essepuntato", email = "essepuntato@gmail.com" },
+    { name = "marilena", email = "marilena.daquino2@unibo.it" },
+    { name = "dbrembilla", email = "davide.brembilla98@gmail.com" },
+    { name = "Ivan Heibi", email = "ivanhb.ita@gmail.com" },
+    { name = "Arcangelo Massari", email = "arcangelo.massari@unibo.it" },
 ]
 license = { text = "ISC" }
 requires-python = ">=3.10"
@@ -39,4 +43,5 @@ dev = [
     "genbadge[coverage]>=1.1.3",
     "pyright>=1.1.408",
     "pytest>=9.0.2",
+    "reuse>=6.2.0",
 ]

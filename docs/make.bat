@@ -1,3 +1,7 @@
+REM SPDX-FileCopyrightText: 2026 NONE
+REM
+REM SPDX-License-Identifier: CC0-1.0
+
 @ECHO OFF
 
 pushd %~dp0

@@ -1,27 +1,11 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-# Copyright (c) 2020
-# Silvio Peroni <essepuntato@gmail.com>
-# Marilena Daquino <marilena.daquino2@unibo.it>
+# SPDX-FileCopyrightText: 2018-2021 essepuntato <essepuntato@gmail.com>
+# SPDX-FileCopyrightText: 2020-2021 marilena <marilena.daquino2@unibo.it>
+# SPDX-FileCopyrightText: 2022 dbrembilla <davide.brembilla98@gmail.com>
+# SPDX-FileCopyrightText: 2024 Ivan Heibi <ivanhb.ita@gmail.com>
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 #
-# Permission to use, copy, modify, and/or distribute this software for any purpose
-# with or without fee is hereby granted, provided that the above copyright notice
-# and this permission notice appear in all copies.
-#
-# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-# REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
-# FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT,
-# OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
-# DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
-# ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
-# SOFTWARE.
+# SPDX-License-Identifier: ISC
 
-# RAMOSE v1.1
-# Ivan Heibi <ivan.heibi2@unibo.it>
-# [+] The preprocessing operation can output a list of values, this means Ramose will perform multiple sequential SPARQL queries (using the SPARQL query defined for that operation).
-# The marge of the final result is performed by the post processing operation. (e.g., see /venue-citation-count in indexapi_v2.py)
-
-__author__ = 'essepuntato'
 
 from abc import abstractmethod
 from re import search, DOTALL, findall, sub, match, split

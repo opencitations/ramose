@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 dbrembilla <davide.brembilla98@gmail.com>
+#
+# SPDX-License-Identifier: ISC
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full

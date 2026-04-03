@@ -1,5 +1,15 @@
+<!--
+SPDX-FileCopyrightText: 2018-2021 essepuntato <essepuntato@gmail.com>
+SPDX-FileCopyrightText: 2020 marilena <marilena.daquino2@unibo.it>
+SPDX-FileCopyrightText: 2022 dbrembilla <davide.brembilla98@gmail.com>
+SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+
+SPDX-License-Identifier: ISC
+-->
+
 [![Tests](https://github.com/opencitations/ramose/actions/workflows/test.yml/badge.svg)](https://github.com/opencitations/ramose/actions/workflows/test.yml)
 [![Coverage](https://opencitations.github.io/ramose/coverage/coverage-badge.svg)](https://opencitations.github.io/ramose/coverage/)
+[![REUSE](https://github.com/opencitations/ramose/actions/workflows/reuse.yml/badge.svg)](https://github.com/opencitations/ramose/actions/workflows/reuse.yml)
 # Restful API Manager Over SPARQL Endpoints (RAMOSE)
 
 Restful API Manager Over SPARQL Endpoints (RAMOSE) is an application that allows agile development and publication of documented RESTful APIs for querying SPARQL endpoints, according to a particular specification document.

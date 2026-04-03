@@ -1,3 +1,7 @@
+.. SPDX-FileCopyrightText: 2022 dbrembilla <davide.brembilla98@gmail.com>
+..
+.. SPDX-License-Identifier: ISC
+
 RAMOSE configuration
 ====================
 In order to configure an API with RAMOSE, you need to crete a hashformat file (.hf) containing the specifications of the API.

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: ISC
+
 from types import SimpleNamespace
 from unittest.mock import patch
 

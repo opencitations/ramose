@@ -1,3 +1,7 @@
+.. SPDX-FileCopyrightText: 2022 dbrembilla <davide.brembilla98@gmail.com>
+..
+.. SPDX-License-Identifier: ISC
+
 Introduction
 ============
 Restful API Manager Over SPARQL Endpoints (``ramose``) is an application that allows agile development and publication of documented RESTful APIs for querying SPARQL endpoints, according to a particular specification document. RAMOSE has been described in `this paper <https://doi.org/10.3233/SW-210439>`_
