@@ -83,3 +83,12 @@ class TestGetIndexNoLogFile:
         monkeypatch.chdir(tmp_path)
         html = doc_handler.get_index()
         assert "RAMOSE" in html
+
+
+class TestGetIndexWithLogFile:
+    def test_log_entries_appear_in_html(self, doc_handler, monkeypatch, tmp_path):
+        monkeypatch.chdir(tmp_path)
+        log_line = '127.0.0.1 - - [03/Apr/2026:10:00:00] "GET /v1/metadata/doi:10.1234 HTTP/1.1" 200 512'
+        (tmp_path / "ramose.log").write_text(log_line)
+        html = doc_handler.get_index()
+        assert "/v1/metadata/doi:10.1234" in html
