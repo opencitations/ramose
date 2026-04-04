@@ -1,0 +1,234 @@
+openapi: 3.0.3
+info:
+  title: Mixed Wikidata + OpenCitations + Crossref
+  version: 0.0.1
+  description: Example RAMOSE operation combining SPARQL endpoints with SPARQL.ANYTHING
+  license:
+    name: ISC
+  contact:
+    email: test@example.org
+servers:
+- url: http://localhost:5000/mixed
+x-ramose-endpoint: https://query-scholarly.wikidata.org/sparql
+x-ramose-addon: testaddon
+x-ramose-sparql-method: get
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: integer
+        message:
+          type: string
+      required:
+      - error
+      - message
+  parameters:
+    require:
+      name: require
+      in: query
+      description: Remove rows that have an empty value in the specified field. Repeatable.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    filter:
+      name: filter
+      in: query
+      description: |-
+        Filter rows. Repeatable.
+
+        Syntax: `field:opvalue` where `op` is one of `=`, `<`, `>`.
+        If `op` is omitted, `value` is treated as a regex.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    sort:
+      name: sort
+      in: query
+      description: 'Sort rows. Syntax: asc(field) or desc(field). Repeatable.'
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+    format:
+      name: format
+      in: query
+      description: Force output format (overrides Accept header).
+      required: false
+      schema:
+        type: string
+        enum:
+        - csv
+        - json
+        - xml
+    json:
+      name: json
+      in: query
+      description: |-
+        Transform JSON output rows. Repeatable.
+
+        Syntax:
+        - `array("<sep>", field)`
+        - `dict("<sep>", field, new_field_1, new_field_2, ...)`
+
+        Where `<sep>` is a string separator (e.g. `,` or `__`).
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        items:
+          type: string
+paths:
+  /metadata/{dois}:
+    get:
+      tags:
+      - Mixed Wikidata + OpenCitations + Crossref
+      summary: Combined metadata from Wikidata, OpenCitations, and Crossref
+      description: |-
+        Combined metadata from Wikidata, OpenCitations, and Crossref
+
+        ---
+
+        ### RAMOSE SPARQL
+
+        ```sparql
+        PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+        PREFIX wd:  <http://www.wikidata.org/entity/>
+
+        SELECT DISTINCT ?doi ?qid
+        WHERE {
+          VALUES ?doi { [[dois]] }
+          BIND(UCASE(?doi) AS ?doi_norm)
+
+          ?article wdt:P356 ?doi_norm .
+          BIND(STRAFTER(str(?article), "http://www.wikidata.org/entity/") AS ?qid)
+        }
+        LIMIT 1000
+
+        @@join ?doi ?doi type=left
+        @@endpoint https://sparql.opencitations.net/meta
+        PREFIX datacite: <http://purl.org/spar/datacite/>
+        PREFIX literal:  <http://www.essepuntato.it/2010/06/literalreification/>
+
+        SELECT ?doi ?br WHERE {
+          VALUES ?doi { [[dois]] }
+          ?br datacite:hasIdentifier ?id .
+          ?id datacite:usesIdentifierScheme datacite:doi ;
+              literal:hasLiteralValue ?doi .
+        }
+
+        @@values ?br:a
+        @@join ?br ?br type=left
+        @@endpoint https://sparql.opencitations.net/index
+        @@foreach a 0.1
+        PREFIX cito: <http://purl.org/spar/cito/>
+
+        SELECT ?br (COUNT(?citing) AS ?oc_citation_count) WHERE {
+          BIND(<[[a]]> AS ?br)
+          ?cit a cito:Citation ;
+               cito:hasCitedEntity  ?br ;
+               cito:hasCitingEntity ?citing .
+        }
+        GROUP BY ?br
+
+        @@join ?doi ?doi type=left
+        @@endpoint sparql-anything
+        PREFIX fx:  <http://sparql.xyz/facade-x/ns/>
+        PREFIX xyz: <http://sparql.xyz/facade-x/data/>
+
+        SELECT ?doi ?title (MAX(?year0) AS ?year)
+        WHERE {
+          VALUES ?doi { [[dois]] }
+          BIND(
+            fx:entity(
+              "x-sparql-anything:media-type=application/json,location=https://api.crossref.org/works/",
+              ?doi
+            ) AS ?svc
+          )
+
+          SERVICE ?svc {
+            # Crossref root → message object
+            ?root xyz:message ?msg .
+
+            # title is typically an array ["Title", ...]
+            ?msg xyz:title ?titleArray .
+            ?titleArray fx:anySlot ?title .
+
+            # issued.date-parts is [[year, month]]; we just extract the first number
+            ?msg xyz:issued ?issued .
+            ?issued xyz:date-parts ?datePartsArray .
+            ?datePartsArray fx:anySlot ?innerArray .
+            ?innerArray fx:anySlot ?year0 .
+          }
+        }
+        GROUP BY ?doi ?title
+        ```
+      parameters:
+      - name: dois
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: \"?10\..+[^_\"]((__|\" \")10\..+[^_])*\"?
+        description: 'Note: input is pre-processed by RAMOSE: lower(dois) --> split_dois(dois)'
+        example: 10.1108%2Fjd-12-2013-0166__10.1038%2Fnature12373
+      - $ref: '#/components/parameters/require'
+      - $ref: '#/components/parameters/filter'
+      - $ref: '#/components/parameters/sort'
+      - $ref: '#/components/parameters/format'
+      - $ref: '#/components/parameters/json'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    doi:
+                      type: string
+                    qid:
+                      type: string
+                    oc_citation_count:
+                      type: integer
+                    title:
+                      type: string
+                    year:
+                      type: integer
+            text/csv:
+              schema:
+                type: string
+            application/xml:
+              schema:
+                type: string
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/csv:
+              schema:
+                type: string
+            application/xml:
+              schema:
+                type: string
+      x-ramose:
+        preprocess: lower(dois) --> split_dois(dois)
+        call: /metadata/10.1108/jd-12-2013-0166__10.1038/nature12373
+        sparql_in_description: true

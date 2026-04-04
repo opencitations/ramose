@@ -21,29 +21,40 @@ class TestGetContentType:
 
 
 class TestConv:
-    def test_csv_output(self):
+    @pytest.fixture
+    def op(self):
+        op_item = {
+            "url": "/test/{id}",
+            "sparql": "SELECT ?x WHERE { ?x ?y ?z }",
+            "method": "get",
+            "field_type": "str(name) int(age)",
+        }
+        return Operation("/api/v1/test/value", "/api/v1/test/(.+)",
+                         op_item, "http://localhost:9999/sparql", "get", None)
+
+    def test_csv_output(self, op):
         csv_str = "name,age\nJohn,30\n"
-        result, ct = Operation.conv(csv_str, {}, "text/csv")
+        result, ct = op.conv(csv_str, {}, "text/csv")
         assert result == csv_str
         assert ct == "text/csv"
 
-    def test_json_output(self):
+    def test_json_output(self, op):
         csv_str = "name,age\nJohn,30\n"
-        result, ct = Operation.conv(csv_str, {}, "application/json")
+        result, ct = op.conv(csv_str, {}, "application/json")
         parsed = json.loads(result)
         assert parsed == [{"name": "John", "age": "30"}]
         assert ct == "application/json"
 
-    def test_format_override_via_query_string(self):
+    def test_format_override_via_query_string(self, op):
         csv_str = "name,age\nJohn,30\n"
-        result, ct = Operation.conv(csv_str, {"format": ["json"]}, "text/csv")
+        result, ct = op.conv(csv_str, {"format": ["json"]}, "text/csv")
         parsed = json.loads(result)
         assert parsed == [{"name": "John", "age": "30"}]
         assert ct == "application/json"
 
-    def test_format_override_csv(self):
+    def test_format_override_csv(self, op):
         csv_str = "name,age\nJohn,30\n"
-        result, ct = Operation.conv(csv_str, {"format": ["csv"]}, "application/json")
+        result, ct = op.conv(csv_str, {"format": ["csv"]}, "application/json")
         assert result == csv_str
         assert ct == "text/csv"
 

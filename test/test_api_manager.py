@@ -34,7 +34,7 @@ class TestBestMatch:
     def test_valid_url(self, api_mgr):
         conf, pat = api_mgr.best_match(api_mgr.base_url[0] + "/metadata/doi:10.1234")
         assert pat == "/v1/metadata/((doi|issn|isbn|omid|openalex|pmid|pmcid):.+?(__(doi|issn|isbn|omid|openalex|pmid|pmcid):.+?)*$)"
-        assert set(conf) == {"conf", "tp", "conf_json", "base_url", "website", "addon", "sparql_http_method"}
+        assert set(conf) == {"conf", "tp", "conf_json", "base_url", "website", "addon", "sparql_http_method", "sources_map", "allow_inline_endpoints", "engine"}
 
     def test_invalid_url(self, api_mgr):
         conf, pat = api_mgr.best_match("/nonexistent/path")

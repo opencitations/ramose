@@ -1,0 +1,103 @@
+#url /api/v1
+#type api
+#base https://w3id.org/oc/wikidata
+#method get
+#title Wikidata REST API
+#description A RAMOSE API implementation for Wikidata
+#version 0.0.2
+#license This document is licensed with a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/legalcode), while the REST API itself has been created using [RAMOSE](https://github.com/opencitations/ramose), the *Restful API Manager Over SPARQL Endpoints* created by [Silvio Peroni](https://orcid.org/0000-0003-0530-4305), which is licensed with an [ISC license](https://opensource.org/licenses/ISC). All the data returned by this API are made freely available under a [Creative Commons public domain dedication (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).
+#contacts [contact@opencitations.net](mailto:contact@opencitations.net)
+#endpoint https://query-scholarly.wikidata.org/sparql
+#allow_inline_endpoints true
+#addon testaddon
+
+#url /metadata/{dois}
+#type operation
+#dois str(\"?10\..+[^_\"]((__|\" \")10\..+[^_])*\"?)
+#preprocess lower(dois) --> split_dois(dois)
+#method get
+#description This operation returns Wikidata metadata for each input DOI and the number of incoming citations from OpenCitations Index.
+#call /metadata/10.1108/jd-12-2013-0166__10.1038/nature12373
+#field_type str(qid) str(author) datetime(year) str(title) str(source_title) str(source_id) str(volume) str(issue) str(page) str(doi) str(reference) int(citation_count) int(oc_citation_count)
+#format upper,to_upper;dummyxml,to_dummyxml;xml,to_xml
+
+#sparql  PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+SELECT DISTINCT ?author ?year ?title ?source_title ?volume ?issue ?page ?doi ?reference ?citation_count ?qid {
+  VALUES ?doi { [[dois]] }
+  BIND(UCASE(?doi) AS ?doi_norm)
+  ?article wdt:P356 ?doi_norm .
+
+  BIND(STRAFTER(str(?article), "http://www.wikidata.org/entity/") as ?qid) .
+
+  { SELECT DISTINCT ?article (GROUP_CONCAT(?cited_doi; separator="; ") as ?reference) {
+      VALUES ?doi { [[dois]] }
+      BIND(UCASE(?doi) AS ?doi_norm)
+      ?article wdt:P356 ?doi_norm .
+      OPTIONAL { ?article wdt:P2860 ?cited .
+                 OPTIONAL { ?cited wdt:P356 ?cited_doi . } }
+    } GROUP BY ?article
+  }
+
+  { SELECT ?article ?doi_norm (COUNT(?doi_norm) as ?citation_count) {
+      VALUES ?doi { [[dois]] }
+      BIND(UCASE(?doi) AS ?doi_norm)
+      ?article wdt:P356 ?doi_norm .
+      OPTIONAL { ?article ^wdt:P2860 ?other }
+    } GROUP BY ?article ?doi_norm
+  }
+
+  OPTIONAL { ?article wdt:P1476 ?title }
+  OPTIONAL { ?article wdt:P577 ?date
+            BIND(SUBSTR(str(?date), 0, 5) as ?year) }
+  OPTIONAL { ?article wdt:P1433/wdt:P1476 ?source_title }
+  OPTIONAL { ?article wdt:P478 ?volume }
+  OPTIONAL { ?article wdt:P433 ?issue }
+  OPTIONAL { ?article wdt:P304 ?page }
+
+  { SELECT ?article ?doi_norm (GROUP_CONCAT(?a; separator="; ") as ?author) {
+      VALUES ?doi { [[dois]] }
+      BIND(UCASE(?doi) AS ?doi_norm)
+      { SELECT ?article ?doi_norm ?a {
+          VALUES ?doi { [[dois]] }
+          BIND(UCASE(?doi) AS ?doi_norm)
+          ?article wdt:P356 ?doi_norm .
+          OPTIONAL {
+            ?article wdt:P50 ?author_res .
+            ?author_res wdt:P735/wdt:P1705 ?g_name ;
+                        wdt:P734/wdt:P1705 ?f_name .
+            BIND(CONCAT(?f_name, ", ", ?g_name) as ?a)
+          }
+        } GROUP BY ?article ?doi_norm ?a ORDER BY DESC(?a)
+      }
+    } GROUP BY ?article ?doi_norm
+  }
+} LIMIT 1000
+
+@@join ?doi ?doi type=left
+@@endpoint https://sparql.opencitations.net/meta
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal:  <http://www.essepuntato.it/2010/06/literalreification/>
+
+SELECT ?doi ?br WHERE {
+  VALUES ?doi { [[dois]] }
+  ?br datacite:hasIdentifier ?id .
+  ?id datacite:usesIdentifierScheme datacite:doi ;
+      literal:hasLiteralValue ?doi .
+}
+
+@@values ?br:a
+@@join ?br ?br type=left
+@@endpoint https://sparql.opencitations.net/index
+@@foreach a 0.1
+PREFIX cito: <http://purl.org/spar/cito/>
+
+SELECT ?br (COUNT(?citing) AS ?oc_citation_count) WHERE {
+  BIND(<[[a]]> AS ?br)
+  ?cit a cito:Citation ;
+       cito:hasCitedEntity  ?br ;
+       cito:hasCitingEntity ?citing .
+}
+GROUP BY ?br
+@@join ?br ?br type=left
+
+@@remove ?br

@@ -10,6 +10,7 @@
 from abc import abstractmethod
 from re import search, DOTALL, findall, sub, match, split
 from requests import get, post, put, delete
+from requests.exceptions import RequestException
 from requests import Session as _RequestsSession
 _http_session = _RequestsSession()
 from csv import DictReader, reader, writer
@@ -25,7 +26,12 @@ from dateutil.parser import parse
 from datetime import datetime
 from isodate import parse_duration
 from argparse import ArgumentParser
+import json
 import logging
+import pysparql_anything
+import re
+import time
+import yaml
 from os.path import abspath, dirname, basename
 from os import path as pt
 from os import sep, getcwd
@@ -34,6 +40,7 @@ from itertools import product
 
 FIELD_TYPE_RE = r"([^\(\s]+)\(([^\)]+)\)"
 PARAM_NAME = r"{([^{}\(\)]+)}"
+DEFAULT_HTTP_TIMEOUT = 60
 
 
 class HashFormatHandler(object):
@@ -795,6 +802,531 @@ The operations that this API implements are:
         return full_str
 
 
+class OpenAPIDocumentationHandler(DocumentationHandler):
+    """
+    Export RAMOSE .hf configuration(s) to an OpenAPI 3.0 YAML specification.
+
+    Notes:
+    - OpenAPI is a surface contract. RAMOSE implementation details are preserved as vendor extensions.
+    - Extra RAMOSE config fields from Tables 1-2 are kept as x-ramose-* where OpenAPI has no native field.
+    """
+
+    # -------------------------
+    # Small utilities
+    # -------------------------
+    def _normalize_base_url(self, base_url):
+        if base_url is None:
+            return None
+        return base_url[1:] if base_url.startswith("/") else base_url
+
+    def _get_conf(self, base_url=None):
+        if base_url is None:
+            first_key = next(iter(self.conf_doc))
+            return self.conf_doc[first_key]
+        base_url = self._normalize_base_url(base_url)
+        return self.conf_doc["/" + base_url]
+
+    def _schema_for_ramose_type(self, t):
+        t = (t or "str").strip().lower()
+        if t == "int":
+            return {"type": "integer"}
+        if t == "float":
+            return {"type": "number"}
+        if t == "datetime":
+            return {"type": "string", "format": "date-time"}
+        if t == "duration":
+            # OpenAPI doesn't standardize duration; still useful as hint.
+            return {"type": "string", "format": "duration"}
+        return {"type": "string"}
+
+    def _parse_param_type_shape(self, s):
+        # expected "type(regex)"
+        try:
+            t, shape = findall(r"^\s*([^\(]+)\((.+)\)\s*$", s)[0]
+            return t.strip(), shape.strip()
+        except Exception:
+            return "str", ".+"
+
+    def _guess_contact(self, contacts_value):
+        """
+        Table 1: '#contacts <contact_url>' but in practice it's often an email.
+        Prefer OpenAPI contact.email when it looks like an email.
+        """
+        if not contacts_value:
+            return None
+        c = str(contacts_value).strip()
+        if "@" in c and " " not in c and "/" not in c:
+            return {"email": c}
+        return {"name": c}
+
+    def _clean_text(self, v):
+        """
+        Normalize text coming from .hf parsing so Swagger/ YAML render nicely:
+        - remove wrapping quotes if they were included as part of the value
+        - turn literal '\\n' into real newlines
+        - trim whitespace
+        """
+        if v is None:
+            return None
+        s = str(v).strip()
+        # Strip wrapping quotes if parser stored them as part of the value
+        if len(s) >= 2 and ((s[0] == s[-1] == '"') or (s[0] == s[-1] == "'")):
+            s = s[1:-1].strip()
+        # Convert literal backslash-n sequences to actual newlines
+        s = s.replace("\\n", "\n")
+        return s
+
+    def _param_hint_from_preprocess(self, preprocess_str, param_name):
+        """
+        Table 2: preprocess functions like 'lower(doi) --> split_dois(dois)'.
+        Not formalizable in OpenAPI, but helpful as a hint.
+        """
+        if not preprocess_str:
+            return ""
+        s = str(preprocess_str)
+        # Any function call mentioning the param inside (...)?
+        if re.search(r"\([^)]*\b" + re.escape(param_name) + r"\b[^)]*\)", s):
+            return f"Note: input is pre-processed by RAMOSE: {s}"
+        return ""
+
+    def _try_parse_output_json(self, output_json_value):
+        """
+        Table 2: '#output_json <ex_response>' (JSON example).
+        """
+        if not output_json_value:
+            return None
+        try:
+            return json.loads(output_json_value)
+        except Exception:
+            return None
+
+    # -------------------------
+    # Formats / media-types
+    # -------------------------
+    def _collect_format_tokens(self, conf):
+        # always supported by RAMOSE docs
+        formats = {"csv", "json"}
+        for op in conf["conf_json"][1:]:
+            if "format" in op:
+                fm_val = op["format"]
+                fm_list = fm_val if isinstance(fm_val, list) else [fm_val]
+                for fm in fm_list:
+                    for part in str(fm).split(";"):
+                        part = part.strip()
+                        if not part:
+                            continue
+                        # expected "fmt,func"
+                        fmt = part.split(",", 1)[0].strip()
+                        if fmt:
+                            formats.add(fmt)
+        return sorted(formats)
+
+    def _media_type_for_format(self, fmt):
+        fmt = (fmt or "").strip().lower()
+        mapping = {
+            "json": "application/json",
+            "csv": "text/csv",
+            "xml": "application/xml",
+            "rdfxml": "application/rdf+xml",
+            "rdf+xml": "application/rdf+xml",
+            "ttl": "text/turtle",
+            "turtle": "text/turtle",
+            "nt": "application/n-triples",
+            "ntriples": "application/n-triples",
+            "n-triples": "application/n-triples",
+            "nq": "application/n-quads",
+            "n-quads": "application/n-quads",
+            "trig": "application/trig",
+        }
+        return mapping.get(fmt, None)
+
+    def _build_response_content(self, ok_schema, formats_enum, ok_example=None, err_schema_ref=None):
+        """
+        Build OpenAPI 'content' dict for responses based on supported formats.
+        JSON gets structured schema. Others are represented as string payloads.
+        If err_schema_ref is provided, also returns an error-content dict.
+        """
+        content = OrderedDict()
+
+        # JSON: structured
+        content["application/json"] = {"schema": ok_schema}
+        if ok_example is not None:
+            content["application/json"]["examples"] = {"example": {"value": ok_example}}
+
+        # CSV: textual
+        content["text/csv"] = {"schema": {"type": "string"}}
+
+        # Other formats discovered in .hf (#format)
+        for fmt in formats_enum or []:
+            mt = self._media_type_for_format(fmt)
+            if mt is None or mt in content:
+                continue
+            if mt in ("application/json", "text/csv"):
+                continue
+            content[mt] = {"schema": {"type": "string"}}
+
+        if err_schema_ref:
+            err_content = OrderedDict()
+            err_content["application/json"] = {"schema": {"$ref": err_schema_ref}}
+            err_content["text/csv"] = {"schema": {"type": "string"}}
+            for fmt in formats_enum or []:
+                mt = self._media_type_for_format(fmt)
+                if mt is None or mt in err_content:
+                    continue
+                if mt in ("application/json", "text/csv"):
+                    continue
+                err_content[mt] = {"schema": {"type": "string"}}
+            return content, err_content
+
+        return content
+
+    # -------------------------
+    # Examples from #call
+    # -------------------------
+    def _extract_param_examples_from_call(self, path_template, call_value):
+        """
+        Given a template like '/metadata/{dois}' and a call like
+        '/metadata/10.1/abc__10.2/xyz', return {'dois': '10.1/abc__10.2/xyz'}.
+
+        IMPORTANT: RAMOSE allows slashes inside the last param because it routes
+        everything via <path:api_url>. OpenAPI tooling typically expects these
+        slashes to be URL-encoded in examples.
+        """
+        if not call_value:
+            return {}
+
+        call_path = str(call_value).split("?", 1)[0].strip()
+
+        if not path_template.startswith("/"):
+            path_template = "/" + path_template
+        if not call_path.startswith("/"):
+            call_path = "/" + call_path
+
+        parts = path_template.split("/")
+        re_parts = []
+
+        # Allow '/' inside the LAST parameter segment (captures the rest of the path)
+        last_index = len(parts) - 1
+
+        for i, part in enumerate(parts):
+            if part.startswith("{") and part.endswith("}"):
+                name = part[1:-1]
+                if i == last_index:
+                    # last param: capture everything to end, including slashes
+                    re_parts.append(r"(?P<%s>.+)" % name)
+                else:
+                    # middle params: standard segment (no slash)
+                    re_parts.append(r"(?P<%s>[^/]+)" % name)
+            else:
+                re_parts.append(re.escape(part))
+
+        pat = "^" + "/".join(re_parts) + "$"
+        m = re.match(pat, call_path)
+        if not m:
+            return {}
+        return {k: v for k, v in m.groupdict().items() if v is not None}
+
+    # -------------------------
+    # Schema from field_type
+    # -------------------------
+    def _build_row_schema_from_field_type(self, field_type_str):
+        props = OrderedDict()
+        for t, f in findall(FIELD_TYPE_RE, field_type_str or ""):
+            props[f] = self._schema_for_ramose_type(t)
+        return {"type": "object", "properties": props}
+
+    # -------------------------
+    # Main builder
+    # -------------------------
+    def _build_openapi(self, base_url=None):
+        conf = self._get_conf(base_url)
+        api_meta = conf["conf_json"][0]
+        formats_enum = self._collect_format_tokens(conf)
+
+        spec = OrderedDict()
+        spec["openapi"] = "3.0.3"
+
+        # info
+        spec["info"] = OrderedDict(
+            [
+                ("title", api_meta.get("title", "RAMOSE API")),
+                ("version", api_meta.get("version", "0.0.0")),
+            ]
+        )
+        if "description" in api_meta:
+            spec["info"]["description"] = api_meta["description"]
+        if "license" in api_meta:
+            spec["info"]["license"] = {"name": api_meta["license"]}
+        if "contacts" in api_meta:
+            contact_obj = self._guess_contact(api_meta.get("contacts"))
+            if contact_obj:
+                spec["info"]["contact"] = contact_obj
+
+        # servers
+        base = api_meta.get("base", "")
+        root = api_meta.get("url", "")
+        spec["servers"] = [{"url": f"{base}{root}"}]
+
+        # Preserve additional Table 1 fields as vendor extensions
+        if "endpoint" in api_meta:
+            spec["x-ramose-endpoint"] = api_meta.get("endpoint")
+        if "addon" in api_meta:
+            spec["x-ramose-addon"] = api_meta.get("addon")
+        if "method" in api_meta:
+            # Table 1: method used to send request to SPARQL endpoint
+            spec["x-ramose-sparql-method"] = api_meta.get("method")
+
+        # components
+        spec["components"] = {"schemas": {}, "parameters": {}}
+
+        spec["components"]["schemas"]["Error"] = {
+            "type": "object",
+            "properties": {"error": {"type": "integer"}, "message": {"type": "string"}},
+            "required": ["error", "message"],
+        }
+
+        # Common query params (as in HTML docs)
+        spec["components"]["parameters"]["require"] = {
+            "name": "require",
+            "in": "query",
+            "description": "Remove rows that have an empty value in the specified field. Repeatable.",
+            "required": False,
+            "style": "form",
+            "explode": True,
+            "schema": {"type": "array", "items": {"type": "string"}},
+        }
+        spec["components"]["parameters"]["filter"] = {
+            "name": "filter",
+            "in": "query",
+            "description": (
+                "Filter rows. Repeatable.\n\n"
+                "Syntax: `field:opvalue` where `op` is one of `=`, `<`, `>`.\n"
+                "If `op` is omitted, `value` is treated as a regex."
+            ),
+            "required": False,
+            "style": "form",
+            "explode": True,
+            "schema": {"type": "array", "items": {"type": "string"}},
+        }
+        spec["components"]["parameters"]["sort"] = {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort rows. Syntax: asc(field) or desc(field). Repeatable.",
+            "required": False,
+            "style": "form",
+            "explode": True,
+            "schema": {"type": "array", "items": {"type": "string"}},
+        }
+        spec["components"]["parameters"]["format"] = {
+            "name": "format",
+            "in": "query",
+            "description": "Force output format (overrides Accept header).",
+            "required": False,
+            "schema": {"type": "string", "enum": formats_enum},
+        }
+        spec["components"]["parameters"]["json"] = {
+            "name": "json",
+            "in": "query",
+            "description": (
+                "Transform JSON output rows. Repeatable.\n\n"
+                "Syntax:\n"
+                "- `array(\"<sep>\", field)`\n"
+                "- `dict(\"<sep>\", field, new_field_1, new_field_2, ...)`\n\n"
+                "Where `<sep>` is a string separator (e.g. `,` or `__`)."
+            ),
+            "required": False,
+            "style": "form",
+            "explode": True,
+            "schema": {"type": "array", "items": {"type": "string"}},
+        }
+
+        common_param_refs = [
+            {"$ref": "#/components/parameters/require"},
+            {"$ref": "#/components/parameters/filter"},
+            {"$ref": "#/components/parameters/sort"},
+            {"$ref": "#/components/parameters/format"},
+            {"$ref": "#/components/parameters/json"},
+        ]
+
+        # paths
+        spec["paths"] = OrderedDict()
+        tag_name = api_meta.get("title", "RAMOSE API")
+
+        for op in conf["conf_json"][1:]:
+            raw_path = op.get("url", "")
+            if not raw_path.startswith("/"):
+                raw_path = "/" + raw_path
+
+            if raw_path not in spec["paths"]:
+                spec["paths"][raw_path] = OrderedDict()
+
+            # path parameters
+            path_params = []
+            for p in findall(PARAM_NAME, raw_path):
+                t = "str"
+                shape = ".+"
+                if p in op:
+                    t, shape = self._parse_param_type_shape(op[p])
+
+                schema = self._schema_for_ramose_type(t)
+                if schema.get("type") == "string" and shape:
+                    schema["pattern"] = shape
+
+                param_obj = {
+                    "name": p,
+                    "in": "path",
+                    "required": True,
+                    "schema": schema,
+                }
+
+                hint = self._param_hint_from_preprocess(op.get("preprocess"), p)
+                if hint:
+                    param_obj["description"] = hint
+
+                path_params.append(param_obj)
+
+            # Examples from Table 2 '#call'
+            call_examples = self._extract_param_examples_from_call(raw_path, op.get("call"))
+            for param in path_params:
+                nm = param.get("name")
+                if nm in call_examples:
+                    # Encode slashes etc. so Swagger UI / generated clients behave correctly
+                    param["example"] = quote(call_examples[nm], safe="-._~__")
+                    if "__" in call_examples[nm] and "description" not in param:
+                        param["description"] = "Multiple values can be provided separated by '__'."
+
+            # response schema: array of row objects
+            row_schema = self._build_row_schema_from_field_type(op.get("field_type", ""))
+            ok_schema = {"type": "array", "items": row_schema}
+            ok_example = self._try_parse_output_json(op.get("output_json"))
+
+            ok_content, err_content = self._build_response_content(
+                ok_schema=ok_schema,
+                formats_enum=formats_enum,
+                ok_example=ok_example,
+                err_schema_ref="#/components/schemas/Error",
+            )
+
+            # methods can be space-separated in RAMOSE
+            methods = split(r"\s+", op.get("method", "get").strip())
+            for m in [mm for mm in methods if mm]:
+                m = m.lower()
+
+                summary = ""
+                if "description" in op and op["description"]:
+                    summary = op["description"].split("\n")[0].strip()
+
+                # Build a nicer description (and optionally include SPARQL as a markdown code block)
+                desc = self._clean_text(op.get("description")) or ""
+                spr = self._clean_text(op.get("sparql"))
+
+                if spr:
+                    desc += "\n\n---\n\n### RAMOSE SPARQL\n\n```sparql\n" + spr + "\n```"
+
+                op_obj = OrderedDict(
+                    [
+                        ("tags", [tag_name]),
+                        ("summary", summary),
+                        ("description", desc),
+                        ("parameters", path_params + common_param_refs),
+                        (
+                            "responses",
+                            OrderedDict(
+                                [
+                                    (
+                                        "200",
+                                        {
+                                            "description": "Successful response",
+                                            "content": ok_content,
+                                        },
+                                    ),
+                                    (
+                                        "default",
+                                        {
+                                            "description": "Error",
+                                            "content": err_content,
+                                        },
+                                    ),
+                                ]
+                            ),
+                        ),
+                    ]
+                )
+
+                # Option B: keep RAMOSE-specific stuff under one vendor extension object
+                ramose_ext = OrderedDict()
+
+                pre = self._clean_text(op.get("preprocess"))
+                post_val = self._clean_text(op.get("postprocess"))
+                call = self._clean_text(op.get("call"))
+
+                if pre:
+                    ramose_ext["preprocess"] = pre
+                if post_val:
+                    ramose_ext["postprocess"] = post_val
+                if call:
+                    ramose_ext["call"] = call
+
+                # Instead of embedding the giant SPARQL here (which makes the YAML hard to read),
+                # we indicate where it is rendered.
+                if spr:
+                    ramose_ext["sparql_in_description"] = True
+
+                if ramose_ext:
+                    op_obj["x-ramose"] = ramose_ext
+
+                # Assign the operation
+                spec["paths"][raw_path][m] = op_obj
+
+        return spec
+
+    # -------------------------
+    # PyYAML compatibility
+    # -------------------------
+    def _to_builtin(self, obj):
+        """Recursively convert OrderedDict (and other non-builtin containers)
+        to plain Python builtins so that yaml.safe_dump can serialize it."""
+        if isinstance(obj, OrderedDict):
+            obj = dict(obj)
+        if isinstance(obj, dict):
+            return {k: self._to_builtin(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple, set)):
+            return [self._to_builtin(v) for v in obj]
+        return obj
+
+    def _dump_yaml(self, spec):
+        """
+        Dump OpenAPI spec to YAML with nice formatting:
+        - multiline strings become block scalars (|)
+        - keys keep insertion order (sort_keys=False)
+        """
+        class _RamoseYamlDumper(yaml.SafeDumper):
+            pass
+
+        def _str_presenter(dumper, data):
+            if "\n" in data:
+                return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+            return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+        _RamoseYamlDumper.add_representer(str, _str_presenter)
+        return yaml.dump(spec, Dumper=_RamoseYamlDumper, sort_keys=False, allow_unicode=True)
+
+    def get_documentation(self, base_url=None):
+        spec = self._build_openapi(base_url=base_url)
+        spec = self._to_builtin(spec)
+        yml = self._dump_yaml(spec)
+        return 200, yml
+
+    def store_documentation(self, file_path, base_url=None):
+        yml = self.get_documentation(base_url=base_url)[1]
+        with open(file_path, "w", encoding="utf8") as f:
+            f.write(yml)
+
+    def get_index(self, *args, **dargs):
+        # Not used by the current UI. Keep a minimal placeholder.
+        return "OpenAPI exporter available."
+
+
 class DataType(object):
     def __init__(self):
         """This class implements all the possible data types that can be used within
@@ -873,13 +1405,22 @@ class DataType(object):
 
 
 class Operation(object):
-    def __init__(self, op_complete_url, op_key, i, tp, sparql_http_method, addon):
-        """ This class is responsible for materialising a API operation to be run against a SPARQL endpoint.
-         It takes in input a full URL referring to a call to an operation (parameter 'op_complete_url'),
+    def __init__(self, op_complete_url, op_key, i, tp, sparql_http_method, addon,
+                 format=None, sources_map=None, allow_inline_endpoints=False, engine="sparql"):
+        """This class is responsible for materialising a API operation to be run against a SPARQL endpoint
+        (or, depending on configuration, through the SPARQL.Anything engine).
+
+        It takes in input a full URL referring to a call to an operation (parameter 'op_complete_url'),
         the particular shape representing an operation (parameter 'op_key'), the definition (in JSON) of such
         operation (parameter 'i'), the URL of the triplestore to contact (parameter 'tp'), the HTTP method
-        to use for the SPARQL request (paramenter 'sparql_http_method', set to either 'get' or 'post'), and the path
-        of the Python file which defines additional functions for use in the operation (parameter 'addon')."""
+        to use for the SPARQL request (parameter 'sparql_http_method', set to either 'get' or 'post'), the path
+        of the Python file which defines additional functions for use in the operation (parameter 'addon'), and formats
+        with the names of the corresponding functions responsible for converting CSV data into the specified formats
+        (parameter 'format').
+        It also accepts a mapping of named sources to endpoint URLs referenced by @@with directives
+        (parameter 'sources_map'), a flag controlling whether @@endpoint directives are allowed to override
+        endpoints inline (parameter 'allow_inline_endpoints'), and the engine identifier selecting the execution
+        backend (parameter 'engine')."""
         self.url_parsed = urlsplit(op_complete_url)
         self.op_url = self.url_parsed.path
         self.op = op_key
@@ -887,6 +1428,11 @@ class Operation(object):
         self.tp = tp
         self.sparql_http_method = sparql_http_method
         self.addon = addon
+        self.format = format or {}
+        self.sources_map = sources_map or {}
+        self.allow_inline_endpoints = allow_inline_endpoints
+        self.engine = engine
+        self._sa_engine = None
 
         self.operation = {
             "=": eq,
@@ -910,19 +1456,27 @@ class Operation(object):
 
         return content_type
 
-    @staticmethod
-    def conv(s, query_string, c_type="text/csv"):
+    def conv(self, s, query_string, c_type="text/csv"):
         """This method takes a string representing a CSV document and converts it in the requested format according
         to what content type is specified as input."""
 
         content_type = Operation.get_content_type(c_type)
 
-        # Overrite if requesting a particular format via the URL
+        # Overwrite if requesting a particular format via the URL
         if "format" in query_string:
             req_formats = query_string["format"]
 
             for req_format in req_formats:
                 content_type = Operation.get_content_type(req_format)
+
+                if req_format in self.format:
+                    converter_func = getattr(self.addon, self.format[req_format])
+                    return converter_func(s), content_type
+
+        # If a non built-in format was requested but no converter ran,
+        # force CSV Content-Type instead of echoing the requested token.
+        if content_type not in ("text/csv", "application/json"):
+            content_type = "text/csv"
 
         if "application/json" in content_type:
             with StringIO(s) as f:
@@ -1300,8 +1854,378 @@ class Operation(object):
 
         return result
 
+    @staticmethod
+    def _is_directive(line):
+        return line.strip().startswith("@@")
+
+    def _parse_steps(self, text, default_endpoint, params):
+        """
+        Returns a list of steps:
+          - ("QUERY", endpoint_url, query_text)
+          - ("JOIN", left_var, right_var, how)       # how in {"inner","left"}
+          - ("REMOVE", [vars])
+          - ("WITH", endpoint_url)                   # resolved from sources_map
+          - ("ENDPOINT", endpoint_url)               # explicit url (if allowed)
+          - ("VALUES_INJECT", [vars])                # @@values ?var1 ?var2 ...
+          - ("FOREACH_SETUP", alias, var_name)       # @@values ?var:alias
+          - ("FOREACH_MARK", alias, delay_seconds)   # @@foreach alias [delay]
+        """
+        steps = []
+        cur_query = []
+        current_endpoint = default_endpoint
+
+        def flush_query():
+            if cur_query:
+                q = "\n".join(cur_query).strip()
+                if not q:
+                    cur_query.clear()
+                    return
+                # parameter substitution [[...]]
+                for p, v in params.items():
+                    q = q.replace(f"[[{p}]]", str(v))
+                steps.append(("QUERY", current_endpoint, q))
+                cur_query.clear()
+
+        for raw in text.splitlines():
+            line = raw.rstrip("\n")
+            if not self._is_directive(line):
+                cur_query.append(line)
+                continue
+
+            # directive line -> first close any pending query
+            flush_query()
+
+            body = line.strip()[2:].strip()  # remove leading @@
+            parts = body.split()
+            cmd = parts[0].lower()
+
+            if cmd == "with":
+                name = parts[1]
+                if name not in self.sources_map:
+                    raise ValueError(f"Unknown source '{name}' in @@with; declare it in #sources.")
+                current_endpoint = self.sources_map[name]
+
+            elif cmd == "endpoint":
+                url = parts[1]
+                if not self.allow_inline_endpoints:
+                    raise ValueError("@@endpoint not allowed (enable #allow_inline_endpoints).")
+                current_endpoint = url
+
+            elif cmd == "join":
+                left = parts[1]
+                right = parts[2]
+                how = "inner"
+                if len(parts) >= 4 and parts[3].startswith("type="):
+                    how = parts[3].split("=", 1)[1].lower()
+                steps.append(("JOIN", left, right, how))
+
+            elif cmd == "remove":
+                vars_ = parts[1:]
+                steps.append(("REMOVE", vars_))
+
+            elif cmd == "values":
+                # syntax:
+                    # @@values ?var1 ?var2 ...
+                    # @@values ?var:alias              -> FOREACH_SETUP (for @@foreach)
+                tokens = parts[1:]
+                if not tokens:
+                    raise ValueError("@@values needs at least one variable")
+
+                alias_specs = [t for t in tokens if ":" in t]
+                if alias_specs:
+                    # We only support exactly one ?var:alias pair for now
+                    if len(tokens) != 1 or len(alias_specs) != 1:
+                        raise ValueError(
+                            "@@values with alias supports exactly one ?var:alias pair"
+                        )
+                    var_token = alias_specs[0]
+                    var_name, alias = var_token.split(":", 1)
+                    steps.append(("FOREACH_SETUP", alias, var_name))
+                else:
+                    vars_ = tokens
+                    steps.append(("VALUES_INJECT", vars_))
+
+            elif cmd == "foreach":
+                # syntax: @@foreach alias [delay_seconds]
+                if len(parts) < 2:
+                    raise ValueError("@@foreach requires an alias name")
+                alias = parts[1]
+                delay = 0.0
+                if len(parts) >= 3:
+                    try:
+                        delay = float(parts[2])
+                    except ValueError:
+                        raise ValueError(f"Invalid delay value in @@foreach: {parts[2]!r}")
+                steps.append(("FOREACH_MARK", alias, delay))
+
+            else:
+                raise ValueError(f"Unknown directive @@{cmd}")
+
+        flush_query()
+        return steps
+
+    def _run_sparql_dicts(self, endpoint_url, query_text):
+        """Run a SELECT query against a SPARQL endpoint and return a list of dict rows.
+
+        This always requests CSV and parses it via DictReader, to stay consistent
+        with RAMOSE's legacy pipeline.
+        """
+        try:
+            if self.sparql_http_method == "get":
+                r = _http_session.get(
+                    endpoint_url + "?query=" + quote(query_text),
+                    headers={
+                        "Accept": "text/csv",
+                        "User-Agent": "RAMOSE/2.0.0",
+                    },
+                    timeout=DEFAULT_HTTP_TIMEOUT,
+                )
+            else:
+                r = _http_session.post(
+                    endpoint_url,
+                    data=query_text,
+                    headers={
+                        "Accept": "text/csv",
+                        "Content-Type": "application/sparql-query",
+                        "User-Agent": "RAMOSE/2.0.0",
+                    },
+                    timeout=DEFAULT_HTTP_TIMEOUT,
+                )
+        except RequestException as e:
+            raise RuntimeError(f"SPARQL request failed: {e}") from e
+
+        r.encoding = "utf-8"
+        if r.status_code != 200:
+            raise RuntimeError(f"SPARQL {r.status_code}: {r.reason}")
+        text = r.content.decode("utf-8-sig", errors="replace")
+        list_of_lines = text.splitlines()
+        return list(DictReader(list_of_lines))
+
+    def _run_sparql_anything_dicts(self, query_text, values=None):
+        """
+        Execute a SPARQL Anything SELECT query via PySPARQL-Anything and return
+        a list of dicts (one per row), in the same shape as _run_sparql_dicts.
+
+        query_text: full SPARQL (Anything) query string
+                        (typically containing SERVICE <x-sparql-anything:...>).
+        values: optional dict of template parameters for the query
+                    (name -> value), passed to SPARQL Anything's `values=`.
+        """
+        # Lazily create and cache the engine so we don't re-initialise the JVM
+        engine = getattr(self, "_sa_engine", None)
+        if engine is None:
+            engine = pysparql_anything.SparqlAnything()
+            self._sa_engine = engine
+
+        # Build kwargs for PySPARQL-Anything
+        kwargs = {"query": query_text}
+        if values:
+            # SPARQL Anything expects a dict[str, str]
+            kwargs["values"] = {str(k): str(v) for k, v in values.items()}
+
+        # Ask PySPARQL-Anything for a Python dict structure
+        result = engine.select(output_type=dict, **kwargs)
+
+        # --- Normalisation to list[dict] -----------------------------------
+        # 1) If it's already a list of dicts, just return it.
+        if isinstance(result, list):
+            if result and isinstance(result[0], dict):
+                return result
+            # list but not dicts (tuples, etc.): coerce
+            return [dict(row) for row in result]
+
+        # 2) If it's not a dict at all, just wrap it as a single-row result.
+        if not isinstance(result, dict):
+            return [dict(result=result)]
+
+        # 3) Try standard SPARQL JSON ResultSet shape: { "head": {vars}, "results": { "bindings": [...] } }
+        head = result.get("head")
+        results = result.get("results")
+        if isinstance(head, dict) and isinstance(results, dict) and "bindings" in results:
+            vars_ = head.get("vars") or []
+            rows = []
+            for b in results.get("bindings", []):
+                row = {}
+                for v in vars_:
+                    cell = b.get(v)
+                    if isinstance(cell, dict):
+                        # standard SPARQL JSON: { "type": "...", "value": "..." , ... }
+                        row[v] = cell.get("value")
+                    else:
+                        row[v] = cell
+                rows.append(row)
+            return rows
+
+        # 4) Otherwise assume it is a mapping column_name -> list-of-values (or scalars)
+        rows = []
+        cols = list(result.keys())
+
+        # Find maximum column length, if columns are lists/tuples
+        max_len = 0
+        for c in cols:
+            v = result[c]
+            if isinstance(v, (list, tuple)):
+                max_len = max(max_len, len(v))
+
+        if max_len:
+            for i in range(max_len):
+                row = {}
+                for c in cols:
+                    v = result[c]
+                    if isinstance(v, (list, tuple)):
+                        row[c] = v[i] if i < len(v) else None
+                    else:
+                        # scalar: repeat in every row
+                        row[c] = v
+                rows.append(row)
+            return rows
+
+        # 5) Fallback: treat the dict as a single-row result
+        return [result]
+
+    def _run_query_dicts(self, endpoint_url, query_text):
+        """
+        Dispatch query execution to the appropriate backend, with support
+        for per-query engine selection in multi-source mode.
+
+        Rules:
+        - If endpoint_url is the special string "sparql-anything" (case-insensitive),
+        then always use SPARQL.ANYTHING (PySPARQL-Anything) for this query.
+        - Otherwise, fall back to the operation-level engine:
+            * engine == "sparql-anything" -> SPARQL.ANYTHING
+            * else                        -> standard HTTP SPARQL
+        """
+
+        # Per-query override: @@endpoint sparql-anything
+        if endpoint_url and str(endpoint_url).strip().lower() == "sparql-anything":
+            return self._run_sparql_anything_dicts(query_text)
+
+        # Default behaviour: operation-level engine
+        if self.engine == "sparql-anything":
+            return self._run_sparql_anything_dicts(query_text)
+        else:
+            return self._run_sparql_dicts(endpoint_url, query_text)
+
+    def _inject_values_clause(self, query_text, vars_, acc_rows):
+        # build distinct tuples for requested vars from the accumulator
+        cols = [v.lstrip("?") for v in vars_]
+        tuples, seen = [], set()
+        for row in (acc_rows or []):
+            tup = tuple(row.get(c, "") for c in cols)
+            if all(tup) and tup not in seen:
+                seen.add(tup)
+                tuples.append(tup)
+        if not tuples:
+            return query_text  # nothing to inject
+
+        # format literals vs IRIs
+        def fmt(x):
+            s = str(x)
+            if s.startswith("http://") or s.startswith("https://"):
+                return f"<{s}>"
+            return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+        head = "VALUES (" + " ".join(vars_) + ") {\n"
+        body = "\n".join("  (" + " ".join(fmt(v) for v in tup) + ")" for tup in tuples)
+        tail = "\n}\n"
+
+        i = query_text.find("{")
+        if i == -1:
+            # no WHERE brace: put VALUES at top (legal SPARQL)
+            return head + body + tail + query_text
+        j = i + 1
+        return query_text[:j] + "\n" + head + body + tail + query_text[j:]
+
+    @staticmethod
+    def _drop_columns(rows, vars_):
+        if not rows:
+            return rows
+        vars_set = set(v.lstrip("?") for v in vars_)
+        out = []
+        for r in rows:
+            out.append({k: v for k, v in r.items() if k not in vars_set and ("?" + k) not in vars_set})
+        return out
+
+    def _norm_join_key(self, v):
+        if v is None:
+            return None
+        s = str(v).strip()
+        # unify scheme for w3id IRIs (and similar)
+        if s.startswith("http://"):
+            s = "https://" + s[len("http://"):]
+        # drop a single trailing slash for stability
+        if s.endswith("/"):
+            s = s[:-1]
+        return s
+
+    def _join(self, left_rows, right_rows, lkey, rkey, how="inner"):
+        """
+        Merge two row sets on lkey (from left_rows) and rkey (from right_rows).
+        - lkey/rkey may be passed as '?var' or 'var' -> we normalize to bare names.
+        - Keys are normalized with _norm_join_key (e.g., http -> https, trim slash).
+        - When 'left', all left rows are preserved even if no match on the right.
+        - Right-hand columns are copied into the merged row; collisions are avoided.
+        """
+        # 1) Normalize column names (strip leading '?')
+        lcol = lkey.lstrip("?")
+        rcol = rkey.lstrip("?")
+
+        left_rows = left_rows or []
+        right_rows = right_rows or []
+
+        # 2) Build an index for right_rows on normalized rcol values
+        rindex = {}
+        for r in right_rows:
+            rk = self._norm_join_key(r.get(rcol))
+            if rk is None:
+                continue
+            rindex.setdefault(rk, []).append(r)
+
+        # determine right columns to copy (excluding the join key)
+        right_cols = [c for c in (right_rows[0].keys() if right_rows else []) if c != rcol]
+
+        out = []
+        for l in left_rows:
+            lk = self._norm_join_key(l.get(lcol))
+            matches = rindex.get(lk, [])
+            if matches:
+                for r in matches:
+                    merged = dict(l)
+                    for c in right_cols:
+                        rv = r.get(c)
+                        if rv is None:
+                            continue
+                        if c not in merged or merged[c] in ("", None):
+                            merged[c] = rv
+                        else:
+                            alt = f"{c}_r"
+                            if alt not in merged or merged[alt] in ("", None):
+                                merged[alt] = rv
+                    out.append(merged)
+            else:
+                if how == "left":
+                    out.append(dict(l))
+                # inner: drop
+        return out
+
+    @staticmethod
+    def _header_from_field_type(op_item, acc):
+        # Respect #field_type order if provided, else derive from data
+        if "field_type" in op_item:
+            # FIELD_TYPE_RE is global in this file
+            return [f for (_, f) in findall(FIELD_TYPE_RE, op_item["field_type"])]
+        # fallback to keys of first row
+        return list(acc[0].keys()) if acc else []
+
+    @staticmethod
+    def _to_csv_rows(header, acc):
+        rows = [header]
+        for d in acc:
+            rows.append([d.get(h, "") for h in header])
+        return rows
+
     def exec(self, method="get", content_type="application/json"):
-        """This method takes in input the the HTTP method to use for the call
+        """This method takes in input the HTTP method to use for the call
         and the content type to return, and execute the operation as indicated
         in the specification file, by running (in the following order):
 
@@ -1330,77 +2254,224 @@ class Operation(object):
                         par_value = par_man[idx]
                     par_dict[par] = par_value
 
-                self.preprocess(par_dict, self.i, self.addon)
+                if self.addon is not None:
+                    self.preprocess(par_dict, self.i, self.addon)
 
-                # Handle in case the parameters are lists, we need to generate all possible combinations
-                par_dict =  { p_k: [par_dict[p_k]] if not isinstance(par_dict[p_k], list) else par_dict[p_k] for p_k in par_dict }
-                combinations = product(*par_dict.values())
+                sparql_text = self.i["sparql"]
 
-                parameters_comb = []
-                for combination in combinations:
-                    parameters_comb.append( dict(zip(list(par_dict.keys()), list(combination))) )
+                if "@@" not in sparql_text:
+                    # Fast path: single-query (legacy behavior)
 
-                # the __parameters_comb__ varaible is a list of dictionaries,
-                # each dictionary stores a possible combination of parameter values
-                #
-                # Example: {"id":"5","area":["A1","A2"]}  ->  [  {"id":"5","area":"A1"}, {"id":"5","area":"A2"} ]
-                # Example: {"id":"5","area":"A1"}  ->  [  {"id":"5","area":"A1"} ]
+                    if self.engine == "sparql-anything":
+                        query = sparql_text
+                        for param in par_dict:
+                            query = query.replace("[[%s]]" % param, str(par_dict[param]))
+                        rows = self._run_sparql_anything_dicts(query)
+                        header = self._header_from_field_type(self.i, rows or [])
+                        csv_rows = self._to_csv_rows(header, rows or [])
+                        res = self.type_fields(csv_rows, self.i)
+                        if self.addon is not None:
+                            res = self.postprocess(res, self.i, self.addon)
+                        q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
+                        res = self.handling_params(q_string, res)
+                        res = self.remove_types(res)
+                        s_res = StringIO()
+                        writer(s_res).writerows(res)
+                        body, ctype = self.conv(s_res.getvalue(), q_string, content_type)
+                        return 200, body, ctype
 
-                # iterate over __parameters_comb__
+                    # Handle in case the parameters are lists, we need to generate all possible combinations
+                    par_dict = {p_k: [par_dict[p_k]] if not isinstance(par_dict[p_k], list) else par_dict[p_k] for p_k in par_dict}
+                    combinations = product(*par_dict.values())
 
-                list_of_res = []
-                include_header_line = True
-                for par_dict in parameters_comb:
+                    parameters_comb = []
+                    for combination in combinations:
+                        parameters_comb.append(dict(zip(list(par_dict.keys()), list(combination))))
 
-                    list_of_lines = []
-                    query = self.i["sparql"]
-                    for param in par_dict:
-                        query = query.replace("[[%s]]" %
-                                              param, str(par_dict[param]))
+                    # the __parameters_comb__ varaible is a list of dictionaries,
+                    # each dictionary stores a possible combination of parameter values
+                    #
+                    # Example: {"id":"5","area":["A1","A2"]}  ->  [  {"id":"5","area":"A1"}, {"id":"5","area":"A2"} ]
+                    # Example: {"id":"5","area":"A1"}  ->  [  {"id":"5","area":"A1"} ]
 
-                    # GET and POST are sync
-                    # TODO: use threads to make it parallel
+                    # iterate over __parameters_comb__
 
-                    if self.sparql_http_method == "get":
-                        r = _http_session.get(self.tp + "?query=" + quote(query),
-                                headers={"Accept": "text/csv"}, timeout=60)
-                    else:
-                        r = _http_session.post(self.tp, data=query, headers={"Accept": "text/csv",
-                                                               "Content-Type": "application/sparql-query"}, timeout=60)
-                    r.encoding = "utf-8"
+                    list_of_res = []
+                    include_header_line = True
+                    for par_dict in parameters_comb:
 
-                    sc = r.status_code
-                    if sc == 200:
-                        # This line has been added to avoid a strage behaviour of the 'splitlines' method in
-                        # presence of strange characters (non-UTF8).
-                        list_of_lines = [line.decode("utf-8") for line in r.text.encode("utf-8").splitlines()]
+                        query = self.i["sparql"]
+                        for param in par_dict:
+                            query = query.replace("[[%s]]" % param, str(par_dict[param]))
 
-                    else:
-                        return sc, "HTTP status code %s: %s" % (sc, r.reason), "text/plain"
+                        # GET and POST are sync
+                        # TODO: use threads to make it parallel
 
-                    # each res will have a list of list_of_line
-                    # include the header of the first result only
-                    if not include_header_line:
-                        list_of_lines = list_of_lines[1:]
-                    include_header_line = False
+                        if self.sparql_http_method == "get":
+                            r = _http_session.get(self.tp + "?query=" + quote(query),
+                                    headers={"Accept": "text/csv"}, timeout=DEFAULT_HTTP_TIMEOUT)
+                        else:
+                            r = _http_session.post(self.tp, data=query, headers={"Accept": "text/csv",
+                                                                   "Content-Type": "application/sparql-query"}, timeout=DEFAULT_HTTP_TIMEOUT)
+                        r.encoding = "utf-8"
 
-                    # list_of_res Example:
-                    # [ ["id,val","01,a","02,b"] , ["id,val","05,u","08,p"] ]
-                    list_of_res += list_of_lines
+                        sc = r.status_code
+                        if sc == 200:
+                            # This line has been added to avoid a strage behaviour of the 'splitlines' method in
+                            # presence of strange characters (non-UTF8).
+                            list_of_lines = [line.decode("utf-8") for line in r.text.encode("utf-8").splitlines()]
 
-                #
-                #  ----- DELEGATE to POST PROCESSING operations
-                # return 200, "HTTP print for debug %s: %s" % (200, list_of_res), "text/plain"
+                        else:
+                            return sc, "HTTP status code %s: %s" % (sc, r.reason), "text/plain"
 
-                res = self.type_fields(list(reader(list_of_res)), self.i)
-                res = self.postprocess(res, self.i, self.addon)
-                q_string = parse_qs(
-                    quote(self.url_parsed.query, safe="&="))
-                res = self.handling_params(q_string, res)
-                res = self.remove_types(res)
-                s_res = StringIO()
-                writer(s_res).writerows(res)
-                return (sc,) + Operation.conv(s_res.getvalue(), q_string, content_type)
+                        # each res will have a list of list_of_line
+                        # include the header of the first result only
+                        if not include_header_line:
+                            list_of_lines = list_of_lines[1:]
+                        include_header_line = False
+
+                        # list_of_res Example:
+                        # [ ["id,val","01,a","02,b"] , ["id,val","05,u","08,p"] ]
+                        list_of_res += list_of_lines
+
+                    #
+                    #  ----- DELEGATE to POST PROCESSING operations
+                    # return 200, "HTTP print for debug %s: %s" % (200, list_of_res), "text/plain"
+
+                    res = self.type_fields(list(reader(list_of_res)), self.i)
+                    if self.addon is not None:
+                        res = self.postprocess(res, self.i, self.addon)
+                    q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
+                    res = self.handling_params(q_string, res)
+                    res = self.remove_types(res)
+                    s_res = StringIO()
+                    writer(s_res).writerows(res)
+                    return (sc,) + self.conv(s_res.getvalue(), q_string, content_type)
+
+                else:
+                    # Multi-source path: @@ directives present
+                    try:
+                        steps = self._parse_steps(sparql_text, self.tp, par_dict)
+
+                        acc = None     # list of dict rows
+                        pending_join = None
+                        pending_values_vars = None
+
+                        foreach_sources = {}     # alias -> column name (without '?')
+                        pending_foreach = None   # (alias, delay_seconds)
+
+                        for st in steps:
+                            tag = st[0]
+
+                            if tag == "QUERY":
+                                _, endpoint_url, qtxt = st
+                                if not qtxt or not qtxt.strip():
+                                    continue  # defensive: skip any empty query steps
+
+                                # FOREACH mode: run one query per value
+                                if pending_foreach is not None:
+                                    alias, delay = pending_foreach
+
+                                    if alias not in foreach_sources:
+                                        raise ValueError(
+                                            f"@@foreach refers to unknown alias '{alias}'. "
+                                            f"Declare it with @@values ?var:{alias} before @@foreach."
+                                        )
+
+                                    source_col = foreach_sources[alias]  # e.g. "br"
+
+                                    # Collect distinct non-empty values from the accumulator
+                                    values = []
+                                    seen = set()
+                                    for row in (acc or []):
+                                        v = row.get(source_col)
+                                        if v and v not in seen:
+                                            seen.add(v)
+                                            values.append(v)
+
+                                    all_rows = []
+                                    for idx_val, val in enumerate(values):
+                                        # Substitute [[alias]] in the query text
+                                        q_one = qtxt.replace(f"[[{alias}]]", str(val))
+                                        sub_rows = self._run_query_dicts(endpoint_url, q_one)
+                                        if sub_rows:
+                                            all_rows.extend(sub_rows)
+                                        # Sleep between calls if requested
+                                        if delay and idx_val + 1 < len(values):
+                                            time.sleep(delay)
+
+                                    rows = all_rows
+                                    # FOREACH applies only to this single QUERY
+                                    pending_foreach = None
+                                    # In FOREACH mode we ignore any pending VALUES_INJECT
+                                    pending_values_vars = None
+
+                                else:
+                                    # Normal multi-source behaviour
+                                    if pending_values_vars:
+                                        # acc is the current accumulator rows
+                                        qtxt = self._inject_values_clause(qtxt, pending_values_vars, acc)
+                                        pending_values_vars = None  # only affects this single query
+                                    rows = self._run_query_dicts(endpoint_url, qtxt)
+
+                                if acc is None:
+                                    # first query defines the accumulator
+                                    acc = rows
+                                else:
+                                    if pending_join:
+                                        lvar, rvar, how = pending_join
+                                        acc = self._join(acc, rows, lvar, rvar, how)
+                                        pending_join = None
+                                    else:
+                                        raise ValueError(
+                                            "Multiple QUERY steps without an explicit @@join directive"
+                                        )
+
+                            elif tag == "JOIN":
+                                pending_join = (st[1], st[2], st[3] if len(st) > 3 and st[3] else "inner")
+
+                            elif tag == "REMOVE":
+                                _, vars_ = st
+                                acc = self._drop_columns(acc or [], vars_)
+
+                            elif tag == "VALUES_INJECT":
+                                # st = ("VALUES_INJECT", ["?br", ...])
+                                pending_values_vars = st[1]
+
+                            elif tag == "FOREACH_SETUP":
+                                # st = ("FOREACH_SETUP", alias, var_name)
+                                _, alias, var_name = st
+                                foreach_sources[alias] = var_name.lstrip("?")
+
+                            elif tag == "FOREACH_MARK":
+                                # st = ("FOREACH_MARK", alias, delay)
+                                _, alias, delay = st
+                                pending_foreach = (alias, delay)
+
+                            else:
+                                raise RuntimeError(f"Unknown step tag {tag}")
+
+                        # Convert merged dict rows -> CSV rows; then run the usual pipeline
+                        header = self._header_from_field_type(self.i, acc or [])
+                        csv_rows = self._to_csv_rows(header, acc or [])
+
+                        res = self.type_fields(csv_rows, self.i)
+                        if self.addon is not None:
+                            res = self.postprocess(res, self.i, self.addon)
+                        q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
+                        res = self.handling_params(q_string, res)
+                        res = self.remove_types(res)
+                        s_res = StringIO()
+                        writer(s_res).writerows(res)
+                        body, ctype = self.conv(s_res.getvalue(), q_string, content_type)
+                        return 200, body, ctype
+
+                    except ValueError as ve:
+                        sc = 400
+                        return sc, f"HTTP status code {sc}: {ve}", "text/plain"
+                    except RuntimeError as re_err:
+                        sc = 502
+                        return sc, f"HTTP status code {sc}: {re_err}", "text/plain"
 
             except TimeoutError:
                 exc_type, exc_obj, exc_tb = exc_info()
@@ -1475,12 +2546,35 @@ class APIManager(object):
             tp = None
             conf_json = HashFormatHandler().read(conf_file)
             base_url = None
+            addon = None
+            sources_map = {}
+            allow_inline_endpoints = False
+            engine = "sparql"
             for item in conf_json:
                 if base_url is None:
                     base_url = item["url"]
                     self.base_url.append(item["url"])
                     website = item["base"]
                     tp = endpoint_override if endpoint_override else item["endpoint"]
+
+                    # Engine selection at API level (optional)
+                    if "engine" in item:
+                        engine = item["engine"].strip().lower()
+
+                    # Optional: named sources registry
+                    if "sources" in item:
+                        # expected: "name1=url1; name2=url2"
+                        for pair in item["sources"].split(";"):
+                            pair = pair.strip()
+                            if not pair:
+                                continue
+                            name, url = pair.split("=", 1)
+                            sources_map[name.strip()] = url.strip()
+
+                    # Optional: allow explicit @@endpoint <url> in #sparql
+                    if "allow_inline_endpoints" in item:
+                        allow_inline_endpoints = str(item["allow_inline_endpoints"]).strip().lower() in ("true", "1", "yes", "y")
+
                     if "addon" in item:
                         addon_abspath = abspath(dirname(conf_file) + sep + item["addon"])
                         path.append(dirname(addon_abspath))
@@ -1498,7 +2592,10 @@ class APIManager(object):
                 "base_url": base_url,
                 "website": website,
                 "addon": addon,
-                "sparql_http_method": sparql_http_method
+                "sparql_http_method": sparql_http_method,
+                "sources_map": sources_map,
+                "allow_inline_endpoints": allow_inline_endpoints,
+                "engine": engine,
             }
     # Constructor: END
 
@@ -1550,12 +2647,36 @@ class APIManager(object):
 
         conf, op = self.best_match(op_url)
         if op is not None:
-            return Operation(op_complete_url,
-                             op,
-                             conf["conf"][op],
-                             conf["tp"],
-                             conf["sparql_http_method"],
-                             conf["addon"])
+            op_conf = conf["conf"][op]
+            op_engine = conf.get("engine", "sparql")
+            if "engine" in op_conf:
+                op_engine = op_conf["engine"].strip().lower()
+
+            # Build op-level format map from the operation block
+            op_format_map = {}
+            if "format" in op_conf:
+                fm_val = op_conf["format"]
+                fm_list = fm_val if isinstance(fm_val, list) else [fm_val]
+                for fm in fm_list:
+                    for part in fm.split(";"):
+                        part = part.strip()
+                        if not part:
+                            continue
+                        fmt, func = part.split(",", 1)
+                        op_format_map[fmt.strip()] = func.strip()
+
+            return Operation(
+                op_complete_url,
+                op,
+                op_conf,
+                conf["tp"],
+                conf["sparql_http_method"],
+                conf["addon"],
+                op_format_map,
+                conf.get("sources_map", {}),
+                conf.get("allow_inline_endpoints", False),
+                op_engine,
+            )
         else:
             sc = 404
             return sc, "HTTP status code %s: the operation requested does not exist" % sc, "text/plain"
@@ -1579,6 +2700,10 @@ if __name__ == "__main__":
     arg_parser.add_argument("-d", "--doc", dest="doc", default=False, action="store_true",
                             help="Say to generate the HTML documentation of the API (if it is specified, all "
                                  "the arguments '-m', '-c', and '-f' won't be considered).")
+    arg_parser.add_argument("--openapi", dest="openapi", default=False, action="store_true",
+                            help="Export the API specification to OpenAPI 3.0 YAML.")
+    arg_parser.add_argument("--api-base", dest="api_base", default=None,
+                            help="When exporting docs/OpenAPI with multiple specs loaded, choose which API base URL to export.")
     arg_parser.add_argument("-o", "--output", dest="output",
                             help="A file where to store the response.")
     arg_parser.add_argument("-w", "--webserver", dest="webserver", default=False,
@@ -1589,6 +2714,7 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
     am = APIManager(args.spec)
     dh = HTMLDocumentationHandler(am)
+    oah = OpenAPIDocumentationHandler(am)
 
     css_path = args.css if args.css else None
 
@@ -1620,10 +2746,22 @@ if __name__ == "__main__":
                 return index
 
             @app.route('/<path:api_url>')
-            # @app.route('/<path:api_url>/')
             def doc(api_url):
-                """ APIs documentation page and operations """
                 res, status = dh.get_index(css_path), 404
+                # --- OpenAPI export endpoint ---
+                # Example: /api/v1/openapi.yaml  (or .yml)
+                if api_url.endswith("openapi.yaml") or api_url.endswith("openapi.yml"):
+                    base = api_url.rsplit("/", 1)[0]  # e.g. "api/v1"
+                    if "/" + base in am.all_conf:
+                        status, yml = oah.get_documentation(base_url=base)
+                        response = make_response(yml, status)
+                        response.headers.set("Content-Type", "application/yaml")
+                        response.headers.set("Access-Control-Allow-Origin", "*")
+                        response.headers.set("Access-Control-Allow-Credentials", "true")
+                        return response
+                    else:
+                        return res, status
+                # --- end OpenAPI export endpoint ---
                 if any(api_u in '/'+api_url for api_u, api_dict in am.all_conf.items()):
                     # documentation
                     if any(api_u == '/'+api_url for api_u,api_dict in am.all_conf.items()):
@@ -1676,7 +2814,9 @@ if __name__ == "__main__":
 
     else:
         # run locally via shell
-        if args.doc:
+        if args.openapi:
+            res = oah.get_documentation(base_url=args.api_base) + ("application/yaml", )
+        elif args.doc:
             res = dh.get_documentation(css_path) + ("text/html", )
         else:
             op = am.get_op(args.call)

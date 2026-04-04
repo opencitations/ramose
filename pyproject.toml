@@ -15,7 +15,9 @@ dependencies = [
     "flask>=3.1.3",
     "isodate>=0.7.2",
     "markdown>=3.10.2",
+    "pysparql-anything>=1.0.0.0",
     "python-dateutil>=2.9.0.post0",
+    "pyyaml>=6.0.3",
     "requests>=2.32.5",
 ]
 

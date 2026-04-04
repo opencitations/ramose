@@ -30,3 +30,11 @@ path = [
 ]
 SPDX-FileCopyrightText = "2026 Arcangelo Massari <arcangelo.massari@unibo.it>"
 SPDX-License-Identifier = "ISC"
+
+[[annotations]]
+path = [
+    "tests/*.hf",
+    "tests/*.yaml",
+]
+SPDX-FileCopyrightText = "2026 Sergey Slinkin <sergeyslinkin@Sergeys-MacBook-Air.local>"
+SPDX-License-Identifier = "ISC"

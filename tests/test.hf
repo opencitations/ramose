@@ -1,0 +1,147 @@
+#url /mixed
+#type api
+#base http://localhost:5000
+#endpoint https://query-scholarly.wikidata.org/sparql
+#allow_inline_endpoints true
+#engine sparql
+#method get
+#title Mixed Wikidata + OpenCitations + Crossref
+#description Example RAMOSE operation combining SPARQL endpoints with SPARQL.ANYTHING
+#version 0.0.1
+#license ISC
+#contacts test@example.org
+#addon testaddon
+
+#url /metadata/{dois}
+#type operation
+#dois str(\"?10\..+[^_\"]((__|\" \")10\..+[^_])*\"?)
+#preprocess lower(dois) --> split_dois(dois)
+#method get
+#description This operation returns an aggregated “scholarly record” for one or more DOI(s) by orchestrating a heterogeneous workflow across three sources: Wikidata Scholarly (SPARQL), OpenCitations (Meta + Index, SPARQL), and Crossref (REST/JSON accessed through SPARQL Anything).
+
+In case multiple DOIs are specified as input, the DOI should be separated with a double underscore ("\_\_") – e.g. "10.1108/jd-12-2013-0166\_\_10.1016/j.websem.2012.08.001\_\_...". The fields returned by this operation are:
+
+* *doi*: the DOI of the citing entity;
+* *qid*: the identifier of the citing entity in Wikidata;
+* *oc_citation_count*: the number of incoming citations in OpenCitations Index (if the DOI can be mapped to an OpenCitations br);
+* *title*: the title of the citing entity;
+* *year*: the year of publication of the citing entity.
+
+Notes. Because this operation depends on external services (public SPARQL endpoints and Crossref’s REST API), response completeness and latency may vary. Missing values are expected when a DOI is absent from one of the sources, or when a source is temporarily unavailable or rate-limits requests.
+
+#call /metadata/10.1108/jd-12-2013-0166__10.1038/nature12373
+#field_type str(doi) str(qid) str(title) str(author) int(year) int(oc_citation_count)
+#format xml,to_xml
+#output_json [
+    {
+        "doi": "10.1038/nature12373",
+        "qid": "Q34460861",
+        "title": "Nanometre-scale thermometry in a living cell",
+        "author": "Kucsko, G.; Maurer, P. C.; Yao, N. Y.; Kubo, M.; Noh, H. J.; Lo, P. K.; Park, H.; Lukin, M. D.",
+        "year": "2013",
+        "oc_citation_count": "1515"
+    },
+    {
+        "doi": "10.1108/jd-12-2013-0166",
+        "qid": "Q24260641",
+        "title": "Setting our bibliographic references free: towards open citation data",
+        "author": "Peroni, Silvio; Dutton, Alexander; Gray, Tanya; Shotton, David",
+        "year": "2015",
+        "oc_citation_count": "39"
+    }
+]
+#sparql  PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX wd:  <http://www.wikidata.org/entity/>
+
+SELECT DISTINCT ?doi ?qid ?author
+WHERE {
+  VALUES ?doi { [[dois]] }
+  BIND(UCASE(?doi) AS ?doi_norm)
+
+  ?article wdt:P356 ?doi_norm .
+  BIND(STRAFTER(str(?article), "http://www.wikidata.org/entity/") AS ?qid) .
+}
+LIMIT 1000
+
+@@join ?doi ?doi type=left
+@@endpoint https://sparql.opencitations.net/meta
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal:  <http://www.essepuntato.it/2010/06/literalreification/>
+
+SELECT ?doi ?br WHERE {
+  VALUES ?doi { [[dois]] }
+  ?br datacite:hasIdentifier ?id .
+  ?id datacite:usesIdentifierScheme datacite:doi ;
+      literal:hasLiteralValue ?doi .
+}
+
+@@values ?br:a
+@@join ?br ?br type=left
+@@endpoint https://sparql.opencitations.net/index
+@@foreach a 0.1
+PREFIX cito: <http://purl.org/spar/cito/>
+
+SELECT ?br (COUNT(?citing) AS ?oc_citation_count) WHERE {
+  BIND(<[[a]]> AS ?br)
+  ?cit a cito:Citation ;
+       cito:hasCitedEntity  ?br ;
+       cito:hasCitingEntity ?citing .
+}
+GROUP BY ?br
+
+@@join ?doi ?doi type=left
+@@endpoint sparql-anything
+PREFIX fx:  <http://sparql.xyz/facade-x/ns/>
+PREFIX xyz: <http://sparql.xyz/facade-x/data/>
+
+SELECT ?doi ?title (MAX(?year0) AS ?year) (GROUP_CONCAT(DISTINCT ?a; separator="; ") AS ?author)
+WHERE {
+  VALUES ?doi { [[dois]] }
+  BIND(
+    fx:entity(
+      "x-sparql-anything:media-type=application/json,location=https://api.crossref.org/works/",
+      ?doi
+    ) AS ?svc
+  )
+
+  SERVICE ?svc {
+    ?root xyz:message ?msg .
+
+    # title is typically an array ["Title", ...]
+    OPTIONAL {
+      ?msg xyz:title ?titleArray .
+      ?titleArray fx:anySlot ?title .
+    }
+
+    # issued.date-parts is [[year, month, day], ...]; extract first number
+    OPTIONAL {
+      ?msg xyz:issued ?issued .
+      ?issued xyz:date-parts ?datePartsArray .
+      ?datePartsArray fx:anySlot ?innerArray .
+      ?innerArray fx:anySlot ?year0 .
+    }
+
+    # authors: message.author is an array of objects with family/given (often) or name (sometimes)
+    OPTIONAL {
+      ?msg xyz:author ?authorsArray .
+      ?authorsArray fx:anySlot ?authObj .
+
+      OPTIONAL { ?authObj xyz:family ?fam . }
+      OPTIONAL { ?authObj xyz:given  ?giv . }
+      OPTIONAL { ?authObj xyz:name   ?name . }
+
+      BIND(
+        COALESCE(
+          IF(
+            BOUND(?fam) || BOUND(?giv),
+            CONCAT(COALESCE(?fam, ""), IF(BOUND(?giv), CONCAT(", ", ?giv), "")),
+            ?_u
+          ),
+          ?name
+        )
+        AS ?a
+      )
+    }
+  }
+}
+GROUP BY ?doi ?title
