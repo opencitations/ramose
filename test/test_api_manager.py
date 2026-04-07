@@ -49,6 +49,56 @@ class TestGetOp:
 
     def test_invalid_operation_returns_404(self, api_mgr):
         result = api_mgr.get_op("/nonexistent/operation")
-        assert result[0] == 404
-        assert "404" in result[1]
-        assert result[2] == "text/plain"
+        assert result == (404, "HTTP status code 404: the operation requested does not exist", "text/plain")
+
+
+class TestSourcesParsing:
+    def test_sources_map_populated(self):
+        am = APIManager(
+            ["tests/test_with_sources.hf"],
+            endpoint_override="http://localhost:9999/sparql",
+        )
+        base = am.base_url[0]
+        sources = am.all_conf[base]["sources_map"]
+        assert sources["oc_meta"] == "https://sparql.opencitations.net/meta"
+        assert sources["oc_index"] == "https://sparql.opencitations.net/index"
+
+    def test_empty_sources_pairs_skipped(self):
+        am = APIManager(
+            ["tests/test_with_sources.hf"],
+            endpoint_override="http://localhost:9999/sparql",
+        )
+        base = am.base_url[0]
+        sources = am.all_conf[base]["sources_map"]
+        assert "" not in sources
+
+
+class TestPerOperationEngine:
+    def test_operation_level_engine_override(self):
+        am = APIManager(
+            ["tests/test_with_sources.hf"],
+            endpoint_override="http://localhost:9999/sparql",
+        )
+        op = am.get_op("/api/v2/data/test")
+        assert isinstance(op, Operation)
+        assert op.engine == "sparql"
+
+    def test_api_level_engine(self):
+        am = APIManager(
+            ["tests/mixed_scholarly_crossref.hf"],
+            endpoint_override="http://localhost:9999/sparql",
+        )
+        base = am.base_url[0]
+        assert am.all_conf[base]["engine"] == "sparql"
+
+
+class TestFormatParsingEmptyPart:
+    def test_trailing_semicolon_ignored(self):
+        am = APIManager(
+            ["tests/test_openapi_edge.hf"],
+            endpoint_override="http://localhost:9999/sparql",
+        )
+        op = am.get_op("/edge/lookup/wikidata/Q42")
+        assert isinstance(op, Operation)
+        assert "" not in op.format
+        assert "xml" in op.format

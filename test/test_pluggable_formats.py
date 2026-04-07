@@ -204,3 +204,107 @@ class TestRunSparqlAnythingDictsNormalization:
             MockSA.return_value.select.return_value = "raw_string"
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"result": "raw_string"}]
+
+    def test_list_of_non_dicts_coerced(self):
+        op = self._make_op()
+        with patch("pysparql_anything.SparqlAnything") as MockSA:
+            MockSA.return_value.select.return_value = [[("x", "a")], [("x", "b")]]
+            rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert rows == [{"x": "a"}, {"x": "b"}]
+
+    def test_sparql_json_non_dict_cell(self):
+        op = self._make_op()
+        sparql_result = {
+            "head": {"vars": ["x"]},
+            "results": {
+                "bindings": [
+                    {"x": "plain_value"},
+                ]
+            }
+        }
+        with patch("pysparql_anything.SparqlAnything") as MockSA:
+            MockSA.return_value.select.return_value = sparql_result
+            rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert rows == [{"x": "plain_value"}]
+
+    def test_columnar_dict_with_scalar(self):
+        op = self._make_op()
+        with patch("pysparql_anything.SparqlAnything") as MockSA:
+            MockSA.return_value.select.return_value = {"x": ["a", "b"], "label": "fixed"}
+            rows = op._run_sparql_anything_dicts("SELECT ?x ?label WHERE { }")
+        assert len(rows) == 2
+        assert rows[0] == {"x": "a", "label": "fixed"}
+        assert rows[1] == {"x": "b", "label": "fixed"}
+
+    def test_values_param_passed(self):
+        op = self._make_op()
+        with patch("pysparql_anything.SparqlAnything") as MockSA:
+            MockSA.return_value.select.return_value = [{"x": "a"}]
+            rows = op._run_sparql_anything_dicts("Q", values={"doi": "10.1"})
+        call_kwargs = MockSA.return_value.select.call_args
+        assert call_kwargs[1]["values"] == {"doi": "10.1"}
+
+
+class TestRunQueryDictsDispatch:
+    def _make_op(self, engine="sparql"):
+        op_item = {
+            "url": "/test/{id}", "id": "str(.+)",
+            "sparql": "SELECT ?x WHERE { }", "method": "get",
+            "field_type": "str(x)",
+        }
+        return Operation("/api/test/v", r"/api/test/(.+)", op_item,
+                         "http://ep/sparql", "get", None, engine=engine)
+
+    def test_op_level_sparql_anything_engine(self):
+        op = self._make_op(engine="sparql-anything")
+        with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"x": "1"}]) as mock_sa:
+            rows = op._run_query_dicts("http://some-endpoint/sparql", "SELECT ?x WHERE { }")
+        mock_sa.assert_called_once_with("SELECT ?x WHERE { }")
+        assert rows == [{"x": "1"}]
+
+
+class TestSparqlAnythingSingleQueryWithAddon:
+    def test_postprocess_called(self):
+        class FakeAddon:
+            @staticmethod
+            def my_post(result):
+                return result, False
+
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?title WHERE { }",
+            "method": "get",
+            "field_type": "str(title)",
+            "postprocess": "my_post()",
+        }
+        op = Operation(
+            "/api/test/hello", r"/api/test/(.+)", op_item,
+            "http://unused/sparql", "get", FakeAddon,
+            format={}, sources_map={}, allow_inline_endpoints=False,
+            engine="sparql-anything",
+        )
+
+        with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"title": "Test"}]):
+            sc, body, ctype = op.exec(method="get", content_type="application/json")
+
+        assert sc == 200
+
+
+class TestInjectValuesNoWhereBrace:
+    def _make_op(self):
+        op_item = {
+            "url": "/test/{id}", "id": "str(.+)",
+            "sparql": "SELECT ?x WHERE { }", "method": "get",
+            "field_type": "str(x)",
+        }
+        return Operation("/api/test/v", r"/api/test/(.+)", op_item,
+                         "http://ep/sparql", "get", None)
+
+    def test_no_brace_puts_values_at_top(self):
+        op = self._make_op()
+        acc = [{"x": "val"}]
+        query = "CONSTRUCT WHERE SOMETHING"
+        result = op._inject_values_clause(query, ["?x"], acc)
+        assert result.startswith("VALUES (?x)")
+        assert "CONSTRUCT WHERE SOMETHING" in result

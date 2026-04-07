@@ -181,8 +181,113 @@ class TestMultiSourceErrorHandling:
             sc, msg, ct = op.exec(method="get", content_type="application/json")
 
         assert sc == 502
-        assert "502" in msg
+        assert msg == "HTTP status code 502: SPARQL 500: Internal Server Error"
         assert ct == "text/plain"
+
+
+class TestMultiSourceUnknownStepTag:
+    def test_unknown_step_tag_returns_502(self):
+        am = _load_api_manager("test_scholarly_multi-sources.hf")
+        op = _get_operation(am, "10.1108/jd-12-2013-0166")
+
+        def mock_parse_steps(text, tp, par_dict):
+            return [("BOGUS_TAG",)]
+
+        with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
+            sc, msg, ct = op.exec(method="get", content_type="application/json")
+
+        assert sc == 502
+        assert msg == "HTTP status code 502: Unknown step tag BOGUS_TAG"
+        assert ct == "text/plain"
+
+
+class TestMultiSourceValueError:
+    def test_parse_error_returns_400(self):
+        am = _load_api_manager("test_scholarly_multi-sources.hf")
+        op = _get_operation(am, "10.1108/jd-12-2013-0166")
+
+        def mock_parse_steps(text, tp, par_dict):
+            raise ValueError("bad config")
+
+        with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
+            sc, msg, ct = op.exec(method="get", content_type="application/json")
+
+        assert sc == 400
+        assert msg == "HTTP status code 400: bad config"
+        assert ct == "text/plain"
+
+
+class TestMultiSourceValuesInject:
+    def test_values_inject_in_multi_source(self):
+        am = _load_api_manager("test_scholarly_multi-sources.hf")
+        op = _get_operation(am, "10.1108/jd-12-2013-0166")
+
+        call_count = {"n": 0}
+        def mock_run_sparql(endpoint_url, query_text):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                return [{"doi": "10.1108/jd-12-2013-0166", "qid": "Q24260641"}]
+            return [{"doi": "10.1108/jd-12-2013-0166", "extra": "val"}]
+
+        def mock_parse_steps(text, tp, par_dict):
+            return [
+                ("QUERY", "http://ep/sparql", "SELECT ?doi ?qid WHERE { }"),
+                ("VALUES_INJECT", ["?doi"]),
+                ("JOIN", "?doi", "?doi", "inner"),
+                ("QUERY", "http://ep2/sparql", "SELECT ?doi ?extra WHERE { }"),
+            ]
+
+        with patch.object(op, "_parse_steps", side_effect=mock_parse_steps), \
+             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
+            sc, body, ctype = op.exec(method="get", content_type="application/json")
+
+        assert sc == 200
+
+
+class TestMultiSourceMissingJoin:
+    def test_multiple_queries_without_join_returns_400(self):
+        am = _load_api_manager("test_scholarly_multi-sources.hf")
+        op = _get_operation(am, "10.1108/jd-12-2013-0166")
+
+        def mock_run_sparql(endpoint_url, query_text):
+            return [{"x": "1"}]
+
+        def mock_parse_steps(text, tp, par_dict):
+            return [
+                ("QUERY", "http://ep/sparql", "SELECT ?x WHERE { }"),
+                ("QUERY", "http://ep2/sparql", "SELECT ?y WHERE { }"),
+            ]
+
+        with patch.object(op, "_parse_steps", side_effect=mock_parse_steps), \
+             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
+            sc, msg, ct = op.exec(method="get", content_type="application/json")
+
+        assert sc == 400
+        assert msg == "HTTP status code 400: Multiple QUERY steps without an explicit @@join directive"
+
+
+class TestMultiSourceForeachUnknownAlias:
+    def test_foreach_unknown_alias_returns_400(self):
+        am = _load_api_manager("test_scholarly_multi-sources.hf")
+        op = _get_operation(am, "10.1108/jd-12-2013-0166")
+
+        def mock_run_sparql(endpoint_url, query_text):
+            return [{"x": "1"}]
+
+        def mock_parse_steps(text, tp, par_dict):
+            return [
+                ("QUERY", "http://ep/sparql", "SELECT ?x WHERE { }"),
+                ("FOREACH_MARK", "nonexistent", 0.0),
+                ("JOIN", "?x", "?x", "inner"),
+                ("QUERY", "http://ep/sparql", "SELECT ?x WHERE { }"),
+            ]
+
+        with patch.object(op, "_parse_steps", side_effect=mock_parse_steps), \
+             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
+            sc, msg, ct = op.exec(method="get", content_type="application/json")
+
+        assert sc == 400
+        assert msg == "HTTP status code 400: @@foreach refers to unknown alias 'nonexistent'. Declare it with @@values ?var:nonexistent before @@foreach."
 
 
 class TestParseSteps:
@@ -238,7 +343,7 @@ class TestParseSteps:
             op._parse_steps(text, "http://ep/sparql", {})
             assert False, "Should have raised ValueError"
         except ValueError as e:
-            assert "not allowed" in str(e)
+            assert str(e) == "@@endpoint not allowed (enable #allow_inline_endpoints)."
 
     def test_values_inject(self):
         op = self._make_op()
@@ -251,8 +356,7 @@ class TestParseSteps:
         text = "SELECT ?br WHERE { }\n@@values ?br:myalias\n@@join ?br ?br type=left\n@@foreach myalias 0.5\nSELECT ?br ?count WHERE { }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
         tags = [s[0] for s in steps]
-        assert "FOREACH_SETUP" in tags
-        assert "FOREACH_MARK" in tags
+        assert tags == ["QUERY", "FOREACH_SETUP", "JOIN", "FOREACH_MARK", "QUERY"]
         setup = next(s for s in steps if s[0] == "FOREACH_SETUP")
         assert setup == ("FOREACH_SETUP", "myalias", "?br")
         mark = next(s for s in steps if s[0] == "FOREACH_MARK")
@@ -268,8 +372,7 @@ class TestParseSteps:
         op = self._make_op()
         text = "SELECT ?a WHERE { VALUES ?a { [[id]] } }"
         steps = op._parse_steps(text, "http://ep/sparql", {"id": "hello"})
-        assert "hello" in steps[0][2]
-        assert "[[id]]" not in steps[0][2]
+        assert steps[0][2] == "SELECT ?a WHERE { VALUES ?a { hello } }"
 
     def test_unknown_directive_raises(self):
         op = self._make_op()
@@ -278,7 +381,7 @@ class TestParseSteps:
             op._parse_steps(text, "http://ep/sparql", {})
             assert False, "Should have raised ValueError"
         except ValueError as e:
-            assert "Unknown directive" in str(e)
+            assert str(e) == "Unknown directive @@bogus"
 
     def test_with_directive_known_source(self):
         op = self._make_op(sources_map={"wikidata": "https://wikidata.org/sparql"})
@@ -294,7 +397,43 @@ class TestParseSteps:
             op._parse_steps(text, "http://ep/sparql", {})
             assert False, "Should have raised ValueError"
         except ValueError as e:
-            assert "Unknown source" in str(e)
+            assert str(e) == "Unknown source 'nonexistent' in @@with; declare it in #sources."
+
+    def test_values_empty_raises(self):
+        op = self._make_op()
+        text = "@@values\nSELECT ?a WHERE { }"
+        try:
+            op._parse_steps(text, "http://ep/sparql", {})
+            assert False, "Should have raised ValueError"
+        except ValueError as e:
+            assert str(e) == "@@values needs at least one variable"
+
+    def test_values_multiple_alias_raises(self):
+        op = self._make_op()
+        text = "@@values ?a:x ?b:y\nSELECT ?a ?b WHERE { }"
+        try:
+            op._parse_steps(text, "http://ep/sparql", {})
+            assert False, "Should have raised ValueError"
+        except ValueError as e:
+            assert str(e) == "@@values with alias supports exactly one ?var:alias pair"
+
+    def test_foreach_no_alias_raises(self):
+        op = self._make_op()
+        text = "@@foreach\nSELECT ?a WHERE { }"
+        try:
+            op._parse_steps(text, "http://ep/sparql", {})
+            assert False, "Should have raised ValueError"
+        except ValueError as e:
+            assert str(e) == "@@foreach requires an alias name"
+
+    def test_foreach_invalid_delay_raises(self):
+        op = self._make_op()
+        text = "@@foreach myalias notanumber\nSELECT ?a WHERE { }"
+        try:
+            op._parse_steps(text, "http://ep/sparql", {})
+            assert False, "Should have raised ValueError"
+        except ValueError as e:
+            assert str(e) == "Invalid delay value in @@foreach: 'notanumber'"
 
 
 class TestJoin:
@@ -353,6 +492,32 @@ class TestJoin:
         op = self._make_op()
         result = op._join([], [{"a": "1"}], "?a", "?a", "inner")
         assert len(result) == 0
+
+    def test_join_right_none_value_skipped(self):
+        op = self._make_op()
+        left = [{"doi": "10.1", "title": "A"}]
+        right = [{"doi": "10.1", "extra": None, "other": "val"}]
+        result = op._join(left, right, "?doi", "?doi", "inner")
+        assert len(result) == 1
+        assert result[0]["other"] == "val"
+        assert "extra" not in result[0]
+
+    def test_join_column_conflict_creates_suffix(self):
+        op = self._make_op()
+        left = [{"doi": "10.1", "title": "A"}]
+        right = [{"doi": "10.1", "title": "B"}]
+        result = op._join(left, right, "?doi", "?doi", "inner")
+        assert len(result) == 1
+        assert result[0]["title"] == "A"
+        assert result[0]["title_r"] == "B"
+
+    def test_join_right_null_key_skipped(self):
+        op = self._make_op()
+        left = [{"doi": "10.1"}]
+        right = [{"doi": None, "extra": "x"}, {"doi": "10.1", "extra": "y"}]
+        result = op._join(left, right, "?doi", "?doi", "inner")
+        assert len(result) == 1
+        assert result[0]["extra"] == "y"
 
 
 class TestDropColumns:
@@ -493,7 +658,7 @@ class TestRunSparqlDicts:
             op._run_sparql_dicts("http://ep/sparql", "SELECT ?x WHERE { }")
             assert False, "Should have raised"
         except RuntimeError as e:
-            assert "500" in str(e)
+            assert str(e) == "SPARQL 500: Internal Server Error"
 
     @patch("ramose.operation._http_session")
     def test_request_exception_raises(self, mock_session):
@@ -505,4 +670,4 @@ class TestRunSparqlDicts:
             op._run_sparql_dicts("http://ep/sparql", "SELECT ?x WHERE { }")
             assert False, "Should have raised"
         except RuntimeError as e:
-            assert "SPARQL request failed" in str(e)
+            assert str(e) == "SPARQL request failed: refused"

@@ -30,6 +30,7 @@ build-backend = "hatchling.build"
 
 [tool.coverage.run]
 source = ["ramose"]
+omit = ["ramose/__main__.py"]
 
 [tool.coverage.report]
 show_missing = true

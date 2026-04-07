@@ -1,0 +1,18 @@
+#url /edge
+#type api
+#base http://localhost:5000
+#endpoint http://localhost:9999/sparql
+#title Edge Case API
+#version 1.0.0
+
+#url /lookup/{source}/{id}
+#type operation
+#source str([a-z]+)
+#id str(.+)
+#method get
+#description Lookup by source and id
+#call /lookup/wikidata/Q42__Q100
+#postprocess my_post()
+#field_type str(source) str(id)
+#format dummyxml,to_dummyxml;xml,to_xml;
+#sparql SELECT ?source ?id WHERE { BIND("test" AS ?source) BIND("test" AS ?id) }

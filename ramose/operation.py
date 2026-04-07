@@ -155,10 +155,8 @@ class Operation(object):
 
         if type(d_or_l) is dict:
             d_list = [d_or_l]
-        elif type(d_or_l) is list:
-            d_list = d_or_l
         else:
-            return res
+            d_list = d_or_l
 
         for d in d_list:
             key_list_len = len(key_list)
@@ -863,10 +861,7 @@ class Operation(object):
         if str_method in m:
             try:
                 par_dict = {}
-                op_match = match(self.op, self.op_url)
-                if op_match is None:
-                    raise ValueError(f"URL {self.op_url!r} does not match pattern {self.op!r}")
-                par_man = op_match.groups()
+                par_man = match(self.op, self.op_url).groups()  # type: ignore[union-attr]
                 for idx, par in enumerate(findall("{([^{}]+)}", self.i["url"])):
                     try:
                         par_type = self.i[par].split("(")[0]
@@ -990,8 +985,6 @@ class Operation(object):
 
                             if tag == "QUERY":
                                 _, endpoint_url, qtxt = st
-                                if not qtxt or not qtxt.strip():
-                                    continue  # defensive: skip any empty query steps
 
                                 # FOREACH mode: run one query per value
                                 if pending_foreach is not None:

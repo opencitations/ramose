@@ -176,8 +176,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             mt = self._media_type_for_format(fmt)
             if mt is None or mt in content:
                 continue
-            if mt in ("application/json", "text/csv"):
-                continue
             content[mt] = {"schema": {"type": "string"}}
 
         if err_schema_ref:
@@ -187,8 +185,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             for fmt in formats_enum or []:
                 mt = self._media_type_for_format(fmt)
                 if mt is None or mt in err_content:
-                    continue
-                if mt in ("application/json", "text/csv"):
                     continue
                 err_content[mt] = {"schema": {"type": "string"}}
             return content, err_content
@@ -211,11 +207,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             return {}
 
         call_path = str(call_value).split("?", 1)[0].strip()
-
-        if not path_template.startswith("/"):
-            path_template = "/" + path_template
-        if not call_path.startswith("/"):
-            call_path = "/" + call_path
 
         parts = path_template.split("/")
         re_parts = []
@@ -367,9 +358,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         for op in conf["conf_json"][1:]:
             raw_path = op.get("url", "")
-            if not raw_path.startswith("/"):
-                raw_path = "/" + raw_path
-
             if raw_path not in spec["paths"]:
                 spec["paths"][raw_path] = OrderedDict()
 

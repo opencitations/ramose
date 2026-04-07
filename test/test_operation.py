@@ -285,6 +285,10 @@ class TestHandlingParams:
 
 
 class TestPostprocess:
+    def test_norm_join_key_none(self, make_operation):
+        op = make_operation()
+        assert op._norm_join_key(None) is None
+
     def test_postprocess_with_params(self, make_operation):
         class FakeAddon:
             @staticmethod

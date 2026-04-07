@@ -36,7 +36,7 @@ class TestExecMethodNotAllowed:
         op = _make_op()
         sc, msg, ct = op.exec(method="delete")
         assert sc == 405
-        assert "405" in msg
+        assert msg == "HTTP status code 405: 'delete' method not allowed"
         assert ct == "text/plain"
 
 
@@ -47,7 +47,7 @@ class TestExecGetRequest:
         op = _make_op()
         result = op.exec(method="get", content_type="text/csv")
         assert result[0] == 200
-        assert "Alice" in result[1]
+        assert result[1] == "name,age\r\nAlice,30\r\n"
 
     @patch("ramose.operation._http_session")
     def test_successful_post(self, mock_session):
@@ -67,7 +67,7 @@ class TestExecNon200:
         op = _make_op()
         sc, msg, ct = op.exec(method="get")
         assert sc == 500
-        assert "500" in msg
+        assert msg == "HTTP status code 500: Internal Server Error"
         assert ct == "text/plain"
 
 
@@ -78,7 +78,7 @@ class TestExecTimeout:
         op = _make_op()
         sc, msg, ct = op.exec(method="get")
         assert sc == 408
-        assert "408" in msg
+        assert msg.startswith("HTTP status code 408: request timeout - TimeoutError: timed out (line ")
         assert ct == "text/plain"
 
 
@@ -89,7 +89,7 @@ class TestExecTypeError:
         op = _make_op()
         sc, msg, ct = op.exec(method="get")
         assert sc == 400
-        assert "400" in msg
+        assert msg.startswith("HTTP status code 400: parameter in the request not compliant with the type specified - TypeError: bad type (line ")
         assert ct == "text/plain"
 
 
@@ -100,7 +100,7 @@ class TestExecGenericError:
         op = _make_op()
         sc, msg, ct = op.exec(method="get")
         assert sc == 500
-        assert "500" in msg
+        assert msg.startswith("HTTP status code 500: something unexpected happened - RuntimeError: unexpected (line ")
         assert ct == "text/plain"
 
 
