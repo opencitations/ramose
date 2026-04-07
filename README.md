@@ -7,9 +7,13 @@ SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 SPDX-License-Identifier: ISC
 -->
 
+[![PyPI](https://img.shields.io/pypi/v/ramose)](https://pypi.org/project/ramose/)
+[![Python versions](https://img.shields.io/pypi/pyversions/ramose)](https://pypi.org/project/ramose/)
 [![Tests](https://github.com/opencitations/ramose/actions/workflows/test.yml/badge.svg)](https://github.com/opencitations/ramose/actions/workflows/test.yml)
 [![Coverage](https://opencitations.github.io/ramose/coverage/coverage-badge.svg)](https://opencitations.github.io/ramose/coverage/)
+[![Lint](https://github.com/opencitations/ramose/actions/workflows/lint.yml/badge.svg)](https://github.com/opencitations/ramose/actions/workflows/lint.yml)
 [![REUSE](https://github.com/opencitations/ramose/actions/workflows/reuse.yml/badge.svg)](https://github.com/opencitations/ramose/actions/workflows/reuse.yml)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 
 # RAMOSE
 
