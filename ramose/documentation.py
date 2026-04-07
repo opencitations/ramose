@@ -1,7 +1,7 @@
-# SPDX-FileCopyrightText: 2018-2021 essepuntato <essepuntato@gmail.com>
-# SPDX-FileCopyrightText: 2020-2021 marilena <marilena.daquino2@unibo.it>
-# SPDX-FileCopyrightText: 2022 dbrembilla <davide.brembilla98@gmail.com>
-# SPDX-FileCopyrightText: 2024 Ivan Heibi <ivanhb.ita@gmail.com>
+# SPDX-FileCopyrightText: 2018-2021 Silvio Peroni <silvio.peroni@unibo.it>
+# SPDX-FileCopyrightText: 2020-2021 Marilena Daquino <marilena.daquino2@unibo.it>
+# SPDX-FileCopyrightText: 2022 Davide Brembilla
+# SPDX-FileCopyrightText: 2024 Ivan Heibi <ivan.heibi2@unibo.it>
 # SPDX-FileCopyrightText: 2025 Sergei Slinkin
 # SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 #

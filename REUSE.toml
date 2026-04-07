@@ -18,11 +18,6 @@ SPDX-License-Identifier = "CC0-1.0"
 # ISC — project files that cannot have inline comments
 
 [[annotations]]
-path = "eval/RAMOSE_logs.ipynb"
-SPDX-FileCopyrightText = "2020 marilena <marilena.daquino2@unibo.it>"
-SPDX-License-Identifier = "ISC"
-
-[[annotations]]
 path = [
     "test/data/meta_v1_doc.html",
     "test/data/meta_v1_doc_css.html",

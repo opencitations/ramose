@@ -1,7 +1,7 @@
 <!--
-SPDX-FileCopyrightText: 2018-2021 essepuntato <essepuntato@gmail.com>
-SPDX-FileCopyrightText: 2020 marilena <marilena.daquino2@unibo.it>
-SPDX-FileCopyrightText: 2022 dbrembilla <davide.brembilla98@gmail.com>
+SPDX-FileCopyrightText: 2018-2021 Silvio Peroni <silvio.peroni@unibo.it>
+SPDX-FileCopyrightText: 2020 Marilena Daquino <marilena.daquino2@unibo.it>
+SPDX-FileCopyrightText: 2022 Davide Brembilla
 SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 
 SPDX-License-Identifier: ISC
@@ -79,6 +79,14 @@ python -m ramose -s meta_v1.hf -w 127.0.0.1:8080
 ```
 
 Visit `http://localhost:8080/v1` for auto-generated docs.
+
+## How to cite
+
+If you use RAMOSE, please cite both the article and the software:
+
+> Daquino, M., Heibi, I., Peroni, S., Shotton, D. (2022). Creating RESTful APIs over SPARQL endpoints using RAMOSE. *Semantic Web*, 13(2), 195-213. https://doi.org/10.3233/SW-210439
+
+> Brembilla, D., Peroni, S., Daquino, M., Massari, A., Heibi, I. (2026). opencitations/ramose (v2.0.0). Zenodo. https://doi.org/10.5281/zenodo.19399602
 
 ## License
 

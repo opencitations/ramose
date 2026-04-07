@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: NONE
+# SPDX-License-Identifier: CC0-1.0
+
+cff-version: 1.2.0
+title: RAMOSE
+message: If you use this software, please cite the article below.
+type: software
+authors:
+  - family-names: Peroni
+    given-names: Silvio
+    email: silvio.peroni@unibo.it
+    orcid: https://orcid.org/0000-0003-0530-4305
+  - family-names: Daquino
+    given-names: Marilena
+    email: marilena.daquino2@unibo.it
+    orcid: https://orcid.org/0000-0002-1113-7550
+  - family-names: Brembilla
+    given-names: Davide
+  - family-names: Heibi
+    given-names: Ivan
+    email: ivan.heibi2@unibo.it
+    orcid: https://orcid.org/0000-0001-5366-5194
+  - family-names: Massari
+    given-names: Arcangelo
+    email: arcangelo.massari@unibo.it
+    orcid: https://orcid.org/0000-0002-8420-0696
+repository-code: https://github.com/opencitations/ramose/
+license: ISC
+version: 2.0.0
+doi: 10.5281/zenodo.19399602
+date-released: "2026-04-03"
+preferred-citation:
+  type: article
+  title: Creating RESTful APIs over SPARQL endpoints using RAMOSE
+  authors:
+    - family-names: Daquino
+      given-names: Marilena
+      orcid: https://orcid.org/0000-0002-1113-7550
+    - family-names: Heibi
+      given-names: Ivan
+      orcid: https://orcid.org/0000-0001-5366-5194
+    - family-names: Peroni
+      given-names: Silvio
+      orcid: https://orcid.org/0000-0003-0530-4305
+    - family-names: Shotton
+      given-names: David
+      orcid: https://orcid.org/0000-0001-5506-523X
+  journal: Semantic Web
+  volume: 13
+  issue: 2
+  start: 195
+  end: 213
+  year: 2022
+  doi: 10.3233/SW-210439
