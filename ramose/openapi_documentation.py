@@ -242,15 +242,8 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     # -------------------------
     # Main builder
     # -------------------------
-    def _build_openapi(self, base_url=None):  # noqa: C901, PLR0912, PLR0915
-        conf = self._get_conf(base_url)
-        api_meta = conf["conf_json"][0]
-        formats_enum = self._collect_format_tokens(conf)
-
-        spec = OrderedDict()
-        spec["openapi"] = "3.0.3"
-
-        # info
+    def _build_info(self, api_meta):
+        """Build the OpenAPI info object from API metadata."""
         info: OrderedDict[str, object] = OrderedDict()
         info["title"] = api_meta.get("title", "RAMOSE API")
         info["version"] = api_meta.get("version", "0.0.0")
@@ -262,95 +255,163 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             contact_obj = self._guess_contact(api_meta.get("contacts"))
             if contact_obj:
                 info["contact"] = contact_obj
-        spec["info"] = info
+        return info
 
-        # servers
+    @staticmethod
+    def _build_common_parameters(formats_enum):
+        """Build the shared query parameter definitions."""
+        return {
+            "require": {
+                "name": "require",
+                "in": "query",
+                "description": "Remove rows that have an empty value in the specified field. Repeatable.",
+                "required": False,
+                "style": "form",
+                "explode": True,
+                "schema": {"type": "array", "items": {"type": "string"}},
+            },
+            "filter": {
+                "name": "filter",
+                "in": "query",
+                "description": (
+                    "Filter rows. Repeatable.\n\n"
+                    "Syntax: `field:opvalue` where `op` is one of `=`, `<`, `>`.\n"
+                    "If `op` is omitted, `value` is treated as a regex."
+                ),
+                "required": False,
+                "style": "form",
+                "explode": True,
+                "schema": {"type": "array", "items": {"type": "string"}},
+            },
+            "sort": {
+                "name": "sort",
+                "in": "query",
+                "description": "Sort rows. Syntax: asc(field) or desc(field). Repeatable.",
+                "required": False,
+                "style": "form",
+                "explode": True,
+                "schema": {"type": "array", "items": {"type": "string"}},
+            },
+            "format": {
+                "name": "format",
+                "in": "query",
+                "description": "Force output format (overrides Accept header).",
+                "required": False,
+                "schema": {"type": "string", "enum": formats_enum},
+            },
+            "json": {
+                "name": "json",
+                "in": "query",
+                "description": (
+                    "Transform JSON output rows. Repeatable.\n\n"
+                    "Syntax:\n"
+                    "- `array(\"<sep>\", field)`\n"
+                    "- `dict(\"<sep>\", field, new_field_1, new_field_2, ...)`\n\n"
+                    "Where `<sep>` is a string separator (e.g. `,` or `__`)."
+                ),
+                "required": False,
+                "style": "form",
+                "explode": True,
+                "schema": {"type": "array", "items": {"type": "string"}},
+            },
+        }
+
+    def _build_path_params(self, op, raw_path):
+        """Build path parameter objects for an operation, including examples from #call."""
+        path_params = []
+        for p in findall(PARAM_NAME, raw_path):
+            t, shape = ("str", ".+")
+            if p in op:
+                t, shape = self._parse_param_type_shape(op[p])
+
+            schema = self._schema_for_ramose_type(t)
+            if schema.get("type") == "string" and shape:
+                schema["pattern"] = shape
+
+            param_obj = {"name": p, "in": "path", "required": True, "schema": schema}
+            hint = self._param_hint_from_preprocess(op.get("preprocess"), p)
+            if hint:
+                param_obj["description"] = hint
+            path_params.append(param_obj)
+
+        call_examples = self._extract_param_examples_from_call(raw_path, op.get("call"))
+        for param in path_params:
+            nm = param.get("name")
+            if nm in call_examples:
+                param["example"] = quote(call_examples[nm], safe="-._~__")
+                if "__" in call_examples[nm] and "description" not in param:
+                    param["description"] = "Multiple values can be provided separated by '__'."
+
+        return path_params
+
+    def _build_operation_object(self, op, tag_name, path_params, common_param_refs, formats_enum):
+        """Build an OpenAPI operation object for a single HTTP method."""
+        summary = op["description"].split("\n")[0].strip() if op.get("description") else ""
+        desc = self._clean_text(op.get("description")) or ""
+        spr = self._clean_text(op.get("sparql"))
+        if spr:
+            desc += f"\n\n---\n\n### RAMOSE SPARQL\n\n```sparql\n{spr}\n```"
+
+        row_schema = self._build_row_schema_from_field_type(op.get("field_type", ""))
+        ok_schema = {"type": "array", "items": row_schema}
+        ok_example = self._try_parse_output_json(op.get("output_json"))
+        ok_content, err_content = self._build_response_content(
+            ok_schema=ok_schema, formats_enum=formats_enum,
+            ok_example=ok_example, err_schema_ref="#/components/schemas/Error",
+        )
+
+        op_obj: OrderedDict[str, object] = OrderedDict()
+        op_obj["tags"] = [tag_name]
+        op_obj["summary"] = summary
+        op_obj["description"] = desc
+        op_obj["parameters"] = path_params + common_param_refs
+        op_obj["responses"] = OrderedDict([
+            ("200", {"description": "Successful response", "content": ok_content}),
+            ("default", {"description": "Error", "content": err_content}),
+        ])
+
+        ramose_ext = OrderedDict()
+        for key, src_key in [("preprocess", "preprocess"), ("postprocess", "postprocess"), ("call", "call")]:
+            val = self._clean_text(op.get(src_key))
+            if val:
+                ramose_ext[key] = val
+        if spr:
+            ramose_ext["sparql_in_description"] = True
+        if ramose_ext:
+            op_obj["x-ramose"] = ramose_ext
+
+        return op_obj
+
+    def _build_openapi(self, base_url=None):
+        conf = self._get_conf(base_url)
+        api_meta = conf["conf_json"][0]
+        formats_enum = self._collect_format_tokens(conf)
+
+        spec = OrderedDict()
+        spec["openapi"] = "3.0.3"
+        spec["info"] = self._build_info(api_meta)
+
         base = api_meta.get("base", "")
         root = api_meta.get("url", "")
         spec["servers"] = [{"url": f"{base}{root}"}]
 
-        # Preserve additional Table 1 fields as vendor extensions
-        if "endpoint" in api_meta:
-            spec["x-ramose-endpoint"] = api_meta.get("endpoint")
-        if "addon" in api_meta:
-            spec["x-ramose-addon"] = api_meta.get("addon")
-        if "method" in api_meta:
-            # Table 1: method used to send request to SPARQL endpoint
-            spec["x-ramose-sparql-method"] = api_meta.get("method")
+        for ext_key, meta_key in [("x-ramose-endpoint", "endpoint"), ("x-ramose-addon", "addon"), ("x-ramose-sparql-method", "method")]:
+            if meta_key in api_meta:
+                spec[ext_key] = api_meta[meta_key]
 
-        # components
-        spec["components"] = {"schemas": {}, "parameters": {}}
-
-        spec["components"]["schemas"]["Error"] = {
-            "type": "object",
-            "properties": {"error": {"type": "integer"}, "message": {"type": "string"}},
-            "required": ["error", "message"],
+        spec["components"] = {
+            "schemas": {
+                "Error": {
+                    "type": "object",
+                    "properties": {"error": {"type": "integer"}, "message": {"type": "string"}},
+                    "required": ["error", "message"],
+                },
+            },
+            "parameters": self._build_common_parameters(formats_enum),
         }
 
-        # Common query params (as in HTML docs)
-        spec["components"]["parameters"]["require"] = {
-            "name": "require",
-            "in": "query",
-            "description": "Remove rows that have an empty value in the specified field. Repeatable.",
-            "required": False,
-            "style": "form",
-            "explode": True,
-            "schema": {"type": "array", "items": {"type": "string"}},
-        }
-        spec["components"]["parameters"]["filter"] = {
-            "name": "filter",
-            "in": "query",
-            "description": (
-                "Filter rows. Repeatable.\n\n"
-                "Syntax: `field:opvalue` where `op` is one of `=`, `<`, `>`.\n"
-                "If `op` is omitted, `value` is treated as a regex."
-            ),
-            "required": False,
-            "style": "form",
-            "explode": True,
-            "schema": {"type": "array", "items": {"type": "string"}},
-        }
-        spec["components"]["parameters"]["sort"] = {
-            "name": "sort",
-            "in": "query",
-            "description": "Sort rows. Syntax: asc(field) or desc(field). Repeatable.",
-            "required": False,
-            "style": "form",
-            "explode": True,
-            "schema": {"type": "array", "items": {"type": "string"}},
-        }
-        spec["components"]["parameters"]["format"] = {
-            "name": "format",
-            "in": "query",
-            "description": "Force output format (overrides Accept header).",
-            "required": False,
-            "schema": {"type": "string", "enum": formats_enum},
-        }
-        spec["components"]["parameters"]["json"] = {
-            "name": "json",
-            "in": "query",
-            "description": (
-                "Transform JSON output rows. Repeatable.\n\n"
-                "Syntax:\n"
-                "- `array(\"<sep>\", field)`\n"
-                "- `dict(\"<sep>\", field, new_field_1, new_field_2, ...)`\n\n"
-                "Where `<sep>` is a string separator (e.g. `,` or `__`)."
-            ),
-            "required": False,
-            "style": "form",
-            "explode": True,
-            "schema": {"type": "array", "items": {"type": "string"}},
-        }
+        common_param_refs = [{"$ref": f"#/components/parameters/{name}"} for name in spec["components"]["parameters"]]
 
-        common_param_refs = [
-            {"$ref": "#/components/parameters/require"},
-            {"$ref": "#/components/parameters/filter"},
-            {"$ref": "#/components/parameters/sort"},
-            {"$ref": "#/components/parameters/format"},
-            {"$ref": "#/components/parameters/json"},
-        ]
-
-        # paths
         spec["paths"] = OrderedDict()
         tag_name = api_meta.get("title", "RAMOSE API")
 
@@ -359,116 +420,13 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             if raw_path not in spec["paths"]:
                 spec["paths"][raw_path] = OrderedDict()
 
-            # path parameters
-            path_params = []
-            for p in findall(PARAM_NAME, raw_path):
-                t = "str"
-                shape = ".+"
-                if p in op:
-                    t, shape = self._parse_param_type_shape(op[p])
+            path_params = self._build_path_params(op, raw_path)
 
-                schema = self._schema_for_ramose_type(t)
-                if schema.get("type") == "string" and shape:
-                    schema["pattern"] = shape
-
-                param_obj = {
-                    "name": p,
-                    "in": "path",
-                    "required": True,
-                    "schema": schema,
-                }
-
-                hint = self._param_hint_from_preprocess(op.get("preprocess"), p)
-                if hint:
-                    param_obj["description"] = hint
-
-                path_params.append(param_obj)
-
-            # Examples from Table 2 '#call'
-            call_examples = self._extract_param_examples_from_call(raw_path, op.get("call"))
-            for param in path_params:
-                nm = param.get("name")
-                if nm in call_examples:
-                    # Encode slashes etc. so Swagger UI / generated clients behave correctly
-                    param["example"] = quote(call_examples[nm], safe="-._~__")
-                    if "__" in call_examples[nm] and "description" not in param:
-                        param["description"] = "Multiple values can be provided separated by '__'."
-
-            # response schema: array of row objects
-            row_schema = self._build_row_schema_from_field_type(op.get("field_type", ""))
-            ok_schema = {"type": "array", "items": row_schema}
-            ok_example = self._try_parse_output_json(op.get("output_json"))
-
-            ok_content, err_content = self._build_response_content(
-                ok_schema=ok_schema,
-                formats_enum=formats_enum,
-                ok_example=ok_example,
-                err_schema_ref="#/components/schemas/Error",
-            )
-
-            # methods can be space-separated in RAMOSE
-            methods = split(r"\s+", op.get("method", "get").strip())
-            for m in [mm.lower() for mm in methods if mm]:
-
-                summary = ""
-                if op.get("description"):
-                    summary = op["description"].split("\n")[0].strip()
-
-                # Build a nicer description (and optionally include SPARQL as a markdown code block)
-                desc = self._clean_text(op.get("description")) or ""
-                spr = self._clean_text(op.get("sparql"))
-
-                if spr:
-                    desc += "\n\n---\n\n### RAMOSE SPARQL\n\n```sparql\n" + spr + "\n```"
-
-                op_obj: OrderedDict[str, object] = OrderedDict()
-                op_obj["tags"] = [tag_name]
-                op_obj["summary"] = summary
-                op_obj["description"] = desc
-                op_obj["parameters"] = path_params + common_param_refs
-                op_obj["responses"] = OrderedDict(
-                    [
-                        (
-                            "200",
-                            {
-                                "description": "Successful response",
-                                "content": ok_content,
-                            },
-                        ),
-                        (
-                            "default",
-                            {
-                                "description": "Error",
-                                "content": err_content,
-                            },
-                        ),
-                    ]
+            methods = [mm.lower() for mm in split(r"\s+", op.get("method", "get").strip()) if mm]
+            for m in methods:
+                spec["paths"][raw_path][m] = self._build_operation_object(
+                    op, tag_name, path_params, common_param_refs, formats_enum,
                 )
-
-                # Option B: keep RAMOSE-specific stuff under one vendor extension object
-                ramose_ext = OrderedDict()
-
-                pre = self._clean_text(op.get("preprocess"))
-                post_val = self._clean_text(op.get("postprocess"))
-                call = self._clean_text(op.get("call"))
-
-                if pre:
-                    ramose_ext["preprocess"] = pre
-                if post_val:
-                    ramose_ext["postprocess"] = post_val
-                if call:
-                    ramose_ext["call"] = call
-
-                # Instead of embedding the giant SPARQL here (which makes the YAML hard to read),
-                # we indicate where it is rendered.
-                if spr:
-                    ramose_ext["sparql_in_description"] = True
-
-                if ramose_ext:
-                    op_obj["x-ramose"] = ramose_ext
-
-                # Assign the operation
-                spec["paths"][raw_path][m] = op_obj
 
         return spec
 

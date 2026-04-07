@@ -32,51 +32,44 @@ class HTMLDocumentationHandler(DocumentationHandler):
 
     def __sidebar(self, conf):
         """This method builds the sidebar of the API documentation"""
-        result = ""
-
         i = conf["conf_json"][0]
-        result += """
+        ops_html = "".join(
+            f"<li><a class='btn' href='#{op['url']}'>{op['url']}</a></li>"
+            for op in conf["conf_json"][1:]
+        )
+        return f"""
 
-        <h4>{}</h4>
+        <h4>{i["title"]}</h4>
         <ul id="sidebar_menu" class="sidebar_menu">
             <li><a class="btn active" href="#description">DESCRIPTION</a></li>
             <li><a class="btn" href="#parameters">PARAMETERS</a></li>
             <li><a class="btn" href="#operations">OPERATIONS</a>
-                <ul class="sidebar_submenu">{}</ul>
+                <ul class="sidebar_submenu">{ops_html}</ul>
             </li>
             <li><a class="btn active" href="/">HOME</a></li>
         </ul>
-        """.format(i["title"], "".join(["<li><a class='btn' href='#{}'>{}</a></li>".format(op["url"], op["url"])
-                                  for op in conf["conf_json"][1:]]))
-        return result
+        """
 
     def __header(self, conf):
         """This method builds the header of the API documentation"""
-        result = ""
-
         i = conf["conf_json"][0]
-        result += """
+        api_url = i["base"] + i["url"]
+        result = f"""
 <a id='toc'></a>
-# {}
+# {i["title"]}
 
-**Version:** {} <br/>
-**API URL:** <a href="{}">{}</a><br/>
-**Contact:** {}<br/>
-**License:** {}<br/>
+**Version:** {i["version"]} <br/>
+**API URL:** <a href="{api_url}">{api_url}</a><br/>
+**Contact:** {i["contacts"]}<br/>
+**License:** {i["license"]}<br/>
 
 
 
 ## <a id="description"></a>Description [back to top](#toc)
 
-{}
+{i["description"]}
 
-{}""".format(i["title"], i["version"], i["base"] + i["url"], i["base"] + i["url"],  i["contacts"], i["license"],
-
-                   i["description"], self.__parameters())
-        # (i["title"], i["version"], i["base"] + i["url"], i["base"] + i["url"], i["contacts"], i["contacts"], i["license"],
-        #  "".join(["<li>[%s](#%s): %s</li>" % (op["url"], op["url"], op["description"].split("\n")[0])
-        #           for op in self.conf_json[1:]]),
-        #  i["description"], self.__parameters())
+{self.__parameters()}"""
         return markdown(result)
 
     def __parameters(self):
@@ -112,29 +105,30 @@ The operations that this API implements are:
                 p_type = "str"
                 p_shape = ".+"
                 if p in op:
-                    p_type, p_shape = findall(
-                        r"^\s*([^\(]+)\((.+)\)\s*$", op[p])[0]
+                    p_type, p_shape = findall(r"^\s*([^\(]+)\((.+)\)\s*$", op[p])[0]
 
-                params.append(
-                    f"<em>{p}</em>: type <em>{p_type}</em>, regular expression shape <code>{p_shape}</code>")
-            result += "\n* [{}](#{}): {}".format(op["url"],
-                                             op["url"], op["description"].split("\n")[0])
-            ops += """<div id="{}">
-<h3>{} <a href="#operations">back to operations</a></h3>
+                params.append(f"<em>{p}</em>: type <em>{p_type}</em>, regular expression shape <code>{p_shape}</code>")
 
-{}
+            op_url = op["url"]
+            methods = ", ".join(split(r"\s+", op["method"].strip()))
+            params_html = "</li><li>".join(params)
+            fields_html = ", ".join(
+                f"{f} <em>({t})</em>" for t, f in findall(FIELD_TYPE_RE, op["field_type"])
+            )
+            example_url = conf["website"] + conf["base_url"] + op["call"]
 
-<p class="attr"><strong>Accepted HTTP method(s)</strong> <span class="attr_val method">{}</span></p>
-<p class="attr params"><strong>Parameter(s)</strong> <span class="attr_val">{}</span></p>
-<p class="attr"><strong>Result fields type</strong><span class="attr_val">{}</span></p>
-<p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="{}">{}</a></span></p>
+            result += f"\n* [{op_url}](#{op_url}): {op['description'].split(chr(10))[0]}"
+            ops += f"""<div id="{op_url}">
+<h3>{op_url} <a href="#operations">back to operations</a></h3>
+
+{markdown(op["description"])}
+
+<p class="attr"><strong>Accepted HTTP method(s)</strong> <span class="attr_val method">{methods}</span></p>
+<p class="attr params"><strong>Parameter(s)</strong> <span class="attr_val">{params_html}</span></p>
+<p class="attr"><strong>Result fields type</strong><span class="attr_val">{fields_html}</span></p>
+<p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="{example_url}">{op["call"]}</a></span></p>
 <p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
-<pre><code>{}</code></pre></div>""".format(op["url"], op["url"], markdown(op["description"]),
-                                       ", ".join(
-                                           split(r"\s+", op["method"].strip())), "</li><li>".join(params),
-                                       ", ".join([f"{f} <em>({t})</em>" for t, f in
-                                                  findall(FIELD_TYPE_RE, op["field_type"])]),
-                                       conf["website"] + conf["base_url"] + op["call"], op["call"], op["output_json"])
+<pre><code>{op["output_json"]}</code></pre></div>"""
         return markdown(result) + ops
 
     def __footer(self):
@@ -538,7 +532,7 @@ The operations that this API implements are:
 
     def __css_path(self, css_path=None):
         """Add link to a css file if specified in argument -css"""
-        return """<link rel="stylesheet" type="text/css" href='"""+css_path+"""'>""" if css_path else ""
+        return f"<link rel=\"stylesheet\" type=\"text/css\" href='{css_path}'>" if css_path else ""
 
     def logger_ramose(self):  # pragma: no cover
         """This method adds logging info to a local file"""
@@ -560,51 +554,53 @@ The operations that this API implements are:
         Returns: the html including the list of URLs of current working APIs and basic logging info """
         try:
             with Path("ramose.log").open() as l_f:
-                logs = ''.join(l_f.readlines())
+                logs = l_f.read()
         except FileNotFoundError:
             logs = ""
-        rev_list = set()
-        rev_list_add = rev_list.add
-        rev_list = [x for x in list(reversed(logs.splitlines())) if not (
-            x in rev_list or rev_list_add(x))]
 
-        html = """
+        seen = set()
+        rev_list = []
+        for x in reversed(logs.splitlines()):
+            if x not in seen:
+                seen.add(x)
+                rev_list.append(x)
+
+        sidebar_items = "".join(
+            f'\n                    <li><a class="btn active" href="{api_url}">{api_dict["conf_json"][0]["title"]}</a></li>\n                '
+            for api_url, api_dict in self.conf_doc.items()
+        )
+
+        html = f"""
         <p></p>
         <aside>
             <h4>RAMOSE API DASHBOARD</h4>
-            <ul id="sidebar_menu" class="sidebar_menu">"""
-
-        for api_url, api_dict in self.conf_doc.items():
-            html += """
-                    <li><a class="btn active" href="{}">{}</a></li>
-                """.format(api_url, api_dict["conf_json"][0]["title"])
-
-        html += """
+            <ul id="sidebar_menu" class="sidebar_menu">{sidebar_items}
             </ul>
         </aside>
         <header class="dashboard">
             <h1>API MONITORING</h1>"""
 
         for api_url, api_dict in self.conf_doc.items():
-            clean_list = [
-                line for line in rev_list if api_url in line and "debug" not in line]
-            api_logs_list = ''.join(["<p>"+self.clean_log(line, api_url)
-                                    + "</p>" for line in clean_list if self.clean_log(line, api_url) != ''])
+            clean_list = [line for line in rev_list if api_url in line and "debug" not in line]
+            api_logs_list = "".join(
+                f"<p>{self.clean_log(line, api_url)}</p>"
+                for line in clean_list if self.clean_log(line, api_url) != ""
+            )
             api_title = api_dict["conf_json"][0]["title"]
-            html += """
+            html += f"""
                 <div class="info_api">
-                    <h2>{}</h2>
-                    <a id="view_doc" href="{}">VIEW DOCUMENTATION</a><br/>
-                    <a href="{}">GO TO SPARQL ENDPOINT</a><br/>
+                    <h2>{api_title}</h2>
+                    <a id="view_doc" href="{api_url}">VIEW DOCUMENTATION</a><br/>
+                    <a href="{api_dict["tp"]}">GO TO SPARQL ENDPOINT</a><br/>
                 </div>
                 <div class="api_calls">
                     <h4>Last calls</h4>
                     <div>
-                        {}
+                        {api_logs_list}
                     </div>
 
                 </div>
-                """.format(api_title, api_url, api_dict["tp"], api_logs_list)
+                """
         return html
 
     def get_documentation(self, css_path=None, base_url=None):
