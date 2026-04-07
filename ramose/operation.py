@@ -23,9 +23,9 @@ from ramose._constants import DEFAULT_HTTP_TIMEOUT, FIELD_TYPE_RE, _http_session
 from ramose.datatype import DataType
 
 
-class Operation(object):
+class Operation:
     def __init__(self, op_complete_url, op_key, i, tp, sparql_http_method, addon,
-                 format=None, sources_map=None, allow_inline_endpoints=False, engine="sparql"):
+                 format_map=None, sources_map=None, allow_inline_endpoints=False, engine="sparql"):
         """This class is responsible for materialising a API operation to be run against a SPARQL endpoint
         (or, depending on configuration, through the SPARQL.Anything engine).
 
@@ -47,7 +47,7 @@ class Operation(object):
         self.tp = tp
         self.sparql_http_method = sparql_http_method
         self.addon = addon
-        self.format = format or {}
+        self.format = format_map or {}
         self.sources_map = sources_map or {}
         self.allow_inline_endpoints = allow_inline_endpoints
         self.engine = engine
@@ -61,7 +61,6 @@ class Operation(object):
 
         self.dt = DataType()
 
-    # START: Ancillary methods
     @staticmethod
     def get_content_type(ct):
         """It returns the mime type of a given textual representation of a format, being it either
@@ -99,9 +98,7 @@ class Operation(object):
 
         if "application/json" in content_type:
             with StringIO(s) as f:
-                r = []
-                for i in DictReader(f):
-                    r.append(dict(i))
+                r = [dict(i) for i in DictReader(f)]
 
                 # See if any restructuring of the final JSON is required
                 r = Operation.structured(query_string, r)
@@ -118,8 +115,7 @@ class Operation(object):
         within that row."""
         if r is None:
             return i[1]
-        else:
-            return Operation.pv(r[i])
+        return Operation.pv(r[i])
 
     @staticmethod
     def tv(i, r=None):
@@ -131,8 +127,7 @@ class Operation(object):
         within that row."""
         if r is None:
             return i[0]
-        else:
-            return Operation.tv(r[i])
+        return Operation.tv(r[i])
 
     @staticmethod
     def do_overlap(r1, r2):
@@ -148,15 +143,9 @@ class Operation(object):
         """This method takes as input a dictionary or a list of dictionaries and browses it until the value
         specified following the chain indicated in 'key_list' is not found. It returns a list of all the
         values that matched with such search."""
-        if prev is None:
-            res = []
-        else:
-            res = prev.copy()
+        res = [] if prev is None else prev.copy()
 
-        if type(d_or_l) is dict:
-            d_list = [d_or_l]
-        else:
-            d_list = d_or_l
+        d_list = [d_or_l] if type(d_or_l) is dict else d_or_l
 
         for d in d_list:
             key_list_len = len(key_list)
@@ -188,12 +177,11 @@ class Operation(object):
                 else:
                     for i in d_or_l:
                         Operation.add_item_in_dict(i, key_list, item, idx)
-            else:
-                if key in d_or_l:
-                    if key_list_len == 1:
-                        d_or_l[key] = item
-                    else:
-                        Operation.add_item_in_dict(d_or_l[key], key_list[1:], item, idx)
+            elif key in d_or_l:
+                if key_list_len == 1:
+                    d_or_l[key] = item
+                else:
+                    Operation.add_item_in_dict(d_or_l[key], key_list[1:], item, idx)
 
     @staticmethod
     def structured(params, json_table):
@@ -260,19 +248,17 @@ class Operation(object):
                                         separator, new_fields_max_split)
                                     Operation.add_item_in_dict(row, keys,
                                                                dict(
-                                                                   zip(new_fields, new_values)) if v != "" else {},
+                                                                   zip(new_fields, new_values, strict=False)) if v != "" else {},
                                                                idx)
                                 elif type(v) is list:
                                     new_list = []
                                     for i in v:
                                         new_values = i.split(separator, new_fields_max_split)
-                                        new_list.append(dict(zip(new_fields, new_values)))
+                                        new_list.append(dict(zip(new_fields, new_values, strict=False)))
                                     Operation.add_item_in_dict(row, keys, new_list, idx)
 
         return json_table
-    # END: Ancillary methods
 
-    # START: Processing methods
     def preprocess(self, par_dict, op_item, addon):
         """This method takes the a dictionary of parameters with the current typed values associated to them and
         the item of the API specification defining the behaviour of that operation, and preprocesses the parameters
@@ -333,20 +319,17 @@ class Operation(object):
             for post in [i.strip() for i in op_item["postprocess"].split(" --> ")]:
                 func_name = sub(r"^([^\(\)]+)\(.+$", r"\1", post).strip()
                 param_str = sub(r"^.+\(([^\(\)]*)\).*", r"\1", post)
-                if param_str == "":
-                    params_values = ()
-                else:
-                    params_values = next(reader(param_str.splitlines(), skipinitialspace=True))
+                params_values = () if param_str == "" else next(reader(param_str.splitlines(), skipinitialspace=True))
 
                 func = getattr(addon, func_name)
-                func_params = (result,) + tuple(params_values)
+                func_params = (result, *tuple(params_values))
                 result, do_type_fields = func(*func_params)
                 if do_type_fields:
                     result = self.type_fields(result, op_item)
 
         return result
 
-    def handling_params(self, params, table):
+    def handling_params(self, params, table):  # noqa: C901, PLR0912
         """This method is used for filtering the results that are returned after the post-processing
         phase. In particular, it is possible to:
 
@@ -428,14 +411,14 @@ class Operation(object):
                     desc_order = False
                     if idx < len(order):
                         field_order = order[idx].lower().strip()
-                        desc_order = True if field_order == "desc" else False
+                        desc_order = field_order == "desc"
 
                     field_idx = header.index(field_name)
                     result = sorted(result, key=itemgetter(field_idx), reverse=desc_order)
                 except ValueError:
                     pass  # do nothing
 
-        return [header] + result
+        return [header, *result]
 
     def type_fields(self, res, op_item):
         """It creates a version of the results 'res' that adds, to each value of the fields, the same value interpreted
@@ -461,23 +444,20 @@ class Operation(object):
                 new_row.append((cast_func[heading](cur_value), cur_value))
             result.append(new_row)
 
-        return [header] + result
+        return [header, *result]
 
     def remove_types(self, res):
         """This method takes the results 'res' that include also the typed value and returns a version of such
         results without the types that is ready to be stored on the file system."""
         result = [res[0]]
-
-        for row in res[1:]:
-            result.append(tuple(Operation.pv(idx, row) for idx in range(len(row))))
-
+        result.extend(tuple(Operation.pv(idx, row) for idx in range(len(row))) for row in res[1:])
         return result
 
     @staticmethod
     def _is_directive(line):
         return line.strip().startswith("@@")
 
-    def _parse_steps(self, text, default_endpoint, params):
+    def _parse_steps(self, text, default_endpoint, params):  # noqa: C901, PLR0912, PLR0915
         """
         Returns a list of steps:
           - ("QUERY", endpoint_url, query_text)
@@ -574,7 +554,7 @@ class Operation(object):
                     try:
                         delay = float(parts[2])
                     except ValueError:
-                        raise ValueError(f"Invalid delay value in @@foreach: {parts[2]!r}")
+                        raise ValueError(f"Invalid delay value in @@foreach: {parts[2]!r}") from None
                 steps.append(("FOREACH_MARK", alias, delay))
 
             else:
@@ -620,7 +600,7 @@ class Operation(object):
         list_of_lines = text.splitlines()
         return list(DictReader(list_of_lines))
 
-    def _run_sparql_anything_dicts(self, query_text, values=None):
+    def _run_sparql_anything_dicts(self, query_text, values=None):  # noqa: C901, PLR0912
         """
         Execute a SPARQL Anything SELECT query via PySPARQL-Anything and return
         a list of dicts (one per row), in the same shape as _run_sparql_dicts.
@@ -655,7 +635,7 @@ class Operation(object):
 
         # 2) If it's not a dict at all, just wrap it as a single-row result.
         if not isinstance(result, dict):
-            return [dict(result=result)]
+            return [{"result": result}]
 
         # 3) Try standard SPARQL JSON ResultSet shape: { "head": {vars}, "results": { "bindings": [...] } }
         head = result.get("head")
@@ -722,8 +702,7 @@ class Operation(object):
         # Default behaviour: operation-level engine
         if self.engine == "sparql-anything":
             return self._run_sparql_anything_dicts(query_text)
-        else:
-            return self._run_sparql_dicts(endpoint_url, query_text)
+        return self._run_sparql_dicts(endpoint_url, query_text)
 
     def _inject_values_clause(self, query_text, vars_, acc_rows):
         # build distinct tuples for requested vars from the accumulator
@@ -740,7 +719,7 @@ class Operation(object):
         # format literals vs IRIs
         def fmt(x):
             s = str(x)
-            if s.startswith("http://") or s.startswith("https://"):
+            if s.startswith(("http://", "https://")):
                 return f"<{s}>"
             return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
@@ -759,11 +738,8 @@ class Operation(object):
     def _drop_columns(rows, vars_):
         if not rows:
             return rows
-        vars_set = set(v.lstrip("?") for v in vars_)
-        out = []
-        for r in rows:
-            out.append({k: v for k, v in r.items() if k not in vars_set and ("?" + k) not in vars_set})
-        return out
+        vars_set = {v.lstrip("?") for v in vars_}
+        return [{k: v for k, v in r.items() if k not in vars_set and ("?" + k) not in vars_set} for r in rows]
 
     def _norm_join_key(self, v):
         if v is None:
@@ -773,9 +749,7 @@ class Operation(object):
         if s.startswith("http://"):
             s = "https://" + s[len("http://"):]
         # drop a single trailing slash for stability
-        if s.endswith("/"):
-            s = s[:-1]
-        return s
+        return s.removesuffix("/")
 
     def _join(self, left_rows, right_rows, lkey, rkey, how="inner"):
         """
@@ -804,12 +778,12 @@ class Operation(object):
         right_cols = [c for c in (right_rows[0].keys() if right_rows else []) if c != rcol]
 
         out = []
-        for l in left_rows:
-            lk = self._norm_join_key(l.get(lcol))
+        for left_row in left_rows:
+            lk = self._norm_join_key(left_row.get(lcol))
             matches = rindex.get(lk, [])
             if matches:
                 for r in matches:
-                    merged = dict(l)
+                    merged = dict(left_row)
                     for c in right_cols:
                         rv = r.get(c)
                         if rv is None:
@@ -821,10 +795,8 @@ class Operation(object):
                             if alt not in merged or merged[alt] in ("", None):
                                 merged[alt] = rv
                     out.append(merged)
-            else:
-                if how == "left":
-                    out.append(dict(l))
-                # inner: drop
+            elif how == "left":
+                out.append(dict(left_row))
         return out
 
     @staticmethod
@@ -839,11 +811,10 @@ class Operation(object):
     @staticmethod
     def _to_csv_rows(header, acc):
         rows = [header]
-        for d in acc:
-            rows.append([d.get(h, "") for h in header])
+        rows.extend([d.get(h, "") for h in header] for d in acc)
         return rows
 
-    def exec(self, method="get", content_type="application/json"):
+    def exec(self, method="get", content_type="application/json"):  # noqa: C901, PLR0911, PLR0912, PLR0915
         """This method takes in input the HTTP method to use for the call
         and the content type to return, and execute the operation as indicated
         in the specification file, by running (in the following order):
@@ -865,10 +836,7 @@ class Operation(object):
                 for idx, par in enumerate(findall("{([^{}]+)}", self.i["url"])):
                     try:
                         par_type = self.i[par].split("(")[0]
-                        if par_type == "str":
-                            par_value = par_man[idx]
-                        else:
-                            par_value = self.dt.get_func(par_type)(par_man[idx])
+                        par_value = par_man[idx] if par_type == "str" else self.dt.get_func(par_type)(par_man[idx])
                     except KeyError:
                         par_value = par_man[idx]
                     par_dict[par] = par_value
@@ -883,8 +851,8 @@ class Operation(object):
 
                     if self.engine == "sparql-anything":
                         query = sparql_text
-                        for param in par_dict:
-                            query = query.replace("[[%s]]" % param, str(par_dict[param]))
+                        for param, val in par_dict.items():
+                            query = query.replace(f"[[{param}]]", str(val))
                         rows = self._run_sparql_anything_dicts(query)
                         header = self._header_from_field_type(self.i, rows or [])
                         csv_rows = self._to_csv_rows(header, rows or [])
@@ -903,9 +871,10 @@ class Operation(object):
                     par_dict = {p_k: [par_dict[p_k]] if not isinstance(par_dict[p_k], list) else par_dict[p_k] for p_k in par_dict}
                     combinations = product(*par_dict.values())
 
-                    parameters_comb = []
-                    for combination in combinations:
-                        parameters_comb.append(dict(zip(list(par_dict.keys()), list(combination))))
+                    parameters_comb = [
+                        dict(zip(list(par_dict.keys()), list(combination), strict=False))
+                        for combination in combinations
+                    ]
 
                     # the __parameters_comb__ varaible is a list of dictionaries,
                     # each dictionary stores a possible combination of parameter values
@@ -922,7 +891,7 @@ class Operation(object):
 
                         query = self.i["sparql"]
                         for param in par_dict:
-                            query = query.replace("[[%s]]" % param, str(par_dict[param]))
+                            query = query.replace(f"[[{param}]]", str(par_dict[param]))
 
                         # GET and POST are sync
                         # TODO: use threads to make it parallel
@@ -942,7 +911,7 @@ class Operation(object):
                             list_of_lines = [line.decode("utf-8") for line in r.text.encode("utf-8").splitlines()]
 
                         else:
-                            return sc, "HTTP status code %s: %s" % (sc, r.reason), "text/plain"
+                            return sc, f"HTTP status code {sc}: {r.reason}", "text/plain"
 
                         # each res will have a list of list_of_line
                         # include the header of the first result only
@@ -950,13 +919,7 @@ class Operation(object):
                             list_of_lines = list_of_lines[1:]
                         include_header_line = False
 
-                        # list_of_res Example:
-                        # [ ["id,val","01,a","02,b"] , ["id,val","05,u","08,p"] ]
                         list_of_res += list_of_lines
-
-                    #
-                    #  ----- DELEGATE to POST PROCESSING operations
-                    # return 200, "HTTP print for debug %s: %s" % (200, list_of_res), "text/plain"
 
                     res = self.type_fields(list(reader(list_of_res)), self.i)
                     if self.addon is not None:
@@ -966,151 +929,142 @@ class Operation(object):
                     res = self.remove_types(res)
                     s_res = StringIO()
                     writer(s_res).writerows(res)
-                    return (sc,) + self.conv(s_res.getvalue(), q_string, content_type)
+                    return (sc, *self.conv(s_res.getvalue(), q_string, content_type))
 
-                else:
-                    # Multi-source path: @@ directives present
-                    try:
-                        steps = self._parse_steps(sparql_text, self.tp, par_dict)
+                # Multi-source path: @@ directives present
+                try:
+                    steps = self._parse_steps(sparql_text, self.tp, par_dict)
 
-                        acc = None     # list of dict rows
-                        pending_join = None
-                        pending_values_vars = None
+                    acc = None     # list of dict rows
+                    pending_join = None
+                    pending_values_vars = None
 
-                        foreach_sources = {}     # alias -> column name (without '?')
-                        pending_foreach = None   # (alias, delay_seconds)
+                    foreach_sources = {}     # alias -> column name (without '?')
+                    pending_foreach = None   # (alias, delay_seconds)
 
-                        for st in steps:
-                            tag = st[0]
+                    for st in steps:
+                        tag = st[0]
 
-                            if tag == "QUERY":
-                                _, endpoint_url, qtxt = st
+                        if tag == "QUERY":
+                            _, endpoint_url, qtxt = st
 
-                                # FOREACH mode: run one query per value
-                                if pending_foreach is not None:
-                                    alias, delay = pending_foreach
+                            # FOREACH mode: run one query per value
+                            if pending_foreach is not None:
+                                alias, delay = pending_foreach
 
-                                    if alias not in foreach_sources:
-                                        raise ValueError(
-                                            f"@@foreach refers to unknown alias '{alias}'. "
-                                            f"Declare it with @@values ?var:{alias} before @@foreach."
-                                        )
+                                if alias not in foreach_sources:
+                                    raise ValueError(
+                                        f"@@foreach refers to unknown alias '{alias}'. "
+                                        f"Declare it with @@values ?var:{alias} before @@foreach."
+                                    )
 
-                                    source_col = foreach_sources[alias]  # e.g. "br"
+                                source_col = foreach_sources[alias]  # e.g. "br"
 
-                                    # Collect distinct non-empty values from the accumulator
-                                    values = []
-                                    seen = set()
-                                    for row in (acc or []):
-                                        v = row.get(source_col)
-                                        if v and v not in seen:
-                                            seen.add(v)
-                                            values.append(v)
+                                # Collect distinct non-empty values from the accumulator
+                                values = []
+                                seen = set()
+                                for row in (acc or []):
+                                    v = row.get(source_col)
+                                    if v and v not in seen:
+                                        seen.add(v)
+                                        values.append(v)
 
-                                    all_rows = []
-                                    for idx_val, val in enumerate(values):
-                                        # Substitute [[alias]] in the query text
-                                        q_one = qtxt.replace(f"[[{alias}]]", str(val))
-                                        sub_rows = self._run_query_dicts(endpoint_url, q_one)
-                                        if sub_rows:
-                                            all_rows.extend(sub_rows)
-                                        # Sleep between calls if requested
-                                        if delay and idx_val + 1 < len(values):
-                                            time.sleep(delay)
+                                all_rows = []
+                                for idx_val, val in enumerate(values):
+                                    # Substitute [[alias]] in the query text
+                                    q_one = qtxt.replace(f"[[{alias}]]", str(val))
+                                    sub_rows = self._run_query_dicts(endpoint_url, q_one)
+                                    if sub_rows:
+                                        all_rows.extend(sub_rows)
+                                    # Sleep between calls if requested
+                                    if delay and idx_val + 1 < len(values):
+                                        time.sleep(delay)
 
-                                    rows = all_rows
-                                    # FOREACH applies only to this single QUERY
-                                    pending_foreach = None
-                                    # In FOREACH mode we ignore any pending VALUES_INJECT
-                                    pending_values_vars = None
-
-                                else:
-                                    # Normal multi-source behaviour
-                                    if pending_values_vars:
-                                        # acc is the current accumulator rows
-                                        qtxt = self._inject_values_clause(qtxt, pending_values_vars, acc)
-                                        pending_values_vars = None  # only affects this single query
-                                    rows = self._run_query_dicts(endpoint_url, qtxt)
-
-                                if acc is None:
-                                    # first query defines the accumulator
-                                    acc = rows
-                                else:
-                                    if pending_join:
-                                        lvar, rvar, how = pending_join
-                                        acc = self._join(acc, rows, lvar, rvar, how)
-                                        pending_join = None
-                                    else:
-                                        raise ValueError(
-                                            "Multiple QUERY steps without an explicit @@join directive"
-                                        )
-
-                            elif tag == "JOIN":
-                                pending_join = (st[1], st[2], st[3] if len(st) > 3 and st[3] else "inner")
-
-                            elif tag == "REMOVE":
-                                _, vars_ = st
-                                acc = self._drop_columns(acc or [], vars_)
-
-                            elif tag == "VALUES_INJECT":
-                                # st = ("VALUES_INJECT", ["?br", ...])
-                                pending_values_vars = st[1]
-
-                            elif tag == "FOREACH_SETUP":
-                                # st = ("FOREACH_SETUP", alias, var_name)
-                                _, alias, var_name = st
-                                foreach_sources[alias] = var_name.lstrip("?")
-
-                            elif tag == "FOREACH_MARK":
-                                # st = ("FOREACH_MARK", alias, delay)
-                                _, alias, delay = st
-                                pending_foreach = (alias, delay)
+                                rows = all_rows
+                                # FOREACH applies only to this single QUERY
+                                pending_foreach = None
+                                # In FOREACH mode we ignore any pending VALUES_INJECT
+                                pending_values_vars = None
 
                             else:
-                                raise RuntimeError(f"Unknown step tag {tag}")
+                                # Normal multi-source behaviour
+                                if pending_values_vars:
+                                    # acc is the current accumulator rows
+                                    qtxt = self._inject_values_clause(qtxt, pending_values_vars, acc)
+                                    pending_values_vars = None  # only affects this single query
+                                rows = self._run_query_dicts(endpoint_url, qtxt)
 
-                        # Convert merged dict rows -> CSV rows; then run the usual pipeline
-                        header = self._header_from_field_type(self.i, acc or [])
-                        csv_rows = self._to_csv_rows(header, acc or [])
+                            if acc is None:
+                                # first query defines the accumulator
+                                acc = rows
+                            elif pending_join:
+                                lvar, rvar, how = pending_join
+                                acc = self._join(acc, rows, lvar, rvar, how)
+                                pending_join = None
+                            else:
+                                raise ValueError(
+                                    "Multiple QUERY steps without an explicit @@join directive"
+                                )
 
-                        res = self.type_fields(csv_rows, self.i)
-                        if self.addon is not None:
-                            res = self.postprocess(res, self.i, self.addon)
-                        q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
-                        res = self.handling_params(q_string, res)
-                        res = self.remove_types(res)
-                        s_res = StringIO()
-                        writer(s_res).writerows(res)
-                        body, ctype = self.conv(s_res.getvalue(), q_string, content_type)
-                        return 200, body, ctype
+                        elif tag == "JOIN":
+                            pending_join = (st[1], st[2], st[3] if len(st) > 3 and st[3] else "inner")
 
-                    except ValueError as ve:
-                        sc = 400
-                        return sc, f"HTTP status code {sc}: {ve}", "text/plain"
-                    except RuntimeError as re_err:
-                        sc = 502
-                        return sc, f"HTTP status code {sc}: {re_err}", "text/plain"
+                        elif tag == "REMOVE":
+                            _, vars_ = st
+                            acc = self._drop_columns(acc or [], vars_)
+
+                        elif tag == "VALUES_INJECT":
+                            pending_values_vars = st[1]
+
+                        elif tag == "FOREACH_SETUP":
+                            _, alias, var_name = st
+                            foreach_sources[alias] = var_name.lstrip("?")
+
+                        elif tag == "FOREACH_MARK":
+                            _, alias, delay = st
+                            pending_foreach = (alias, delay)
+
+                        else:
+                            raise RuntimeError(f"Unknown step tag {tag}")
+
+                    # Convert merged dict rows -> CSV rows; then run the usual pipeline
+                    header = self._header_from_field_type(self.i, acc or [])
+                    csv_rows = self._to_csv_rows(header, acc or [])
+
+                    res = self.type_fields(csv_rows, self.i)
+                    if self.addon is not None:
+                        res = self.postprocess(res, self.i, self.addon)
+                    q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
+                    res = self.handling_params(q_string, res)
+                    res = self.remove_types(res)
+                    s_res = StringIO()
+                    writer(s_res).writerows(res)
+                    body, ctype = self.conv(s_res.getvalue(), q_string, content_type)
+                    return 200, body, ctype
+
+                except ValueError as ve:
+                    sc = 400
+                    return sc, f"HTTP status code {sc}: {ve}", "text/plain"
+                except RuntimeError as re_err:
+                    sc = 502
+                    return sc, f"HTTP status code {sc}: {re_err}", "text/plain"
 
             except TimeoutError as e:
                 sc = 408
                 tb = e.__traceback__
-                return sc, "HTTP status code %s: request timeout - %s: %s (line %s)" % \
-                    (sc, type(e).__name__, e,
+                return sc, "HTTP status code {}: request timeout - {}: {} (line {})".format(sc, type(e).__name__, e,
                      tb.tb_lineno if tb else "?"), "text/plain"
             except TypeError as e:
                 sc = 400
                 tb = e.__traceback__
-                return sc, "HTTP status code %s: " \
-                    "parameter in the request not compliant with the type specified - %s: %s (line %s)" % \
-                    (sc, type(e).__name__, e,
+                return sc, "HTTP status code {}: " \
+                    "parameter in the request not compliant with the type specified - {}: {} (line {})".format(sc, type(e).__name__, e,
                      tb.tb_lineno if tb else "?"), "text/plain"
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 sc = 500
                 tb = e.__traceback__
-                return sc, "HTTP status code %s: something unexpected happened - %s: %s (line %s)" % \
-                    (sc, type(e).__name__, e,
+                return sc, "HTTP status code {}: something unexpected happened - {}: {} (line {})".format(sc, type(e).__name__, e,
                      tb.tb_lineno if tb else "?"), "text/plain"
         else:
             sc = 405
-            return sc, "HTTP status code %s: '%s' method not allowed" % (sc, str_method), "text/plain"
-    # END: Processing methods
+            return sc, f"HTTP status code {sc}: '{str_method}' method not allowed", "text/plain"

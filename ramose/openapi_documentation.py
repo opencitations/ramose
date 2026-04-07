@@ -10,6 +10,7 @@
 import json
 import re
 from collections import OrderedDict
+from pathlib import Path
 from re import findall, split
 from urllib.parse import quote
 
@@ -32,7 +33,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     # Small utilities
     # -------------------------
     def _normalize_base_url(self, base_url: str) -> str:
-        return base_url[1:] if base_url.startswith("/") else base_url
+        return base_url.removeprefix("/")
 
     def _get_conf(self, base_url: str | None = None):
         if base_url is None:
@@ -59,7 +60,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         try:
             t, shape = findall(r"^\s*([^\(]+)\((.+)\)\s*$", s)[0]
             return t.strip(), shape.strip()
-        except Exception:
+        except (IndexError, ValueError):
             return "str", ".+"
 
     def _guess_contact(self, contacts_value):
@@ -88,8 +89,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         if len(s) >= 2 and ((s[0] == s[-1] == '"') or (s[0] == s[-1] == "'")):
             s = s[1:-1].strip()
         # Convert literal backslash-n sequences to actual newlines
-        s = s.replace("\\n", "\n")
-        return s
+        return s.replace("\\n", "\n")
 
     def _param_hint_from_preprocess(self, preprocess_str, param_name):
         """
@@ -112,7 +112,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             return None
         try:
             return json.loads(output_json_value)
-        except Exception:
+        except (ValueError, TypeError):
             return None
 
     # -------------------------
@@ -126,8 +126,8 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                 fm_val = op["format"]
                 fm_list = fm_val if isinstance(fm_val, list) else [fm_val]
                 for fm in fm_list:
-                    for part in str(fm).split(";"):
-                        part = part.strip()
+                    for raw_part in str(fm).split(";"):
+                        part = raw_part.strip()
                         if not part:
                             continue
                         # expected "fmt,func"
@@ -153,7 +153,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             "n-quads": "application/n-quads",
             "trig": "application/trig",
         }
-        return mapping.get(fmt, None)
+        return mapping.get(fmt)
 
     def _build_response_content(self, ok_schema, formats_enum, ok_example=None, err_schema_ref=None):
         """
@@ -163,12 +163,10 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         """
         content = OrderedDict()
 
-        # JSON: structured
         content["application/json"] = {"schema": ok_schema}
         if ok_example is not None:
             content["application/json"]["examples"] = {"example": {"value": ok_example}}
 
-        # CSV: textual
         content["text/csv"] = {"schema": {"type": "string"}}
 
         # Other formats discovered in .hf (#format)
@@ -219,10 +217,10 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                 name = part[1:-1]
                 if i == last_index:
                     # last param: capture everything to end, including slashes
-                    re_parts.append(r"(?P<%s>.+)" % name)
+                    re_parts.append(rf"(?P<{name}>.+)")
                 else:
                     # middle params: standard segment (no slash)
-                    re_parts.append(r"(?P<%s>[^/]+)" % name)
+                    re_parts.append(rf"(?P<{name}>[^/]+)")
             else:
                 re_parts.append(re.escape(part))
 
@@ -244,7 +242,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     # -------------------------
     # Main builder
     # -------------------------
-    def _build_openapi(self, base_url=None):
+    def _build_openapi(self, base_url=None):  # noqa: C901, PLR0912, PLR0915
         conf = self._get_conf(base_url)
         api_meta = conf["conf_json"][0]
         formats_enum = self._collect_format_tokens(conf)
@@ -410,11 +408,10 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
             # methods can be space-separated in RAMOSE
             methods = split(r"\s+", op.get("method", "get").strip())
-            for m in [mm for mm in methods if mm]:
-                m = m.lower()
+            for m in [mm.lower() for mm in methods if mm]:
 
                 summary = ""
-                if "description" in op and op["description"]:
+                if op.get("description"):
                     summary = op["description"].split("\n")[0].strip()
 
                 # Build a nicer description (and optionally include SPARQL as a markdown code block)
@@ -514,9 +511,9 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
     def store_documentation(self, file_path, base_url=None):
         yml = self.get_documentation(base_url=base_url)[1]
-        with open(file_path, "w", encoding="utf8") as f:
+        with Path(file_path).open("w", encoding="utf8") as f:
             f.write(yml)
 
-    def get_index(self, *args, **dargs):
+    def get_index(self, *_args, **_dargs):
         # Not used by the current UI. Keep a minimal placeholder.
         return "OpenAPI exporter available."

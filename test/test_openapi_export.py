@@ -2,18 +2,17 @@
 #
 # SPDX-License-Identifier: ISC
 
-import os
+from pathlib import Path
 
 import yaml
 
 from ramose import APIManager, OpenAPIDocumentationHandler
 
-
-TESTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tests")
+TESTS_DIR = Path(__file__).resolve().parent.parent / "tests"
 
 
 def _build_handler(*hf_files):
-    paths = [os.path.join(TESTS_DIR, f) for f in hf_files]
+    paths = [str(TESTS_DIR / f) for f in hf_files]
     am = APIManager(paths, endpoint_override="http://localhost:9999/sparql")
     return OpenAPIDocumentationHandler(am)
 
@@ -25,8 +24,8 @@ class TestOpenAPIFromMixedScholarlyCrossref:
         assert status == 200
 
         generated = yaml.safe_load(yml)
-        ref_path = os.path.join(TESTS_DIR, "mixed_scholarly_crossref_openapi.yaml")
-        with open(ref_path) as f:
+        ref_path = TESTS_DIR / "mixed_scholarly_crossref_openapi.yaml"
+        with ref_path.open() as f:
             reference = yaml.safe_load(f.read())
 
         assert generated == reference

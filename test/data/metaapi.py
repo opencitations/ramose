@@ -4,7 +4,6 @@
 
 __author__ = 'Arcangelo Massari'
 
-from typing import Tuple
 
 URI_TYPE_DICT = {
     'http://purl.org/spar/doco/Abstract': 'abstract',
@@ -45,8 +44,8 @@ URI_TYPE_DICT = {
 }
 
 
-def generate_id_search(ids: str) -> Tuple[str]:
-    id_searches = list()
+def generate_id_search(ids: str) -> tuple[str]:
+    id_searches = []
     omid_values = []
     other_values = []
 
@@ -82,7 +81,7 @@ def generate_id_search(ids: str) -> Tuple[str]:
     ids_search = " UNION ".join(id_searches)
     return ids_search,
 
-def generate_ra_search(identifier:str) -> Tuple[str]:
+def generate_ra_search(identifier:str) -> tuple[str]:
     scheme_literal_value = identifier.split(':')
     if len(scheme_literal_value) == 2:
         scheme = scheme_literal_value[0]
@@ -91,9 +90,8 @@ def generate_ra_search(identifier:str) -> Tuple[str]:
         scheme = 'orcid'
         literal_value = scheme_literal_value[0]
     if scheme == 'omid':
-        return '<https://w3id.org/oc/meta/{0}> ^pro:isHeldBy ?knownRole.'.format(literal_value),
-    else:
-        return '''
+        return f'<https://w3id.org/oc/meta/{literal_value}> ^pro:isHeldBy ?knownRole.',
+    return '''
             {
                 ?knownPersonIdentifier literal:hasLiteralValue "'''+literal_value+'''"
             }
@@ -110,7 +108,7 @@ def create_metadata_output(results):
     header = results[0]
     output_results = [header]
     for result in results[1:]:
-        output_result = list()
+        output_result = []
         for i, data in enumerate(result):
             if i == header.index('type'):
                 beautiful_type = __postprocess_type(data[1])
@@ -124,11 +122,7 @@ def create_metadata_output(results):
     return output_results, True
 
 def __postprocess_type(type_uri:str) -> str:
-    if type_uri:
-        type_string = URI_TYPE_DICT[type_uri]
-    else:
-        type_string = ''
-    return type_string
+    return URI_TYPE_DICT[type_uri] if type_uri else ''
 
 def process_ordered_list(items):
     if not items:
@@ -147,7 +141,7 @@ def process_ordered_list(items):
         role_to_name[current_role] = name
 
     ordered_items = []
-    start_role = next(iter(role for role, next_role in items_dict.items() if not role in items_dict.values()))
+    start_role = next(iter(role for role, next_role in items_dict.items() if role not in items_dict.values()))
 
     current_role = start_role
     while current_role:

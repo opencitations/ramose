@@ -19,8 +19,8 @@ __all__ = [
     "APIManager",
     "DataType",
     "DocumentationHandler",
-    "HashFormatHandler",
     "HTMLDocumentationHandler",
+    "HashFormatHandler",
     "OpenAPIDocumentationHandler",
     "Operation",
 ]

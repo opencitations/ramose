@@ -10,8 +10,7 @@
 import csv
 from collections import OrderedDict
 from importlib import import_module
-from os import sep
-from os.path import abspath, basename, dirname
+from pathlib import Path
 from re import findall, match, sub
 from sys import maxsize, path
 from urllib.parse import urlsplit
@@ -21,19 +20,18 @@ from ramose.hash_format import HashFormatHandler
 from ramose.operation import Operation
 
 
-class APIManager(object):
+class APIManager:
     # Fixing max size for CSV
     @staticmethod
     def __max_size_csv():
-        maxInt = maxsize
+        max_int = maxsize
         while True:
             try:
-                csv.field_size_limit(maxInt)
+                csv.field_size_limit(max_int)
                 break
             except OverflowError:  # pragma: no cover
-                maxInt = int(maxInt/10)
+                max_int = int(max_int / 10)
 
-    # Constructor: START
     def __init__(self, conf_files, endpoint_override=None):
         """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
         defined according to the Hash Format and following a particular structure, and stores all the operations
@@ -78,7 +76,7 @@ class APIManager(object):
                     base_url = item["url"]
                     self.base_url.append(item["url"])
                     website = item["base"]
-                    tp = endpoint_override if endpoint_override else item["endpoint"]
+                    tp = endpoint_override or item["endpoint"]
 
                     # Engine selection at API level (optional)
                     if "engine" in item:
@@ -86,9 +84,8 @@ class APIManager(object):
 
                     # Optional: named sources registry
                     if "sources" in item:
-                        # expected: "name1=url1; name2=url2"
-                        for pair in item["sources"].split(";"):
-                            pair = pair.strip()
+                        for raw_pair in item["sources"].split(";"):
+                            pair = raw_pair.strip()
                             if not pair:
                                 continue
                             name, url = pair.split("=", 1)
@@ -99,9 +96,9 @@ class APIManager(object):
                         allow_inline_endpoints = str(item["allow_inline_endpoints"]).strip().lower() in ("true", "1", "yes", "y")
 
                     if "addon" in item:
-                        addon_abspath = abspath(dirname(conf_file) + sep + item["addon"])
-                        path.append(dirname(addon_abspath))
-                        addon = import_module(basename(addon_abspath))
+                        addon_path = (Path(conf_file).parent / item["addon"]).resolve()
+                        path.append(str(addon_path.parent))
+                        addon = import_module(addon_path.name)
                     sparql_http_method = "post"
                     if "method" in item:
                         sparql_http_method = item["method"].strip().lower()
@@ -120,9 +117,7 @@ class APIManager(object):
                 "allow_inline_endpoints": allow_inline_endpoints,
                 "engine": engine,
             }
-    # Constructor: END
 
-    # START: Ancillary methods
     @staticmethod
     def nor_api_url(i, b=""):
         """This method takes an API operation object and an optional base URL (e.g. "/api/v1") as input
@@ -139,27 +134,24 @@ class APIManager(object):
                 t = i[term]
             except KeyError:
                 t = "str(.+)"
-            result = result.replace("{%s}" % term, "%s" % sub(r"^[^\(]+(\(.+\))$", r"\1", t))
+            result = result.replace(f"{{{term}}}", "{}".format(sub(r"^[^\(]+(\(.+\))$", r"\1", t)))
 
-        return "%s%s" % (b, result)
+        return f"{b}{result}"
 
     def best_match(self, u):
         """This method takes an URL of an API call in input and find the API operation URL and the related
         configuration that best match with the API call, if any."""
-        #u = u.decode('UTF8') if isinstance(u, (bytes, bytearray)) else u
         cur_u = sub(r"\?.*$", "", u)
         result = None, None
         for base_url in self.all_conf:
             if u.startswith(base_url):
                 conf = self.all_conf[base_url]
                 for pat in conf["conf"]:
-                    if match("^%s$" % pat, cur_u):
+                    if match(f"^{pat}$", cur_u):
                         result = conf, pat
                         break
         return result
-    # END: Ancillary methods
 
-    # START: Processing methods
     def get_op(self, op_complete_url):
         """This method returns a new object of type Operation which represent the operation specified by
         the input URL (parameter 'op_complete_url)'. In case no operation can be found according by checking
@@ -181,8 +173,8 @@ class APIManager(object):
                 fm_val = op_conf["format"]
                 fm_list = fm_val if isinstance(fm_val, list) else [fm_val]
                 for fm in fm_list:
-                    for part in fm.split(";"):
-                        part = part.strip()
+                    for raw_part in fm.split(";"):
+                        part = raw_part.strip()
                         if not part:
                             continue
                         fmt, func = part.split(",", 1)
@@ -200,7 +192,5 @@ class APIManager(object):
                 conf.get("allow_inline_endpoints", False),
                 op_engine,
             )
-        else:
-            sc = 404
-            return sc, "HTTP status code %s: the operation requested does not exist" % sc, "text/plain"
-    # END: Processing methods
+        sc = 404
+        return sc, f"HTTP status code {sc}: the operation requested does not exist", "text/plain"

@@ -3,14 +3,15 @@
 # SPDX-License-Identifier: ISC
 
 import json
-import os
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
+
 from ramose import APIManager, Operation
 
-
-TESTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tests")
+TESTS_DIR = str(Path(__file__).resolve().parent.parent / "tests")
 
 # Realistic mock data captured from real endpoints (Wikidata, OpenCitations, Crossref)
 
@@ -69,7 +70,7 @@ WIKIDATA_FULL_SCHOLARLY = [
 
 def _load_api_manager(hf_file):
     return APIManager(
-        [os.path.join(TESTS_DIR, hf_file)],
+        [str(Path(TESTS_DIR) / hf_file)],
         endpoint_override="http://mock-endpoint/sparql",
     )
 
@@ -151,7 +152,7 @@ class TestMultiSourceWithSparqlAnything:
 
         with patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql), \
              patch.object(op, "_run_sparql_anything_dicts", side_effect=mock_run_sa):
-            sc, body, ctype = op.exec(method="get", content_type="application/json")
+            sc, body, _ctype = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
         rows = json.loads(body)
@@ -239,7 +240,7 @@ class TestMultiSourceValuesInject:
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps), \
              patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
-            sc, body, ctype = op.exec(method="get", content_type="application/json")
+            sc, _body, _ctype = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
 
@@ -260,7 +261,7 @@ class TestMultiSourceMissingJoin:
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps), \
              patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
-            sc, msg, ct = op.exec(method="get", content_type="application/json")
+            sc, msg, _ct = op.exec(method="get", content_type="application/json")
 
         assert sc == 400
         assert msg == "HTTP status code 400: Multiple QUERY steps without an explicit @@join directive"
@@ -284,7 +285,7 @@ class TestMultiSourceForeachUnknownAlias:
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps), \
              patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
-            sc, msg, ct = op.exec(method="get", content_type="application/json")
+            sc, msg, _ct = op.exec(method="get", content_type="application/json")
 
         assert sc == 400
         assert msg == "HTTP status code 400: @@foreach refers to unknown alias 'nonexistent'. Declare it with @@values ?var:nonexistent before @@foreach."
@@ -302,7 +303,7 @@ class TestParseSteps:
         return Operation(
             "/api/test/val", r"/api/test/(.+)", op_item,
             "http://default-endpoint/sparql", "get", None,
-            format={}, sources_map=sources_map or {},
+            format_map={}, sources_map=sources_map or {},
             allow_inline_endpoints=allow_inline,
         )
 
@@ -339,11 +340,8 @@ class TestParseSteps:
     def test_endpoint_not_allowed_raises(self):
         op = self._make_op(allow_inline=False)
         text = "@@endpoint https://other/sparql\nSELECT ?a WHERE { }"
-        try:
+        with pytest.raises(ValueError, match="@@endpoint not allowed"):
             op._parse_steps(text, "http://ep/sparql", {})
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert str(e) == "@@endpoint not allowed (enable #allow_inline_endpoints)."
 
     def test_values_inject(self):
         op = self._make_op()
@@ -377,11 +375,8 @@ class TestParseSteps:
     def test_unknown_directive_raises(self):
         op = self._make_op()
         text = "@@bogus something"
-        try:
+        with pytest.raises(ValueError, match="Unknown directive @@bogus"):
             op._parse_steps(text, "http://ep/sparql", {})
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert str(e) == "Unknown directive @@bogus"
 
     def test_with_directive_known_source(self):
         op = self._make_op(sources_map={"wikidata": "https://wikidata.org/sparql"})
@@ -393,47 +388,32 @@ class TestParseSteps:
     def test_with_directive_unknown_source_raises(self):
         op = self._make_op(sources_map={})
         text = "@@with nonexistent\nSELECT ?a WHERE { }"
-        try:
+        with pytest.raises(ValueError, match="Unknown source 'nonexistent'"):
             op._parse_steps(text, "http://ep/sparql", {})
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert str(e) == "Unknown source 'nonexistent' in @@with; declare it in #sources."
 
     def test_values_empty_raises(self):
         op = self._make_op()
         text = "@@values\nSELECT ?a WHERE { }"
-        try:
+        with pytest.raises(ValueError, match="@@values needs at least one variable"):
             op._parse_steps(text, "http://ep/sparql", {})
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert str(e) == "@@values needs at least one variable"
 
     def test_values_multiple_alias_raises(self):
         op = self._make_op()
         text = "@@values ?a:x ?b:y\nSELECT ?a ?b WHERE { }"
-        try:
+        with pytest.raises(ValueError, match="exactly one"):
             op._parse_steps(text, "http://ep/sparql", {})
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert str(e) == "@@values with alias supports exactly one ?var:alias pair"
 
     def test_foreach_no_alias_raises(self):
         op = self._make_op()
         text = "@@foreach\nSELECT ?a WHERE { }"
-        try:
+        with pytest.raises(ValueError, match="@@foreach requires an alias name"):
             op._parse_steps(text, "http://ep/sparql", {})
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert str(e) == "@@foreach requires an alias name"
 
     def test_foreach_invalid_delay_raises(self):
         op = self._make_op()
         text = "@@foreach myalias notanumber\nSELECT ?a WHERE { }"
-        try:
+        with pytest.raises(ValueError, match="Invalid delay value"):
             op._parse_steps(text, "http://ep/sparql", {})
-            assert False, "Should have raised ValueError"
-        except ValueError as e:
-            assert str(e) == "Invalid delay value in @@foreach: 'notanumber'"
 
 
 class TestJoin:
@@ -654,20 +634,15 @@ class TestRunSparqlDicts:
         mock_session.get.return_value = resp
 
         op = self._make_op("get")
-        try:
+        with pytest.raises(RuntimeError, match="SPARQL 500: Internal Server Error"):
             op._run_sparql_dicts("http://ep/sparql", "SELECT ?x WHERE { }")
-            assert False, "Should have raised"
-        except RuntimeError as e:
-            assert str(e) == "SPARQL 500: Internal Server Error"
 
     @patch("ramose.operation._http_session")
     def test_request_exception_raises(self, mock_session):
         from requests.exceptions import ConnectionError
+
         mock_session.get.side_effect = ConnectionError("refused")
 
         op = self._make_op("get")
-        try:
+        with pytest.raises(RuntimeError, match="SPARQL request failed: refused"):
             op._run_sparql_dicts("http://ep/sparql", "SELECT ?x WHERE { }")
-            assert False, "Should have raised"
-        except RuntimeError as e:
-            assert str(e) == "SPARQL request failed: refused"

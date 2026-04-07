@@ -8,6 +8,7 @@
 # SPDX-License-Identifier: ISC
 
 import logging
+from pathlib import Path
 from re import findall, split, sub
 
 from markdown import markdown
@@ -26,7 +27,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
         """This method returns the HTML meta-description tag defined in the API specification."""
         desc = conf["conf_json"][0].get("html_meta_description")
         if desc:
-            return '<meta name="description" content="%s"/>' % desc
+            return f'<meta name="description" content="{desc}"/>'
         return ""  # pragma: no cover
 
     def __sidebar(self, conf):
@@ -36,17 +37,16 @@ class HTMLDocumentationHandler(DocumentationHandler):
         i = conf["conf_json"][0]
         result += """
 
-        <h4>%s</h4>
+        <h4>{}</h4>
         <ul id="sidebar_menu" class="sidebar_menu">
             <li><a class="btn active" href="#description">DESCRIPTION</a></li>
             <li><a class="btn" href="#parameters">PARAMETERS</a></li>
             <li><a class="btn" href="#operations">OPERATIONS</a>
-                <ul class="sidebar_submenu">%s</ul>
+                <ul class="sidebar_submenu">{}</ul>
             </li>
             <li><a class="btn active" href="/">HOME</a></li>
         </ul>
-        """ % \
-            (i["title"], "".join(["<li><a class='btn' href='#%s'>%s</a></li>" % (op["url"], op["url"])
+        """.format(i["title"], "".join(["<li><a class='btn' href='#{}'>{}</a></li>".format(op["url"], op["url"])
                                   for op in conf["conf_json"][1:]]))
         return result
 
@@ -57,21 +57,20 @@ class HTMLDocumentationHandler(DocumentationHandler):
         i = conf["conf_json"][0]
         result += """
 <a id='toc'></a>
-# %s
+# {}
 
-**Version:** %s <br/>
-**API URL:** <a href="%s">%s</a><br/>
-**Contact:** %s<br/>
-**License:** %s<br/>
+**Version:** {} <br/>
+**API URL:** <a href="{}">{}</a><br/>
+**Contact:** {}<br/>
+**License:** {}<br/>
 
 
 
 ## <a id="description"></a>Description [back to top](#toc)
 
-%s
+{}
 
-%s""" % \
-                  (i["title"], i["version"], i["base"] + i["url"], i["base"] + i["url"],  i["contacts"], i["license"],
+{}""".format(i["title"], i["version"], i["base"] + i["url"], i["base"] + i["url"],  i["contacts"], i["license"],
 
                    i["description"], self.__parameters())
         # (i["title"], i["version"], i["base"] + i["url"], i["base"] + i["url"], i["contacts"], i["contacts"], i["license"],
@@ -117,23 +116,23 @@ The operations that this API implements are:
                         r"^\s*([^\(]+)\((.+)\)\s*$", op[p])[0]
 
                 params.append(
-                    "<em>%s</em>: type <em>%s</em>, regular expression shape <code>%s</code>" % (p, p_type, p_shape))
-            result += "\n* [%s](#%s): %s" % (op["url"],
+                    f"<em>{p}</em>: type <em>{p_type}</em>, regular expression shape <code>{p_shape}</code>")
+            result += "\n* [{}](#{}): {}".format(op["url"],
                                              op["url"], op["description"].split("\n")[0])
-            ops += """<div id="%s">
-<h3>%s <a href="#operations">back to operations</a></h3>
+            ops += """<div id="{}">
+<h3>{} <a href="#operations">back to operations</a></h3>
 
-%s
+{}
 
-<p class="attr"><strong>Accepted HTTP method(s)</strong> <span class="attr_val method">%s</span></p>
-<p class="attr params"><strong>Parameter(s)</strong> <span class="attr_val">%s</span></p>
-<p class="attr"><strong>Result fields type</strong><span class="attr_val">%s</span></p>
-<p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="%s">%s</a></span></p>
+<p class="attr"><strong>Accepted HTTP method(s)</strong> <span class="attr_val method">{}</span></p>
+<p class="attr params"><strong>Parameter(s)</strong> <span class="attr_val">{}</span></p>
+<p class="attr"><strong>Result fields type</strong><span class="attr_val">{}</span></p>
+<p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="{}">{}</a></span></p>
 <p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
-<pre><code>%s</code></pre></div>""" % (op["url"], op["url"], markdown(op["description"]),
+<pre><code>{}</code></pre></div>""".format(op["url"], op["url"], markdown(op["description"]),
                                        ", ".join(
                                            split(r"\s+", op["method"].strip())), "</li><li>".join(params),
-                                       ", ".join(["%s <em>(%s)</em>" % (f, t) for t, f in
+                                       ", ".join([f"{f} <em>({t})</em>" for t, f in
                                                   findall(FIELD_TYPE_RE, op["field_type"])]),
                                        conf["website"] + conf["base_url"] + op["call"], op["call"], op["output_json"])
         return markdown(result) + ops
@@ -544,23 +543,23 @@ The operations that this API implements are:
     def logger_ramose(self):  # pragma: no cover
         """This method adds logging info to a local file"""
         # logging
-        logFormatter = logging.Formatter(
+        log_formatter = logging.Formatter(
             "[%(asctime)s] [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
-        rootLogger = logging.getLogger()
+        root_logger = logging.getLogger()
 
-        fileHandler = logging.FileHandler("ramose.log")
-        fileHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(fileHandler)
+        file_handler = logging.FileHandler("ramose.log")
+        file_handler.setFormatter(log_formatter)
+        root_logger.addHandler(file_handler)
 
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(consoleHandler)
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(log_formatter)
+        root_logger.addHandler(console_handler)
 
     def __parse_logger_ramose(self):
         """This method reads logging info stored into a local file, so as to be browsed in the dashboard.
         Returns: the html including the list of URLs of current working APIs and basic logging info """
         try:
-            with open("ramose.log") as l_f:
+            with Path("ramose.log").open() as l_f:
                 logs = ''.join(l_f.readlines())
         except FileNotFoundError:
             logs = ""
@@ -577,8 +576,8 @@ The operations that this API implements are:
 
         for api_url, api_dict in self.conf_doc.items():
             html += """
-                    <li><a class="btn active" href="%s">%s</a></li>
-                """ % (api_url, api_dict["conf_json"][0]["title"])
+                    <li><a class="btn active" href="{}">{}</a></li>
+                """.format(api_url, api_dict["conf_json"][0]["title"])
 
         html += """
             </ul>
@@ -588,24 +587,24 @@ The operations that this API implements are:
 
         for api_url, api_dict in self.conf_doc.items():
             clean_list = [
-                l for l in rev_list if api_url in l and "debug" not in l]
-            api_logs_list = ''.join(["<p>"+self.clean_log(l, api_url)
-                                    + "</p>" for l in clean_list if self.clean_log(l, api_url) != ''])
+                line for line in rev_list if api_url in line and "debug" not in line]
+            api_logs_list = ''.join(["<p>"+self.clean_log(line, api_url)
+                                    + "</p>" for line in clean_list if self.clean_log(line, api_url) != ''])
             api_title = api_dict["conf_json"][0]["title"]
             html += """
                 <div class="info_api">
-                    <h2>%s</h2>
-                    <a id="view_doc" href="%s">VIEW DOCUMENTATION</a><br/>
-                    <a href="%s">GO TO SPARQL ENDPOINT</a><br/>
+                    <h2>{}</h2>
+                    <a id="view_doc" href="{}">VIEW DOCUMENTATION</a><br/>
+                    <a href="{}">GO TO SPARQL ENDPOINT</a><br/>
                 </div>
                 <div class="api_calls">
                     <h4>Last calls</h4>
                     <div>
-                        %s
+                        {}
                     </div>
 
                 </div>
-                """ % (api_title, api_url, api_dict["tp"], api_logs_list)
+                """.format(api_title, api_url, api_dict["tp"], api_logs_list)
         return html
 
     def get_documentation(self, css_path=None, base_url=None):
@@ -616,65 +615,56 @@ The operations that this API implements are:
         else:
             conf = self.conf_doc['/'+base_url]
 
-        return 200, """<!DOCTYPE html>
+        return 200, f"""<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>%s</title>
-        %s
+        <title>{self.__title(conf)}</title>
+        {self.__htmlmetadescription(conf)}
         <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
         <meta name="viewport" content="width=device-width" />
-        <style>%s</style>
-        %s
+        <style>{self.__css()}</style>
+        {self.__css_path(css_path)}
     </head>
     <body>
-        <aside>%s</aside>
-        <main>%s</main>
-        <section id="operations">%s</section>
-        <footer>%s</footer>
+        <aside>{self.__sidebar(conf)}</aside>
+        <main>{self.__header(conf)}</main>
+        <section id="operations">{self.__operations(conf)}</section>
+        <footer>{self.__footer()}</footer>
     </body>
-</html>""" % (
-            self.__title(conf),
-            self.__htmlmetadescription(conf),
-            self.__css(),
-            self.__css_path(css_path),
-            self.__sidebar(conf),
-            self.__header(conf),
-            self.__operations(conf),
-            self.__footer()
-        )
+</html>"""
 
     def get_index(self, css_path=None):
         """This method generates the index of all the HTML documentations that can be
         created from the configuration file."""
 
-        return """
+        return f"""
             <!doctype html>
             <html lang="en">
             <head>
               <meta charset="utf-8">
               <title>RAMOSE</title>
               <meta name="description" content="Documentation of RAMOSE API Manager">
-              <style>%s</style>
-              %s
+              <style>{self.__css()}</style>
+              {self.__css_path(css_path)}
             </head>
             <body>
-                %s
-                <footer>%s</footer>
+                {self.__parse_logger_ramose()}
+                <footer>{self.__footer()}</footer>
             </body>
             </html>
-        """ % (self.__css(), self.__css_path(css_path), self.__parse_logger_ramose(), self.__footer())
+        """
 
     def store_documentation(self, file_path, css_path=None):
         """This method stores the HTML documentation of an API in a file."""
         _, html = self.get_documentation(css_path)
-        with open(file_path, "w") as f:
+        with Path(file_path).open("w") as f:
             f.write(html)
 
-    def clean_log(self, l, api_url):
+    def clean_log(self, log_line, api_url):
         """This method parses logs lines into structured data."""
-        if "- - " not in l:
+        if "- - " not in log_line:
             return ''
-        s = l.split("- - ", 1)[1]
+        s = log_line.split("- - ", 1)[1]
         date = s[s.find("[")+1:s.find("]")]
         method = s.split('"')[1::2][0].split()[0]
         cur_call = s.split('"')[1::2][0].split()[1].strip()

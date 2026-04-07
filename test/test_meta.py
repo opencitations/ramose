@@ -6,8 +6,8 @@ import json
 import re
 
 import pytest
-
 from conftest import execute_operation
+
 from ramose import APIManager
 
 

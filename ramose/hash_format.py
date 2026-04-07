@@ -7,10 +7,11 @@
 #
 # SPDX-License-Identifier: ISC
 
+from pathlib import Path
 from re import DOTALL, search
 
 
-class HashFormatHandler(object):
+class HashFormatHandler:
     """This class creates an object capable to read files stored in Hash Format (see
     https://github.com/opencitations/ramose#Hashformat-configuration-file). A Hash Format
     file (.hf) is a specification file that includes information structured using the following
@@ -29,11 +30,11 @@ class HashFormatHandler(object):
         Hash Format, and returns its representation as list of dictionaries."""
         result = []
 
-        with open(file_path, "r", newline=None) as f:
+        with Path(file_path).open(newline=None) as f:
             first_field_name = None
             cur_object: dict[str, str] = {}
             cur_field_name = None
-            for line in f.readlines():
+            for line in f:
                 cur_matching = search(r"^#([^\s]+)\s(.+)$", line, DOTALL)
                 if cur_matching is not None:
                     cur_field_name = cur_matching.group(1)

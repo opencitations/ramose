@@ -4,15 +4,16 @@
 
 import csv
 import io
-import xml.etree.ElementTree as ET
 import re
+import xml.etree.ElementTree as ET
+
 
 def lower(s):
     return s.lower(),
 
 
 def split_dois(s):
-    return "\"%s\"" % "\" \"".join(s.split("__")),
+    return "\"{}\"".format("\" \"".join(s.split("__"))),
 
 def to_upper(csv_str):
     """Dummy example: convert entire CSV to uppercase."""
@@ -56,7 +57,7 @@ def to_xml(csv_str):
             if val:
                 child.text = val
 
-    # Pretty‐print indentation
+    # Pretty-print indentation
     def _indent(elem, level=0):
         i = "\n" + level*"  "
         if len(elem):
@@ -67,9 +68,8 @@ def to_xml(csv_str):
             last = elem[-1]
             if not last.tail or not last.tail.strip():
                 last.tail = i
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
+        elif level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
     _indent(root)
 

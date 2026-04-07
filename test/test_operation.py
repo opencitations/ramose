@@ -296,7 +296,7 @@ class TestPostprocess:
                 header = result[0]
                 col_idx = header.index(col)
                 filtered = [row for row in result[1:] if Operation.pv(col_idx, row) == val]
-                return [header] + filtered, False
+                return [header, *filtered], False
 
         op_item = {
             "url": "/test/{id}",

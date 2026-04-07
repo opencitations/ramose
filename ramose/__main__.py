@@ -55,7 +55,7 @@ def main():  # pragma: no cover
     dh = HTMLDocumentationHandler(am)
     oah = OpenAPIDocumentationHandler(am)
 
-    css_path = args.css if args.css else None
+    css_path = args.css or None
 
     if args.webserver:
         try:
@@ -74,15 +74,14 @@ def main():  # pragma: no cover
             @app.route('/')
             def home():
 
-                index = dh.get_index(css_path)
-                return index
+                return dh.get_index(css_path)
 
             @app.route('/<path:api_url>')
             def doc(api_url):
                 res, status = dh.get_index(css_path), 404
                 # --- OpenAPI export endpoint ---
                 # Example: /api/v1/openapi.yaml  (or .yml)
-                if api_url.endswith("openapi.yaml") or api_url.endswith("openapi.yml"):
+                if api_url.endswith(("openapi.yaml", "openapi.yml")):
                     base = api_url.rsplit("/", 1)[0]  # e.g. "api/v1"
                     if "/" + base in am.all_conf:
                         status, yml = oah.get_documentation(base_url=base)
@@ -91,8 +90,7 @@ def main():  # pragma: no cover
                         response.headers.set("Access-Control-Allow-Origin", "*")
                         response.headers.set("Access-Control-Allow-Credentials", "true")
                         return response
-                    else:
-                        return res, status
+                    return res, status
                 # --- end OpenAPI export endpoint ---
                 if any(api_u in '/'+api_url for api_u, api_dict in am.all_conf.items()):
                     # documentation
@@ -100,46 +98,44 @@ def main():  # pragma: no cover
                         status, res = dh.get_documentation(css_path, api_url)
                         return res, status
                     # api calls
+                    cur_call = '/'+api_url
+                    fmt = request.args.get('format')
+                    content_type = "text/csv" if fmt is not None and "csv" in fmt else "application/json"
+
+                    op = am.get_op(cur_call+'?'+unquote(request.query_string.decode('utf8')))
+                    if isinstance(op, Operation):
+                        status, res, c_type = op.exec(content_type=content_type)
                     else:
-                        cur_call = '/'+api_url
-                        format = request.args.get('format')
-                        content_type = "text/csv" if format is not None and "csv" in format else "application/json"
+                        status, res, c_type = op
 
-                        op = am.get_op(cur_call+'?'+unquote(request.query_string.decode('utf8')))
-                        if isinstance(op, Operation):
-                            status, res, c_type = op.exec(content_type=content_type)
+                    if status == 200:
+                        response = make_response(res, status)
+                        response.headers.set('Content-Type', c_type)
+                    else:
+                        # The API Manager returns a text/plain message when there is an error.
+                        # Now set to return the header requested by the user
+                        if content_type == "text/csv":
+                            si = StringIO()
+                            cw = writer(si)
+                            cw.writerows([["error","message"], [str(status),str(res)]])
+                            response = make_response(si.getvalue(), status)
+                            response.headers.set("Content-Disposition", "attachment", filename="error.csv")
                         else:
-                            status, res, c_type = op
+                            m_res = {"error": status, "message": res}
+                            mes = dumps(m_res)
+                            response = make_response(mes, status)
+                        response.headers.set('Content-Type', content_type) # overwrite text/plain
 
-                        if status == 200:
-                            response = make_response(res, status)
-                            response.headers.set('Content-Type', c_type)
-                        else:
-                            # The API Manager returns a text/plain message when there is an error.
-                            # Now set to return the header requested by the user
-                            if content_type == "text/csv":
-                                si = StringIO()
-                                cw = writer(si)
-                                cw.writerows([["error","message"], [str(status),str(res)]])
-                                response = make_response(si.getvalue(), status)
-                                response.headers.set("Content-Disposition", "attachment", filename="error.csv")
-                            else:
-                                m_res = {"error": status, "message": res}
-                                mes = dumps(m_res)
-                                response = make_response(mes, status)
-                            response.headers.set('Content-Type', content_type) # overwrite text/plain
+                        # allow CORS anyway
+                    response.headers.set('Access-Control-Allow-Origin', '*')
+                    response.headers.set('Access-Control-Allow-Credentials', 'true')
 
-                            # allow CORS anyway
-                        response.headers.set('Access-Control-Allow-Origin', '*')
-                        response.headers.set('Access-Control-Allow-Credentials', 'true')
-
-                        return response
-                else:
-                    return res, status
+                    return response
+                return res, status
 
             app.run(host=str(host_name), debug=True, port=int(port))
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             tb = e.__traceback__
             fname = pt.split(tb.tb_frame.f_code.co_filename)[1] if tb else "?"
             print("[ERROR]", type(e).__name__, fname, tb.tb_lineno if tb else "?")
@@ -147,20 +143,17 @@ def main():  # pragma: no cover
     else:
         # run locally via shell
         if args.openapi:
-            res = oah.get_documentation(base_url=args.api_base) + ("application/yaml", )
+            res = (*oah.get_documentation(base_url=args.api_base), "application/yaml")
         elif args.doc:
-            res = dh.get_documentation(css_path) + ("text/html", )
+            res = (*dh.get_documentation(css_path), "text/html")
         else:
             op = am.get_op(args.call)
-            if isinstance(op, Operation):
-                res = op.exec(args.method, args.format)
-            else:
-                res = op
+            res = op.exec(args.method, args.format) if isinstance(op, Operation) else op
 
         if args.output is None:
-            print("# Response HTTP code: %s\n# Body:\n%s\n# Content-type: %s" % res)
+            print("# Response HTTP code: {}\n# Body:\n{}\n# Content-type: {}".format(*res))
         else:
-            with open(args.output, "w") as f:
+            with open(args.output, "w") as f:  # noqa: PTH123
                 f.write(res[1])
 
 

@@ -39,6 +39,94 @@ exclude_lines = [
     "if __name__ == .__main__.:",
 ]
 
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    # Docstrings: not required in this project
+    "D",      # pydocstyle
+    "DOC",    # pydoclint
+    # Type annotations: handled by pyright
+    "ANN",    # flake8-annotations
+    # Framework-specific: not used
+    "DJ",     # flake8-django
+    "PD",     # pandas-vet
+    "NPY",    # NumPy-specific
+    "AIR",    # Airflow
+    "FAST",   # FastAPI
+    # Copyright: handled by REUSE
+    "CPY",    # flake8-copyright
+    # TODOs: not enforcing format
+    "FIX",    # flake8-fixme
+    "TD",     # flake8-todos
+    # Trailing commas: formatter handles this
+    "COM",    # flake8-commas
+    # Quote style: formatter handles this
+    "Q",      # flake8-quotes
+    # Boolean trap: too restrictive for this codebase
+    "FBT",    # flake8-boolean-trap
+    # Conflicts with formatter
+    "ISC001", # implicit-str-concat (single line)
+    # Too many arguments: legitimate in complex constructors
+    "PLR0913", # too-many-arguments
+    # Raise vanilla args: forces extracting every message to a variable
+    "TRY003", # raise-vanilla-args
+    # Exception message in f-string: related to TRY003, same rationale
+    "EM",     # flake8-errmsg
+    # Implicit string concat on multiple lines: formatter handles this
+    "ISC002", # multi-line-implicit-string-concatenation
+    # Line too long: templates and docstrings make this impractical
+    "E501",   # line-too-long
+    # Magic values: HTTP status codes (200, 404) are universally understood
+    "PLR2004", # magic-value-comparison
+    # Raise within try: legitimate pattern for re-raising with context
+    "TRY301", # raise-within-try
+    # Try/else: style preference, not a bug
+    "TRY300", # try-consider-else
+]
+
+[tool.ruff.lint.per-file-ignores]
+"test/**" = [
+    "S101",   # assert allowed in tests
+    "ARG",    # unused args in fixtures
+    "SLF001", # private member access in tests
+    "INP001", # implicit namespace package
+    "S603",   # subprocess in test fixtures
+    "S607",   # partial path in test fixtures
+    "PLW1510", # subprocess.run without check in fixtures
+    "N806",   # MockSA and similar mock class names
+    "PLW2901", # loop variable overwrite in test helpers
+    "PLC0415", # import inside test function
+    "A004",   # shadowing builtin (ConnectionError import)
+    "TRY004", # prefer TypeError
+    "DTZ001", # datetime without tzinfo in test values
+]
+"test/data/**" = [
+    "INP001", # implicit namespace package
+]
+"tests/**" = [
+    "INP001", # implicit namespace package
+]
+"ramose/__init__.py" = [
+    "F401",   # unused imports for re-exports
+]
+"ramose/__main__.py" = [
+    "T20",    # print statements in CLI
+    "C901",   # complexity: pragma no cover
+    "PLR0912", # too many branches: pragma no cover
+    "PLR0915", # too many statements: pragma no cover
+    "S201",   # flask debug=True: development server only
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.pylint]
+max-args = 10
+
 [dependency-groups]
 dev = [
     "coverage>=7.13.0",
@@ -46,4 +134,5 @@ dev = [
     "pyright>=1.1.408",
     "pytest>=9.0.2",
     "reuse>=6.2.0",
+    "ruff>=0.15.9",
 ]

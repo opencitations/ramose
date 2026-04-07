@@ -5,6 +5,7 @@
 import os
 import subprocess
 import time
+from pathlib import Path
 
 import pytest
 import requests
@@ -18,8 +19,8 @@ QLEVER_PORT = 7019
 INDEX_NAME = "ramose-test"
 DOCKER_USER = f"{os.getuid()}:{os.getgid()}"
 
-TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(TEST_DIR, "data")
+TEST_DIR = Path(__file__).resolve().parent
+DATA_DIR = TEST_DIR / "data"
 
 
 def _wait_for_qlever(port: int, timeout: int = 60) -> None:
@@ -44,7 +45,7 @@ def qlever_endpoint():
             "--name", QLEVER_CONTAINER,
             "--entrypoint", "bash",
             "-u", DOCKER_USER,
-            "-v", f"{DATA_DIR}:/index:ro",
+            "-v", f"{DATA_DIR!s}:/index:ro",
             "-w", "/index",
             "-p", f"{QLEVER_PORT}:{QLEVER_PORT}",
             "--init",
@@ -68,7 +69,7 @@ def qlever_endpoint():
 @pytest.fixture(scope="session")
 def api_manager(qlever_endpoint: str) -> APIManager:
     return APIManager(
-        [os.path.join(DATA_DIR, "meta_v1.hf")],
+        [str(DATA_DIR / "meta_v1.hf")],
         endpoint_override=qlever_endpoint,
     )
 
@@ -76,7 +77,7 @@ def api_manager(qlever_endpoint: str) -> APIManager:
 def execute_operation(api_manager: APIManager, operation_url: str) -> str:
     op = api_manager.get_op(operation_url)
     if isinstance(op, tuple):
-        raise ValueError(f"Operation not found: {operation_url}")
+        raise TypeError(f"Operation not found: {operation_url}")
     status, result, _ = op.exec(method="get", content_type="application/json")
     if status != 200:
         raise RuntimeError(f"API returned status {status}: {result}")

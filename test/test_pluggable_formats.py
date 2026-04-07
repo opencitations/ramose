@@ -3,14 +3,13 @@
 # SPDX-License-Identifier: ISC
 
 import json
-import os
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from ramose import APIManager, Operation
 
-
-TESTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tests")
+TESTS_DIR = str(Path(__file__).resolve().parent.parent / "tests")
 
 
 class TestCustomFormatConversion:
@@ -19,7 +18,7 @@ class TestCustomFormatConversion:
 
     def _make_op_with_formats(self):
         am = APIManager(
-            [os.path.join(TESTS_DIR, "test_scholarly.hf")],
+            [str(Path(TESTS_DIR) / "test_scholarly.hf")],
             endpoint_override="http://mock/sparql",
         )
         op = am.get_op("/api/v1/metadata/10.1108/jd-12-2013-0166")
@@ -59,7 +58,7 @@ class TestCustomFormatConversion:
 class TestCustomFormatThroughExec:
     def test_xml_output_through_exec(self):
         am = APIManager(
-            [os.path.join(TESTS_DIR, "test_scholarly.hf")],
+            [str(Path(TESTS_DIR) / "test_scholarly.hf")],
             endpoint_override="http://mock/sparql",
         )
         op = am.get_op("/api/v1/metadata/10.1108/jd-12-2013-0166?format=xml")
@@ -85,7 +84,7 @@ class TestCustomFormatThroughExec:
 class TestAPIManagerConfigParsing:
     def test_allow_inline_endpoints_true(self):
         am = APIManager(
-            [os.path.join(TESTS_DIR, "test_scholarly_multi-sources.hf")],
+            [str(Path(TESTS_DIR) / "test_scholarly_multi-sources.hf")],
             endpoint_override="http://mock/sparql",
         )
         base = am.base_url[0]
@@ -93,7 +92,7 @@ class TestAPIManagerConfigParsing:
 
     def test_allow_inline_endpoints_default_false(self):
         am = APIManager(
-            [os.path.join(TESTS_DIR, "test_scholarly.hf")],
+            [str(Path(TESTS_DIR) / "test_scholarly.hf")],
             endpoint_override="http://mock/sparql",
         )
         base = am.base_url[0]
@@ -101,7 +100,7 @@ class TestAPIManagerConfigParsing:
 
     def test_addon_loaded(self):
         am = APIManager(
-            [os.path.join(TESTS_DIR, "test_scholarly.hf")],
+            [str(Path(TESTS_DIR) / "test_scholarly.hf")],
             endpoint_override="http://mock/sparql",
         )
         base = am.base_url[0]
@@ -113,7 +112,7 @@ class TestAPIManagerConfigParsing:
 
     def test_format_map_built_correctly(self):
         am = APIManager(
-            [os.path.join(TESTS_DIR, "test_scholarly.hf")],
+            [str(Path(TESTS_DIR) / "test_scholarly.hf")],
             endpoint_override="http://mock/sparql",
         )
         op = am.get_op("/api/v1/metadata/10.1108/jd-12-2013-0166")
@@ -133,7 +132,7 @@ class TestSparqlAnythingSingleQueryExec:
         op = Operation(
             "/api/test/hello", r"/api/test/(.+)", op_item,
             "http://unused/sparql", "get", None,
-            format={}, sources_map={}, allow_inline_endpoints=False,
+            format_map={}, sources_map={}, allow_inline_endpoints=False,
             engine="sparql-anything",
         )
 
@@ -240,7 +239,7 @@ class TestRunSparqlAnythingDictsNormalization:
         op = self._make_op()
         with patch("pysparql_anything.SparqlAnything") as MockSA:
             MockSA.return_value.select.return_value = [{"x": "a"}]
-            rows = op._run_sparql_anything_dicts("Q", values={"doi": "10.1"})
+            op._run_sparql_anything_dicts("Q", values={"doi": "10.1"})
         call_kwargs = MockSA.return_value.select.call_args
         assert call_kwargs[1]["values"] == {"doi": "10.1"}
 
@@ -281,12 +280,12 @@ class TestSparqlAnythingSingleQueryWithAddon:
         op = Operation(
             "/api/test/hello", r"/api/test/(.+)", op_item,
             "http://unused/sparql", "get", FakeAddon,
-            format={}, sources_map={}, allow_inline_endpoints=False,
+            format_map={}, sources_map={}, allow_inline_endpoints=False,
             engine="sparql-anything",
         )
 
         with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"title": "Test"}]):
-            sc, body, ctype = op.exec(method="get", content_type="application/json")
+            sc, _body, _ctype = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
 
