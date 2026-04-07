@@ -64,8 +64,9 @@ def to_xml(csv_str):
                 elem.text = i + "  "
             for c in elem:
                 _indent(c, level+1)
-            if not c.tail or not c.tail.strip():
-                c.tail = i
+            last = elem[-1]
+            if not last.tail or not last.tail.strip():
+                last.tail = i
         else:
             if level and (not elem.tail or not elem.tail.strip()):
                 elem.tail = i

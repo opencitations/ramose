@@ -24,8 +24,9 @@ class TestGetFunc:
         assert dt.get_func("duration") == DataType.duration
         assert dt.get_func("datetime") == DataType.datetime
 
-    def test_returns_none_for_unknown_type(self, dt):
-        assert dt.get_func("unknown") is None
+    def test_raises_for_unknown_type(self, dt):
+        with pytest.raises(KeyError):
+            dt.get_func("unknown")
 
 
 class TestDuration:

@@ -64,9 +64,8 @@ class HashFormatHandler(object):
 
         with open(file_path, "r", newline=None) as f:
             first_field_name = None
-            cur_object = None
+            cur_object: dict[str, str] = {}
             cur_field_name = None
-            cur_field_content = None
             for line in f.readlines():
                 cur_matching = search(r"^#([^\s]+)\s(.+)$", line, DOTALL)
                 if cur_matching is not None:
@@ -84,17 +83,16 @@ class HashFormatHandler(object):
                         if cur_field_name == first_field_name:
                             # If there is an already defined object, add it to the
                             # final result
-                            if cur_object is not None:
+                            if cur_object:
                                 result.append(cur_object)
                             cur_object = {}
 
                         # Add the new key to the object
                         cur_object[cur_field_name] = cur_field_content
-                elif cur_object is not None and len(cur_object) > 0:
+                elif cur_object and cur_field_name is not None:
                     cur_object[cur_field_name] += line
 
-            # Insert the last object in the result
-            if cur_object is not None and len(cur_object) > 0:
+            if cur_object:
                 result.append(cur_object)
 
         # Clean the final \n
@@ -112,19 +110,19 @@ class DocumentationHandler(object):
         self.conf_doc = api_manager.all_conf
 
     @abstractmethod
-    def get_documentation(self, *args, **dargs):
+    def get_documentation(self, *args, **dargs) -> tuple[int, str]:
         """An abstract method that returns a string defining the human-readable documentation of the operations
         available in the input APIManager."""
         pass  # pragma: no cover
 
     @abstractmethod
-    def store_documentation(self, file_path, *args, **dargs):
+    def store_documentation(self, file_path, *args, **dargs) -> None:
         """An abstract method that store in the input file path (parameter 'file_path') the human-readable
         documentation of the operations available in the input APIManager."""
         pass  # pragma: no cover
 
     @abstractmethod
-    def get_index(self, *args, **dargs):
+    def get_index(self, *args, **dargs) -> str:
         """An abstract method that returns a string defining the index of all the various configuration files
         handled by the input APIManager."""
         pass  # pragma: no cover
@@ -814,17 +812,15 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     # -------------------------
     # Small utilities
     # -------------------------
-    def _normalize_base_url(self, base_url):
-        if base_url is None:
-            return None
+    def _normalize_base_url(self, base_url: str) -> str:
         return base_url[1:] if base_url.startswith("/") else base_url
 
-    def _get_conf(self, base_url=None):
+    def _get_conf(self, base_url: str | None = None):
         if base_url is None:
             first_key = next(iter(self.conf_doc))
             return self.conf_doc[first_key]
-        base_url = self._normalize_base_url(base_url)
-        return self.conf_doc["/" + base_url]
+        normalized = self._normalize_base_url(base_url)
+        return self.conf_doc["/" + normalized]
 
     def _schema_for_ramose_type(self, t):
         t = (t or "str").strip().lower()
@@ -1047,20 +1043,18 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         spec["openapi"] = "3.0.3"
 
         # info
-        spec["info"] = OrderedDict(
-            [
-                ("title", api_meta.get("title", "RAMOSE API")),
-                ("version", api_meta.get("version", "0.0.0")),
-            ]
-        )
+        info: OrderedDict[str, object] = OrderedDict()
+        info["title"] = api_meta.get("title", "RAMOSE API")
+        info["version"] = api_meta.get("version", "0.0.0")
         if "description" in api_meta:
-            spec["info"]["description"] = api_meta["description"]
+            info["description"] = api_meta["description"]
         if "license" in api_meta:
-            spec["info"]["license"] = {"name": api_meta["license"]}
+            info["license"] = {"name": api_meta["license"]}
         if "contacts" in api_meta:
             contact_obj = self._guess_contact(api_meta.get("contacts"))
             if contact_obj:
-                spec["info"]["contact"] = contact_obj
+                info["contact"] = contact_obj
+        spec["info"] = info
 
         # servers
         base = api_meta.get("base", "")
@@ -1223,32 +1217,26 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                 if spr:
                     desc += "\n\n---\n\n### RAMOSE SPARQL\n\n```sparql\n" + spr + "\n```"
 
-                op_obj = OrderedDict(
+                op_obj: OrderedDict[str, object] = OrderedDict()
+                op_obj["tags"] = [tag_name]
+                op_obj["summary"] = summary
+                op_obj["description"] = desc
+                op_obj["parameters"] = path_params + common_param_refs
+                op_obj["responses"] = OrderedDict(
                     [
-                        ("tags", [tag_name]),
-                        ("summary", summary),
-                        ("description", desc),
-                        ("parameters", path_params + common_param_refs),
                         (
-                            "responses",
-                            OrderedDict(
-                                [
-                                    (
-                                        "200",
-                                        {
-                                            "description": "Successful response",
-                                            "content": ok_content,
-                                        },
-                                    ),
-                                    (
-                                        "default",
-                                        {
-                                            "description": "Error",
-                                            "content": err_content,
-                                        },
-                                    ),
-                                ]
-                            ),
+                            "200",
+                            {
+                                "description": "Successful response",
+                                "content": ok_content,
+                            },
+                        ),
+                        (
+                            "default",
+                            {
+                                "description": "Error",
+                                "content": err_content,
+                            },
                         ),
                     ]
                 )
@@ -1340,9 +1328,9 @@ class DataType(object):
             "datetime": DataType.datetime
         }
 
-    def get_func(self, name_str):
+    def get_func(self, name_str: str):
         """This method returns the method for handling a given data type expressed as a string name."""
-        return self.func.get(name_str)
+        return self.func[name_str]
 
     @staticmethod
     def duration(s):
@@ -1536,8 +1524,10 @@ class Operation(object):
 
         if type(d_or_l) is dict:
             d_list = [d_or_l]
-        if type(d_or_l) is list:
+        elif type(d_or_l) is list:
             d_list = d_or_l
+        else:
+            return res
 
         for d in d_list:
             key_list_len = len(key_list)
@@ -2242,7 +2232,10 @@ class Operation(object):
         if str_method in m:
             try:
                 par_dict = {}
-                par_man = match(self.op, self.op_url).groups()
+                op_match = match(self.op, self.op_url)
+                if op_match is None:
+                    raise ValueError(f"URL {self.op_url!r} does not match pattern {self.op!r}")
+                par_man = op_match.groups()
                 for idx, par in enumerate(findall("{([^{}]+)}", self.i["url"])):
                     try:
                         par_type = self.i[par].split("(")[0]
@@ -2298,6 +2291,7 @@ class Operation(object):
 
                     list_of_res = []
                     include_header_line = True
+                    sc = 200
                     for par_dict in parameters_comb:
 
                         query = self.i["sparql"]
@@ -2473,25 +2467,25 @@ class Operation(object):
                         sc = 502
                         return sc, f"HTTP status code {sc}: {re_err}", "text/plain"
 
-            except TimeoutError:
-                exc_type, exc_obj, exc_tb = exc_info()
+            except TimeoutError as e:
                 sc = 408
+                tb = e.__traceback__
                 return sc, "HTTP status code %s: request timeout - %s: %s (line %s)" % \
-                    (sc, exc_type.__name__, exc_obj,
-                     exc_tb.tb_lineno), "text/plain"
-            except TypeError:
-                exc_type, exc_obj, exc_tb = exc_info()
+                    (sc, type(e).__name__, e,
+                     tb.tb_lineno if tb else "?"), "text/plain"
+            except TypeError as e:
                 sc = 400
+                tb = e.__traceback__
                 return sc, "HTTP status code %s: " \
                     "parameter in the request not compliant with the type specified - %s: %s (line %s)" % \
-                    (sc, exc_type.__name__, exc_obj,
-                     exc_tb.tb_lineno), "text/plain"
-            except:
-                exc_type, exc_obj, exc_tb = exc_info()
+                    (sc, type(e).__name__, e,
+                     tb.tb_lineno if tb else "?"), "text/plain"
+            except Exception as e:
                 sc = 500
+                tb = e.__traceback__
                 return sc, "HTTP status code %s: something unexpected happened - %s: %s (line %s)" % \
-                    (sc, exc_type.__name__, exc_obj,
-                     exc_tb.tb_lineno), "text/plain"
+                    (sc, type(e).__name__, e,
+                     tb.tb_lineno if tb else "?"), "text/plain"
         else:
             sc = 405
             return sc, "HTTP status code %s: '%s' method not allowed" % (sc, str_method), "text/plain"
@@ -2547,6 +2541,8 @@ class APIManager(object):
             conf_json = HashFormatHandler().read(conf_file)
             base_url = None
             addon = None
+            website = ""
+            sparql_http_method = "post"
             sources_map = {}
             allow_inline_endpoints = False
             engine = "sparql"
@@ -2646,7 +2642,7 @@ class APIManager(object):
         op_url = url_parsed.path
 
         conf, op = self.best_match(op_url)
-        if op is not None:
+        if conf is not None and op is not None:
             op_conf = conf["conf"][op]
             op_engine = conf.get("engine", "sparql")
             if "engine" in op_conf:
@@ -2774,9 +2770,9 @@ if __name__ == "__main__":
                         content_type = "text/csv" if format is not None and "csv" in format else "application/json"
 
                         op = am.get_op(cur_call+'?'+unquote(request.query_string.decode('utf8')))
-                        if type(op) is Operation:  # Operation found
+                        if isinstance(op, Operation):
                             status, res, c_type = op.exec(content_type=content_type)
-                        else:  # HTTP error
+                        else:
                             status, res, c_type = op
 
                         if status == 200:
@@ -2805,12 +2801,12 @@ if __name__ == "__main__":
                 else:
                     return res, status
 
-            app.run(host=str(host_name), debug=True, port=str(port))
+            app.run(host=str(host_name), debug=True, port=int(port))
 
         except Exception as e:
-            exc_type, exc_obj, exc_tb = exc_info()
-            fname = pt.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print("[ERROR]", exc_type, fname, exc_tb.tb_lineno)
+            tb = e.__traceback__
+            fname = pt.split(tb.tb_frame.f_code.co_filename)[1] if tb else "?"
+            print("[ERROR]", type(e).__name__, fname, tb.tb_lineno if tb else "?")
 
     else:
         # run locally via shell
@@ -2820,9 +2816,9 @@ if __name__ == "__main__":
             res = dh.get_documentation(css_path) + ("text/html", )
         else:
             op = am.get_op(args.call)
-            if type(op) is Operation:  # Operation found
+            if isinstance(op, Operation):
                 res = op.exec(args.method, args.format)
-            else:  # HTTP error
+            else:
                 res = op
 
         if args.output is None:

@@ -22,7 +22,9 @@ class TestCustomFormatConversion:
             [os.path.join(TESTS_DIR, "test_scholarly.hf")],
             endpoint_override="http://mock/sparql",
         )
-        return am.get_op("/api/v1/metadata/10.1108/jd-12-2013-0166")
+        op = am.get_op("/api/v1/metadata/10.1108/jd-12-2013-0166")
+        assert isinstance(op, Operation)
+        return op
 
     def test_xml_format_via_query_string(self):
         op = self._make_op_with_formats()
@@ -61,6 +63,7 @@ class TestCustomFormatThroughExec:
             endpoint_override="http://mock/sparql",
         )
         op = am.get_op("/api/v1/metadata/10.1108/jd-12-2013-0166?format=xml")
+        assert isinstance(op, Operation)
 
         resp = SimpleNamespace(
             status_code=200,

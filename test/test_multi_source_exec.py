@@ -76,7 +76,9 @@ def _load_api_manager(hf_file):
 
 def _get_operation(am, dois_param):
     base = am.base_url[0]
-    return am.get_op(f"{base}/metadata/{dois_param}")
+    op = am.get_op(f"{base}/metadata/{dois_param}")
+    assert isinstance(op, Operation)
+    return op
 
 
 class TestMultiSourceJoinEndpointForeachRemove:
