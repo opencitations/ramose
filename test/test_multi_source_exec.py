@@ -34,7 +34,11 @@ OC_INDEX_CITATIONS_BR2 = [
 ]
 
 CROSSREF_TITLE_YEAR = [
-    {"doi": "10.1108/jd-12-2013-0166", "title": "Setting our bibliographic references free: towards open citation data", "year": "2015"},
+    {
+        "doi": "10.1108/jd-12-2013-0166",
+        "title": "Setting our bibliographic references free: towards open citation data",
+        "year": "2015",
+    },
     {"doi": "10.1038/nature12373", "title": "Nanometre-scale thermometry in a living cell", "year": "2013"},
 ]
 
@@ -150,8 +154,10 @@ class TestMultiSourceWithSparqlAnything:
         def mock_run_sa(query_text, values=None):
             return list(CROSSREF_TITLE_YEAR)
 
-        with patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql), \
-             patch.object(op, "_run_sparql_anything_dicts", side_effect=mock_run_sa):
+        with (
+            patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
+            patch.object(op, "_run_sparql_anything_dicts", side_effect=mock_run_sa),
+        ):
             sc, body, _ctype = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
@@ -224,6 +230,7 @@ class TestMultiSourceValuesInject:
         op = _get_operation(am, "10.1108/jd-12-2013-0166")
 
         call_count = {"n": 0}
+
         def mock_run_sparql(endpoint_url, query_text):
             call_count["n"] += 1
             if call_count["n"] == 1:
@@ -238,8 +245,10 @@ class TestMultiSourceValuesInject:
                 ("QUERY", "http://ep2/sparql", "SELECT ?doi ?extra WHERE { }"),
             ]
 
-        with patch.object(op, "_parse_steps", side_effect=mock_parse_steps), \
-             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
+        with (
+            patch.object(op, "_parse_steps", side_effect=mock_parse_steps),
+            patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
+        ):
             sc, _body, _ctype = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
@@ -259,8 +268,10 @@ class TestMultiSourceMissingJoin:
                 ("QUERY", "http://ep2/sparql", "SELECT ?y WHERE { }"),
             ]
 
-        with patch.object(op, "_parse_steps", side_effect=mock_parse_steps), \
-             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
+        with (
+            patch.object(op, "_parse_steps", side_effect=mock_parse_steps),
+            patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
+        ):
             sc, msg, _ct = op.exec(method="get", content_type="application/json")
 
         assert sc == 400
@@ -283,12 +294,17 @@ class TestMultiSourceForeachUnknownAlias:
                 ("QUERY", "http://ep/sparql", "SELECT ?x WHERE { }"),
             ]
 
-        with patch.object(op, "_parse_steps", side_effect=mock_parse_steps), \
-             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
+        with (
+            patch.object(op, "_parse_steps", side_effect=mock_parse_steps),
+            patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
+        ):
             sc, msg, _ct = op.exec(method="get", content_type="application/json")
 
         assert sc == 400
-        assert msg == "HTTP status code 400: @@foreach refers to unknown alias 'nonexistent'. Declare it with @@values ?var:nonexistent before @@foreach."
+        assert (
+            msg
+            == "HTTP status code 400: @@foreach refers to unknown alias 'nonexistent'. Declare it with @@values ?var:nonexistent before @@foreach."
+        )
 
 
 class TestParseSteps:
@@ -301,9 +317,14 @@ class TestParseSteps:
             "field_type": "str(x)",
         }
         return Operation(
-            "/api/test/val", r"/api/test/(.+)", op_item,
-            "http://default-endpoint/sparql", "get", None,
-            format_map={}, sources_map=sources_map or {},
+            "/api/test/val",
+            r"/api/test/(.+)",
+            op_item,
+            "http://default-endpoint/sparql",
+            "get",
+            None,
+            format_map={},
+            sources_map=sources_map or {},
             allow_inline_endpoints=allow_inline,
         )
 
@@ -419,12 +440,13 @@ class TestParseSteps:
 class TestJoin:
     def _make_op(self):
         op_item = {
-            "url": "/test/{id}", "id": "str(.+)",
-            "sparql": "SELECT ?x WHERE { }", "method": "get",
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?x WHERE { }",
+            "method": "get",
             "field_type": "str(x)",
         }
-        return Operation("/api/test/v", r"/api/test/(.+)", op_item,
-                         "http://ep/sparql", "get", None)
+        return Operation("/api/test/v", r"/api/test/(.+)", op_item, "http://ep/sparql", "get", None)
 
     def test_inner_join(self):
         op = self._make_op()
@@ -513,19 +535,20 @@ class TestDropColumns:
 class TestInjectValuesClause:
     def _make_op(self):
         op_item = {
-            "url": "/test/{id}", "id": "str(.+)",
-            "sparql": "SELECT ?x WHERE { }", "method": "get",
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?x WHERE { }",
+            "method": "get",
             "field_type": "str(x)",
         }
-        return Operation("/api/test/v", r"/api/test/(.+)", op_item,
-                         "http://ep/sparql", "get", None)
+        return Operation("/api/test/v", r"/api/test/(.+)", op_item, "http://ep/sparql", "get", None)
 
     def test_injects_literal_values(self):
         op = self._make_op()
         acc = [{"doi": "10.1", "title": "A"}, {"doi": "10.2", "title": "B"}]
         query = "SELECT ?doi ?extra WHERE { ?s ?p ?o }"
         result = op._inject_values_clause(query, ["?doi"], acc)
-        assert 'VALUES (?doi)' in result
+        assert "VALUES (?doi)" in result
         assert '"10.1"' in result
         assert '"10.2"' in result
 
@@ -585,12 +608,13 @@ class TestToCsvRows:
 class TestRunSparqlDicts:
     def _make_op(self, method="get"):
         op_item = {
-            "url": "/test/{id}", "id": "str(.+)",
-            "sparql": "SELECT ?x WHERE { }", "method": "get",
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?x WHERE { }",
+            "method": "get",
             "field_type": "str(x)",
         }
-        return Operation("/api/test/v", r"/api/test/(.+)", op_item,
-                         "http://ep/sparql", method, None)
+        return Operation("/api/test/v", r"/api/test/(.+)", op_item, "http://ep/sparql", method, None)
 
     @patch("ramose.operation._http_session")
     def test_get_request(self, mock_session):

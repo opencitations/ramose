@@ -145,7 +145,7 @@ EXPECTED_AUTHOR_WORKS = [
     },
     {
         "id": "doi:10.32388/x2dx81 openalex:W3153150899 omid:br/062203845802",
-        "title": "Review Of: \"Investigating Invalid DOIs In COCI\"",
+        "title": 'Review Of: "Investigating Invalid DOIs In COCI"',
         "author": "Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]",
         "pub_date": "2021-04-19",
         "issue": "",

@@ -24,8 +24,19 @@ from ramose.datatype import DataType
 
 
 class Operation:
-    def __init__(self, op_complete_url, op_key, i, tp, sparql_http_method, addon,
-                 format_map=None, sources_map=None, allow_inline_endpoints=False, engine="sparql"):
+    def __init__(
+        self,
+        op_complete_url,
+        op_key,
+        i,
+        tp,
+        sparql_http_method,
+        addon,
+        format_map=None,
+        sources_map=None,
+        allow_inline_endpoints=False,
+        engine="sparql",
+    ):
         """This class is responsible for materialising a API operation to be run against a SPARQL endpoint
         (or, depending on configuration, through the SPARQL.Anything engine).
 
@@ -53,11 +64,7 @@ class Operation:
         self.engine = engine
         self._sa_engine = None
 
-        self.operation = {
-            "=": eq,
-            "<": lt,
-            ">": gt
-        }
+        self.operation = {"=": eq, "<": lt, ">": gt}
 
         self.dt = DataType()
 
@@ -238,18 +245,18 @@ class Operation:
                         for idx, v in enumerate(v_list):
                             if op_type == "array":
                                 if isinstance(v, str):
-                                    Operation.add_item_in_dict(row, keys,
-                                                               v.split(separator) if v != "" else [], idx)
+                                    Operation.add_item_in_dict(row, keys, v.split(separator) if v != "" else [], idx)
                             elif op_type == "dict":
                                 new_fields = entries[1:]
                                 new_fields_max_split = len(new_fields) - 1
                                 if isinstance(v, str):
-                                    new_values = v.split(
-                                        separator, new_fields_max_split)
-                                    Operation.add_item_in_dict(row, keys,
-                                                               dict(
-                                                                   zip(new_fields, new_values, strict=False)) if v != "" else {},
-                                                               idx)
+                                    new_values = v.split(separator, new_fields_max_split)
+                                    Operation.add_item_in_dict(
+                                        row,
+                                        keys,
+                                        dict(zip(new_fields, new_values, strict=False)) if v != "" else {},
+                                        idx,
+                                    )
                                 elif isinstance(v, list):
                                     new_list = []
                                     for i in v:
@@ -275,7 +282,6 @@ class Operation:
         result = par_dict
 
         if "preprocess" in op_item:
-
             for pre in [sub(r"\s+", "", i) for i in op_item["preprocess"].split(" --> ")]:
                 func_name = sub(r"^([^\(\)]+)\(.+$", r"\1", pre).strip()
                 params_name = sub(r"^.+\(([^\(\)]+)\).*", r"\1", pre).split(",")
@@ -345,7 +351,8 @@ class Operation:
                 if flag in ("<", ">", "="):
                     value = field_value[1:].lower()
                     result = [
-                        row for row in result
+                        row
+                        for row in result
                         if self.operation[flag](
                             Operation.tv(field_idx, row),
                             self.dt.get_func(type(Operation.tv(field_idx, row)).__name__)(value),
@@ -353,10 +360,7 @@ class Operation:
                     ]
                 else:
                     pattern = field_value.lower()
-                    result = [
-                        row for row in result
-                        if search(pattern, Operation.pv(field_idx, row).lower())
-                    ]
+                    result = [row for row in result if search(pattern, Operation.pv(field_idx, row).lower())]
             except ValueError:
                 pass
         return result
@@ -616,7 +620,11 @@ class Operation:
             row = {}
             for c in cols:
                 v = result[c]
-                row[c] = v[i] if isinstance(v, (list, tuple)) and i < len(v) else (v if not isinstance(v, (list, tuple)) else None)
+                row[c] = (
+                    v[i]
+                    if isinstance(v, (list, tuple)) and i < len(v)
+                    else (v if not isinstance(v, (list, tuple)) else None)
+                )
             rows.append(row)
         return rows
 
@@ -684,7 +692,7 @@ class Operation:
         # build distinct tuples for requested vars from the accumulator
         cols = [v.lstrip("?") for v in vars_]
         tuples, seen = [], set()
-        for row in (acc_rows or []):
+        for row in acc_rows or []:
             tup = tuple(row.get(c, "") for c in cols)
             if all(tup) and tup not in seen:
                 seen.add(tup)
@@ -697,7 +705,7 @@ class Operation:
             s = str(x)
             if s.startswith(("http://", "https://")):
                 return f"<{s}>"
-            return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
+            return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
         head = "VALUES (" + " ".join(vars_) + ") {\n"
         body = "\n".join("  (" + " ".join(fmt(v) for v in tup) + ")" for tup in tuples)
@@ -723,7 +731,7 @@ class Operation:
         s = str(v).strip()
         # unify scheme for w3id IRIs (and similar)
         if s.startswith("http://"):
-            s = "https://" + s[len("http://"):]
+            s = "https://" + s[len("http://") :]
         # drop a single trailing slash for stability
         return s.removesuffix("/")
 
@@ -832,8 +840,7 @@ class Operation:
         par_dict = {k: v if isinstance(v, list) else [v] for k, v in par_dict.items()}
 
         parameters_comb = [
-            dict(zip(par_dict.keys(), combination, strict=False))
-            for combination in product(*par_dict.values())
+            dict(zip(par_dict.keys(), combination, strict=False)) for combination in product(*par_dict.values())
         ]
 
         # Example: {"id":"5","area":["A1","A2"]}  ->  [{"id":"5","area":"A1"}, {"id":"5","area":"A2"}]
@@ -853,7 +860,8 @@ class Operation:
                 )
             else:
                 r = _http_session.post(
-                    self.tp, data=query,
+                    self.tp,
+                    data=query,
                     headers={"Accept": "text/csv", "Content-Type": "application/sparql-query"},
                     timeout=DEFAULT_HTTP_TIMEOUT,
                 )
@@ -878,8 +886,7 @@ class Operation:
         """Run one query per distinct value collected from the accumulator (@@foreach)."""
         if alias not in foreach_sources:
             raise ValueError(
-                f"@@foreach refers to unknown alias '{alias}'. "
-                f"Declare it with @@values ?var:{alias} before @@foreach."
+                f"@@foreach refers to unknown alias '{alias}'. Declare it with @@values ?var:{alias} before @@foreach."
             )
 
         source_col = foreach_sources[alias]
@@ -887,7 +894,7 @@ class Operation:
         # Collect distinct non-empty values from the accumulator
         values = []
         seen = set()
-        for row in (acc or []):
+        for row in acc or []:
             v = row.get(source_col)
             if v and v not in seen:
                 seen.add(v)

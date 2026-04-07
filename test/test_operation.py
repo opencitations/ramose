@@ -29,8 +29,9 @@ class TestConv:
             "method": "get",
             "field_type": "str(name) int(age)",
         }
-        return Operation("/api/v1/test/value", "/api/v1/test/(.+)",
-                         op_item, "http://localhost:9999/sparql", "get", None)
+        return Operation(
+            "/api/v1/test/value", "/api/v1/test/(.+)", op_item, "http://localhost:9999/sparql", "get", None
+        )
 
     def test_csv_output(self, op):
         csv_str = "name,age\nJohn,30\n"
@@ -193,9 +194,14 @@ class TestStructured:
 
 @pytest.fixture
 def make_operation():
-    def _make(op_url="/api/v1/test/value", op_key="/api/v1/test/(.+)",
-              op_item=None, tp="http://localhost:9999/sparql",
-              sparql_http_method="get", addon=None):
+    def _make(
+        op_url="/api/v1/test/value",
+        op_key="/api/v1/test/(.+)",
+        op_item=None,
+        tp="http://localhost:9999/sparql",
+        sparql_http_method="get",
+        addon=None,
+    ):
         if op_item is None:
             op_item = {
                 "url": "/test/{id}",
@@ -204,6 +210,7 @@ def make_operation():
                 "field_type": "str(name) int(age)",
             }
         return Operation(op_url, op_key, op_item, tp, sparql_http_method, addon)
+
     return _make
 
 

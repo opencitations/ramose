@@ -24,7 +24,7 @@ class DataType:
             "int": DataType.int,
             "float": DataType.float,
             "duration": DataType.duration,
-            "datetime": DataType.datetime
+            "datetime": DataType.datetime,
         }
 
     def get_func(self, name_str: str):
@@ -44,11 +44,10 @@ class DataType:
     @staticmethod
     def datetime(s):
         """This method returns the data type for datetime according to the ISO 8601
-           (https://en.wikipedia.org/wiki/ISO_8601) from the input string. In case the input string is None or
-           it is empty, a low date value (i.e. 0001-01-01) is returned."""
+        (https://en.wikipedia.org/wiki/ISO_8601) from the input string. In case the input string is None or
+        it is empty, a low date value (i.e. 0001-01-01) is returned."""
         default = datetime(1, 1, 1, 0, 0)  # noqa: DTZ001
         return parse("0001-01-01", default=default) if s is None or s == "" else parse(s, default=default)
-
 
     @staticmethod
     def str(s):
@@ -56,17 +55,14 @@ class DataType:
         is returned."""
         return "" if s is None else str(s).lower()
 
-
     @staticmethod
     def int(s):
         """This method returns the data type for integer numbers from the input string. In case the input string is
         None or it is empty, a low integer value is returned."""
         return -maxsize if s is None or s == "" else int(s)
 
-
     @staticmethod
     def float(s):
         """This method returns the data type for float numbers from the input string. In case the input string is
-            None or it is empty, a low float value is returned."""
+        None or it is empty, a low float value is returned."""
         return float(-maxsize) if s is None or s == "" else float(s)
-

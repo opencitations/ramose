@@ -17,9 +17,14 @@ def _mock_response(status_code=200, text="name,age\nAlice,30\n", reason="OK"):
     return resp
 
 
-def _make_op(op_url="/api/v1/test/val", op_key=r"/api/v1/test/(.+)",
-             op_item=None, tp="http://localhost/sparql",
-             sparql_http_method="get", addon=None):
+def _make_op(
+    op_url="/api/v1/test/val",
+    op_key=r"/api/v1/test/(.+)",
+    op_item=None,
+    tp="http://localhost/sparql",
+    sparql_http_method="get",
+    addon=None,
+):
     if op_item is None:
         op_item = {
             "url": "/test/{id}",
@@ -61,9 +66,7 @@ class TestExecGetRequest:
 class TestExecNon200:
     @patch("ramose.operation._http_session")
     def test_sparql_endpoint_error(self, mock_session):
-        mock_session.get.return_value = _mock_response(
-            status_code=500, reason="Internal Server Error"
-        )
+        mock_session.get.return_value = _mock_response(status_code=500, reason="Internal Server Error")
         op = _make_op()
         sc, msg, ct = op.exec(method="get")
         assert sc == 500
@@ -89,7 +92,9 @@ class TestExecTypeError:
         op = _make_op()
         sc, msg, ct = op.exec(method="get")
         assert sc == 400
-        assert msg.startswith("HTTP status code 400: parameter in the request not compliant with the type specified - TypeError: bad type (line ")
+        assert msg.startswith(
+            "HTTP status code 400: parameter in the request not compliant with the type specified - TypeError: bad type (line "
+        )
         assert ct == "text/plain"
 
 

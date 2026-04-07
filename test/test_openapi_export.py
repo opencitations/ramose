@@ -51,14 +51,18 @@ class TestOpenAPIFromScholarlyHf:
         handler = _build_handler("test_scholarly.hf")
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
-        props = spec["paths"]["/metadata/{dois}"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]["items"]["properties"]
+        props = spec["paths"]["/metadata/{dois}"]["get"]["responses"]["200"]["content"]["application/json"]["schema"][
+            "items"
+        ]["properties"]
         assert props["year"] == {"type": "string", "format": "date-time"}
 
     def test_output_json_example_included(self):
         handler = _build_handler("test_scholarly.hf")
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
-        examples = spec["paths"]["/metadata/{dois}"]["get"]["responses"]["200"]["content"]["application/json"].get("examples")
+        examples = spec["paths"]["/metadata/{dois}"]["get"]["responses"]["200"]["content"]["application/json"].get(
+            "examples"
+        )
         assert examples is not None
         example_value = examples["example"]["value"]
         assert isinstance(example_value, list)
@@ -206,17 +210,14 @@ class TestMediaTypeForFormat:
 class TestBuildResponseContent:
     def test_without_error_schema(self):
         handler = _build_handler("test_scholarly.hf")
-        result = handler._build_response_content(
-            {"type": "array"}, ["csv", "json"], None, None
-        )
+        result = handler._build_response_content({"type": "array"}, ["csv", "json"], None, None)
         assert isinstance(result, dict)
         assert set(result.keys()) == {"application/json", "text/csv"}
 
     def test_extra_format_added(self):
         handler = _build_handler("test_scholarly.hf")
         ok_and_err = handler._build_response_content(
-            {"type": "array"}, ["csv", "json", "xml"],
-            None, "#/components/schemas/Error"
+            {"type": "array"}, ["csv", "json", "xml"], None, "#/components/schemas/Error"
         )
         assert isinstance(ok_and_err, tuple)
         assert set(ok_and_err[1].keys()) == {"application/json", "text/csv", "application/xml"}
@@ -230,6 +231,7 @@ class TestExtractParamExamples:
     def test_no_match(self):
         handler = _build_handler("test_scholarly.hf")
         assert handler._extract_param_examples_from_call("/test/{id}", "/other/path") == {}
+
 
 class TestOpenAPIFromMixedHf:
     def test_xml_format_in_response_content(self):
@@ -283,8 +285,6 @@ class TestOpenAPIEdgeCases:
 
     def test_middle_param_example_extracted(self):
         handler = _build_handler("test_openapi_edge.hf")
-        result = handler._extract_param_examples_from_call(
-            "/lookup/{source}/{id}", "/lookup/wikidata/Q42"
-        )
+        result = handler._extract_param_examples_from_call("/lookup/{source}/{id}", "/lookup/wikidata/Q42")
         assert result["source"] == "wikidata"
         assert result["id"] == "Q42"

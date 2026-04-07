@@ -93,7 +93,12 @@ class APIManager:
 
                     # Optional: allow explicit @@endpoint <url> in #sparql
                     if "allow_inline_endpoints" in item:
-                        allow_inline_endpoints = str(item["allow_inline_endpoints"]).strip().lower() in ("true", "1", "yes", "y")
+                        allow_inline_endpoints = str(item["allow_inline_endpoints"]).strip().lower() in (
+                            "true",
+                            "1",
+                            "yes",
+                            "y",
+                        )
 
                     if "addon" in item:
                         addon_path = (Path(conf_file).parent / item["addon"]).resolve()

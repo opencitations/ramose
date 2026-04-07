@@ -9,19 +9,22 @@ import xml.etree.ElementTree as ET
 
 
 def lower(s):
-    return s.lower(),
+    return (s.lower(),)
 
 
 def split_dois(s):
-    return "\"{}\"".format("\" \"".join(s.split("__"))),
+    return ('"{}"'.format('" "'.join(s.split("__"))),)
+
 
 def to_upper(csv_str):
     """Dummy example: convert entire CSV to uppercase."""
     return csv_str.upper()
 
+
 def to_dummyxml(csv_str):
     """Dummy: wrap CSV in <xml> tags."""
     return f"<xml>\n{csv_str}\n</xml>"
+
 
 def to_xml(csv_str):
     """
@@ -33,13 +36,14 @@ def to_xml(csv_str):
     - Invalid XML tag characters in headers are replaced with underscores.
     - Adds an XML declaration at the top.
     """
+
     # Helper: make a valid XML tag name from a header
     def _safe_tag(tag: str) -> str:
         # replace any character not letter, digit, underscore, hyphen, or period with underscore
-        tag = re.sub(r'[^\w\-.]', '_', tag)
+        tag = re.sub(r"[^\w\-.]", "_", tag)
         # ensure it doesn't start with digit or punctuation
-        if re.match(r'^[^A-Za-z_]', tag):
-            tag = '_' + tag
+        if re.match(r"^[^A-Za-z_]", tag):
+            tag = "_" + tag
         return tag
 
     # Parse CSV
@@ -47,24 +51,24 @@ def to_xml(csv_str):
     headers = reader.fieldnames or []
 
     # Build XML tree
-    root = ET.Element('records')
+    root = ET.Element("records")
     for row in reader:
-        rec = ET.SubElement(root, 'record')
+        rec = ET.SubElement(root, "record")
         for h in headers:
             # create child even if empty
             child = ET.SubElement(rec, _safe_tag(h))
-            val = row.get(h, '').strip()
+            val = row.get(h, "").strip()
             if val:
                 child.text = val
 
     # Pretty-print indentation
     def _indent(elem, level=0):
-        i = "\n" + level*"  "
+        i = "\n" + level * "  "
         if len(elem):
             if not elem.text or not elem.text.strip():
                 elem.text = i + "  "
             for c in elem:
-                _indent(c, level+1)
+                _indent(c, level + 1)
             last = elem[-1]
             if not last.tail or not last.tail.strip():
                 last.tail = i
@@ -74,6 +78,5 @@ def to_xml(csv_str):
     _indent(root)
 
     # Serialize to string with declaration
-    xml_body = ET.tostring(root, encoding='unicode')
+    xml_body = ET.tostring(root, encoding="unicode")
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + xml_body
-

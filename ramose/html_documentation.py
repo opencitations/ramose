@@ -34,8 +34,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
         """This method builds the sidebar of the API documentation"""
         i = conf["conf_json"][0]
         ops_html = "".join(
-            f"<li><a class='btn' href='#{op['url']}'>{op['url']}</a></li>"
-            for op in conf["conf_json"][1:]
+            f"<li><a class='btn' href='#{op['url']}'>{op['url']}</a></li>" for op in conf["conf_json"][1:]
         )
         return f"""
 
@@ -112,9 +111,7 @@ The operations that this API implements are:
             op_url = op["url"]
             methods = ", ".join(split(r"\s+", op["method"].strip()))
             params_html = "</li><li>".join(params)
-            fields_html = ", ".join(
-                f"{f} <em>({t})</em>" for t, f in findall(FIELD_TYPE_RE, op["field_type"])
-            )
+            fields_html = ", ".join(f"{f} <em>({t})</em>" for t, f in findall(FIELD_TYPE_RE, op["field_type"]))
             example_url = conf["website"] + conf["base_url"] + op["call"]
 
             result += f"\n* [{op_url}](#{op_url}): {op['description'].split(chr(10))[0]}"
@@ -532,13 +529,12 @@ The operations that this API implements are:
 
     def __css_path(self, css_path=None):
         """Add link to a css file if specified in argument -css"""
-        return f"<link rel=\"stylesheet\" type=\"text/css\" href='{css_path}'>" if css_path else ""
+        return f'<link rel="stylesheet" type="text/css" href=\'{css_path}\'>' if css_path else ""
 
     def logger_ramose(self):  # pragma: no cover
         """This method adds logging info to a local file"""
         # logging
-        log_formatter = logging.Formatter(
-            "[%(asctime)s] [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+        log_formatter = logging.Formatter("[%(asctime)s] [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
         root_logger = logging.getLogger()
 
         file_handler = logging.FileHandler("ramose.log")
@@ -551,7 +547,7 @@ The operations that this API implements are:
 
     def __parse_logger_ramose(self):
         """This method reads logging info stored into a local file, so as to be browsed in the dashboard.
-        Returns: the html including the list of URLs of current working APIs and basic logging info """
+        Returns: the html including the list of URLs of current working APIs and basic logging info"""
         try:
             with Path("ramose.log").open() as l_f:
                 logs = l_f.read()
@@ -583,8 +579,7 @@ The operations that this API implements are:
         for api_url, api_dict in self.conf_doc.items():
             clean_list = [line for line in rev_list if api_url in line and "debug" not in line]
             api_logs_list = "".join(
-                f"<p>{self.clean_log(line, api_url)}</p>"
-                for line in clean_list if self.clean_log(line, api_url) != ""
+                f"<p>{self.clean_log(line, api_url)}</p>" for line in clean_list if self.clean_log(line, api_url) != ""
             )
             api_title = api_dict["conf_json"][0]["title"]
             html += f"""
@@ -609,9 +604,11 @@ The operations that this API implements are:
             first_key = next(iter(self.conf_doc))
             conf = self.conf_doc[first_key]
         else:
-            conf = self.conf_doc['/'+base_url]
+            conf = self.conf_doc["/" + base_url]
 
-        return 200, f"""<!DOCTYPE html>
+        return (
+            200,
+            f"""<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <title>{self.__title(conf)}</title>
@@ -627,7 +624,8 @@ The operations that this API implements are:
         <section id="operations">{self.__operations(conf)}</section>
         <footer>{self.__footer()}</footer>
     </body>
-</html>"""
+</html>""",
+        )
 
     def get_index(self, css_path=None):
         """This method generates the index of all the HTML documentations that can be
@@ -659,16 +657,30 @@ The operations that this API implements are:
     def clean_log(self, log_line, api_url):
         """This method parses logs lines into structured data."""
         if "- - " not in log_line:
-            return ''
+            return ""
         s = log_line.split("- - ", 1)[1]
-        date = s[s.find("[")+1:s.find("]")]
+        date = s[s.find("[") + 1 : s.find("]")]
         method = s.split('"')[1::2][0].split()[0]
         cur_call = s.split('"')[1::2][0].split()[1].strip()
         status = sub(r"\D+", "", s.split('"', 2)[2])
-        if cur_call != api_url+'/':
-            full_str = "<span class='group_log'><span class='status_log code_"+status+"'>"+status+"</span>"+"<span class='date_log'>"+date+"</span><span class='method_log'>" + \
-                method+"</span></span>"+"<span class='group_log'><span class='call_log'><a href='" + \
-                cur_call+"' target='_blank'>"+cur_call+"</a></span></span>"
+        if cur_call != api_url + "/":
+            full_str = (
+                "<span class='group_log'><span class='status_log code_"
+                + status
+                + "'>"
+                + status
+                + "</span>"
+                + "<span class='date_log'>"
+                + date
+                + "</span><span class='method_log'>"
+                + method
+                + "</span></span>"
+                + "<span class='group_log'><span class='call_log'><a href='"
+                + cur_call
+                + "' target='_blank'>"
+                + cur_call
+                + "</a></span></span>"
+            )
         else:
-            full_str = ''
+            full_str = ""
         return full_str

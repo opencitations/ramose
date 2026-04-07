@@ -305,8 +305,8 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                 "description": (
                     "Transform JSON output rows. Repeatable.\n\n"
                     "Syntax:\n"
-                    "- `array(\"<sep>\", field)`\n"
-                    "- `dict(\"<sep>\", field, new_field_1, new_field_2, ...)`\n\n"
+                    '- `array("<sep>", field)`\n'
+                    '- `dict("<sep>", field, new_field_1, new_field_2, ...)`\n\n'
                     "Where `<sep>` is a string separator (e.g. `,` or `__`)."
                 ),
                 "required": False,
@@ -356,8 +356,10 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         ok_schema = {"type": "array", "items": row_schema}
         ok_example = self._try_parse_output_json(op.get("output_json"))
         ok_content, err_content = self._build_response_content(
-            ok_schema=ok_schema, formats_enum=formats_enum,
-            ok_example=ok_example, err_schema_ref="#/components/schemas/Error",
+            ok_schema=ok_schema,
+            formats_enum=formats_enum,
+            ok_example=ok_example,
+            err_schema_ref="#/components/schemas/Error",
         )
 
         op_obj: OrderedDict[str, object] = OrderedDict()
@@ -365,10 +367,12 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         op_obj["summary"] = summary
         op_obj["description"] = desc
         op_obj["parameters"] = path_params + common_param_refs
-        op_obj["responses"] = OrderedDict([
-            ("200", {"description": "Successful response", "content": ok_content}),
-            ("default", {"description": "Error", "content": err_content}),
-        ])
+        op_obj["responses"] = OrderedDict(
+            [
+                ("200", {"description": "Successful response", "content": ok_content}),
+                ("default", {"description": "Error", "content": err_content}),
+            ]
+        )
 
         ramose_ext = OrderedDict()
         for key, src_key in [("preprocess", "preprocess"), ("postprocess", "postprocess"), ("call", "call")]:
@@ -395,7 +399,11 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         root = api_meta.get("url", "")
         spec["servers"] = [{"url": f"{base}{root}"}]
 
-        for ext_key, meta_key in [("x-ramose-endpoint", "endpoint"), ("x-ramose-addon", "addon"), ("x-ramose-sparql-method", "method")]:
+        for ext_key, meta_key in [
+            ("x-ramose-endpoint", "endpoint"),
+            ("x-ramose-addon", "addon"),
+            ("x-ramose-sparql-method", "method"),
+        ]:
             if meta_key in api_meta:
                 spec[ext_key] = api_meta[meta_key]
 
@@ -425,7 +433,11 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             methods = [mm.lower() for mm in split(r"\s+", op.get("method", "get").strip()) if mm]
             for m in methods:
                 spec["paths"][raw_path][m] = self._build_operation_object(
-                    op, tag_name, path_params, common_param_refs, formats_enum,
+                    op,
+                    tag_name,
+                    path_params,
+                    common_param_refs,
+                    formats_enum,
                 )
 
         return spec
@@ -450,6 +462,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         - multiline strings become block scalars (|)
         - keys keep insertion order (sort_keys=False)
         """
+
         class _RamoseYamlDumper(yaml.SafeDumper):
             pass
 

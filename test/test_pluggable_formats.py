@@ -130,9 +130,15 @@ class TestSparqlAnythingSingleQueryExec:
             "field_type": "str(title)",
         }
         op = Operation(
-            "/api/test/hello", r"/api/test/(.+)", op_item,
-            "http://unused/sparql", "get", None,
-            format_map={}, sources_map={}, allow_inline_endpoints=False,
+            "/api/test/hello",
+            r"/api/test/(.+)",
+            op_item,
+            "http://unused/sparql",
+            "get",
+            None,
+            format_map={},
+            sources_map={},
+            allow_inline_endpoints=False,
             engine="sparql-anything",
         )
 
@@ -149,12 +155,15 @@ class TestSparqlAnythingSingleQueryExec:
 class TestRunSparqlAnythingDictsNormalization:
     def _make_op(self):
         op_item = {
-            "url": "/test/{id}", "id": "str(.+)",
-            "sparql": "SELECT ?x WHERE { }", "method": "get",
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?x WHERE { }",
+            "method": "get",
             "field_type": "str(x)",
         }
-        return Operation("/api/test/v", r"/api/test/(.+)", op_item,
-                         "http://ep/sparql", "get", None, engine="sparql-anything")
+        return Operation(
+            "/api/test/v", r"/api/test/(.+)", op_item, "http://ep/sparql", "get", None, engine="sparql-anything"
+        )
 
     def test_list_of_dicts(self):
         op = self._make_op()
@@ -172,7 +181,7 @@ class TestRunSparqlAnythingDictsNormalization:
                     {"x": {"type": "literal", "value": "a"}, "y": {"type": "literal", "value": "1"}},
                     {"x": {"type": "literal", "value": "b"}, "y": {"type": "literal", "value": "2"}},
                 ]
-            }
+            },
         }
         with patch("pysparql_anything.SparqlAnything") as MockSA:
             MockSA.return_value.select.return_value = sparql_result
@@ -219,7 +228,7 @@ class TestRunSparqlAnythingDictsNormalization:
                 "bindings": [
                     {"x": "plain_value"},
                 ]
-            }
+            },
         }
         with patch("pysparql_anything.SparqlAnything") as MockSA:
             MockSA.return_value.select.return_value = sparql_result
@@ -247,12 +256,13 @@ class TestRunSparqlAnythingDictsNormalization:
 class TestRunQueryDictsDispatch:
     def _make_op(self, engine="sparql"):
         op_item = {
-            "url": "/test/{id}", "id": "str(.+)",
-            "sparql": "SELECT ?x WHERE { }", "method": "get",
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?x WHERE { }",
+            "method": "get",
             "field_type": "str(x)",
         }
-        return Operation("/api/test/v", r"/api/test/(.+)", op_item,
-                         "http://ep/sparql", "get", None, engine=engine)
+        return Operation("/api/test/v", r"/api/test/(.+)", op_item, "http://ep/sparql", "get", None, engine=engine)
 
     def test_op_level_sparql_anything_engine(self):
         op = self._make_op(engine="sparql-anything")
@@ -278,9 +288,15 @@ class TestSparqlAnythingSingleQueryWithAddon:
             "postprocess": "my_post()",
         }
         op = Operation(
-            "/api/test/hello", r"/api/test/(.+)", op_item,
-            "http://unused/sparql", "get", FakeAddon,
-            format_map={}, sources_map={}, allow_inline_endpoints=False,
+            "/api/test/hello",
+            r"/api/test/(.+)",
+            op_item,
+            "http://unused/sparql",
+            "get",
+            FakeAddon,
+            format_map={},
+            sources_map={},
+            allow_inline_endpoints=False,
             engine="sparql-anything",
         )
 
@@ -293,12 +309,13 @@ class TestSparqlAnythingSingleQueryWithAddon:
 class TestInjectValuesNoWhereBrace:
     def _make_op(self):
         op_item = {
-            "url": "/test/{id}", "id": "str(.+)",
-            "sparql": "SELECT ?x WHERE { }", "method": "get",
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?x WHERE { }",
+            "method": "get",
             "field_type": "str(x)",
         }
-        return Operation("/api/test/v", r"/api/test/(.+)", op_item,
-                         "http://ep/sparql", "get", None)
+        return Operation("/api/test/v", r"/api/test/(.+)", op_item, "http://ep/sparql", "get", None)
 
     def test_no_brace_puts_values_at_top(self):
         op = self._make_op()
