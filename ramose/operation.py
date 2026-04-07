@@ -34,7 +34,6 @@ class Operation:
         addon,
         format_map=None,
         sources_map=None,
-        allow_inline_endpoints=False,
         engine="sparql",
     ):
         """This class is responsible for materialising a API operation to be run against a SPARQL endpoint
@@ -48,8 +47,7 @@ class Operation:
         with the names of the corresponding functions responsible for converting CSV data into the specified formats
         (parameter 'format').
         It also accepts a mapping of named sources to endpoint URLs referenced by @@with directives
-        (parameter 'sources_map'), a flag controlling whether @@endpoint directives are allowed to override
-        endpoints inline (parameter 'allow_inline_endpoints'), and the engine identifier selecting the execution
+        (parameter 'sources_map') and the engine identifier selecting the execution
         backend (parameter 'engine')."""
         self.url_parsed = urlsplit(op_complete_url)
         self.op_url = self.url_parsed.path
@@ -60,7 +58,6 @@ class Operation:
         self.addon = addon
         self.format = format_map or {}
         self.sources_map = sources_map or {}
-        self.allow_inline_endpoints = allow_inline_endpoints
         self.engine = engine
         self._sa_engine = None
 
@@ -461,9 +458,8 @@ class Operation:
             raise ValueError(f"Unknown source '{name}' in @@with; declare it in #sources.")
         return self.sources_map[name], None
 
-    def _handle_directive_endpoint(self, parts):
-        if not self.allow_inline_endpoints:
-            raise ValueError("@@endpoint not allowed (enable #allow_inline_endpoints).")
+    @staticmethod
+    def _handle_directive_endpoint(parts):
         return parts[1], None
 
     @staticmethod

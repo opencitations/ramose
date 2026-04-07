@@ -69,7 +69,6 @@ class APIManager:
             website = ""
             sparql_http_method = "post"
             sources_map = {}
-            allow_inline_endpoints = False
             engine = "sparql"
             for item in conf_json:
                 if base_url is None:
@@ -91,15 +90,6 @@ class APIManager:
                             name, url = pair.split("=", 1)
                             sources_map[name.strip()] = url.strip()
 
-                    # Optional: allow explicit @@endpoint <url> in #sparql
-                    if "allow_inline_endpoints" in item:
-                        allow_inline_endpoints = str(item["allow_inline_endpoints"]).strip().lower() in (
-                            "true",
-                            "1",
-                            "yes",
-                            "y",
-                        )
-
                     if "addon" in item:
                         addon_path = (Path(conf_file).parent / item["addon"]).resolve()
                         path.append(str(addon_path.parent))
@@ -119,7 +109,6 @@ class APIManager:
                 "addon": addon,
                 "sparql_http_method": sparql_http_method,
                 "sources_map": sources_map,
-                "allow_inline_endpoints": allow_inline_endpoints,
                 "engine": engine,
             }
 
@@ -194,7 +183,6 @@ class APIManager:
                 conf["addon"],
                 op_format_map,
                 conf.get("sources_map", {}),
-                conf.get("allow_inline_endpoints", False),
                 op_engine,
             )
         sc = 404

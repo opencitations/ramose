@@ -2,7 +2,6 @@
 #type api
 #base http://localhost:5000
 #endpoint https://query-scholarly.wikidata.org/sparql
-#allow_inline_endpoints true
 #engine sparql
 #method get
 #title Mixed Wikidata + OpenCitations + Crossref

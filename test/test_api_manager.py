@@ -46,7 +46,6 @@ class TestBestMatch:
             "addon",
             "sparql_http_method",
             "sources_map",
-            "allow_inline_endpoints",
             "engine",
         }
 

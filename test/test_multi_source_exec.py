@@ -308,7 +308,7 @@ class TestMultiSourceForeachUnknownAlias:
 
 
 class TestParseSteps:
-    def _make_op(self, allow_inline=True, sources_map=None):
+    def _make_op(self, sources_map=None):
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
@@ -325,7 +325,6 @@ class TestParseSteps:
             None,
             format_map={},
             sources_map=sources_map or {},
-            allow_inline_endpoints=allow_inline,
         )
 
     def test_simple_query_no_directives(self):
@@ -352,17 +351,11 @@ class TestParseSteps:
         assert steps[1] == ("JOIN", "?a", "?b", "inner")
 
     def test_endpoint_directive(self):
-        op = self._make_op(allow_inline=True)
+        op = self._make_op()
         text = "SELECT ?a WHERE { }\n@@join ?a ?a\n@@endpoint https://other.endpoint/sparql\nSELECT ?a ?b WHERE { }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
         assert steps[2][0] == "QUERY"
         assert steps[2][1] == "https://other.endpoint/sparql"
-
-    def test_endpoint_not_allowed_raises(self):
-        op = self._make_op(allow_inline=False)
-        text = "@@endpoint https://other/sparql\nSELECT ?a WHERE { }"
-        with pytest.raises(ValueError, match="@@endpoint not allowed"):
-            op._parse_steps(text, "http://ep/sparql", {})
 
     def test_values_inject(self):
         op = self._make_op()

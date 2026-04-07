@@ -8,7 +8,6 @@
 #license This document is licensed with a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/legalcode), while the REST API itself has been created using [RAMOSE](https://github.com/opencitations/ramose), the *Restful API Manager Over SPARQL Endpoints* created by [Silvio Peroni](https://orcid.org/0000-0003-0530-4305), which is licensed with an [ISC license](https://opensource.org/licenses/ISC). All the data returned by this API are made freely available under a [Creative Commons public domain dedication (CC0)](https://creativecommons.org/publicdomain/zero/1.0/).
 #contacts [contact@opencitations.net](mailto:contact@opencitations.net)
 #endpoint https://query-scholarly.wikidata.org/sparql
-#allow_inline_endpoints true
 #addon testaddon
 
 #url /metadata/{dois}

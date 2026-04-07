@@ -82,22 +82,6 @@ class TestCustomFormatThroughExec:
 
 
 class TestAPIManagerConfigParsing:
-    def test_allow_inline_endpoints_true(self):
-        am = APIManager(
-            [str(Path(TESTS_DIR) / "test_scholarly_multi-sources.hf")],
-            endpoint_override="http://mock/sparql",
-        )
-        base = am.base_url[0]
-        assert am.all_conf[base]["allow_inline_endpoints"] is True
-
-    def test_allow_inline_endpoints_default_false(self):
-        am = APIManager(
-            [str(Path(TESTS_DIR) / "test_scholarly.hf")],
-            endpoint_override="http://mock/sparql",
-        )
-        base = am.base_url[0]
-        assert am.all_conf[base]["allow_inline_endpoints"] is False
-
     def test_addon_loaded(self):
         am = APIManager(
             [str(Path(TESTS_DIR) / "test_scholarly.hf")],
@@ -138,7 +122,6 @@ class TestSparqlAnythingSingleQueryExec:
             None,
             format_map={},
             sources_map={},
-            allow_inline_endpoints=False,
             engine="sparql-anything",
         )
 
@@ -296,7 +279,6 @@ class TestSparqlAnythingSingleQueryWithAddon:
             FakeAddon,
             format_map={},
             sources_map={},
-            allow_inline_endpoints=False,
             engine="sparql-anything",
         )
 

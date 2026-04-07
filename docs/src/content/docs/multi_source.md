@@ -21,12 +21,6 @@ Register named endpoints in the API section:
 #sources meta=https://opencitations.net/meta/sparql; index=https://opencitations.net/index/sparql
 ```
 
-To allow overriding endpoints inline (rather than by name only):
-
-```
-#allow_inline_endpoints true
-```
-
 ## Directives
 
 ### @@with
@@ -40,7 +34,7 @@ SELECT ?citing ?cited WHERE { ... }
 
 ### @@endpoint
 
-Override the endpoint with an explicit URL. Requires `#allow_inline_endpoints true`.
+Override the endpoint with an explicit URL.
 
 ```
 @@endpoint https://opencitations.net/index/sparql

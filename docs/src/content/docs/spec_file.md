@@ -44,7 +44,6 @@ The file contains sections separated by blank lines. The first section defines t
 | `#addon` | no | Python module name for custom functions. Path relative to the spec file. |
 | `#engine` | no | Execution backend: `sparql` (default) or `sparql-anything`. See [multi-source queries](/ramose/multi_source/). |
 | `#sources` | no | Named endpoints for multi-source queries: `name1=url1; name2=url2`. |
-| `#allow_inline_endpoints` | no | Set to `true` to enable `@@endpoint` directives in SPARQL blocks. |
 | `#html_meta_description` | no | HTML meta description for documentation pages. |
 
 ## Operation section
