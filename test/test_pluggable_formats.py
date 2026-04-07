@@ -1,0 +1,203 @@
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: ISC
+
+import json
+import os
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from ramose import APIManager, Operation
+
+
+TESTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tests")
+
+
+class TestCustomFormatConversion:
+    """Test pluggable format converters via the conv() method.
+    Uses test_scholarly.hf which declares: #format upper,to_upper;dummyxml,to_dummyxml;xml,to_xml"""
+
+    def _make_op_with_formats(self):
+        am = APIManager(
+            [os.path.join(TESTS_DIR, "test_scholarly.hf")],
+            endpoint_override="http://mock/sparql",
+        )
+        return am.get_op("/api/v1/metadata/10.1108/jd-12-2013-0166")
+
+    def test_xml_format_via_query_string(self):
+        op = self._make_op_with_formats()
+        csv_str = "qid,doi\nQ24260641,10.1108/JD-12-2013-0166\n"
+        result, ct = op.conv(csv_str, {"format": ["xml"]})
+        assert ct == "xml"
+        assert '<?xml version="1.0"' in result
+        assert "<records>" in result
+        assert "<qid>Q24260641</qid>" in result
+
+    def test_upper_format_via_query_string(self):
+        op = self._make_op_with_formats()
+        csv_str = "name,age\nalice,30\n"
+        result, _ = op.conv(csv_str, {"format": ["upper"]})
+        assert result == "NAME,AGE\nALICE,30\n"
+
+    def test_dummyxml_format_via_query_string(self):
+        op = self._make_op_with_formats()
+        csv_str = "name,age\nalice,30\n"
+        result, _ = op.conv(csv_str, {"format": ["dummyxml"]})
+        assert "<xml>" in result
+        assert "alice" in result
+
+    def test_unknown_format_falls_back_to_csv(self):
+        op = self._make_op_with_formats()
+        csv_str = "name,age\nalice,30\n"
+        result, ct = op.conv(csv_str, {"format": ["nonexistent"]})
+        assert ct == "text/csv"
+        assert result == csv_str
+
+
+class TestCustomFormatThroughExec:
+    def test_xml_output_through_exec(self):
+        am = APIManager(
+            [os.path.join(TESTS_DIR, "test_scholarly.hf")],
+            endpoint_override="http://mock/sparql",
+        )
+        op = am.get_op("/api/v1/metadata/10.1108/jd-12-2013-0166?format=xml")
+
+        resp = SimpleNamespace(
+            status_code=200,
+            text="qid,author,year,title,source_title,source_id,volume,issue,page,doi,reference,citation_count\nQ24260641,,2015,Setting our bibliographic references free,,,,,,10.1108/JD-12-2013-0166,,1\n",
+            reason="OK",
+            encoding=None,
+        )
+        with patch("ramose._http_session") as mock_session:
+            mock_session.post.return_value = resp
+            sc, body, ctype = op.exec(method="get", content_type="text/csv")
+
+        assert sc == 200
+        assert ctype == "xml"
+        assert '<?xml version="1.0"' in body
+        assert "<record>" in body
+        assert "Q24260641" in body
+
+
+class TestAPIManagerConfigParsing:
+    def test_allow_inline_endpoints_true(self):
+        am = APIManager(
+            [os.path.join(TESTS_DIR, "test_scholarly_multi-sources.hf")],
+            endpoint_override="http://mock/sparql",
+        )
+        base = am.base_url[0]
+        assert am.all_conf[base]["allow_inline_endpoints"] is True
+
+    def test_allow_inline_endpoints_default_false(self):
+        am = APIManager(
+            [os.path.join(TESTS_DIR, "test_scholarly.hf")],
+            endpoint_override="http://mock/sparql",
+        )
+        base = am.base_url[0]
+        assert am.all_conf[base]["allow_inline_endpoints"] is False
+
+    def test_addon_loaded(self):
+        am = APIManager(
+            [os.path.join(TESTS_DIR, "test_scholarly.hf")],
+            endpoint_override="http://mock/sparql",
+        )
+        base = am.base_url[0]
+        addon = am.all_conf[base]["addon"]
+        assert addon is not None
+        assert hasattr(addon, "to_xml")
+        assert hasattr(addon, "to_upper")
+        assert hasattr(addon, "to_dummyxml")
+
+    def test_format_map_built_correctly(self):
+        am = APIManager(
+            [os.path.join(TESTS_DIR, "test_scholarly.hf")],
+            endpoint_override="http://mock/sparql",
+        )
+        op = am.get_op("/api/v1/metadata/10.1108/jd-12-2013-0166")
+        assert isinstance(op, Operation)
+        assert op.format == {"upper": "to_upper", "dummyxml": "to_dummyxml", "xml": "to_xml"}
+
+
+class TestSparqlAnythingSingleQueryExec:
+    def test_sparql_anything_engine_exec(self):
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?title WHERE { SERVICE <x-sparql-anything:...> { ?r ?p ?title } }",
+            "method": "get",
+            "field_type": "str(title)",
+        }
+        op = Operation(
+            "/api/test/hello", r"/api/test/(.+)", op_item,
+            "http://unused/sparql", "get", None,
+            format={}, sources_map={}, allow_inline_endpoints=False,
+            engine="sparql-anything",
+        )
+
+        with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"title": "Test Paper"}]):
+            sc, body, ctype = op.exec(method="get", content_type="application/json")
+
+        assert sc == 200
+        assert ctype == "application/json"
+        rows = json.loads(body)
+        assert len(rows) == 1
+        assert rows[0]["title"] == "Test Paper"
+
+
+class TestRunSparqlAnythingDictsNormalization:
+    def _make_op(self):
+        op_item = {
+            "url": "/test/{id}", "id": "str(.+)",
+            "sparql": "SELECT ?x WHERE { }", "method": "get",
+            "field_type": "str(x)",
+        }
+        return Operation("/api/test/v", r"/api/test/(.+)", op_item,
+                         "http://ep/sparql", "get", None, engine="sparql-anything")
+
+    def test_list_of_dicts(self):
+        op = self._make_op()
+        with patch("pysparql_anything.SparqlAnything") as MockSA:
+            MockSA.return_value.select.return_value = [{"x": "a"}, {"x": "b"}]
+            rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert rows == [{"x": "a"}, {"x": "b"}]
+
+    def test_sparql_json_resultset(self):
+        op = self._make_op()
+        sparql_result = {
+            "head": {"vars": ["x", "y"]},
+            "results": {
+                "bindings": [
+                    {"x": {"type": "literal", "value": "a"}, "y": {"type": "literal", "value": "1"}},
+                    {"x": {"type": "literal", "value": "b"}, "y": {"type": "literal", "value": "2"}},
+                ]
+            }
+        }
+        with patch("pysparql_anything.SparqlAnything") as MockSA:
+            MockSA.return_value.select.return_value = sparql_result
+            rows = op._run_sparql_anything_dicts("SELECT ?x ?y WHERE { }")
+        assert len(rows) == 2
+        assert rows[0] == {"x": "a", "y": "1"}
+        assert rows[1] == {"x": "b", "y": "2"}
+
+    def test_columnar_dict(self):
+        op = self._make_op()
+        with patch("pysparql_anything.SparqlAnything") as MockSA:
+            MockSA.return_value.select.return_value = {"x": ["a", "b"], "y": ["1", "2"]}
+            rows = op._run_sparql_anything_dicts("SELECT ?x ?y WHERE { }")
+        assert len(rows) == 2
+        assert rows[0] == {"x": "a", "y": "1"}
+        assert rows[1] == {"x": "b", "y": "2"}
+
+    def test_single_dict_fallback(self):
+        op = self._make_op()
+        with patch("pysparql_anything.SparqlAnything") as MockSA:
+            MockSA.return_value.select.return_value = {"x": "a"}
+            rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert rows == [{"x": "a"}]
+
+    def test_non_dict_result(self):
+        op = self._make_op()
+        with patch("pysparql_anything.SparqlAnything") as MockSA:
+            MockSA.return_value.select.return_value = "raw_string"
+            rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert rows == [{"result": "raw_string"}]

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Sergey Slinkin <sergeyslinkin@Sergeys-MacBook-Air.local>
+# SPDX-FileCopyrightText: 2026 Sergei Slinkin
 #
 # SPDX-License-Identifier: ISC
 
