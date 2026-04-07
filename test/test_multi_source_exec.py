@@ -447,7 +447,7 @@ class TestRunSparqlDicts:
         return Operation("/api/test/v", r"/api/test/(.+)", op_item,
                          "http://ep/sparql", method, None)
 
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_get_request(self, mock_session):
         resp = SimpleNamespace(
             status_code=200,
@@ -463,7 +463,7 @@ class TestRunSparqlDicts:
         assert rows[0]["doi"] == "10.1"
         assert rows[1]["qid"] == "Q2"
 
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_post_request(self, mock_session):
         resp = SimpleNamespace(
             status_code=200,
@@ -478,7 +478,7 @@ class TestRunSparqlDicts:
         assert len(rows) == 1
         assert rows[0]["x"] == "val"
 
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_non_200_raises(self, mock_session):
         resp = SimpleNamespace(
             status_code=500,
@@ -495,7 +495,7 @@ class TestRunSparqlDicts:
         except RuntimeError as e:
             assert "500" in str(e)
 
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_request_exception_raises(self, mock_session):
         from requests.exceptions import ConnectionError
         mock_session.get.side_effect = ConnectionError("refused")

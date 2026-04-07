@@ -71,7 +71,7 @@ class TestCustomFormatThroughExec:
             reason="OK",
             encoding=None,
         )
-        with patch("ramose._http_session") as mock_session:
+        with patch("ramose.operation._http_session") as mock_session:
             mock_session.post.return_value = resp
             sc, body, ctype = op.exec(method="get", content_type="text/csv")
 

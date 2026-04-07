@@ -41,7 +41,7 @@ class TestExecMethodNotAllowed:
 
 
 class TestExecGetRequest:
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_successful_get(self, mock_session):
         mock_session.get.return_value = _mock_response()
         op = _make_op()
@@ -49,7 +49,7 @@ class TestExecGetRequest:
         assert result[0] == 200
         assert "Alice" in result[1]
 
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_successful_post(self, mock_session):
         mock_session.post.return_value = _mock_response()
         op = _make_op(sparql_http_method="post")
@@ -59,7 +59,7 @@ class TestExecGetRequest:
 
 
 class TestExecNon200:
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_sparql_endpoint_error(self, mock_session):
         mock_session.get.return_value = _mock_response(
             status_code=500, reason="Internal Server Error"
@@ -72,7 +72,7 @@ class TestExecNon200:
 
 
 class TestExecTimeout:
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_timeout_returns_408(self, mock_session):
         mock_session.get.side_effect = TimeoutError("timed out")
         op = _make_op()
@@ -83,7 +83,7 @@ class TestExecTimeout:
 
 
 class TestExecTypeError:
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_type_error_returns_400(self, mock_session):
         mock_session.get.side_effect = TypeError("bad type")
         op = _make_op()
@@ -94,7 +94,7 @@ class TestExecTypeError:
 
 
 class TestExecGenericError:
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_generic_error_returns_500(self, mock_session):
         mock_session.get.side_effect = RuntimeError("unexpected")
         op = _make_op()
@@ -105,7 +105,7 @@ class TestExecGenericError:
 
 
 class TestExecJsonOutput:
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_json_content_type(self, mock_session):
         mock_session.get.return_value = _mock_response()
         op = _make_op()
@@ -120,7 +120,7 @@ class TestExecMultipleParameterCombinations:
     issues one SPARQL query per combination. The CSV header row is included
     only in the first result to avoid duplication."""
 
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_header_included_once(self, mock_session):
         mock_session.get.return_value = _mock_response()
 
@@ -144,7 +144,7 @@ class TestExecMultipleParameterCombinations:
 
 
 class TestExecNonStrTypedParam:
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_int_param_type_conversion(self, mock_session):
         mock_session.get.return_value = _mock_response()
         op_item = {
@@ -164,7 +164,7 @@ class TestExecKeyErrorFallback:
     (e.g. missing ``"id": "str(.+)"``), exec() falls back to using the raw
     matched value from the URL without any type conversion."""
 
-    @patch("ramose._http_session")
+    @patch("ramose.operation._http_session")
     def test_param_without_type_definition(self, mock_session):
         mock_session.get.return_value = _mock_response()
         op_item = {
