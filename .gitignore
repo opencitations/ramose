@@ -9,3 +9,6 @@ htmlcov/
 ramose.log*
 __pycache__/
 docs/build/*
+docs/dist/
+docs/node_modules/
+docs/.astro/

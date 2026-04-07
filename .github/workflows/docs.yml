@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: ISC
 
-name: Deploy coverage report
+name: Deploy documentation
 
 on:
   workflow_run:
@@ -23,18 +23,31 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ format('{0}coverage/', steps.deployment.outputs.page_url) }}
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Create Pages artifact directory
-        run: mkdir -p site/coverage
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: "lts/*"
+
+      - name: Install dependencies
+        working-directory: docs
+        run: npm ci
+
+      - name: Build documentation
+        working-directory: docs
+        run: npm run build
 
       - name: Download coverage report
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           github-token: ${{ github.token }}
           name: coverage-report
-          path: site/coverage
+          path: docs/dist/coverage
           run-id: ${{ github.event.workflow_run.id }}
 
       - name: Download coverage badge
@@ -42,11 +55,8 @@ jobs:
         with:
           github-token: ${{ github.token }}
           name: coverage-badge
-          path: site/coverage
+          path: docs/dist/coverage
           run-id: ${{ github.event.workflow_run.id }}
-
-      - name: Disable Jekyll
-        run: touch site/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
@@ -54,7 +64,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
         with:
-          path: site
+          path: docs/dist
 
       - name: Deploy to GitHub Pages
         id: deployment

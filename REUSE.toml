@@ -38,3 +38,19 @@ path = [
 ]
 SPDX-FileCopyrightText = "2026 Sergei Slinkin"
 SPDX-License-Identifier = "ISC"
+
+[[annotations]]
+path = [
+    "docs/.gitignore",
+    "docs/package.json",
+    "docs/package-lock.json",
+    "docs/tsconfig.json",
+    "docs/public/**",
+]
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = "docs/src/content.config.ts"
+SPDX-FileCopyrightText = "2026 Arcangelo Massari <arcangelo.massari@unibo.it>"
+SPDX-License-Identifier = "ISC"

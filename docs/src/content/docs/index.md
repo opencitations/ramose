@@ -1,23 +1,18 @@
+---
+title: Quick start
+description: Install RAMOSE and run your first API in under five minutes.
+template: doc
+---
+
 <!--
-SPDX-FileCopyrightText: 2018-2021 essepuntato <essepuntato@gmail.com>
-SPDX-FileCopyrightText: 2020 marilena <marilena.daquino2@unibo.it>
-SPDX-FileCopyrightText: 2022 dbrembilla <davide.brembilla98@gmail.com>
 SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 
 SPDX-License-Identifier: ISC
 -->
 
-[![Tests](https://github.com/opencitations/ramose/actions/workflows/test.yml/badge.svg)](https://github.com/opencitations/ramose/actions/workflows/test.yml)
-[![Coverage](https://opencitations.github.io/ramose/coverage/coverage-badge.svg)](https://opencitations.github.io/ramose/coverage/)
-[![REUSE](https://github.com/opencitations/ramose/actions/workflows/reuse.yml/badge.svg)](https://github.com/opencitations/ramose/actions/workflows/reuse.yml)
+RAMOSE turns SPARQL endpoints into documented REST APIs. You write a spec file describing your queries, and RAMOSE handles routing, type casting, filtering, and documentation generation.
 
-# RAMOSE
-
-Restful API Manager Over SPARQL Endpoints. Turns SPARQL endpoints into documented REST APIs.
-
-**[Documentation](https://opencitations.github.io/ramose/)**
-
-## Quick start
+## Install
 
 ```sh
 pip install ramose
@@ -25,7 +20,9 @@ pip install ramose
 
 Requires Python 3.10 or later.
 
-Create a spec file `meta_v1.hf`:
+## Create a spec file
+
+Save this as `meta_v1.hf`:
 
 ```
 #url /v1
@@ -66,20 +63,34 @@ SELECT ?title ?pub_date ?venue ?type WHERE {
 }
 ```
 
-Run locally:
+The first section declares the API (endpoint, metadata). The second defines an operation: a URL pattern with a `{doi}` parameter, mapped to a SPARQL query where `[[doi]]` gets replaced at runtime.
+
+## Run locally
 
 ```sh
 python -m ramose -s meta_v1.hf -c '/v1/metadata/10.1162/qss_a_00292'
 ```
 
-Or start the web server:
+Output:
+
+```
+# Response HTTP code: 200
+# Body:
+[{"title": "OpenCitations Meta", "pub_date": "2024", "venue": "Quantitative Science Studies", "type": "journal article"}]
+# Content-type: application/json
+```
+
+## Start the web server
 
 ```sh
 python -m ramose -s meta_v1.hf -w 127.0.0.1:8080
 ```
 
-Visit `http://localhost:8080/v1` for auto-generated docs.
+Open `http://localhost:8080/v1` for auto-generated documentation, or query `http://localhost:8080/v1/metadata/10.1162/qss_a_00292` directly.
 
-## License
+## What's next
 
-ISC
+- [Spec file format](/ramose/spec_file/) for the full `.hf` reference
+- [CLI](/ramose/cli/) for all command-line options
+- [Python API](/ramose/python_api/) for programmatic usage
+- [Query parameters](/ramose/parameters/) for filtering and sorting results
