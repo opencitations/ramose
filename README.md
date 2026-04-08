@@ -50,14 +50,15 @@ Create a spec file `meta_v1.hf`:
 #description Returns bibliographic metadata for the given DOI.
 #call /metadata/10.1162/qss_a_00292
 #field_type str(title) datetime(pub_date) str(venue) str(type)
-#sparql PREFIX datacite: <http://purl.org/spar/datacite/>
+#sparql PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX dcterm: <http://purl.org/dc/terms/>
 PREFIX fabio: <http://purl.org/spar/fabio/>
 PREFIX frbr: <http://purl.org/vocab/frbr/core#>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
 SELECT ?title ?pub_date ?venue ?type WHERE {
-  ?identifier literal:hasLiteralValue "[[doi]]" ;
+  ?identifier literal:hasLiteralValue "[[doi]]"^^xsd:string ;
     datacite:usesIdentifierScheme datacite:doi ;
     ^datacite:hasIdentifier ?res .
   OPTIONAL { ?res dcterm:title ?title }

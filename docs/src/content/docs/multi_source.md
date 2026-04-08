@@ -124,11 +124,11 @@ A query that fetches metadata from OpenCitations Meta and joins citation counts 
 ```
 #sparql
 SELECT ?doi ?title WHERE {
-  ?identifier literal:hasLiteralValue "[[doi]]" ;
+  ?identifier literal:hasLiteralValue "[[doi]]"^^xsd:string ;
     datacite:usesIdentifierScheme datacite:doi ;
     ^datacite:hasIdentifier ?res .
   ?res dcterm:title ?title .
-  BIND("[[doi]]" as ?doi)
+  BIND("[[doi]]"^^xsd:string as ?doi)
 }
 @@with index
 @@join ?doi ?doi type=left
@@ -137,7 +137,7 @@ SELECT ?doi ?citation_count WHERE {
   {
     SELECT (COUNT(?citing) as ?citation_count) WHERE {
       ?citing cito:cites ?cited .
-      ?cited datacite:hasIdentifier/literal:hasLiteralValue "[[doi]]"
+      ?cited datacite:hasIdentifier/literal:hasLiteralValue "[[doi]]"^^xsd:string
     }
   }
 }
