@@ -2,11 +2,10 @@
 #
 # SPDX-License-Identifier: ISC
 
-from datetime import datetime
+from datetime import datetime, timezone
 from sys import maxsize
 
 import pytest
-from isodate import parse_duration
 
 from ramose import DataType
 
@@ -32,32 +31,29 @@ class TestGetFunc:
 class TestDuration:
     def test_valid_duration(self):
         result = DataType.duration("P1Y")
-        expected = datetime(1983, 1, 15) + parse_duration("P1Y")
-        assert result == expected
+        assert result == datetime(1984, 1, 15, tzinfo=timezone.utc)
 
     def test_none_returns_high_duration(self):
         result = DataType.duration(None)
-        expected = datetime(1983, 1, 15) + parse_duration("P2000Y")
-        assert result == expected
+        assert result == datetime(3983, 1, 15, tzinfo=timezone.utc)
 
     def test_empty_string_returns_high_duration(self):
         result = DataType.duration("")
-        expected = datetime(1983, 1, 15) + parse_duration("P2000Y")
-        assert result == expected
+        assert result == datetime(3983, 1, 15, tzinfo=timezone.utc)
 
 
 class TestDatetime:
     def test_valid_date(self):
         result = DataType.datetime("2023-06-15")
-        assert result == datetime(2023, 6, 15, 0, 0)
+        assert result == datetime(2023, 6, 15, 0, 0, tzinfo=timezone.utc)
 
     def test_none_returns_low_date(self):
         result = DataType.datetime(None)
-        assert result == datetime(1, 1, 1, 0, 0)
+        assert result == datetime(1, 1, 1, 0, 0, tzinfo=timezone.utc)
 
     def test_empty_string_returns_low_date(self):
         result = DataType.datetime("")
-        assert result == datetime(1, 1, 1, 0, 0)
+        assert result == datetime(1, 1, 1, 0, 0, tzinfo=timezone.utc)
 
 
 class TestStr:
