@@ -67,7 +67,7 @@ class APIManager:
             base_url = None
             addon = None
             website = ""
-            sparql_http_method = "post"
+            sparql_http_method = "get"
             sources_map = {}
             engine = "sparql"
             for item in conf_json:
@@ -94,7 +94,7 @@ class APIManager:
                         addon_path = (Path(conf_file).parent / item["addon"]).resolve()
                         path.append(str(addon_path.parent))
                         addon = import_module(addon_path.name)
-                    sparql_http_method = "post"
+                    sparql_http_method = "get"
                     if "method" in item:
                         sparql_http_method = item["method"].strip().lower()
                 else:
