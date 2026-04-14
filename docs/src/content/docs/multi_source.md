@@ -26,10 +26,20 @@ Register named endpoints in the API section:
 All directives follow the same grammar:
 
 ```
-@@name <required_arg>... [key=value]...
+@@name <arg>... [param=value]...
 ```
 
-Required arguments are positional. Optional parameters use `key=value` syntax. This separation is unambiguous: any token containing `=` is an optional parameter, everything before it is a required argument.
+Parameters can be passed positionally or by name using `key=value` syntax, like Python function arguments. Once a keyword argument appears, all subsequent arguments must also be keyword. Optional parameters (those with defaults) use `key=value` syntax.
+
+A token with `=` is treated as a keyword argument only if the key matches a known parameter name. This allows values containing `=` (such as URLs with query strings) to be passed positionally without ambiguity.
+
+```
+@@foreach ?br item wait=0.5
+@@foreach ?br placeholder=item wait=0.5
+@@foreach variable=?br placeholder=item wait=0.5
+```
+
+These three forms are equivalent.
 
 ## Directives
 
@@ -37,14 +47,22 @@ Required arguments are positional. Optional parameters use `key=value` syntax. T
 
 Switch to a named source for subsequent queries. The name must be declared in `#sources`.
 
+Syntax: `@@with <source>`
+
 ```
 @@with index
 SELECT ?citing ?cited WHERE { ... }
 ```
 
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `source` | yes | Name declared in `#sources` |
+
 ### @@endpoint
 
 Override the endpoint with an explicit URL.
+
+Syntax: `@@endpoint <target>`
 
 ```
 @@endpoint https://opencitations.net/index/sparql
@@ -54,23 +72,30 @@ SELECT ?citing ?cited WHERE { ... }
 The special value `sparql-anything` routes the query through the SPARQL Anything engine instead:
 
 ```
-@@endpoint sparql-anything
+@@endpoint target=sparql-anything
 SELECT * WHERE { SERVICE <x-sparql-anything:location=data.csv> { ... } }
 ```
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `target` | yes | Endpoint URL or `sparql-anything` |
 
 ### @@join
 
 Join the next query's results with the current accumulator.
 
+Syntax: `@@join <left_var> <right_var> [type=<inner|left>]`
+
 ```
-@@join ?doi ?doi
+@@join ?doi ?doi type=left
 SELECT ?doi ?citation_count WHERE { ... }
 ```
 
-Syntax: `@@join <left_var> <right_var> [type=<inner|left>]`
-
-- `inner` (default): only rows with matches on both sides are kept.
-- `left`: all rows from the accumulator are preserved. Unmatched rows get empty values for the right-side columns.
+| Parameter | Required | Default | Description |
+|-----------|----------|---------|-------------|
+| `left_var` | yes | | Join key from the accumulator |
+| `right_var` | yes | | Join key from the next query |
+| `type` | no | `inner` | `inner` keeps only matches; `left` preserves all accumulator rows |
 
 Join keys are normalized (http/https unification, trailing slash removal) to handle minor URL differences between endpoints.
 
@@ -80,16 +105,20 @@ When a right-side column name collides with an existing column, it gets a `_r` s
 
 Inject accumulated values into the next query as a SPARQL `VALUES` clause.
 
+Syntax: `@@values <var>...`
+
 ```
 @@values ?doi
 SELECT ?doi ?abstract WHERE { ... }
 ```
 
-RAMOSE collects distinct values for the listed variables from the accumulator and inserts a `VALUES` block into the next query's `WHERE` clause. Literal values are quoted; IRIs (starting with `http://` or `https://`) are wrapped in angle brackets.
+Takes one or more `?variable` names. RAMOSE collects distinct values for the listed variables from the accumulator and inserts a `VALUES` block into the next query's `WHERE` clause. Literal values are quoted; IRIs (starting with `http://` or `https://`) are wrapped in angle brackets.
 
 ### @@foreach
 
 Iterate the next query once per distinct value of a variable from the accumulator.
+
+Syntax: `@@foreach <variable> <placeholder> [wait=<seconds>]`
 
 ```
 @@foreach ?br item wait=0.5
@@ -99,19 +128,25 @@ SELECT ?result WHERE {
 }
 ```
 
-Syntax: `@@foreach ?variable placeholder [wait=<seconds>]`
+| Parameter | Required | Default | Description |
+|-----------|----------|---------|-------------|
+| `variable` | yes | | Column from the accumulator to iterate over (must start with `?`) |
+| `placeholder` | yes | | Name used as `[[placeholder]]` in the query text |
+| `wait` | no | `0` | Pause in seconds (float) between iterations |
 
-For each distinct value of `?variable` in the current accumulator, `[[placeholder]]` is replaced in the query text. The placeholder name is a required positional argument, separate from the variable being iterated. The optional `wait` parameter (in seconds, float) adds a pause between iterations to avoid overwhelming the endpoint. Results from all iterations are concatenated.
+Results from all iterations are concatenated.
 
 ### @@remove
 
 Drop columns from the accumulator.
 
+Syntax: `@@remove <var>...`
+
 ```
 @@remove ?batch_id ?temp_var
 ```
 
-Useful for cleaning up intermediate columns before the final output.
+Takes one or more `?variable` names. Useful for cleaning up intermediate columns before the final output.
 
 ## Full example
 

@@ -415,7 +415,7 @@ class TestParseSteps:
     def test_foreach_missing_args_raises(self):
         op = self._make_op()
         text = "@@foreach\nSELECT ?a WHERE { }"
-        with pytest.raises(ValueError, match=r"@@foreach requires a \?variable and a placeholder name"):
+        with pytest.raises(ValueError, match="Missing required parameter"):
             op._parse_steps(text, "http://ep/sparql", {})
 
     def test_foreach_invalid_delay_raises(self):
@@ -428,6 +428,80 @@ class TestParseSteps:
         op = self._make_op()
         text = "@@foreach br item wait=0.1\nSELECT ?a WHERE { }"
         with pytest.raises(ValueError, match="must start with '\\?'"):
+            op._parse_steps(text, "http://ep/sparql", {})
+
+    # @@with: keyword and positional
+
+    def test_with_keyword_syntax(self):
+        op = self._make_op(sources_map={"wikidata": "https://wikidata.org/sparql"})
+        text = "@@with source=wikidata\nSELECT ?a WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[0][1] == "https://wikidata.org/sparql"
+
+    # @@endpoint: keyword, positional, and URL with =
+
+    def test_endpoint_keyword_syntax(self):
+        op = self._make_op()
+        text = "@@endpoint target=https://other/sparql\nSELECT ?a WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[0][1] == "https://other/sparql"
+
+    def test_endpoint_positional_url_with_equals(self):
+        op = self._make_op()
+        text = "@@endpoint https://example.org/sparql?format=json\nSELECT ?a WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[0][1] == "https://example.org/sparql?format=json"
+
+    # @@join: positional, keyword, mixed, wrong order
+
+    def test_join_keyword_syntax(self):
+        op = self._make_op()
+        text = "SELECT ?a WHERE { }\n@@join left_var=?a right_var=?b type=left\nSELECT ?b WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[1] == ("JOIN", "?a", "?b", "left")
+
+    def test_join_mixed_positional_keyword(self):
+        op = self._make_op()
+        text = "SELECT ?a WHERE { }\n@@join ?a right_var=?b type=left\nSELECT ?b WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[1] == ("JOIN", "?a", "?b", "left")
+
+    def test_join_keyword_reversed_order(self):
+        op = self._make_op()
+        text = "SELECT ?a WHERE { }\n@@join type=left right_var=?b left_var=?a\nSELECT ?b WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[1] == ("JOIN", "?a", "?b", "left")
+
+    def test_join_positional_after_keyword_raises(self):
+        op = self._make_op()
+        text = "SELECT ?a WHERE { }\n@@join left_var=?a ?b\nSELECT ?b WHERE { }"
+        with pytest.raises(ValueError, match=r"Positional argument.*cannot follow keyword"):
+            op._parse_steps(text, "http://ep/sparql", {})
+
+    # @@foreach: positional, keyword, mixed, wrong order
+
+    def test_foreach_keyword_syntax(self):
+        op = self._make_op()
+        text = "@@foreach variable=?br placeholder=item wait=0.5\nSELECT ?br WHERE { BIND(<[[item]]> AS ?br) }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[0] == ("FOREACH", "?br", "item", 0.5)
+
+    def test_foreach_mixed_positional_keyword(self):
+        op = self._make_op()
+        text = "@@foreach ?br placeholder=item\nSELECT ?br WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[0] == ("FOREACH", "?br", "item", 0.0)
+
+    def test_foreach_keyword_reversed_order(self):
+        op = self._make_op()
+        text = "@@foreach wait=0.5 placeholder=item variable=?br\nSELECT ?br WHERE { BIND(<[[item]]> AS ?br) }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[0] == ("FOREACH", "?br", "item", 0.5)
+
+    def test_foreach_positional_after_keyword_raises(self):
+        op = self._make_op()
+        text = "@@foreach variable=?br item\nSELECT ?a WHERE { }"
+        with pytest.raises(ValueError, match=r"Positional argument.*cannot follow keyword"):
             op._parse_steps(text, "http://ep/sparql", {})
 
 

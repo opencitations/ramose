@@ -453,34 +453,55 @@ class Operation:
         return line.strip().startswith("@@")
 
     @staticmethod
-    def _parse_kv_options(tokens, known_keys):
-        parsed_options = {}
+    def _parse_directive_args(tokens, param_names, defaults=None):
+        defaults = defaults or {}
+        all_names = set(param_names) | set(defaults)
+        result = {}
+        positional_index = 0
+        seen_keyword = False
+
         for token in tokens:
-            if "=" not in token:
-                raise ValueError(f"Expected key=value option, got {token!r}")
-            key, value = token.split("=", 1)
-            if key not in known_keys:
-                raise ValueError(f"Unknown option {key!r}; valid options: {', '.join(sorted(known_keys))}")
-            parsed_options[key] = value
-        return parsed_options
+            if "=" in token:
+                key, value = token.split("=", 1)
+                if key in all_names:
+                    if key in result:
+                        raise ValueError(f"Duplicate parameter {key!r}")
+                    seen_keyword = True
+                    result[key] = value
+                    continue
+            if seen_keyword:
+                raise ValueError(f"Positional argument {token!r} cannot follow keyword argument")
+            if positional_index >= len(param_names):
+                raise ValueError(f"Unexpected argument {token!r}")
+            result[param_names[positional_index]] = token
+            positional_index += 1
+
+        for name, default in defaults.items():
+            if name not in result:
+                result[name] = default
+
+        missing = [name for name in param_names if name not in result]
+        if missing:
+            raise ValueError(f"Missing required parameter(s): {', '.join(missing)}")
+
+        return result
 
     def _handle_directive_with(self, parts):
-        name = parts[1]
+        args = Operation._parse_directive_args(parts[1:], ["source"])
+        name = args["source"]
         if name not in self.sources_map:
             raise ValueError(f"Unknown source '{name}' in @@with; declare it in #sources.")
         return self.sources_map[name], None
 
     @staticmethod
     def _handle_directive_endpoint(parts):
-        return parts[1], None
+        args = Operation._parse_directive_args(parts[1:], ["target"])
+        return args["target"], None
 
     @staticmethod
     def _handle_directive_join(parts):
-        if len(parts) < 3:
-            raise ValueError("@@join requires at least two variable names")
-        options = Operation._parse_kv_options(parts[3:], {"type"})
-        how = options.get("type", "inner").lower()
-        return None, ("JOIN", parts[1], parts[2], how)
+        args = Operation._parse_directive_args(parts[1:], ["left_var", "right_var"], defaults={"type": "inner"})
+        return None, ("JOIN", args["left_var"], args["right_var"], args["type"].lower())
 
     @staticmethod
     def _handle_directive_values(parts):
@@ -491,20 +512,15 @@ class Operation:
 
     @staticmethod
     def _handle_directive_foreach(parts):
-        if len(parts) < 3:
-            raise ValueError("@@foreach requires a ?variable and a placeholder name")
-        var_name = parts[1]
+        args = Operation._parse_directive_args(parts[1:], ["variable", "placeholder"], defaults={"wait": "0"})
+        var_name = args["variable"]
         if not var_name.startswith("?"):
             raise ValueError(f"@@foreach variable must start with '?', got {var_name!r}")
-        placeholder = parts[2]
-        options = Operation._parse_kv_options(parts[3:], {"wait"})
-        delay = 0.0
-        if "wait" in options:
-            try:
-                delay = float(options["wait"])
-            except ValueError:
-                raise ValueError(f"Invalid wait value in @@foreach: {options['wait']!r}") from None
-        return None, ("FOREACH", var_name, placeholder, delay)
+        try:
+            delay = float(args["wait"])
+        except ValueError:
+            raise ValueError(f"Invalid wait value in @@foreach: {args['wait']!r}") from None
+        return None, ("FOREACH", var_name, args["placeholder"], delay)
 
     def _parse_steps(self, text, default_endpoint, params):
         """
