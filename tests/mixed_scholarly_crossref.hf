@@ -46,14 +46,13 @@ SELECT ?doi ?br WHERE {
       literal:hasLiteralValue ?doi .
 }
 
-@@values ?br:a
 @@join ?br ?br type=left
 @@endpoint https://sparql.opencitations.net/index
-@@foreach a 0.1
+@@foreach ?br item wait=0.1
 PREFIX cito: <http://purl.org/spar/cito/>
 
 SELECT ?br (COUNT(?citing) AS ?oc_citation_count) WHERE {
-  BIND(<[[a]]> AS ?br)
+  BIND(<[[item]]> AS ?br)
   ?cit a cito:Citation ;
        cito:hasCitedEntity  ?br ;
        cito:hasCitingEntity ?citing .

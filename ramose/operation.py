@@ -452,6 +452,18 @@ class Operation:
     def _is_directive(line):
         return line.strip().startswith("@@")
 
+    @staticmethod
+    def _parse_kv_options(tokens, known_keys):
+        parsed_options = {}
+        for token in tokens:
+            if "=" not in token:
+                raise ValueError(f"Expected key=value option, got {token!r}")
+            key, value = token.split("=", 1)
+            if key not in known_keys:
+                raise ValueError(f"Unknown option {key!r}; valid options: {', '.join(sorted(known_keys))}")
+            parsed_options[key] = value
+        return parsed_options
+
     def _handle_directive_with(self, parts):
         name = parts[1]
         if name not in self.sources_map:
@@ -464,9 +476,10 @@ class Operation:
 
     @staticmethod
     def _handle_directive_join(parts):
-        how = "inner"
-        if len(parts) >= 4 and parts[3].startswith("type="):
-            how = parts[3].split("=", 1)[1].lower()
+        if len(parts) < 3:
+            raise ValueError("@@join requires at least two variable names")
+        options = Operation._parse_kv_options(parts[3:], {"type"})
+        how = options.get("type", "inner").lower()
         return None, ("JOIN", parts[1], parts[2], how)
 
     @staticmethod
@@ -474,26 +487,24 @@ class Operation:
         tokens = parts[1:]
         if not tokens:
             raise ValueError("@@values needs at least one variable")
-
-        alias_specs = [t for t in tokens if ":" in t]
-        if alias_specs:
-            if len(tokens) != 1 or len(alias_specs) != 1:
-                raise ValueError("@@values with alias supports exactly one ?var:alias pair")
-            var_name, alias = alias_specs[0].split(":", 1)
-            return None, ("FOREACH_SETUP", alias, var_name)
         return None, ("VALUES_INJECT", tokens)
 
     @staticmethod
     def _handle_directive_foreach(parts):
-        if len(parts) < 2:
-            raise ValueError("@@foreach requires an alias name")
+        if len(parts) < 3:
+            raise ValueError("@@foreach requires a ?variable and a placeholder name")
+        var_name = parts[1]
+        if not var_name.startswith("?"):
+            raise ValueError(f"@@foreach variable must start with '?', got {var_name!r}")
+        placeholder = parts[2]
+        options = Operation._parse_kv_options(parts[3:], {"wait"})
         delay = 0.0
-        if len(parts) >= 3:
+        if "wait" in options:
             try:
-                delay = float(parts[2])
+                delay = float(options["wait"])
             except ValueError:
-                raise ValueError(f"Invalid delay value in @@foreach: {parts[2]!r}") from None
-        return None, ("FOREACH_MARK", parts[1], delay)
+                raise ValueError(f"Invalid wait value in @@foreach: {options['wait']!r}") from None
+        return None, ("FOREACH", var_name, placeholder, delay)
 
     def _parse_steps(self, text, default_endpoint, params):
         """
@@ -501,11 +512,8 @@ class Operation:
           - ("QUERY", endpoint_url, query_text)
           - ("JOIN", left_var, right_var, how)       # how in {"inner","left"}
           - ("REMOVE", [vars])
-          - ("WITH", endpoint_url)                   # resolved from sources_map
-          - ("ENDPOINT", endpoint_url)               # explicit url (if allowed)
           - ("VALUES_INJECT", [vars])                # @@values ?var1 ?var2 ...
-          - ("FOREACH_SETUP", alias, var_name)       # @@values ?var:alias
-          - ("FOREACH_MARK", alias, delay_seconds)   # @@foreach alias [delay]
+          - ("FOREACH", var_name, placeholder, delay)  # @@foreach ?var placeholder [wait=N]
         """
         steps = []
         cur_query = []
@@ -878,27 +886,21 @@ class Operation:
 
         return self._finalize_result(list(reader(list_of_res)), content_type)
 
-    def _exec_foreach_query(self, endpoint_url, qtxt, alias, delay, foreach_sources, acc):
+    def _exec_foreach_query(self, endpoint_url, qtxt, var_name, placeholder, delay, acc):
         """Run one query per distinct value collected from the accumulator (@@foreach)."""
-        if alias not in foreach_sources:
-            raise ValueError(
-                f"@@foreach refers to unknown alias '{alias}'. Declare it with @@values ?var:{alias} before @@foreach."
-            )
+        column = var_name.lstrip("?")
 
-        source_col = foreach_sources[alias]
-
-        # Collect distinct non-empty values from the accumulator
         values = []
         seen = set()
         for row in acc or []:
-            v = row.get(source_col)
+            v = row.get(column)
             if v and v not in seen:
                 seen.add(v)
                 values.append(v)
 
         all_rows = []
         for idx_val, val in enumerate(values):
-            q_one = qtxt.replace(f"[[{alias}]]", str(val))
+            q_one = qtxt.replace(f"[[{placeholder}]]", str(val))
             sub_rows = self._run_query_dicts(endpoint_url, q_one)
             if sub_rows:
                 all_rows.extend(sub_rows)
@@ -910,8 +912,8 @@ class Operation:
     def _exec_multi_source_query_step(self, endpoint_url, qtxt, state):
         """Handle a QUERY step in the multi-source pipeline."""
         if state["pending_foreach"] is not None:
-            alias, delay = state["pending_foreach"]
-            rows = self._exec_foreach_query(endpoint_url, qtxt, alias, delay, state["foreach_sources"], state["acc"])
+            var_name, placeholder, delay = state["pending_foreach"]
+            rows = self._exec_foreach_query(endpoint_url, qtxt, var_name, placeholder, delay, state["acc"])
             state["pending_foreach"] = None
             state["pending_values_vars"] = None
         else:
@@ -933,11 +935,10 @@ class Operation:
         """Execute a multi-source query pipeline with @@ directives."""
         steps = self._parse_steps(self.i["sparql"], self.tp, par_dict)
 
-        state = {
+        state: dict[str, object] = {
             "acc": None,
             "pending_join": None,
             "pending_values_vars": None,
-            "foreach_sources": {},
             "pending_foreach": None,
         }
 
@@ -947,15 +948,13 @@ class Operation:
             if tag == "QUERY":
                 self._exec_multi_source_query_step(st[1], st[2], state)
             elif tag == "JOIN":
-                state["pending_join"] = (st[1], st[2], st[3] if len(st) > 3 and st[3] else "inner")
+                state["pending_join"] = (st[1], st[2], st[3])
             elif tag == "REMOVE":
                 state["acc"] = self._drop_columns(state["acc"] or [], st[1])
             elif tag == "VALUES_INJECT":
                 state["pending_values_vars"] = st[1]
-            elif tag == "FOREACH_SETUP":
-                state["foreach_sources"][st[1]] = st[2].lstrip("?")
-            elif tag == "FOREACH_MARK":
-                state["pending_foreach"] = (st[1], st[2])
+            elif tag == "FOREACH":
+                state["pending_foreach"] = (st[1], st[2], st[3])
             else:
                 raise RuntimeError(f"Unknown step tag {tag}")
 

@@ -21,6 +21,16 @@ Register named endpoints in the API section:
 #sources meta=https://opencitations.net/meta/sparql; index=https://opencitations.net/index/sparql
 ```
 
+## Directive syntax
+
+All directives follow the same grammar:
+
+```
+@@name <required_arg>... [key=value]...
+```
+
+Required arguments are positional. Optional parameters use `key=value` syntax. This separation is unambiguous: any token containing `=` is an optional parameter, everything before it is a required argument.
+
 ## Directives
 
 ### @@with
@@ -77,31 +87,21 @@ SELECT ?doi ?abstract WHERE { ... }
 
 RAMOSE collects distinct values for the listed variables from the accumulator and inserts a `VALUES` block into the next query's `WHERE` clause. Literal values are quoted; IRIs (starting with `http://` or `https://`) are wrapped in angle brackets.
 
-### @@values with alias (foreach setup)
-
-Prepare a column for iteration with `@@foreach`:
-
-```
-@@values ?br:batch_id
-```
-
-This creates an alias `batch_id` for the `?br` column, collecting its distinct values for the subsequent `@@foreach`.
-
 ### @@foreach
 
-Iterate the next query once per value from the aliased column.
+Iterate the next query once per distinct value of a variable from the accumulator.
 
 ```
-@@foreach batch_id 0.5
+@@foreach ?br item wait=0.5
 SELECT ?result WHERE {
-  BIND([[batch_id]] as ?item)
+  BIND(<[[item]]> as ?br)
   ...
 }
 ```
 
-Syntax: `@@foreach <alias> [delay_seconds]`
+Syntax: `@@foreach ?variable placeholder [wait=<seconds>]`
 
-For each distinct value, `[[alias]]` is replaced in the query text. The optional delay (in seconds, float) adds a pause between iterations to avoid overwhelming the endpoint. Results from all iterations are concatenated.
+For each distinct value of `?variable` in the current accumulator, `[[placeholder]]` is replaced in the query text. The placeholder name is a required positional argument, separate from the variable being iterated. The optional `wait` parameter (in seconds, float) adds a pause between iterations to avoid overwhelming the endpoint. Results from all iterations are concatenated.
 
 ### @@remove
 

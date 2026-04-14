@@ -88,7 +88,7 @@ def _get_operation(am, dois_param):
 
 class TestMultiSourceJoinEndpointForeachRemove:
     """Full pipeline test for test_scholarly_multi-sources.hf:
-    Wikidata -> @@join OC Meta -> @@values + @@foreach OC Index -> @@remove @@join -> result."""
+    Wikidata -> @@join OC Meta -> @@foreach OC Index -> @@remove @@join -> result."""
 
     def test_full_multi_source_pipeline_json(self):
         am = _load_api_manager("test_scholarly_multi-sources.hf")
@@ -278,8 +278,8 @@ class TestMultiSourceMissingJoin:
         assert msg == "HTTP status code 400: Multiple QUERY steps without an explicit @@join directive"
 
 
-class TestMultiSourceForeachUnknownAlias:
-    def test_foreach_unknown_alias_returns_400(self):
+class TestMultiSourceForeachNoMatchingColumn:
+    def test_foreach_missing_column_returns_empty(self):
         am = _load_api_manager("test_scholarly_multi-sources.hf")
         op = _get_operation(am, "10.1108/jd-12-2013-0166")
 
@@ -289,7 +289,7 @@ class TestMultiSourceForeachUnknownAlias:
         def mock_parse_steps(text, tp, par_dict):
             return [
                 ("QUERY", "http://ep/sparql", "SELECT ?x WHERE { }"),
-                ("FOREACH_MARK", "nonexistent", 0.0),
+                ("FOREACH", "?nonexistent", "item", 0.0),
                 ("JOIN", "?x", "?x", "inner"),
                 ("QUERY", "http://ep/sparql", "SELECT ?x WHERE { }"),
             ]
@@ -298,13 +298,10 @@ class TestMultiSourceForeachUnknownAlias:
             patch.object(op, "_parse_steps", side_effect=mock_parse_steps),
             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
         ):
-            sc, msg, _ct = op.exec(method="get", content_type="application/json")
+            sc, body, _ct = op.exec(method="get", content_type="application/json")
 
-        assert sc == 400
-        assert (
-            msg
-            == "HTTP status code 400: @@foreach refers to unknown alias 'nonexistent'. Declare it with @@values ?var:nonexistent before @@foreach."
-        )
+        assert sc == 200
+        assert json.loads(body) == []
 
 
 class TestParseSteps:
@@ -363,16 +360,14 @@ class TestParseSteps:
         steps = op._parse_steps(text, "http://ep/sparql", {})
         assert steps[1] == ("VALUES_INJECT", ["?a", "?b"])
 
-    def test_foreach_setup_and_mark(self):
+    def test_foreach_directive(self):
         op = self._make_op()
-        text = "SELECT ?br WHERE { }\n@@values ?br:myalias\n@@join ?br ?br type=left\n@@foreach myalias 0.5\nSELECT ?br ?count WHERE { }"
+        text = "SELECT ?br WHERE { }\n@@join ?br ?br type=left\n@@foreach ?br item wait=0.5\nSELECT ?br ?count WHERE { BIND(<[[item]]> AS ?br) }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
         tags = [s[0] for s in steps]
-        assert tags == ["QUERY", "FOREACH_SETUP", "JOIN", "FOREACH_MARK", "QUERY"]
-        setup = next(s for s in steps if s[0] == "FOREACH_SETUP")
-        assert setup == ("FOREACH_SETUP", "myalias", "?br")
-        mark = next(s for s in steps if s[0] == "FOREACH_MARK")
-        assert mark == ("FOREACH_MARK", "myalias", 0.5)
+        assert tags == ["QUERY", "JOIN", "FOREACH", "QUERY"]
+        foreach_step = next(s for s in steps if s[0] == "FOREACH")
+        assert foreach_step == ("FOREACH", "?br", "item", 0.5)
 
     def test_remove_directive(self):
         op = self._make_op()
@@ -411,22 +406,28 @@ class TestParseSteps:
         with pytest.raises(ValueError, match="@@values needs at least one variable"):
             op._parse_steps(text, "http://ep/sparql", {})
 
-    def test_values_multiple_alias_raises(self):
+    def test_values_with_colon_treated_as_variable(self):
         op = self._make_op()
-        text = "@@values ?a:x ?b:y\nSELECT ?a ?b WHERE { }"
-        with pytest.raises(ValueError, match="exactly one"):
-            op._parse_steps(text, "http://ep/sparql", {})
+        text = "@@values ?a:x\nSELECT ?a WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[0] == ("VALUES_INJECT", ["?a:x"])
 
-    def test_foreach_no_alias_raises(self):
+    def test_foreach_missing_args_raises(self):
         op = self._make_op()
         text = "@@foreach\nSELECT ?a WHERE { }"
-        with pytest.raises(ValueError, match="@@foreach requires an alias name"):
+        with pytest.raises(ValueError, match=r"@@foreach requires a \?variable and a placeholder name"):
             op._parse_steps(text, "http://ep/sparql", {})
 
     def test_foreach_invalid_delay_raises(self):
         op = self._make_op()
-        text = "@@foreach myalias notanumber\nSELECT ?a WHERE { }"
-        with pytest.raises(ValueError, match="Invalid delay value"):
+        text = "@@foreach ?br item wait=notanumber\nSELECT ?a WHERE { }"
+        with pytest.raises(ValueError, match="Invalid wait value"):
+            op._parse_steps(text, "http://ep/sparql", {})
+
+    def test_foreach_without_question_mark_raises(self):
+        op = self._make_op()
+        text = "@@foreach br item wait=0.1\nSELECT ?a WHERE { }"
+        with pytest.raises(ValueError, match="must start with '\\?'"):
             op._parse_steps(text, "http://ep/sparql", {})
 
 
