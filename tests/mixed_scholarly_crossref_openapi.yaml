@@ -9,9 +9,6 @@ info:
     email: test@example.org
 servers:
 - url: http://localhost:5000/mixed
-x-ramose-endpoint: https://query-scholarly.wikidata.org/sparql
-x-ramose-addon: testaddon
-x-ramose-sparql-method: get
 components:
   schemas:
     Error:
@@ -228,7 +225,3 @@ paths:
             application/xml:
               schema:
                 type: string
-      x-ramose:
-        preprocess: lower(dois) --> split_dois(dois)
-        call: /metadata/10.1108/jd-12-2013-0166__10.1038/nature12373
-        sparql_in_description: true

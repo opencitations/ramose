@@ -32,12 +32,6 @@ class TestOpenAPIFromMixedScholarlyCrossref:
 
 
 class TestOpenAPIFromScholarlyHf:
-    def test_post_method_preserved(self):
-        handler = _build_handler("test_scholarly.hf")
-        _, yml = handler.get_documentation()
-        spec = yaml.safe_load(yml)
-        assert spec["x-ramose-sparql-method"] == "post"
-
     def test_multiple_formats_discovered(self):
         handler = _build_handler("test_scholarly.hf")
         _, yml = handler.get_documentation()
@@ -242,14 +236,6 @@ class TestOpenAPIFromMixedHf:
         ok_content = path["responses"]["200"]["content"]
         assert set(ok_content.keys()) == {"application/json", "text/csv", "application/xml"}
 
-    def test_vendor_extension_keys(self):
-        handler = _build_handler("test_scholarly.hf")
-        _, yml = handler.get_documentation()
-        spec = yaml.safe_load(yml)
-        path = spec["paths"]["/metadata/{dois}"]["get"]
-        ramose_ext = path["x-ramose"]
-        assert set(ramose_ext.keys()) == {"preprocess", "call", "sparql_in_description"}
-
     def test_double_underscore_param_description(self):
         handler = _build_handler("test_scholarly.hf")
         _, yml = handler.get_documentation()
@@ -266,14 +252,6 @@ class TestOpenAPIEdgeCases:
         spec = yaml.safe_load(yml)
         fmt_enum = spec["components"]["parameters"]["format"]["schema"]["enum"]
         assert fmt_enum == ["csv", "dummyxml", "json", "xml"]
-
-    def test_postprocess_vendor_extension(self):
-        handler = _build_handler("test_openapi_edge.hf")
-        _, yml = handler.get_documentation()
-        spec = yaml.safe_load(yml)
-        path = spec["paths"]["/lookup/{source}/{id}"]["get"]
-        ramose_ext = path["x-ramose"]
-        assert ramose_ext["postprocess"] == "my_post()"
 
     def test_multi_param_with_double_underscore(self):
         handler = _build_handler("test_openapi_edge.hf")

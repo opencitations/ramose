@@ -25,8 +25,8 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     Export RAMOSE .hf configuration(s) to an OpenAPI 3.0 YAML specification.
 
     Notes:
-    - OpenAPI is a surface contract. RAMOSE implementation details are preserved as vendor extensions.
-    - Extra RAMOSE config fields from Tables 1-2 are kept as x-ramose-* where OpenAPI has no native field.
+    - OpenAPI is a surface contract. RAMOSE implementation details (endpoint, addon, method,
+      preprocess, postprocess) are intentionally omitted as they are not meaningful to API consumers.
     """
 
     # -------------------------
@@ -374,16 +374,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             ]
         )
 
-        ramose_ext = OrderedDict()
-        for key, src_key in [("preprocess", "preprocess"), ("postprocess", "postprocess"), ("call", "call")]:
-            val = self._clean_text(op.get(src_key))
-            if val:
-                ramose_ext[key] = val
-        if spr:
-            ramose_ext["sparql_in_description"] = True
-        if ramose_ext:
-            op_obj["x-ramose"] = ramose_ext
-
         return op_obj
 
     def _build_openapi(self, base_url=None):
@@ -398,14 +388,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         base = api_meta.get("base", "")
         root = api_meta.get("url", "")
         spec["servers"] = [{"url": f"{base}{root}"}]
-
-        for ext_key, meta_key in [
-            ("x-ramose-endpoint", "endpoint"),
-            ("x-ramose-addon", "addon"),
-            ("x-ramose-sparql-method", "method"),
-        ]:
-            if meta_key in api_meta:
-                spec[ext_key] = api_meta[meta_key]
 
         spec["components"] = {
             "schemas": {

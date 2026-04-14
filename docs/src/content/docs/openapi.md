@@ -45,4 +45,4 @@ The generated document includes:
 - Response schemas with field types from `#field_type`
 - Available output formats from `#format` declarations and built-in `csv`/`json`
 
-RAMOSE-specific fields that don't map to OpenAPI are preserved as `x-ramose-*` vendor extensions (e.g., `x-ramose-sparql`, `x-ramose-preprocess`).
+RAMOSE-specific implementation details (endpoint, addon, method, preprocess, postprocess) are intentionally omitted from the output as they are not meaningful to API consumers.
