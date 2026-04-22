@@ -40,7 +40,9 @@ def _load_product_response_schema() -> dict:
     response.raise_for_status()
     openapi_spec = yaml.safe_load(response.text)
     components = openapi_spec["components"]["schemas"]
-    response_schema = openapi_spec["paths"]["/products/{short_local_identifier}"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+    response_schema = openapi_spec["paths"]["/products/{short_local_identifier}"]["get"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]
     return _resolve_refs(copy.deepcopy(response_schema), components)
 
 
