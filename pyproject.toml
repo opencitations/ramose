@@ -129,6 +129,7 @@ max-args = 10
 dev = [
     "coverage>=7.13.0",
     "genbadge[coverage]>=1.1.3",
+    "jsonschema>=4.26.0",
     "pyright>=1.1.408",
     "pytest>=9.0.2",
     "reuse>=6.2.0",

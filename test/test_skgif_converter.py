@@ -2,9 +2,49 @@
 #
 # SPDX-License-Identifier: ISC
 
+import copy
 import json
+from typing import overload
+
+import requests
+import yaml
+from jsonschema import validate
 
 from ramose import APIManager
+
+SKGIF_OPENAPI_URL = "https://raw.githubusercontent.com/skg-if/api/main/openapi/ver/current/skg-if-openapi.yaml"
+
+
+@overload
+def _resolve_refs(node: dict, components: dict) -> dict: ...
+@overload
+def _resolve_refs(node: list, components: dict) -> list: ...
+
+
+def _resolve_refs(node, components):
+    if isinstance(node, dict):
+        if "$ref" in node:
+            ref_path = node["$ref"]
+            if ref_path.startswith("#/components/schemas/"):
+                schema_name = ref_path.split("/")[-1]
+                return _resolve_refs(copy.deepcopy(components[schema_name]), components)
+            return node
+        return {key: _resolve_refs(value, components) for key, value in node.items()}
+    if isinstance(node, list):
+        return [_resolve_refs(item, components) for item in node]
+    return node
+
+
+def _load_product_response_schema() -> dict:
+    response = requests.get(SKGIF_OPENAPI_URL, timeout=30)
+    response.raise_for_status()
+    openapi_spec = yaml.safe_load(response.text)
+    components = openapi_spec["components"]["schemas"]
+    response_schema = openapi_spec["paths"]["/products/{short_local_identifier}"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+    return _resolve_refs(copy.deepcopy(response_schema), components)
+
+
+SKGIF_PRODUCT_RESPONSE_SCHEMA = _load_product_response_schema()
 
 
 def _execute_skgif(skgif_api_manager: APIManager, omid: str) -> dict:
@@ -15,6 +55,10 @@ def _execute_skgif(skgif_api_manager: APIManager, omid: str) -> dict:
     if status != 200:
         raise RuntimeError(f"API returned status {status}: {result}")
     return json.loads(result)
+
+
+def _validate_skgif_response(response: dict) -> None:
+    validate(instance=response, schema=SKGIF_PRODUCT_RESPONSE_SCHEMA)
 
 
 SKGIF_CONTEXT = [
@@ -154,3 +198,13 @@ class TestSkgifBook:
         }
         assert "biblio" not in manifestation
         assert manifestation["dates"]["publication"] == ["2009"]
+
+
+class TestSkgifSchemaConformance:
+    def test_journal_article_conforms(self, skgif_api_manager):
+        response = _execute_skgif(skgif_api_manager, "omid:br/0601")
+        _validate_skgif_response(response)
+
+    def test_book_conforms(self, skgif_api_manager):
+        response = _execute_skgif(skgif_api_manager, "omid:br/0612058700")
+        _validate_skgif_response(response)
