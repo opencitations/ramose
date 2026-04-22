@@ -1,0 +1,125 @@
+#url /skgif/v1
+#type api
+#base https://w3id.org/skg-if/sandbox/opencitations
+#title SKG-IF API for OpenCitations
+#description SKG-IF compliant API exposing OpenCitations bibliographic data as JSON-LD, following the Scholarly Knowledge Graph Interoperability Framework specification.
+#version 1.0.0
+#contacts [contact@opencitations.net](mailto:contact@opencitations.net)
+#endpoint https://sparql.opencitations.net/meta
+#method post
+#sources meta=https://sparql.opencitations.net/meta;index=https://sparql.opencitations.net/index
+#addon skgif_addon
+
+#url /products/{local_identifier}
+#type operation
+#local_identifier str(omid:.+)
+#preprocess resolve_omid(local_identifier)
+#method get
+#description Returns a single research product in SKG-IF JSON-LD format, identified by its OpenCitations Meta identifier (OMID). The response includes bibliographic metadata from OpenCitations Meta and citation data from OpenCitations Index.
+#call /products/omid:br/0612058700
+#field_type str(br_uri) str(title) str(fabio_type) str(pub_date) str(volume) str(issue) str(start_page) str(end_page) str(id_scheme) str(id_value) str(venue_name) str(venue_br_id) str(venue_id_scheme) str(venue_id_value) str(contributor_role) str(contributor_family_name) str(contributor_given_name) str(contributor_name) str(contributor_orcid) str(contributor_ra_id) str(contributor_role_uri) str(contributor_next_role_uri) str(cited_br)
+#format skgif,to_skgif
+#sparql PREFIX fabio: <http://purl.org/spar/fabio/>
+PREFIX dcterm: <http://purl.org/dc/terms/>
+PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
+PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+
+SELECT ?br_uri ?title ?fabio_type ?pub_date
+       ?volume ?issue ?start_page ?end_page
+       ?id_scheme ?id_value
+       ?venue_name ?venue_br_id ?venue_id_scheme ?venue_id_value
+WHERE {
+  BIND([[local_identifier]] AS ?br_uri)
+  ?br_uri a fabio:Expression .
+  OPTIONAL { ?br_uri dcterm:title ?title }
+  OPTIONAL { ?br_uri a ?fabio_type . FILTER(?fabio_type != fabio:Expression) }
+  OPTIONAL { ?br_uri prism:publicationDate ?pub_date }
+  OPTIONAL {
+    ?br_uri frbr:embodiment ?resource_embodiment .
+    ?resource_embodiment prism:startingPage ?start_page ;
+                         prism:endingPage ?end_page .
+  }
+  OPTIONAL {
+    ?br_uri frbr:partOf ?journal_issue .
+    ?journal_issue a fabio:JournalIssue ;
+                   fabio:hasSequenceIdentifier ?issue .
+  }
+  OPTIONAL {
+    ?br_uri frbr:partOf+ ?journal_volume .
+    ?journal_volume a fabio:JournalVolume ;
+                    fabio:hasSequenceIdentifier ?volume .
+  }
+  OPTIONAL {
+    ?br_uri datacite:hasIdentifier ?identifier_node .
+    ?identifier_node datacite:usesIdentifierScheme ?id_scheme_uri ;
+                     literal:hasLiteralValue ?id_value .
+    BIND(STRAFTER(STR(?id_scheme_uri), "http://purl.org/spar/datacite/") AS ?id_scheme)
+  }
+  OPTIONAL {
+    {
+      ?br_uri a fabio:JournalArticle ;
+              frbr:partOf+ ?venue_resource .
+      ?venue_resource a fabio:Journal .
+    } UNION {
+      ?br_uri frbr:partOf ?venue_resource .
+      FILTER NOT EXISTS { ?venue_resource a fabio:JournalIssue }
+      FILTER NOT EXISTS { ?venue_resource a fabio:JournalVolume }
+    }
+    ?venue_resource dcterm:title ?venue_name .
+    BIND(STRAFTER(STR(?venue_resource), "/br/") AS ?venue_br_id)
+    OPTIONAL {
+      ?venue_resource datacite:hasIdentifier ?venue_id_node .
+      ?venue_id_node datacite:usesIdentifierScheme ?venue_id_scheme_uri ;
+                     literal:hasLiteralValue ?venue_id_value .
+      BIND(STRAFTER(STR(?venue_id_scheme_uri), "http://purl.org/spar/datacite/") AS ?venue_id_scheme)
+    }
+  }
+}
+
+@@join ?br_uri ?br_uri type=left
+PREFIX pro: <http://purl.org/spar/pro/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX oco: <https://w3id.org/oc/ontology/>
+
+SELECT ?br_uri ?contributor_role ?contributor_family_name ?contributor_given_name
+       ?contributor_name ?contributor_orcid ?contributor_ra_id
+       ?contributor_role_uri ?contributor_next_role_uri
+WHERE {
+  BIND([[local_identifier]] AS ?br_uri)
+  ?br_uri pro:isDocumentContextFor ?agent_role .
+  ?agent_role pro:withRole ?role_type ;
+              pro:isHeldBy ?responsible_agent .
+  FILTER(?role_type IN (pro:author, pro:editor, pro:publisher))
+  BIND(IF(?role_type = pro:author, "author", IF(?role_type = pro:editor, "editor", "publisher")) AS ?contributor_role)
+  BIND(STR(?agent_role) AS ?contributor_role_uri)
+  OPTIONAL {
+    ?agent_role oco:hasNext ?next_agent_role .
+    BIND(STR(?next_agent_role) AS ?contributor_next_role_uri)
+  }
+  OPTIONAL { ?responsible_agent foaf:familyName ?contributor_family_name }
+  OPTIONAL { ?responsible_agent foaf:givenName ?contributor_given_name }
+  OPTIONAL { ?responsible_agent foaf:name ?contributor_name }
+  BIND(STRAFTER(STR(?responsible_agent), "/ra/") AS ?contributor_ra_id)
+  OPTIONAL {
+    ?responsible_agent datacite:hasIdentifier ?orcid_node .
+    ?orcid_node datacite:usesIdentifierScheme datacite:orcid ;
+                literal:hasLiteralValue ?contributor_orcid .
+  }
+}
+
+@@join ?br_uri ?br_uri type=left
+@@with source=index
+PREFIX cito: <http://purl.org/spar/cito/>
+
+SELECT ?br_uri ?cited_br
+WHERE {
+  BIND([[local_identifier]] AS ?citing_entity)
+  ?citation cito:hasCitingEntity ?citing_entity ;
+            cito:hasCitedEntity ?cited_entity .
+  BIND(STR(?citing_entity) AS ?br_uri)
+  BIND(CONCAT("products/", STRAFTER(STR(?cited_entity), "/meta/")) AS ?cited_br)
+}

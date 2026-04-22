@@ -9,6 +9,7 @@ path = [
     "uv.lock",
     "test/data/meta_subset.nq",
     "test/data/meta_v1.hf",
+    "test/data/skgif_products.hf",
     "test/data/settings.json",
     "test/data/ramose-test.**",
 ]

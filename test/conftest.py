@@ -82,6 +82,17 @@ def api_manager(qlever_endpoint: str) -> APIManager:
     )
 
 
+@pytest.fixture(scope="session")
+def skgif_api_manager(qlever_endpoint: str) -> APIManager:
+    manager = APIManager(
+        [str(DATA_DIR / "skgif_products.hf")],
+        endpoint_override=qlever_endpoint,
+    )
+    for config in manager.all_conf.values():
+        config["sources_map"] = dict.fromkeys(config["sources_map"], qlever_endpoint)
+    return manager
+
+
 def execute_operation(api_manager: APIManager, operation_url: str) -> str:
     op = api_manager.get_op(operation_url)
     if isinstance(op, tuple):
