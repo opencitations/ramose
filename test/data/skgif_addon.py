@@ -6,8 +6,11 @@ import csv
 import json
 from io import StringIO
 
+from oc_constants import FABIO_TYPE_LABELS
+
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+    "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
     {"@base": "https://w3id.org/skg-if/sandbox/opencitations/"},
 ]
 
@@ -59,32 +62,36 @@ def _order_linked_list(items: dict[str, dict], next_map: dict[str, str | None]) 
     return ordered
 
 
-def _build_person(row: dict) -> dict | None:
+def _build_agent(row: dict) -> dict | None:
     family_name = row["contributor_family_name"]
     given_name = row["contributor_given_name"]
     full_name = row["contributor_name"]
     orcid = row["contributor_orcid"]
     ra_id = row["contributor_ra_id"]
+    role = row["contributor_role"]
 
-    if family_name and given_name:
-        display_name = f"{family_name}, {given_name}"
-    elif family_name:
-        display_name = family_name
+    is_person = bool(family_name or given_name)
+
+    if is_person:
+        display_name = f"{family_name}, {given_name}" if family_name and given_name else (family_name or given_name)
+        entity_type = "person"
     elif full_name:
         display_name = full_name
+        entity_type = "organisation" if role == "publisher" else "agent"
     else:
         return None
 
-    person: dict = {"name": display_name, "entity_type": "person"}
-    if family_name:
-        person["family_name"] = family_name
-    if given_name:
-        person["given_name"] = given_name
+    agent: dict = {"name": display_name, "entity_type": entity_type}
+    if is_person:
+        if family_name:
+            agent["family_name"] = family_name
+        if given_name:
+            agent["given_name"] = given_name
     if orcid:
-        person["identifiers"] = [{"value": orcid, "scheme": "orcid"}]
+        agent["identifiers"] = [{"value": orcid, "scheme": "orcid"}]
     if ra_id:
-        person["local_identifier"] = f"persons/ra/{ra_id}"
-    return person
+        agent["local_identifier"] = f"{entity_type}s/ra/{ra_id}"
+    return agent
 
 
 def _collect_contributors(rows: list[dict]) -> list[dict]:
@@ -108,11 +115,11 @@ def _collect_contributors(rows: list[dict]) -> list[dict]:
                 existing["by"]["identifiers"] = [{"value": orcid, "scheme": "orcid"}]
             continue
 
-        person = _build_person(row)
-        if not person:
+        agent = _build_agent(row)
+        if not agent:
             continue
 
-        contributors_by_role_type[role][role_uri] = {"role": role, "by": person}
+        contributors_by_role_type[role][role_uri] = {"role": role, "by": agent}
         next_map_by_role_type[role][role_uri] = row["contributor_next_role_uri"] or None
 
     result = []
@@ -147,6 +154,7 @@ def _build_venue(rows: list[dict], venue_name: str, venue_br_id: str) -> dict:
 
 def _build_manifestation(rows: list[dict]) -> dict | None:
     first_row = rows[0]
+    fabio_type = first_row["fabio_type"]
     pub_date = first_row["pub_date"]
     volume = first_row["volume"]
     issue = first_row["issue"]
@@ -154,6 +162,18 @@ def _build_manifestation(rows: list[dict]) -> dict | None:
     end_page = first_row["end_page"]
     venue_name = first_row["venue_name"]
     venue_br_id = first_row["venue_br_id"]
+
+    manifestation: dict = {}
+
+    if fabio_type:
+        manifestation_type: dict = {
+            "class": fabio_type,
+            "defined_in": "http://purl.org/spar/fabio",
+        }
+        label = FABIO_TYPE_LABELS.get(fabio_type)
+        if label:
+            manifestation_type["labels"] = {"en": label}
+        manifestation["type"] = manifestation_type
 
     biblio: dict = {}
     if volume:
@@ -164,20 +184,13 @@ def _build_manifestation(rows: list[dict]) -> dict | None:
         biblio["pages"] = {"first": start_page, "last": end_page}
     if venue_name:
         biblio["in"] = _build_venue(rows, venue_name, venue_br_id)
-
-    dates = {}
-    if pub_date:
-        dates["publication"] = [pub_date]
-
-    if not biblio and not dates:
-        return None
-
-    manifestation = {}
     if biblio:
         manifestation["biblio"] = biblio
-    if dates:
-        manifestation["dates"] = dates
-    return manifestation
+
+    if pub_date:
+        manifestation["dates"] = {"publication": [pub_date]}
+
+    return manifestation or None
 
 
 def _collect_citations(rows: list[dict]) -> list[str]:

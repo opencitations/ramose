@@ -2,46 +2,7 @@
 #
 # SPDX-License-Identifier: ISC
 
-__author__ = "Arcangelo Massari"
-
-
-URI_TYPE_DICT = {
-    "http://purl.org/spar/doco/Abstract": "abstract",
-    "http://purl.org/spar/fabio/ArchivalDocument": "archival document",
-    "http://purl.org/spar/fabio/AudioDocument": "audio document",
-    "http://purl.org/spar/fabio/Book": "book",
-    "http://purl.org/spar/fabio/BookChapter": "book chapter",
-    "http://purl.org/spar/fabio/ExpressionCollection": "book section",
-    "http://purl.org/spar/fabio/BookSeries": "book series",
-    "http://purl.org/spar/fabio/BookSet": "book set",
-    "http://purl.org/spar/fabio/ComputerProgram": "computer program",
-    "http://purl.org/spar/doco/Part": "book part",
-    "http://purl.org/spar/fabio/Expression": "",
-    "http://purl.org/spar/fabio/DataFile": "dataset",
-    "http://purl.org/spar/fabio/DataManagementPlan": "data management plan",
-    "http://purl.org/spar/fabio/Thesis": "dissertation",
-    "http://purl.org/spar/fabio/Editorial": "editorial",
-    "http://purl.org/spar/fabio/Journal": "journal",
-    "http://purl.org/spar/fabio/JournalArticle": "journal article",
-    "http://purl.org/spar/fabio/JournalEditorial": "journal editorial",
-    "http://purl.org/spar/fabio/JournalIssue": "journal issue",
-    "http://purl.org/spar/fabio/JournalVolume": "journal volume",
-    "http://purl.org/spar/fabio/Newspaper": "newspaper",
-    "http://purl.org/spar/fabio/NewspaperArticle": "newspaper article",
-    "http://purl.org/spar/fabio/NewspaperIssue": "newspaper issue",
-    "http://purl.org/spar/fr/ReviewVersion": "peer review",
-    "http://purl.org/spar/fabio/AcademicProceedings": "proceedings",
-    "http://purl.org/spar/fabio/Preprint": "preprint",
-    "http://purl.org/spar/fabio/Presentation": "presentation",
-    "http://purl.org/spar/fabio/ProceedingsPaper": "proceedings article",
-    "http://purl.org/spar/fabio/ReferenceBook": "reference book",
-    "http://purl.org/spar/fabio/ReferenceEntry": "reference entry",
-    "http://purl.org/spar/fabio/ReportDocument": "report",
-    "http://purl.org/spar/fabio/RetractionNotice": "retraction notice",
-    "http://purl.org/spar/fabio/Series": "series",
-    "http://purl.org/spar/fabio/SpecificationDocument": "standard",
-    "http://purl.org/spar/fabio/WebContent": "web content",
-}
+from oc_constants import FABIO_TYPE_LABELS
 
 
 def generate_id_search(ids: str) -> tuple[str]:
@@ -141,7 +102,7 @@ def create_metadata_output(results):
 
 
 def __postprocess_type(type_uri: str) -> str:
-    return URI_TYPE_DICT[type_uri] if type_uri else ""
+    return FABIO_TYPE_LABELS[type_uri] if type_uri else ""
 
 
 def process_ordered_list(items):

@@ -19,6 +19,7 @@ def _execute_skgif(skgif_api_manager: APIManager, omid: str) -> dict:
 
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+    "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
     {"@base": "https://w3id.org/skg-if/sandbox/opencitations/"},
 ]
 
@@ -70,9 +71,19 @@ class TestSkgifJournalArticle:
         assert len(publishers) == 1
         assert publishers[0]["rank"] == 1
         assert publishers[0]["by"]["name"] == "Wiley"
-        assert publishers[0]["by"]["local_identifier"] == "persons/ra/0610116001"
+        assert publishers[0]["by"]["entity_type"] == "organisation"
+        assert publishers[0]["by"]["local_identifier"] == "organisations/ra/0610116001"
         assert "family_name" not in publishers[0]["by"]
         assert "given_name" not in publishers[0]["by"]
+
+    def test_manifestation_type(self, skgif_api_manager):
+        product = _execute_skgif(skgif_api_manager, "omid:br/0601")["@graph"][0]
+        manifestation_type = product["manifestations"][0]["type"]
+        assert manifestation_type == {
+            "class": "http://purl.org/spar/fabio/JournalArticle",
+            "defined_in": "http://purl.org/spar/fabio",
+            "labels": {"en": "journal article"},
+        }
 
     def test_biblio_volume_issue_pages(self, skgif_api_manager):
         product = _execute_skgif(skgif_api_manager, "omid:br/0601")["@graph"][0]
@@ -136,5 +147,10 @@ class TestSkgifBook:
     def test_no_venue_no_pages(self, skgif_api_manager):
         product = _execute_skgif(skgif_api_manager, "omid:br/0612058700")["@graph"][0]
         manifestation = product["manifestations"][0]
+        assert manifestation["type"] == {
+            "class": "http://purl.org/spar/fabio/Book",
+            "defined_in": "http://purl.org/spar/fabio",
+            "labels": {"en": "book"},
+        }
         assert "biblio" not in manifestation
         assert manifestation["dates"]["publication"] == ["2009"]
