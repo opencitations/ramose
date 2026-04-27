@@ -21,11 +21,6 @@ FABIO_TO_SKGIF_PRODUCT_TYPE = {
 }
 
 
-def resolve_omid(local_identifier: str) -> tuple[str]:
-    path = local_identifier.removeprefix("omid:")
-    return (f"<https://w3id.org/oc/meta/{path}>",)
-
-
 def _collect_identifiers(rows: list[dict]) -> list[dict]:
     seen = set()
     identifiers = []
@@ -214,11 +209,10 @@ def to_skgif(csv_str: str) -> str:
     title = first_row["title"]
     fabio_type = first_row["fabio_type"]
 
-    br_path = br_uri.rsplit("/meta/", maxsplit=1)[-1]
     product_type = FABIO_TO_SKGIF_PRODUCT_TYPE.get(fabio_type, "literature")
 
     product: dict = {
-        "local_identifier": f"products/{br_path}",
+        "local_identifier": br_uri,
         "entity_type": "product",
         "product_type": product_type,
     }

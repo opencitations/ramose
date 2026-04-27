@@ -12,11 +12,10 @@
 
 #url /products/{local_identifier}
 #type operation
-#local_identifier str(omid:.+)
-#preprocess resolve_omid(local_identifier)
+#local_identifier str(https://w3id\.org/oc/meta/.+)
 #method get
 #description Returns a single research product in SKG-IF JSON-LD format, identified by its OpenCitations Meta identifier (OMID). The response includes bibliographic metadata from OpenCitations Meta and citation data from OpenCitations Index.
-#call /products/omid:br/0612058700
+#call /products/https://w3id.org/oc/meta/br/0612058700
 #field_type str(br_uri) str(title) str(fabio_type) str(pub_date) str(volume) str(issue) str(start_page) str(end_page) str(id_scheme) str(id_value) str(venue_name) str(venue_br_id) str(venue_id_scheme) str(venue_id_value) str(contributor_role) str(contributor_family_name) str(contributor_given_name) str(contributor_name) str(contributor_orcid) str(contributor_ra_id) str(contributor_role_uri) str(contributor_next_role_uri) str(cited_br)
 #format skgif,to_skgif
 #sparql PREFIX fabio: <http://purl.org/spar/fabio/>
@@ -31,7 +30,7 @@ SELECT ?br_uri ?title ?fabio_type ?pub_date
        ?id_scheme ?id_value
        ?venue_name ?venue_br_id ?venue_id_scheme ?venue_id_value
 WHERE {
-  BIND([[local_identifier]] AS ?br_uri)
+  BIND(<[[local_identifier]]> AS ?br_uri)
   ?br_uri a fabio:Expression .
   OPTIONAL { ?br_uri dcterm:title ?title }
   OPTIONAL { ?br_uri a ?fabio_type . FILTER(?fabio_type != fabio:Expression) }
@@ -89,7 +88,7 @@ SELECT ?br_uri ?contributor_role ?contributor_family_name ?contributor_given_nam
        ?contributor_name ?contributor_orcid ?contributor_ra_id
        ?contributor_role_uri ?contributor_next_role_uri
 WHERE {
-  BIND([[local_identifier]] AS ?br_uri)
+  BIND(<[[local_identifier]]> AS ?br_uri)
   ?br_uri pro:isDocumentContextFor ?agent_role .
   ?agent_role pro:withRole ?role_type ;
               pro:isHeldBy ?responsible_agent .
@@ -117,9 +116,9 @@ PREFIX cito: <http://purl.org/spar/cito/>
 
 SELECT ?br_uri ?cited_br
 WHERE {
-  BIND([[local_identifier]] AS ?citing_entity)
+  BIND(<[[local_identifier]]> AS ?citing_entity)
   ?citation cito:hasCitingEntity ?citing_entity ;
             cito:hasCitedEntity ?cited_entity .
   BIND(STR(?citing_entity) AS ?br_uri)
-  BIND(CONCAT("products/", STRAFTER(STR(?cited_entity), "/meta/")) AS ?cited_br)
+  BIND(STR(?cited_entity) AS ?cited_br)
 }

@@ -12,7 +12,7 @@ SPDX-License-Identifier: ISC
 [![Tests](https://github.com/opencitations/ramose/actions/workflows/test.yml/badge.svg)](https://github.com/opencitations/ramose/actions/workflows/test.yml)
 [![Coverage](https://opencitations.github.io/ramose/coverage/coverage-badge.svg)](https://opencitations.github.io/ramose/coverage/)
 [![Lint](https://github.com/opencitations/ramose/actions/workflows/lint.yml/badge.svg)](https://github.com/opencitations/ramose/actions/workflows/lint.yml)
-[![REUSE](https://github.com/opencitations/ramose/actions/workflows/reuse.yml/badge.svg)](https://github.com/opencitations/ramose/actions/workflows/reuse.yml)
+[![REUSE status](https://api.reuse.software/badge/github.com/opencitations/ramose)](https://api.reuse.software/info/github.com/opencitations/ramose)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 
 # RAMOSE
