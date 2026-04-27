@@ -11,6 +11,21 @@ from pathlib import Path
 from re import DOTALL, search
 
 
+def parse_custom_params(raw: str) -> dict[str, dict[str, str]]:
+    result = {}
+    for raw_part in raw.split(";"):
+        part = raw_part.strip()
+        if not part:
+            continue
+        name, handler, phase, *desc_parts = part.split(",", 3)
+        result[name.strip()] = {
+            "handler": handler.strip(),
+            "phase": phase.strip(),
+            "description": desc_parts[0].strip() if desc_parts else "",
+        }
+    return result
+
+
 class HashFormatHandler:
     """This class creates an object capable to read files stored in Hash Format (see
     https://github.com/opencitations/ramose#Hashformat-configuration-file). A Hash Format

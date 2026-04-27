@@ -18,6 +18,7 @@ import yaml
 
 from ramose._constants import FIELD_TYPE_RE, PARAM_NAME
 from ramose.documentation import DocumentationHandler
+from ramose.hash_format import parse_custom_params
 
 
 class OpenAPIDocumentationHandler(DocumentationHandler):
@@ -348,9 +349,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         """Build an OpenAPI operation object for a single HTTP method."""
         summary = op["description"].split("\n")[0].strip() if op.get("description") else ""
         desc = self._clean_text(op.get("description")) or ""
-        spr = self._clean_text(op.get("sparql"))
-        if spr:
-            desc += f"\n\n---\n\n### RAMOSE SPARQL\n\n```sparql\n{spr}\n```"
 
         row_schema = self._build_row_schema_from_field_type(op.get("field_type", ""))
         ok_schema = {"type": "array", "items": row_schema}
@@ -366,7 +364,23 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         op_obj["tags"] = [tag_name]
         op_obj["summary"] = summary
         op_obj["description"] = desc
-        op_obj["parameters"] = path_params + common_param_refs
+        custom_query_params = []
+        custom_names: set[str] = set()
+        if "custom_params" in op:
+            for name, conf in parse_custom_params(op["custom_params"]).items():
+                custom_names.add(name)
+                param_obj: dict[str, object] = {
+                    "name": name,
+                    "in": "query",
+                    "required": False,
+                    "schema": {"type": "string"},
+                }
+                if conf["description"]:
+                    param_obj["description"] = conf["description"]
+                custom_query_params.append(param_obj)
+
+        filtered_refs = [ref for ref in common_param_refs if ref["$ref"].rsplit("/", 1)[-1] not in custom_names]
+        op_obj["parameters"] = path_params + custom_query_params + filtered_refs
         op_obj["responses"] = OrderedDict(
             [
                 ("200", {"description": "Successful response", "content": ok_content}),

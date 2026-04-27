@@ -35,6 +35,7 @@ class Operation:
         format_map=None,
         sources_map=None,
         engine="sparql",
+        custom_params=None,
     ):
         """This class is responsible for materialising a API operation to be run against a SPARQL endpoint
         (or, depending on configuration, through the SPARQL.Anything engine).
@@ -59,6 +60,7 @@ class Operation:
         self.format = format_map or {}
         self.sources_map = sources_map or {}
         self.engine = engine
+        self.custom_params = custom_params or {}
         self._sa_engine = None
 
         self.operation = {"=": eq, "<": lt, ">": gt}
@@ -410,14 +412,16 @@ class Operation:
         header = table[0]
         result = table[1:]
 
-        if "exclude" in params or "require" in params:
+        overridden = set(self.custom_params)
+
+        if ("exclude" in params or "require" in params) and "require" not in overridden and "exclude" not in overridden:
             fields = params["exclude"] if "exclude" in params else params["require"]
             result = self._apply_require(header, result, fields)
 
-        if "filter" in params:
+        if "filter" in params and "filter" not in overridden:
             result = self._apply_filter(header, result, params["filter"])
 
-        if "sort" in params:
+        if "sort" in params and "sort" not in overridden:
             result = self._apply_sort(header, result, params["sort"])
 
         return [header, *result]
@@ -809,6 +813,15 @@ class Operation:
                 out.append(dict(left_row))
         return out
 
+    def _apply_custom_postprocess_params(self, table, q_string):
+        for param_name, param_conf in self.custom_params.items():
+            if param_conf["phase"] != "postprocess":
+                continue
+            if param_name in q_string:
+                handler = getattr(self.addon, param_conf["handler"])
+                table = handler(table, q_string[param_name])
+        return table
+
     def _finalize_result(self, csv_rows, content_type):
         """Run the shared pipeline: type fields, postprocess, filter, remove types, convert format."""
         res = self.type_fields(csv_rows, self.i)
@@ -817,6 +830,8 @@ class Operation:
         q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
         res = self.handling_params(q_string, res)
         res = self.remove_types(res)
+        if self.custom_params:
+            res = self._apply_custom_postprocess_params(res, q_string)
         s_res = StringIO()
         writer(s_res).writerows(res)
         body, ctype = self.conv(s_res.getvalue(), q_string, content_type)
@@ -849,6 +864,17 @@ class Operation:
                 par_value = par_man[idx]
             par_dict[par] = par_value
         return par_dict
+
+    def _apply_custom_preprocess_params(self, par_dict):
+        q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
+        for param_name, param_conf in self.custom_params.items():
+            if param_conf["phase"] != "preprocess":
+                continue
+            if param_name in q_string:
+                handler = getattr(self.addon, param_conf["handler"])
+                par_dict[param_name] = handler(q_string[param_name])
+            else:
+                par_dict[param_name] = ""
 
     def _exec_sparql_anything_single(self, par_dict, content_type):
         """Execute a single SPARQL Anything query and return the finalized result."""
@@ -1022,6 +1048,8 @@ class Operation:
         par_dict = self._extract_params()
         if self.addon is not None:
             self.preprocess(par_dict, self.i, self.addon)
+        if self.custom_params:
+            self._apply_custom_preprocess_params(par_dict)
 
         sparql_text = self.i["sparql"]
 

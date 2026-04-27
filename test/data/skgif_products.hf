@@ -5,10 +5,33 @@
 #description SKG-IF compliant API exposing OpenCitations bibliographic data as JSON-LD, following the Scholarly Knowledge Graph Interoperability Framework specification.
 #version 1.0.0
 #contacts [contact@opencitations.net](mailto:contact@opencitations.net)
+#license [ISC](https://opensource.org/licenses/ISC)
 #endpoint https://sparql.opencitations.net/meta
 #method post
 #sources meta=https://sparql.opencitations.net/meta;index=https://sparql.opencitations.net/index
 #addon skgif_addon
+
+#url /products
+#type operation
+#method get
+#description Returns a list of research products matching the given filters.
+#custom_params filter,handle_skgif_product_filter,preprocess,Search filter. Format: comma-separated filter_name:filter_value pairs (AND logic). Supported: cf.search.title, identifiers.id, identifiers.scheme, contributions.by.identifiers.id
+#call /products?filter=cf.search.title:adaptive
+#field_type str(br_uri) str(title)
+#output_json [{"br_uri": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"}]
+#sparql PREFIX fabio: <http://purl.org/spar/fabio/>
+PREFIX dcterm: <http://purl.org/dc/terms/>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX pro: <http://purl.org/spar/pro/>
+
+SELECT DISTINCT ?br_uri ?title
+WHERE {
+  ?br_uri a fabio:Expression ;
+          dcterm:title ?title .
+  [[filter]]
+}
+ORDER BY ?title
 
 #url /products/{local_identifier}
 #type operation

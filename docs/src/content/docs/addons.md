@@ -106,6 +106,60 @@ Functions are chained with `-->`:
 #postprocess create_metadata_output() --> distinct()
 ```
 
+## Custom parameters
+
+The `#custom_params` field defines query string parameters handled by addon functions instead of the built-in RAMOSE pipeline. Each entry specifies the parameter name, handler function, processing phase, and description:
+
+```
+#custom_params filter,handle_title_filter,preprocess,Filter products by title substring
+```
+
+Multiple parameters are separated by `;`:
+
+```
+#custom_params filter,handle_title_filter,preprocess,Filter by title;limit,handle_limit,postprocess,Limit results
+```
+
+### Preprocessing parameters
+
+A preprocessing handler generates a SPARQL fragment that replaces a `[[param_name]]` placeholder in the query before execution. The function receives the list of values from the query string and returns a SPARQL string:
+
+```python
+def handle_title_filter(values: list[str]) -> str:
+    clauses = [
+        f'FILTER(CONTAINS(LCASE(?title), LCASE("{v}")))'
+        for v in values
+    ]
+    return "\n".join(clauses)
+```
+
+The SPARQL query uses a placeholder where the generated fragment should go:
+
+```
+#sparql PREFIX dcterm: <http://purl.org/dc/terms/>
+
+SELECT ?uri ?title WHERE {
+  ?uri dcterm:title ?title .
+  [[filter]]
+}
+```
+
+A request to `?filter=semantics` calls the handler, which returns a `FILTER(CONTAINS(...))` clause. The clause replaces `[[filter]]` in the query. When the parameter is absent, `[[filter]]` is replaced with an empty string, so the query runs without constraints.
+
+### Postprocessing parameters
+
+A postprocessing handler transforms the result table after built-in filters have run. The function receives the table (header followed by data rows, all plain strings) and the list of values from the query string:
+
+```python
+def handle_limit(table: list[list], values: list[str]) -> list[list]:
+    limit = int(values[0])
+    return [table[0], *table[1:limit + 1]]
+```
+
+### Overriding built-in parameters
+
+If a custom parameter has the same name as a built-in query parameter (`filter`, `sort`, `require`), the built-in behavior is disabled for that operation.
+
 ## Format converters
 
 The `#format` field in an operation registers custom output formats. Each entry maps a format name to a function in the addon module.

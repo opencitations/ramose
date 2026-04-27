@@ -11,6 +11,8 @@ SPDX-License-Identifier: ISC
 
 Query parameters are passed as standard HTTP query string arguments. They are applied after the SPARQL query returns and after postprocessing, in this fixed order: require, filter, sort, format/json.
 
+Operations can override any of these built-in parameters with a [custom parameter handler](/ramose/addons/#custom-parameters) via the `#custom_params` field. When overridden, the built-in behavior is replaced by the addon function.
+
 ## require
 
 Remove rows where a field is empty.

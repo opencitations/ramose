@@ -199,6 +199,37 @@ def _collect_citations(rows: list[dict]) -> list[str]:
     return citations
 
 
+SUPPORTED_PRODUCT_FILTERS = {
+    "cf.search.title",
+    "identifiers.id",
+    "identifiers.scheme",
+    "contributions.by.identifiers.id",
+}
+
+
+def handle_skgif_product_filter(values: list[str]) -> str:
+    raw = values[0]
+    pairs = [pair.strip() for pair in raw.split(",") if pair.strip()]
+    clauses = []
+    for pair in pairs:
+        key, value = pair.split(":", 1)
+        if key not in SUPPORTED_PRODUCT_FILTERS:
+            msg = f"The filter {key} is not supported, valid filters are {', '.join(sorted(SUPPORTED_PRODUCT_FILTERS))}"
+            raise ValueError(msg)
+        if key == "cf.search.title":
+            clauses.append(f'FILTER(CONTAINS(LCASE(?title), LCASE("{value}")))')
+        elif key == "identifiers.id":
+            clauses.append(f'?br_uri datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .')
+        elif key == "identifiers.scheme":
+            clauses.append(f"?br_uri datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{value} ] .")
+        elif key == "contributions.by.identifiers.id":
+            clauses.append(
+                "?br_uri pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .\n"
+                f'?_filter_agent datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .'
+            )
+    return "\n".join(clauses)
+
+
 def to_skgif(csv_str: str) -> str:
     rows = list(csv.DictReader(StringIO(csv_str)))
     if not rows:

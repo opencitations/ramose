@@ -16,7 +16,7 @@ from sys import maxsize, path
 from urllib.parse import urlsplit
 
 from ramose._constants import PARAM_NAME
-from ramose.hash_format import HashFormatHandler
+from ramose.hash_format import HashFormatHandler, parse_custom_params
 from ramose.operation import Operation
 
 
@@ -174,6 +174,8 @@ class APIManager:
                         fmt, func = part.split(",", 1)
                         op_format_map[fmt.strip()] = func.strip()
 
+            custom_params_map = parse_custom_params(op_conf["custom_params"]) if "custom_params" in op_conf else {}
+
             return Operation(
                 op_complete_url,
                 op,
@@ -184,6 +186,7 @@ class APIManager:
                 op_format_map,
                 conf.get("sources_map", {}),
                 op_engine,
+                custom_params_map,
             )
         sc = 404
         return sc, f"HTTP status code {sc}: the operation requested does not exist", "text/plain"

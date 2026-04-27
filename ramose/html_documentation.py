@@ -15,6 +15,7 @@ from markdown import markdown
 
 from ramose._constants import FIELD_TYPE_RE, PARAM_NAME
 from ramose.documentation import DocumentationHandler
+from ramose.hash_format import parse_custom_params
 
 
 class HTMLDocumentationHandler(DocumentationHandler):
@@ -68,23 +69,70 @@ class HTMLDocumentationHandler(DocumentationHandler):
 
 {i["description"]}
 
-{self.__parameters()}"""
+{self.__parameters(conf)}"""
         return markdown(result)
 
-    def __parameters(self):
-        result = """## <a id="parameters"></a>Parameters [back to top](#toc)
+    def __parameters(self, conf):
+        overridden: set[str] = set()
+        for op in conf["conf_json"][1:]:
+            if "custom_params" in op:
+                overridden.update(parse_custom_params(op["custom_params"]))
+
+        builtin_params = []
+        if "require" not in overridden:
+            builtin_params.append(
+                "`require=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are "
+                "removed from the result set - e.g. `require=given_name` removes all the rows that do not have any "
+                "string specified in the `given_name` field."
+            )
+        if "filter" not in overridden:
+            builtin_params.append(
+                "`filter=<field_name>:<operator><value>`: only the rows compliant with `<value>` are kept in the "
+                "result set. The parameter `<operation>` is not mandatory. If `<operation>` is not specified, "
+                "`<value>` is interpreted as a regular expression, otherwise it is compared by means of the specified "
+                'operation. Possible operators are "=", "<", and ">". For instance, `filter=title:semantics?` returns '
+                'all the rows that contain the string "semantic" or "semantics" in the field `title`, while '
+                "`filter=date:>2016-05` returns all the rows that have a `date` greater than May 2016."
+            )
+        if "sort" not in overridden:
+            builtin_params.append(
+                '`sort=<order>(<field_name>)`: sort in ascending (`<order>` set to "asc") or descending (`<order>` '
+                'set to "desc") order the rows in the result set according to the values in `<field_name>`. For '
+                "instance, `sort=desc(date)` sorts all the rows according to the value specified in the field `date` "
+                "in descending order."
+            )
+        if "format" not in overridden:
+            builtin_params.append(
+                "`format=<format_type>`: the final table is returned in the format specified in `<format_type>` that "
+                'can be either "csv" or "json" - e.g. `format=csv` returns the final table in CSV format. This '
+                'parameter has higher priority of the type specified through the "Accept" header of the request. Thus, '
+                "if the header of a request to the API specifies `Accept: text/csv` and the URL of such request "
+                "includes `format=json`, the final table is returned in JSON."
+            )
+        if "json" not in overridden:
+            builtin_params.append(
+                '`json=<operation_type>("<separator>",<field>,<new_field_1>,<new_field_2>,...)`: in case a JSON format '
+                "is requested in return, tranform each row of the final JSON table according to the rule specified. "
+                'If `<operation_type>` is set to "array", the string value associated to the field name `<field>` is '
+                "converted into an array by splitting the various textual parts by means of `<separator>`. For "
+                'instance, considering the JSON table `[ { "names": "Doe, John; Doe, Jane" }, ... ]`, the execution '
+                'of `array("; ",names)` returns `[ { "names": [ "Doe, John", "Doe, Jane" ], ... ]`. Instead, if '
+                '`<operation_type>` is set to "dict", the string value associated to the field name `<field>` is '
+                "converted into a dictionary by splitting the various textual parts by means of `<separator>` and by "
+                "associating the new fields `<new_field_1>`, `<new_field_2>`, etc., to these new parts. For instance, "
+                'considering the JSON table `[ { "name": "Doe, John" }, ... ]`, the execution of '
+                '`dict(", ",name,fname,gname)` returns `[ { "name": { "fname": "Doe", "gname": "John" }, ... ]`.'
+            )
+
+        if not builtin_params:
+            return ""
+
+        items = "\n\n".join(f"{idx}. {text}" for idx, text in enumerate(builtin_params, 1))
+        result = f"""## <a id="parameters"></a>Parameters [back to top](#toc)
 
 Parameters can be used to filter and control the results returned by the API. They are passed as normal HTTP parameters in the URL of the call. They are:
 
-1. `require=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are removed from the result set - e.g. `require=given_name` removes all the rows that do not have any string specified in the `given_name` field.
-
-2. `filter=<field_name>:<operator><value>`: only the rows compliant with `<value>` are kept in the result set. The parameter `<operation>` is not mandatory. If `<operation>` is not specified, `<value>` is interpreted as a regular expression, otherwise it is compared by means of the specified operation. Possible operators are "=", "<", and ">". For instance, `filter=title:semantics?` returns all the rows that contain the string "semantic" or "semantics" in the field `title`, while `filter=date:>2016-05` returns all the rows that have a `date` greater than May 2016.
-
-3. `sort=<order>(<field_name>)`: sort in ascending (`<order>` set to "asc") or descending (`<order>` set to "desc") order the rows in the result set according to the values in `<field_name>`. For instance, `sort=desc(date)` sorts all the rows according to the value specified in the field `date` in descending order.
-
-4. `format=<format_type>`: the final table is returned in the format specified in `<format_type>` that can be either "csv" or "json" - e.g. `format=csv` returns the final table in CSV format. This parameter has higher priority of the type specified through the "Accept" header of the request. Thus, if the header of a request to the API specifies `Accept: text/csv` and the URL of such request includes `format=json`, the final table is returned in JSON.
-
-5. `json=<operation_type>("<separator>",<field>,<new_field_1>,<new_field_2>,...)`: in case a JSON format is requested in return, tranform each row of the final JSON table according to the rule specified. If `<operation_type>` is set to "array", the string value associated to the field name `<field>` is converted into an array by splitting the various textual parts by means of `<separator>`. For instance, considering the JSON table `[ { "names": "Doe, John; Doe, Jane" }, ... ]`, the execution of `array("; ",names)` returns `[ { "names": [ "Doe, John", "Doe, Jane" ], ... ]`. Instead, if `<operation_type>` is set to "dict", the string value associated to the field name `<field>` is converted into a dictionary by splitting the various textual parts by means of `<separator>` and by associating the new fields `<new_field_1>`, `<new_field_2>`, etc., to these new parts. For instance, considering the JSON table `[ { "name": "Doe, John" }, ... ]`, the execution of `dict(", ",name,fname,gname)` returns `[ { "name": { "fname": "Doe", "gname": "John" }, ... ]`.
+{items}
 
 It is possible to specify one or more filtering operation of the same kind (e.g. `require=given_name&require=family_name`). In addition, these filtering operations are applied in the order presented above - first all the `require` operation, then all the `filter` operations followed by all the `sort` operation, and finally the `format` and the `json` operation (if applicable). It is worth mentioning that each of the aforementioned rules is applied in order, and it works on the structure returned after the execution of the previous rule.
 
@@ -108,6 +156,10 @@ The operations that this API implements are:
 
                 params.append(f"<em>{p}</em>: type <em>{p_type}</em>, regular expression shape <code>{p_shape}</code>")
 
+            if "custom_params" in op:
+                for param_name, param_conf in parse_custom_params(op["custom_params"]).items():
+                    params.append(f"<em>{param_name}</em> (query, optional): {param_conf['description']}")
+
             op_url = op["url"]
             methods = ", ".join(split(r"\s+", op["method"].strip()))
             params_html = "</li><li>".join(params)
@@ -124,8 +176,7 @@ The operations that this API implements are:
 <p class="attr params"><strong>Parameter(s)</strong> <span class="attr_val">{params_html}</span></p>
 <p class="attr"><strong>Result fields type</strong><span class="attr_val">{fields_html}</span></p>
 <p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="{example_url}">{op["call"]}</a></span></p>
-<p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
-<pre><code>{op["output_json"]}</code></pre></div>"""
+{'<p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>' + chr(10) + "<pre><code>" + op["output_json"] + "</code></pre>" if "output_json" in op else ""}</div>"""
         return markdown(result) + ops
 
     def __footer(self):
