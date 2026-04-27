@@ -36,21 +36,127 @@ class TestCustomFormatConversion:
 
     def test_upper_format_via_query_string(self):
         op = self._make_op_with_formats()
-        csv_str = "name,age\nalice,30\n"
+        csv_str = "name,age\nvergine,30\n"
         result, _ = op.conv(csv_str, {"format": ["upper"]})
-        assert result == "NAME,AGE\nALICE,30\n"
+        assert result == "NAME,AGE\nVERGINE,30\n"
 
     def test_dummyxml_format_via_query_string(self):
         op = self._make_op_with_formats()
-        csv_str = "name,age\nalice,30\n"
+        csv_str = "name,age\nvergine,30\n"
         result, _ = op.conv(csv_str, {"format": ["dummyxml"]})
         assert "<xml>" in result
-        assert "alice" in result
+        assert "vergine" in result
 
     def test_unknown_format_falls_back_to_csv(self):
         op = self._make_op_with_formats()
-        csv_str = "name,age\nalice,30\n"
+        csv_str = "name,age\nvergine,30\n"
         result, ct = op.conv(csv_str, {"format": ["nonexistent"]})
+        assert ct == "text/csv"
+        assert result == csv_str
+
+
+class TestDefaultFormat:
+    def test_default_format_used_when_no_query_param(self):
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?name WHERE { }",
+            "method": "get",
+            "field_type": "str(name)",
+            "default_format": "upper",
+        }
+
+        class FakeAddon:
+            @staticmethod
+            def to_upper(csv_str):
+                return csv_str.upper()
+
+        op = Operation(
+            "/api/test/hello",
+            r"/api/test/(.+)",
+            op_item,
+            "http://unused/sparql",
+            "get",
+            FakeAddon,
+            format_map={"upper": "to_upper"},
+        )
+        csv_str = "name,age\narcangelo,30\n"
+        result, _ = op.conv(csv_str, {})
+        assert result == "NAME,AGE\nARCANGELO,30\n"
+
+    def test_explicit_format_overrides_default(self):
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?name WHERE { }",
+            "method": "get",
+            "field_type": "str(name)",
+            "default_format": "upper",
+        }
+
+        class FakeAddon:
+            @staticmethod
+            def to_upper(csv_str):
+                return csv_str.upper()
+
+            @staticmethod
+            def to_dummyxml(csv_str):
+                return f"<xml>\n{csv_str}\n</xml>"
+
+        op = Operation(
+            "/api/test/hello",
+            r"/api/test/(.+)",
+            op_item,
+            "http://unused/sparql",
+            "get",
+            FakeAddon,
+            format_map={"upper": "to_upper", "dummyxml": "to_dummyxml"},
+        )
+        csv_str = "name,age\narcangelo,30\n"
+        result, _ = op.conv(csv_str, {"format": ["dummyxml"]})
+        assert "<xml>" in result
+        assert "arcangelo" in result
+
+    def test_default_format_json(self):
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?name WHERE { }",
+            "method": "get",
+            "field_type": "str(name)",
+            "default_format": "json",
+        }
+        op = Operation(
+            "/api/test/hello",
+            r"/api/test/(.+)",
+            op_item,
+            "http://unused/sparql",
+            "get",
+            None,
+        )
+        csv_str = "name\narcangelo\n"
+        result, ct = op.conv(csv_str, {})
+        assert ct == "application/json"
+        assert json.loads(result) == [{"name": "arcangelo"}]
+
+    def test_no_default_format_falls_back_to_csv(self):
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?name WHERE { }",
+            "method": "get",
+            "field_type": "str(name)",
+        }
+        op = Operation(
+            "/api/test/hello",
+            r"/api/test/(.+)",
+            op_item,
+            "http://unused/sparql",
+            "get",
+            None,
+        )
+        csv_str = "name\narcangelo\n"
+        result, ct = op.conv(csv_str, {})
         assert ct == "text/csv"
         assert result == csv_str
 

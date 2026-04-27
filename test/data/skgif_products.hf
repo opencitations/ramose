@@ -18,6 +18,7 @@
 #call /products/https://w3id.org/oc/meta/br/0612058700
 #field_type str(br_uri) str(title) str(fabio_type) str(pub_date) str(volume) str(issue) str(start_page) str(end_page) str(id_scheme) str(id_value) str(venue_name) str(venue_br_id) str(venue_id_scheme) str(venue_id_value) str(contributor_role) str(contributor_family_name) str(contributor_given_name) str(contributor_name) str(contributor_orcid) str(contributor_ra_id) str(contributor_role_uri) str(contributor_next_role_uri) str(cited_br)
 #format skgif,to_skgif
+#default_format skgif
 #sparql PREFIX fabio: <http://purl.org/spar/fabio/>
 PREFIX dcterm: <http://purl.org/dc/terms/>
 PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>

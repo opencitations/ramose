@@ -101,6 +101,7 @@ SELECT DISTINCT ?id ?title ?author ?pub_date ... WHERE {
 | `#postprocess` | no | Postprocessing chain: `func1() --> func2("arg")`. See [addon modules](/ramose/addons/). |
 | `#sparql` | yes | SPARQL query. Parameters injected via `[[param_name]]` placeholders. |
 | `#format` | no | Custom output format converters: `name,function;...`. See [addon modules](/ramose/addons/#format-converters). |
+| `#default_format` | no | Default output format when no `?format=` query parameter is provided. Must match a name registered in `#format` or a built-in format (`csv`, `json`). Without this field, the default is CSV. |
 | `#engine` | no | Override the API-level engine for this operation only. |
 
 ## Supported types

@@ -94,6 +94,12 @@ class Operation:
                 if req_format in self.format:
                     converter_func = getattr(self.addon, self.format[req_format])
                     return converter_func(s), content_type
+        elif "default_format" in self.i:
+            default_fmt = self.i["default_format"].strip()
+            content_type = Operation.get_content_type(default_fmt)
+            if default_fmt in self.format:
+                converter_func = getattr(self.addon, self.format[default_fmt])
+                return converter_func(s), content_type
 
         # If a non built-in format was requested but no converter ran,
         # force CSV Content-Type instead of echoing the requested token.

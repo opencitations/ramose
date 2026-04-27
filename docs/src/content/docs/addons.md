@@ -124,6 +124,19 @@ def to_xml(csv_string: str) -> str:
 
 These formats become available via `?format=` in the query string and `-f` on the CLI.
 
+### Default format
+
+By default, operations return CSV when no `?format=` parameter is provided. The `#default_format` field overrides this for a specific operation:
+
+```
+#format skgif,to_skgif
+#default_format skgif
+```
+
+With this configuration, requests without `?format=` use the `to_skgif` converter. Clients can still request other formats explicitly (e.g., `?format=csv` or `?format=json`).
+
+The value must be a format name registered in `#format` or one of the built-in formats (`csv`, `json`).
+
 Content types are inferred from the format name:
 
 | Format name | Content type |
