@@ -153,6 +153,15 @@ def _build_venue(rows: list[dict], venue_name: str, venue_br_id: str) -> dict:
     return venue
 
 
+def _normalize_datetime(date_str: str) -> str:
+    parts = date_str.split("-")
+    if len(parts) == 1:
+        return f"{parts[0]}-01-01"
+    if len(parts) == 2:
+        return f"{parts[0]}-{parts[1]}-01"
+    return date_str
+
+
 def _build_manifestation(rows: list[dict]) -> dict | None:
     first_row = rows[0]
     fabio_type = first_row["fabio_type"]
@@ -189,7 +198,7 @@ def _build_manifestation(rows: list[dict]) -> dict | None:
         manifestation["biblio"] = biblio
 
     if pub_date:
-        manifestation["dates"] = {"publication": [pub_date]}
+        manifestation["dates"] = {"publication": [_normalize_datetime(pub_date)]}
 
     return manifestation or None
 

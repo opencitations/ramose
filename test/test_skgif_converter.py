@@ -6,9 +6,11 @@ import copy
 import json
 from typing import overload
 
+import pyshacl
 import requests
 import yaml
 from jsonschema import validate
+from rdflib import Graph
 
 from ramose import APIManager
 
@@ -48,6 +50,19 @@ def _load_product_response_schema() -> dict:
 
 SKGIF_PRODUCT_RESPONSE_SCHEMA = _load_product_response_schema()
 
+SKGIF_SHACL_URL = "https://raw.githubusercontent.com/skg-if/shacl-extractor/main/shapes.ttl"
+
+
+def _load_shacl_shapes() -> Graph:
+    response = requests.get(SKGIF_SHACL_URL, timeout=30)
+    response.raise_for_status()
+    shapes_graph = Graph()
+    shapes_graph.parse(data=response.text, format="turtle")
+    return shapes_graph
+
+
+SKGIF_SHACL_SHAPES = _load_shacl_shapes()
+
 
 def _execute_skgif(skgif_api_manager: APIManager, local_identifier: str) -> dict:
     operation = skgif_api_manager.get_op(f"/skgif/v1/products/{local_identifier}")
@@ -61,6 +76,13 @@ def _execute_skgif(skgif_api_manager: APIManager, local_identifier: str) -> dict
 
 def _validate_skgif_response(response: dict) -> None:
     validate(instance=response, schema=SKGIF_PRODUCT_RESPONSE_SCHEMA)
+
+
+def _validate_skgif_shacl(response: dict) -> None:
+    data_graph = Graph()
+    data_graph.parse(data=json.dumps(response), format="json-ld")
+    conforms, _, results_text = pyshacl.validate(data_graph, shacl_graph=SKGIF_SHACL_SHAPES)
+    assert conforms, f"SHACL validation failed:\n{results_text}"
 
 
 SKGIF_CONTEXT = [
@@ -153,7 +175,7 @@ class TestSkgifJournalArticle:
 
     def test_publication_date(self, skgif_api_manager):
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
-        assert product["manifestations"][0]["dates"]["publication"] == ["1999-10"]
+        assert product["manifestations"][0]["dates"]["publication"] == ["1999-10-01"]
 
     def test_no_citations(self, skgif_api_manager):
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
@@ -199,7 +221,7 @@ class TestSkgifBook:
             "labels": {"en": "book"},
         }
         assert "biblio" not in manifestation
-        assert manifestation["dates"]["publication"] == ["2009"]
+        assert manifestation["dates"]["publication"] == ["2009-01-01"]
 
 
 class TestSkgifSchemaConformance:
@@ -210,3 +232,11 @@ class TestSkgifSchemaConformance:
     def test_book_conforms(self, skgif_api_manager):
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")
         _validate_skgif_response(response)
+
+    def test_journal_article_shacl(self, skgif_api_manager):
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")
+        _validate_skgif_shacl(response)
+
+    def test_book_shacl(self, skgif_api_manager):
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")
+        _validate_skgif_shacl(response)
