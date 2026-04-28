@@ -20,6 +20,12 @@ FABIO_TO_SKGIF_PRODUCT_TYPE = {
     "http://purl.org/spar/fabio/ComputerProgram": "research software",
 }
 
+NON_LITERATURE_FABIO_CLASSES = frozenset(FABIO_TO_SKGIF_PRODUCT_TYPE.keys())
+
+SKGIF_TO_FABIO_PRODUCT_TYPE: dict[str, list[str]] = {}
+for _fabio_uri, _skgif_type in FABIO_TO_SKGIF_PRODUCT_TYPE.items():
+    SKGIF_TO_FABIO_PRODUCT_TYPE.setdefault(_skgif_type, []).append(_fabio_uri)
+
 
 def _collect_identifiers(rows: list[dict]) -> list[dict]:
     seen = set()
@@ -200,33 +206,68 @@ def _collect_citations(rows: list[dict]) -> list[str]:
 
 
 SUPPORTED_PRODUCT_FILTERS = {
+    "cf.contributions_orcid",
     "cf.search.title",
+    "contributions.by.family_name",
+    "contributions.by.given_name",
+    "contributions.by.identifiers.id",
+    "contributions.by.identifiers.scheme",
+    "contributions.by.local_identifier",
+    "contributions.by.name",
     "identifiers.id",
     "identifiers.scheme",
-    "contributions.by.identifiers.id",
+    "product_type",
+}
+
+
+def _filter_product_type(value: str) -> list[str]:
+    if value == "literature":
+        return [f"FILTER NOT EXISTS {{ ?br_uri a <{fc}> }}" for fc in NON_LITERATURE_FABIO_CLASSES]
+    if value in SKGIF_TO_FABIO_PRODUCT_TYPE:
+        values_list = " ".join(f"<{fc}>" for fc in SKGIF_TO_FABIO_PRODUCT_TYPE[value])
+        return [f"VALUES ?_filter_type {{ {values_list} }}\n?br_uri a ?_filter_type ."]
+    return ["FILTER(false)"]
+
+
+_AGENT_FILTER_TEMPLATES: dict[str, str] = {
+    "contributions.by.identifiers.id": '?_filter_agent datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .',
+    "contributions.by.identifiers.scheme": "?_filter_agent datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{value} ] .",
+    "contributions.by.family_name": '?_filter_agent foaf:familyName "{value}" .',
+    "contributions.by.given_name": '?_filter_agent foaf:givenName "{value}" .',
+    "contributions.by.name": '?_filter_agent foaf:name "{value}" .',
+    "cf.contributions_orcid": '?_filter_agent datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ; datacite:usesIdentifierScheme datacite:orcid ] .',
 }
 
 
 def handle_skgif_product_filter(values: list[str]) -> str:
     raw = values[0]
     pairs = [pair.strip() for pair in raw.split(",") if pair.strip()]
-    clauses = []
+    clauses: list[str] = []
+    agent_clauses: list[str] = []
+
     for pair in pairs:
         key, value = pair.split(":", 1)
         if key not in SUPPORTED_PRODUCT_FILTERS:
             msg = f"The filter {key} is not supported, valid filters are {', '.join(sorted(SUPPORTED_PRODUCT_FILTERS))}"
             raise ValueError(msg)
+
         if key == "cf.search.title":
             clauses.append(f'FILTER(CONTAINS(LCASE(?title), LCASE("{value}")))')
         elif key == "identifiers.id":
             clauses.append(f'?br_uri datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .')
         elif key == "identifiers.scheme":
             clauses.append(f"?br_uri datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{value} ] .")
-        elif key == "contributions.by.identifiers.id":
-            clauses.append(
-                "?br_uri pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .\n"
-                f'?_filter_agent datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .'
-            )
+        elif key == "product_type":
+            clauses.extend(_filter_product_type(value))
+        elif key == "contributions.by.local_identifier":
+            clauses.append(f"?br_uri pro:isDocumentContextFor [ pro:isHeldBy <{value}> ] .")
+        elif key in _AGENT_FILTER_TEMPLATES:
+            agent_clauses.append(_AGENT_FILTER_TEMPLATES[key].format(value=value))
+
+    if agent_clauses:
+        clauses.insert(0, "?br_uri pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .")
+        clauses.extend(agent_clauses)
+
     return "\n".join(clauses)
 
 

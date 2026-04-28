@@ -95,8 +95,120 @@ class TestCombinedFilters:
         ]
 
 
+class TestProductTypeFilter:
+    def test_literature_returns_all(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:literature")
+        assert len(results) == 1098
+
+    def test_research_data_returns_empty(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:research data")
+        assert results == []
+
+    def test_unknown_type_returns_empty(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:nonexistent")
+        assert results == []
+
+
+class TestContributorFamilyNameFilter:
+    def test_family_name_match(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.family_name:Slotkin")
+        assert results == [
+            {
+                "br_uri": "https://w3id.org/oc/meta/br/0601",
+                "title": "Response To The Letter Of Hanley Et Al. "
+                "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
+                "([1998] Teratology 58:62-68)",
+            },
+        ]
+
+
+class TestContributorGivenNameFilter:
+    def test_given_name_match(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.given_name:Theodore A.")
+        assert results == [
+            {
+                "br_uri": "https://w3id.org/oc/meta/br/0601",
+                "title": "Response To The Letter Of Hanley Et Al. "
+                "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
+                "([1998] Teratology 58:62-68)",
+            },
+        ]
+
+
+class TestContributorNameFilter:
+    def test_org_name_match(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.name:Zenodo")
+        assert results == [
+            {
+                "br_uri": "https://w3id.org/oc/meta/br/060504627",
+                "title": "Classes Of Errors In DOI Names (Data Management Plan)",
+            },
+            {
+                "br_uri": "https://w3id.org/oc/meta/br/060504628",
+                "title": "Classes Of Errors In DOI Names (Data Management Plan)",
+            },
+            {
+                "br_uri": "https://w3id.org/oc/meta/br/060504675",
+                "title": "Cleaning Different Types Of DOI Errors Found In Cited References On Crossref Using Automated Methods",
+            },
+        ]
+
+
+class TestContributorLocalIdentifierFilter:
+    def test_local_identifier_match(self, skgif_api_manager):
+        results = _exec(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=contributions.by.local_identifier:https://w3id.org/oc/meta/ra/0601",
+        )
+        assert results == [
+            {
+                "br_uri": "https://w3id.org/oc/meta/br/0601",
+                "title": "Response To The Letter Of Hanley Et Al. "
+                "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
+                "([1998] Teratology 58:62-68)",
+            },
+        ]
+
+
+class TestContributorIdentifierSchemeFilter:
+    def test_orcid_scheme_match(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.identifiers.scheme:orcid")
+        assert len(results) == 73
+
+
+class TestContributionsOrcidFilter:
+    def test_specific_orcid_match(self, skgif_api_manager):
+        results = _exec(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=cf.contributions_orcid:0000-0003-4747-4708",
+        )
+        assert results == [
+            {
+                "br_uri": "https://w3id.org/oc/meta/br/06035",
+                "title": "H-ras, But Not N-ras, Induces An Invasive Phenotype In Human Breast Epithelial Cells: "
+                "A Role For MMP-2 In The H-Ras-Induced Invasive Phenotype",
+            },
+        ]
+
+
+class TestCombinedContributorFilters:
+    def test_family_and_given_name_same_agent(self, skgif_api_manager):
+        results = _exec(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=contributions.by.family_name:Slotkin,contributions.by.given_name:Theodore A.",
+        )
+        assert results == [
+            {
+                "br_uri": "https://w3id.org/oc/meta/br/0601",
+                "title": "Response To The Letter Of Hanley Et Al. "
+                "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
+                "([1998] Teratology 58:62-68)",
+            },
+        ]
+
+
 class TestUnsupportedFilter:
-    def test_unsupported_filter_returns_error(self, skgif_api_manager):
+    def test_unknown_filter_returns_error(self, skgif_api_manager):
         status, result = _exec_raw(
             skgif_api_manager,
             "/skgif/v1/products?filter=unsupported_field:value",
@@ -105,10 +217,38 @@ class TestUnsupportedFilter:
         expected_prefix = (
             "HTTP status code 500: something unexpected happened - ValueError: "
             "The filter unsupported_field is not supported, "
-            "valid filters are cf.search.title, contributions.by.identifiers.id, "
-            "identifiers.id, identifiers.scheme (line "
+            "valid filters are cf.contributions_orcid, cf.search.title, "
+            "contributions.by.family_name, contributions.by.given_name, "
+            "contributions.by.identifiers.id, contributions.by.identifiers.scheme, "
+            "contributions.by.local_identifier, contributions.by.name, "
+            "identifiers.id, identifiers.scheme, product_type (line "
         )
         assert result.startswith(expected_prefix)
+
+    def test_known_unsupported_filter_returns_same_error(self, skgif_api_manager):
+        status, result = _exec_raw(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=contributions.declared_affiliations.name:MIT",
+        )
+        assert status == 500
+        expected_prefix = (
+            "HTTP status code 500: something unexpected happened - ValueError: "
+            "The filter contributions.declared_affiliations.name is not supported, "
+            "valid filters are cf.contributions_orcid, cf.search.title, "
+            "contributions.by.family_name, contributions.by.given_name, "
+            "contributions.by.identifiers.id, contributions.by.identifiers.scheme, "
+            "contributions.by.local_identifier, contributions.by.name, "
+            "identifiers.id, identifiers.scheme, product_type (line "
+        )
+        assert result.startswith(expected_prefix)
+
+    def test_title_abstract_not_supported(self, skgif_api_manager):
+        status, result = _exec_raw(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=cf.search.title_abstract:adaptive",
+        )
+        assert status == 500
+        assert "The filter cf.search.title_abstract is not supported" in result
 
 
 class TestBuiltinFilterOverride:

@@ -15,7 +15,7 @@
 #type operation
 #method get
 #description Returns a list of research products matching the given filters.
-#custom_params filter,handle_skgif_product_filter,preprocess,Search filter. Format: comma-separated filter_name:filter_value pairs (AND logic). Supported: cf.search.title, identifiers.id, identifiers.scheme, contributions.by.identifiers.id
+#custom_params filter,handle_skgif_product_filter,preprocess,Search filter. Format: comma-separated filter_name:filter_value pairs (AND logic). Supported: cf.contributions_orcid, cf.search.title, contributions.by.family_name, contributions.by.given_name, contributions.by.identifiers.id, contributions.by.identifiers.scheme, contributions.by.local_identifier, contributions.by.name, identifiers.id, identifiers.scheme, product_type
 #call /products?filter=cf.search.title:adaptive
 #field_type str(br_uri) str(title)
 #output_json [{"br_uri": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"}]
@@ -24,6 +24,7 @@ PREFIX dcterm: <http://purl.org/dc/terms/>
 PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX pro: <http://purl.org/spar/pro/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
 SELECT DISTINCT ?br_uri ?title
 WHERE {

@@ -41,7 +41,8 @@ class TestGetDocumentation:
 
 
 class TestGetIndex:
-    def test_returns_expected_html(self, doc_handler):
+    def test_returns_expected_html(self, doc_handler, monkeypatch, tmp_path):
+        monkeypatch.chdir(tmp_path)
         html = doc_handler.get_index()
         assert html == _read_expected("meta_v1_index.html")
 
