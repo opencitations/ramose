@@ -104,9 +104,18 @@ class TestProductTypeFilter:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:research data")
         assert results == []
 
-    def test_unknown_type_returns_empty(self, skgif_api_manager):
-        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:nonexistent")
+    def test_research_software_returns_empty(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:research software")
         assert results == []
+
+    def test_other_returns_empty(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:other")
+        assert results == []
+
+    def test_invalid_type_returns_error(self, skgif_api_manager):
+        status, result = _exec_raw(skgif_api_manager, "/skgif/v1/products?filter=product_type:nonexistent")
+        assert status == 500
+        assert "The product type 'nonexistent' is not valid" in result
 
 
 class TestContributorFamilyNameFilter:

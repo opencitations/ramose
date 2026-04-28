@@ -220,7 +220,13 @@ SUPPORTED_PRODUCT_FILTERS = {
 }
 
 
+VALID_PRODUCT_TYPES = {"literature", "research data", "research software", "other"}
+
+
 def _filter_product_type(value: str) -> list[str]:
+    if value not in VALID_PRODUCT_TYPES:
+        msg = f"The product type '{value}' is not valid, valid types are {', '.join(sorted(VALID_PRODUCT_TYPES))}"
+        raise ValueError(msg)
     if value == "literature":
         return [f"FILTER NOT EXISTS {{ ?br_uri a <{fc}> }}" for fc in NON_LITERATURE_FABIO_CLASSES]
     if value in SKGIF_TO_FABIO_PRODUCT_TYPE:
