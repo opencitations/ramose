@@ -122,15 +122,15 @@ Multiple parameters are separated by `;`:
 
 ### Preprocessing parameters
 
-A preprocessing handler generates a SPARQL fragment that replaces a `[[param_name]]` placeholder in the query before execution. The function receives the list of values from the query string and returns a SPARQL string:
+A preprocessing handler returns a `dict[str, str]` mapping placeholder names to SPARQL fragments. The function receives the list of values from the query string. Each key in the returned dict corresponds to a `[[placeholder]]` in the `#sparql` block:
 
 ```python
-def handle_title_filter(values: list[str]) -> str:
+def handle_title_filter(values: list[str]) -> dict[str, str]:
     clauses = [
         f'FILTER(CONTAINS(LCASE(?title), LCASE("{v}")))'
         for v in values
     ]
-    return "\n".join(clauses)
+    return {"filter": "\n".join(clauses)}
 ```
 
 The SPARQL query uses a placeholder where the generated fragment should go:
@@ -144,7 +144,31 @@ SELECT ?uri ?title WHERE {
 }
 ```
 
-A request to `?filter=semantics` calls the handler, which returns a `FILTER(CONTAINS(...))` clause. The clause replaces `[[filter]]` in the query. When the parameter is absent, `[[filter]]` is replaced with an empty string, so the query runs without constraints.
+A request to `?filter=semantics` calls the handler, which returns `{"filter": "FILTER(CONTAINS(...))"}`. The fragment replaces `[[filter]]` in the query. When the parameter is absent, all `[[...]]` placeholders in the template are replaced with empty strings, so the query runs without constraints.
+
+### Multiple placeholders
+
+A handler can populate more than one placeholder. Placeholders can appear anywhere in the `#sparql` block: before the first PREFIX, inside the WHERE clause, or after the closing brace. Position is determined entirely by where you place the `[[placeholder]]` in the template.
+
+```
+#sparql [[directives]]
+PREFIX dcterm: <http://purl.org/dc/terms/>
+
+SELECT ?uri ?title WHERE {
+  ?uri dcterm:title ?title .
+  [[filter]]
+}
+```
+
+```python
+def handle_search(values: list[str]) -> dict[str, str]:
+    return {
+        "directives": "@@with source=index\n...\n@@join ?uri ?uri type=inner",
+        "filter": 'FILTER(CONTAINS(LCASE(?title), LCASE("...")))',
+    }
+```
+
+When the handler returns `@@` directives (such as `@@with`, `@@join`, `@@values`), the engine detects them after placeholder substitution and switches from single-query to [multi-source execution](/ramose/multi_source/). This allows a handler to dynamically activate cross-endpoint queries without changing the spec file. Directives injected this way follow the same syntax and rules as directives written directly in the `#sparql` block.
 
 ### Postprocessing parameters
 

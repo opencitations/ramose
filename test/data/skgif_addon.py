@@ -4,6 +4,7 @@
 
 import csv
 import json
+from collections.abc import Callable
 from io import StringIO
 
 from oc_constants import FABIO_TYPE_LABELS
@@ -215,6 +216,10 @@ def _collect_citations(rows: list[dict]) -> list[str]:
 
 
 SUPPORTED_PRODUCT_FILTERS = {
+    "cf.cited_by",
+    "cf.cited_by_doi",
+    "cf.cites",
+    "cf.cites_doi",
     "cf.contributions_orcid",
     "cf.search.title",
     "contributions.by.family_name",
@@ -254,11 +259,98 @@ _AGENT_FILTER_TEMPLATES: dict[str, str] = {
 }
 
 
-def handle_skgif_product_filter(values: list[str]) -> str:
+_CITATION_CITO_PREFIX = "PREFIX cito: <http://purl.org/spar/cito/>"
+
+_DOI_RESOLVE_PREFIX = (
+    "PREFIX datacite: <http://purl.org/spar/datacite/>\n"
+    "PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>"
+)
+
+
+def _build_cites_preamble(target_uri: str) -> str:
+    return (
+        f"@@with source=index\n"
+        f"{_CITATION_CITO_PREFIX}\n"
+        f"SELECT ?br_uri WHERE {{\n"
+        f"  ?_ci cito:hasCitingEntity ?_citing ;\n"
+        f"       cito:hasCitedEntity <{target_uri}> .\n"
+        f"  BIND(STR(?_citing) AS ?br_uri)\n"
+        f"}}\n"
+        f"@@join ?br_uri ?br_uri type=inner"
+    )
+
+
+def _build_cited_by_preamble(target_uri: str) -> str:
+    return (
+        f"@@with source=index\n"
+        f"{_CITATION_CITO_PREFIX}\n"
+        f"SELECT ?br_uri WHERE {{\n"
+        f"  ?_ci cito:hasCitingEntity <{target_uri}> ;\n"
+        f"       cito:hasCitedEntity ?_cited .\n"
+        f"  BIND(STR(?_cited) AS ?br_uri)\n"
+        f"}}\n"
+        f"@@join ?br_uri ?br_uri type=inner"
+    )
+
+
+def _build_cites_doi_preamble(doi: str) -> str:
+    return (
+        f"{_DOI_RESOLVE_PREFIX}\n"
+        f"SELECT ?_target WHERE {{\n"
+        f"  ?_target datacite:hasIdentifier ?_id_node .\n"
+        f"  ?_id_node datacite:usesIdentifierScheme datacite:doi ;\n"
+        f'            literal:hasLiteralValue "{doi}" .\n'
+        f"}}\n"
+        f"@@values ?_target\n"
+        f"@@join ?_target ?_target type=inner\n"
+        f"@@with source=index\n"
+        f"{_CITATION_CITO_PREFIX}\n"
+        f"SELECT ?_target ?br_uri WHERE {{\n"
+        f"  ?_ci cito:hasCitingEntity ?_citing ;\n"
+        f"       cito:hasCitedEntity ?_target .\n"
+        f"  BIND(STR(?_citing) AS ?br_uri)\n"
+        f"}}\n"
+        f"@@remove ?_target\n"
+        f"@@join ?br_uri ?br_uri type=inner"
+    )
+
+
+def _build_cited_by_doi_preamble(doi: str) -> str:
+    return (
+        f"{_DOI_RESOLVE_PREFIX}\n"
+        f"SELECT ?_target WHERE {{\n"
+        f"  ?_target datacite:hasIdentifier ?_id_node .\n"
+        f"  ?_id_node datacite:usesIdentifierScheme datacite:doi ;\n"
+        f'            literal:hasLiteralValue "{doi}" .\n'
+        f"}}\n"
+        f"@@values ?_target\n"
+        f"@@join ?_target ?_target type=inner\n"
+        f"@@with source=index\n"
+        f"{_CITATION_CITO_PREFIX}\n"
+        f"SELECT ?_target ?br_uri WHERE {{\n"
+        f"  ?_ci cito:hasCitingEntity ?_target ;\n"
+        f"       cito:hasCitedEntity ?_cited .\n"
+        f"  BIND(STR(?_cited) AS ?br_uri)\n"
+        f"}}\n"
+        f"@@remove ?_target\n"
+        f"@@join ?br_uri ?br_uri type=inner"
+    )
+
+
+_CITATION_FILTER_BUILDERS: dict[str, Callable[[str], str]] = {
+    "cf.cites": _build_cites_preamble,
+    "cf.cited_by": _build_cited_by_preamble,
+    "cf.cites_doi": _build_cites_doi_preamble,
+    "cf.cited_by_doi": _build_cited_by_doi_preamble,
+}
+
+
+def handle_skgif_product_filter(values: list[str]) -> dict[str, str]:
     raw = values[0]
     pairs = [pair.strip() for pair in raw.split(",") if pair.strip()]
     clauses: list[str] = []
     agent_clauses: list[str] = []
+    preamble_parts: list[str] = []
 
     for pair in pairs:
         key, value = pair.split(":", 1)
@@ -266,7 +358,9 @@ def handle_skgif_product_filter(values: list[str]) -> str:
             msg = f"The filter {key} is not supported, valid filters are {', '.join(sorted(SUPPORTED_PRODUCT_FILTERS))}"
             raise ValueError(msg)
 
-        if key == "cf.search.title":
+        if key in _CITATION_FILTER_BUILDERS:
+            preamble_parts.append(_CITATION_FILTER_BUILDERS[key](value))
+        elif key == "cf.search.title":
             clauses.append(f'FILTER(CONTAINS(LCASE(?title), LCASE("{value}")))')
         elif key == "identifiers.id":
             clauses.append(f'?br_uri datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .')
@@ -283,7 +377,10 @@ def handle_skgif_product_filter(values: list[str]) -> str:
         clauses.insert(0, "?br_uri pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .")
         clauses.extend(agent_clauses)
 
-    return "\n".join(clauses)
+    return {
+        "filter_preamble": "\n".join(preamble_parts),
+        "filter": "\n".join(clauses),
+    }
 
 
 def to_skgif(csv_str: str) -> str:

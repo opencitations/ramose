@@ -226,7 +226,8 @@ class TestUnsupportedFilter:
         expected_prefix = (
             "HTTP status code 500: something unexpected happened - ValueError: "
             "The filter unsupported_field is not supported, "
-            "valid filters are cf.contributions_orcid, cf.search.title, "
+            "valid filters are cf.cited_by, cf.cited_by_doi, cf.cites, cf.cites_doi, "
+            "cf.contributions_orcid, cf.search.title, "
             "contributions.by.family_name, contributions.by.given_name, "
             "contributions.by.identifiers.id, contributions.by.identifiers.scheme, "
             "contributions.by.local_identifier, contributions.by.name, "
@@ -243,7 +244,8 @@ class TestUnsupportedFilter:
         expected_prefix = (
             "HTTP status code 500: something unexpected happened - ValueError: "
             "The filter contributions.declared_affiliations.name is not supported, "
-            "valid filters are cf.contributions_orcid, cf.search.title, "
+            "valid filters are cf.cited_by, cf.cited_by_doi, cf.cites, cf.cites_doi, "
+            "cf.contributions_orcid, cf.search.title, "
             "contributions.by.family_name, contributions.by.given_name, "
             "contributions.by.identifiers.id, contributions.by.identifiers.scheme, "
             "contributions.by.local_identifier, contributions.by.name, "
@@ -258,6 +260,73 @@ class TestUnsupportedFilter:
         )
         assert status == 500
         assert "The filter cf.search.title_abstract is not supported" in result
+
+
+class TestCitesFilter:
+    def test_cites_returns_citing_products(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035")
+        br_uris = [r["br_uri"] for r in results]
+        assert br_uris == ["https://w3id.org/oc/meta/br/0601"]
+
+    def test_cites_no_match(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/9999999")
+        assert results == []
+
+
+class TestCitedByFilter:
+    def test_cited_by_returns_cited_products(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by:https://w3id.org/oc/meta/br/0601")
+        br_uris = [r["br_uri"] for r in results]
+        assert br_uris == ["https://w3id.org/oc/meta/br/06035"]
+
+    def test_cited_by_no_match(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by:https://w3id.org/oc/meta/br/9999999")
+        assert results == []
+
+
+class TestCitesDoiFilter:
+    def test_cites_doi_resolves_and_returns(self, skgif_api_manager):
+        results = _exec(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=cf.cites_doi:10.1002/(sici)1097-0215(20000115)85:2<176::aid-ijc5>3.0.co;2-e",
+        )
+        br_uris = [r["br_uri"] for r in results]
+        assert br_uris == ["https://w3id.org/oc/meta/br/0601"]
+
+    def test_cites_doi_no_match(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cites_doi:10.9999/nonexistent")
+        assert results == []
+
+
+class TestCitedByDoiFilter:
+    def test_cited_by_doi_resolves_and_returns(self, skgif_api_manager):
+        results = _exec(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=cf.cited_by_doi:10.1002/(sici)1096-9926(199910)60:4<177::aid-tera1>3.0.co;2-z",
+        )
+        br_uris = [r["br_uri"] for r in results]
+        assert br_uris == ["https://w3id.org/oc/meta/br/06035"]
+
+    def test_cited_by_doi_no_match(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by_doi:10.9999/nonexistent")
+        assert results == []
+
+
+class TestMixedCitationAndRegularFilter:
+    def test_cites_with_title_filter(self, skgif_api_manager):
+        results = _exec(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035,cf.search.title:Response",
+        )
+        br_uris = [r["br_uri"] for r in results]
+        assert br_uris == ["https://w3id.org/oc/meta/br/0601"]
+
+    def test_cites_with_nonmatching_title(self, skgif_api_manager):
+        results = _exec(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035,cf.search.title:xyznonexistent",
+        )
+        assert results == []
 
 
 class TestBuiltinFilterOverride:

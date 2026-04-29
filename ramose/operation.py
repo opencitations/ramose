@@ -541,6 +541,8 @@ class Operation:
           - ("VALUES_INJECT", [vars])                # @@values ?var1 ?var2 ...
           - ("FOREACH", var_name, placeholder, delay)  # @@foreach ?var placeholder [wait=N]
         """
+        for p, v in params.items():
+            text = text.replace(f"[[{p}]]", str(v))
         steps = []
         cur_query = []
         current_endpoint = default_endpoint
@@ -872,9 +874,12 @@ class Operation:
                 continue
             if param_name in q_string:
                 handler = getattr(self.addon, param_conf["handler"])
-                par_dict[param_name] = handler(q_string[param_name])
-            else:
+                par_dict.update(handler(q_string[param_name]))
+            elif param_name not in par_dict:
                 par_dict[param_name] = ""
+        for placeholder in findall(r"\[\[(\w+)\]\]", self.i["sparql"]):
+            if placeholder not in par_dict:
+                par_dict[placeholder] = ""
 
     def _exec_sparql_anything_single(self, par_dict, content_type):
         """Execute a single SPARQL Anything query and return the finalized result."""
@@ -1052,8 +1057,11 @@ class Operation:
             self._apply_custom_preprocess_params(par_dict)
 
         sparql_text = self.i["sparql"]
+        resolved_text = sparql_text
+        for param, val in par_dict.items():
+            resolved_text = resolved_text.replace(f"[[{param}]]", str(val))
 
-        if "@@" not in sparql_text:
+        if "@@" not in resolved_text:
             if self.engine == "sparql-anything":
                 return self._exec_sparql_anything_single(par_dict, content_type)
             return self._exec_standard_sparql(par_dict, content_type)

@@ -177,9 +177,9 @@ class TestSkgifJournalArticle:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
         assert product["manifestations"][0]["dates"]["publication"] == ["1999-10-01"]
 
-    def test_no_citations(self, skgif_api_manager):
+    def test_citations(self, skgif_api_manager):
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
-        assert "related_products" not in product
+        assert product["related_products"] == {"cites": ["https://w3id.org/oc/meta/br/06035"]}
 
 
 class TestSkgifBook:
