@@ -65,6 +65,30 @@ class TestGetOp:
         assert result == (404, "HTTP status code 404: the operation requested does not exist", "text/plain")
 
 
+class TestGetOpInvalidParam:
+    def test_invalid_param_value_returns_400(self, api_mgr):
+        result = api_mgr.get_op(api_mgr.base_url[0] + "/author/orcid:10.1162/qss_a_00292")
+        assert result == (
+            400,
+            "HTTP status code 400: the value 'orcid:10.1162/qss_a_00292' is not valid for parameter 'id'"
+            " in operation '/v1/author/{id}'. Example: /v1/author/orcid:0000-0002-8420-0696",
+            "text/plain",
+        )
+
+    def test_empty_param_returns_400(self, api_mgr):
+        result = api_mgr.get_op(api_mgr.base_url[0] + "/author/")
+        assert result == (
+            400,
+            "HTTP status code 400: the operation '/v1/author/{id}' requires a value for parameter 'id'"
+            ". Example: /v1/author/orcid:0000-0002-8420-0696",
+            "text/plain",
+        )
+
+    def test_nonexistent_operation_still_404(self, api_mgr):
+        result = api_mgr.get_op(api_mgr.base_url[0] + "/nonexistent/something")
+        assert result == (404, "HTTP status code 404: the operation requested does not exist", "text/plain")
+
+
 class TestSourcesParsing:
     def test_sources_map_populated(self):
         am = APIManager(

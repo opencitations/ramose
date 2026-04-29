@@ -112,6 +112,20 @@ class APIManager:
                 "engine": engine,
             }
 
+        self._operation_prefixes = APIManager._build_operation_prefixes(self.all_conf)
+
+    @staticmethod
+    def _build_operation_prefixes(all_conf):
+        prefixes = []
+        for base, api_data in all_conf.items():
+            for item in api_data["conf"].values():
+                template = item["url"]
+                brace_pos = template.find("{")
+                if brace_pos != -1:
+                    prefixes.append((base + template[:brace_pos], base, item))
+        prefixes.sort(key=lambda entry: len(entry[0]), reverse=True)
+        return prefixes
+
     @staticmethod
     def nor_api_url(i, b=""):
         """This method takes an API operation object and an optional base URL (e.g. "/api/v1") as input
@@ -136,15 +150,13 @@ class APIManager:
         """This method takes an URL of an API call in input and find the API operation URL and the related
         configuration that best match with the API call, if any."""
         cur_u = sub(r"\?.*$", "", u)
-        result = None, None
         for base_url in self.all_conf:
             if u.startswith(base_url):
                 conf = self.all_conf[base_url]
                 for pat in conf["conf"]:
                     if match(f"^{pat}$", cur_u):
-                        result = conf, pat
-                        break
-        return result
+                        return conf, pat
+        return None, None
 
     def get_op(self, op_complete_url):
         """This method returns a new object of type Operation which represent the operation specified by
@@ -155,7 +167,7 @@ class APIManager:
         op_url = url_parsed.path
 
         conf, op = self.best_match(op_url)
-        if conf is not None and op is not None:
+        if conf is not None:
             op_conf = conf["conf"][op]
             op_engine = conf.get("engine", "sparql")
             if "engine" in op_conf:
@@ -188,5 +200,19 @@ class APIManager:
                 op_engine,
                 custom_params_map,
             )
-        sc = 404
-        return sc, f"HTTP status code {sc}: the operation requested does not exist", "text/plain"
+
+        for prefix, base_url, item in self._operation_prefixes:
+            if op_url.startswith(prefix):
+                template = item["url"]
+                full_template = base_url + template
+                param_value = op_url[len(prefix) :]
+                param_names = findall(PARAM_NAME, template)
+                if not param_value:
+                    msg = f"HTTP status code 400: the operation '{full_template}' requires a value for parameter '{param_names[0]}'"
+                else:
+                    msg = f"HTTP status code 400: the value '{param_value}' is not valid for parameter '{param_names[0]}' in operation '{full_template}'"
+                if "call" in item:
+                    msg += f". Example: {base_url}{item['call']}"
+                return 400, msg, "text/plain"
+
+        return 404, "HTTP status code 404: the operation requested does not exist", "text/plain"
