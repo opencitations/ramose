@@ -175,7 +175,7 @@ class TestSkgifJournalArticle:
 
     def test_publication_date(self, skgif_api_manager):
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
-        assert product["manifestations"][0]["dates"]["publication"] == ["1999-10-01"]
+        assert product["manifestations"][0]["dates"]["publication"] == ["1999-10-01T00:00:00"]
 
     def test_citations(self, skgif_api_manager):
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
@@ -221,7 +221,7 @@ class TestSkgifBook:
             "labels": {"en": "book"},
         }
         assert "biblio" not in manifestation
-        assert manifestation["dates"]["publication"] == ["2009-01-01"]
+        assert manifestation["dates"]["publication"] == ["2009-01-01T00:00:00"]
 
 
 class TestSkgifSchemaConformance:

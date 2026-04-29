@@ -157,9 +157,11 @@ def _build_venue(rows: list[dict], venue_name: str, venue_br_id: str) -> dict:
 def _normalize_datetime(date_str: str) -> str:
     parts = date_str.split("-")
     if len(parts) == 1:
-        return f"{parts[0]}-01-01"
+        return f"{parts[0]}-01-01T00:00:00"
     if len(parts) == 2:
-        return f"{parts[0]}-{parts[1]}-01"
+        return f"{parts[0]}-{parts[1]}-01T00:00:00"
+    if "T" not in date_str:
+        return f"{date_str}T00:00:00"
     return date_str
 
 
