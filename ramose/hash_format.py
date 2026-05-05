@@ -10,6 +10,15 @@
 from pathlib import Path
 from re import DOTALL, search
 
+BUILTIN_PARAMS = frozenset({"require", "filter", "sort", "format", "json"})
+
+
+def parse_disable_params(raw: str) -> set[str]:
+    stripped = raw.strip()
+    if stripped == "*":
+        return set(BUILTIN_PARAMS)
+    return {name.strip() for name in stripped.split(",") if name.strip()}
+
 
 def parse_custom_params(raw: str) -> dict[str, dict[str, str]]:
     result = {}

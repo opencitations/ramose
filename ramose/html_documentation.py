@@ -15,7 +15,7 @@ from markdown import markdown
 
 from ramose._constants import FIELD_TYPE_RE, PARAM_NAME
 from ramose.documentation import DocumentationHandler
-from ramose.hash_format import parse_custom_params
+from ramose.hash_format import parse_custom_params, parse_disable_params
 
 
 class HTMLDocumentationHandler(DocumentationHandler):
@@ -74,9 +74,14 @@ class HTMLDocumentationHandler(DocumentationHandler):
 
     def __parameters(self, conf):
         overridden: set[str] = set()
+        api_meta = conf["conf_json"][0]
+        if "disable_params" in api_meta:
+            overridden.update(parse_disable_params(api_meta["disable_params"]))
         for op in conf["conf_json"][1:]:
             if "custom_params" in op:
                 overridden.update(parse_custom_params(op["custom_params"]))
+            if "disable_params" in op:
+                overridden.update(parse_disable_params(op["disable_params"]))
 
         builtin_params = []
         if "require" not in overridden:

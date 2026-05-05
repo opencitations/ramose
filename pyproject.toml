@@ -123,7 +123,8 @@ ignore = [
 max-complexity = 12
 
 [tool.ruff.lint.pylint]
-max-args = 10
+# Operation.__init__ has 11 params
+max-args = 11
 
 [dependency-groups]
 dev = [

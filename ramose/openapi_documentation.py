@@ -18,7 +18,7 @@ import yaml
 
 from ramose._constants import FIELD_TYPE_RE, PARAM_NAME
 from ramose.documentation import DocumentationHandler
-from ramose.hash_format import parse_custom_params
+from ramose.hash_format import parse_custom_params, parse_disable_params
 
 
 class OpenAPIDocumentationHandler(DocumentationHandler):
@@ -345,7 +345,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         return path_params
 
-    def _build_operation_object(self, op, tag_name, path_params, common_param_refs, formats_enum):
+    def _build_operation_object(self, op, tag_name, path_params, common_param_refs, formats_enum, api_disabled=None):
         """Build an OpenAPI operation object for a single HTTP method."""
         summary = op["description"].split("\n")[0].strip() if op.get("description") else ""
         desc = self._clean_text(op.get("description")) or ""
@@ -379,7 +379,12 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                     param_obj["description"] = conf["description"]
                 custom_query_params.append(param_obj)
 
-        filtered_refs = [ref for ref in common_param_refs if ref["$ref"].rsplit("/", 1)[-1] not in custom_names]
+        disabled_names = set(api_disabled) if api_disabled else set()
+        if "disable_params" in op:
+            disabled_names |= parse_disable_params(op["disable_params"])
+
+        suppressed = custom_names | disabled_names
+        filtered_refs = [ref for ref in common_param_refs if ref["$ref"].rsplit("/", 1)[-1] not in suppressed]
         op_obj["parameters"] = path_params + custom_query_params + filtered_refs
         op_obj["responses"] = OrderedDict(
             [
@@ -419,6 +424,8 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         spec["paths"] = OrderedDict()
         tag_name = api_meta.get("title", "RAMOSE API")
 
+        api_disabled = parse_disable_params(api_meta["disable_params"]) if "disable_params" in api_meta else set()
+
         for op in conf["conf_json"][1:]:
             raw_path = op.get("url", "")
             if raw_path not in spec["paths"]:
@@ -434,6 +441,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                     path_params,
                     common_param_refs,
                     formats_enum,
+                    api_disabled,
                 )
 
         return spec

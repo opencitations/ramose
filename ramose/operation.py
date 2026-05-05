@@ -36,6 +36,7 @@ class Operation:
         sources_map=None,
         engine="sparql",
         custom_params=None,
+        disabled_params=None,
     ):
         """This class is responsible for materialising a API operation to be run against a SPARQL endpoint
         (or, depending on configuration, through the SPARQL.Anything engine).
@@ -61,6 +62,7 @@ class Operation:
         self.sources_map = sources_map or {}
         self.engine = engine
         self.custom_params = custom_params or {}
+        self.disabled_params = disabled_params or set()
         self._sa_engine = None
 
         self.operation = {"=": eq, "<": lt, ">": gt}
@@ -87,7 +89,7 @@ class Operation:
         content_type = Operation.get_content_type(c_type)
 
         # Overwrite if requesting a particular format via the URL
-        if "format" in query_string:
+        if "format" in query_string and "format" not in self.disabled_params:
             req_formats = query_string["format"]
 
             for req_format in req_formats:
@@ -112,8 +114,8 @@ class Operation:
             with StringIO(s) as f:
                 r = [dict(i) for i in DictReader(f)]
 
-                # See if any restructuring of the final JSON is required
-                r = Operation.structured(query_string, r)
+                if "json" not in self.disabled_params:
+                    r = Operation.structured(query_string, r)
 
                 return dumps(r, ensure_ascii=False, indent=4), content_type
         else:
@@ -412,7 +414,7 @@ class Operation:
         header = table[0]
         result = table[1:]
 
-        overridden = set(self.custom_params)
+        overridden = set(self.custom_params) | self.disabled_params
 
         if ("exclude" in params or "require" in params) and "require" not in overridden and "exclude" not in overridden:
             fields = params["exclude"] if "exclude" in params else params["require"]

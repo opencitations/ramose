@@ -6,7 +6,8 @@ import json
 
 import yaml
 
-from ramose import APIManager, OpenAPIDocumentationHandler
+from ramose import APIManager, HTMLDocumentationHandler, OpenAPIDocumentationHandler
+from ramose.hash_format import BUILTIN_PARAMS
 
 
 def _exec(skgif_api_manager: APIManager, url: str) -> list[dict]:
@@ -356,3 +357,20 @@ class TestCustomParamsInDocumentation:
         assert filter_param["in"] == "query"
         assert filter_param["required"] is False
         assert "cf.search.title" in filter_param["description"]
+
+    def test_builtin_params_absent_from_openapi(self, skgif_api_manager):
+        handler = OpenAPIDocumentationHandler(skgif_api_manager)
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        for path_ops in spec["paths"].values():
+            for op in path_ops.values():
+                ref_names = {p["$ref"].rsplit("/", 1)[-1] for p in op["parameters"] if "$ref" in p}
+                for builtin in BUILTIN_PARAMS:
+                    assert builtin not in ref_names
+
+    def test_builtin_params_absent_from_html(self, skgif_api_manager):
+        handler = HTMLDocumentationHandler(skgif_api_manager)
+        _, html = handler.get_documentation()
+        assert "require=" not in html
+        assert "sort=" not in html
+        assert 'id="parameters"' not in html

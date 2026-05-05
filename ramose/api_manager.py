@@ -16,7 +16,7 @@ from sys import maxsize, path
 from urllib.parse import urlsplit
 
 from ramose._constants import PARAM_NAME
-from ramose.hash_format import HashFormatHandler, parse_custom_params
+from ramose.hash_format import HashFormatHandler, parse_custom_params, parse_disable_params
 from ramose.operation import Operation
 
 
@@ -70,6 +70,7 @@ class APIManager:
             sparql_http_method = "get"
             sources_map = {}
             engine = "sparql"
+            disable_params_api: set[str] = set()
             for item in conf_json:
                 if base_url is None:
                     base_url = item["url"]
@@ -89,6 +90,9 @@ class APIManager:
                                 continue
                             name, url = pair.split("=", 1)
                             sources_map[name.strip()] = url.strip()
+
+                    if "disable_params" in item:
+                        disable_params_api = parse_disable_params(item["disable_params"])
 
                     if "addon" in item:
                         addon_path = (Path(conf_file).parent / item["addon"]).resolve()
@@ -110,6 +114,7 @@ class APIManager:
                 "sparql_http_method": sparql_http_method,
                 "sources_map": sources_map,
                 "engine": engine,
+                "disable_params": disable_params_api,
             }
 
         self._operation_prefixes = APIManager._build_operation_prefixes(self.all_conf)
@@ -188,6 +193,10 @@ class APIManager:
 
             custom_params_map = parse_custom_params(op_conf["custom_params"]) if "custom_params" in op_conf else {}
 
+            api_disabled = conf["disable_params"]
+            op_disabled = parse_disable_params(op_conf["disable_params"]) if "disable_params" in op_conf else set()
+            effective_disabled = api_disabled | op_disabled
+
             return Operation(
                 op_complete_url,
                 op,
@@ -199,6 +208,7 @@ class APIManager:
                 conf.get("sources_map", {}),
                 op_engine,
                 custom_params_map,
+                effective_disabled,
             )
 
         for prefix, base_url, item in self._operation_prefixes:

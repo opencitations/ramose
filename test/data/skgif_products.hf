@@ -10,6 +10,7 @@
 #method post
 #sources meta=https://sparql.opencitations.net/meta;index=https://sparql.opencitations.net/index
 #addon skgif_addon
+#disable_params *
 
 #url /products
 #type operation

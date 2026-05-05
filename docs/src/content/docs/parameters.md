@@ -111,3 +111,19 @@ Multiple transformations can be chained. Each one operates on the result of the 
 ```
 
 This removes rows without an author, keeps only those published after 2020, sorts by date descending, and returns CSV.
+
+## Disabling built-in parameters
+
+Operations or entire APIs can suppress built-in parameters with `#disable_params` in the spec file. When disabled, the parameter has no effect at runtime and does not appear in generated documentation.
+
+```
+#disable_params require,sort,format,json
+```
+
+Use `*` to disable all built-in parameters at once:
+
+```
+#disable_params *
+```
+
+See the [spec file reference](/ramose/spec_file/) for placement and syntax.

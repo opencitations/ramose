@@ -44,6 +44,7 @@ The file contains sections separated by blank lines. The first section defines t
 | `#addon` | no | Python module name for custom functions. Path relative to the spec file. |
 | `#engine` | no | Execution backend: `sparql` (default) or `sparql-anything`. See [multi-source queries](/ramose/multi_source/). |
 | `#sources` | no | Named endpoints for multi-source queries: `name1=url1; name2=url2`. |
+| `#disable_params` | no | Comma-separated list of built-in query parameters to suppress (`require`, `filter`, `sort`, `format`, `json`). Use `*` to disable all. Applies to all operations in this API. Operation-level `#disable_params` extends this set. |
 | `#html_meta_description` | no | HTML meta description for documentation pages. |
 
 ## Operation section
@@ -104,6 +105,7 @@ SELECT DISTINCT ?id ?title ?author ?pub_date ... WHERE {
 | `#default_format` | no | Default output format when no `?format=` query parameter is provided. Must match a name registered in `#format` or a built-in format (`csv`, `json`). Without this field, the default is CSV. |
 | `#custom_params` | no | Custom query parameters with addon handlers: `name,handler,phase,description;...`. See [addon modules](/ramose/addons/#custom-parameters). |
 | `#engine` | no | Override the API-level engine for this operation only. |
+| `#disable_params` | no | Comma-separated list of built-in query parameters to suppress for this operation. Use `*` to disable all. Merged with any API-level `#disable_params`. |
 
 ## Supported types
 

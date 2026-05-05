@@ -47,6 +47,7 @@ class TestBestMatch:
             "sparql_http_method",
             "sources_map",
             "engine",
+            "disable_params",
         }
 
     def test_invalid_url(self, api_mgr):
