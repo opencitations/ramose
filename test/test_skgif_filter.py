@@ -227,40 +227,51 @@ class TestUnsupportedFilter:
         expected_prefix = (
             "HTTP status code 500: something unexpected happened - ValueError: "
             "The filter unsupported_field is not supported, "
-            "valid filters are cf.cited_by, cf.cited_by_doi, cf.cites, cf.cites_doi, "
-            "cf.contributions_orcid, cf.search.title, "
+            "valid filters are "
+            "cf.cited_by, cf.cited_by_doi, cf.cites, cf.cites_doi, "
+            "cf.contributions_aff_country, cf.contributions_aff_ror, cf.contributions_orcid, "
+            "cf.search.title, cf.search.title_abstract, "
             "contributions.by.family_name, contributions.by.given_name, "
             "contributions.by.identifiers.id, contributions.by.identifiers.scheme, "
             "contributions.by.local_identifier, contributions.by.name, "
+            "contributions.declared_affiliations.identifiers.id, "
+            "contributions.declared_affiliations.identifiers.scheme, "
+            "contributions.declared_affiliations.local_identifier, "
+            "contributions.declared_affiliations.name, "
+            "contributions.declared_affiliations.short_name, "
+            "funding.grant_number, funding.identifiers.id, "
+            "funding.identifiers.scheme, funding.local_identifier, "
             "identifiers.id, identifiers.scheme, product_type (line "
         )
         assert result.startswith(expected_prefix)
 
-    def test_known_unsupported_filter_returns_same_error(self, skgif_api_manager):
-        status, result = _exec_raw(
+    def test_unsupported_affiliation_filter_returns_empty(self, skgif_api_manager):
+        results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=contributions.declared_affiliations.name:MIT",
         )
-        assert status == 500
-        expected_prefix = (
-            "HTTP status code 500: something unexpected happened - ValueError: "
-            "The filter contributions.declared_affiliations.name is not supported, "
-            "valid filters are cf.cited_by, cf.cited_by_doi, cf.cites, cf.cites_doi, "
-            "cf.contributions_orcid, cf.search.title, "
-            "contributions.by.family_name, contributions.by.given_name, "
-            "contributions.by.identifiers.id, contributions.by.identifiers.scheme, "
-            "contributions.by.local_identifier, contributions.by.name, "
-            "identifiers.id, identifiers.scheme, product_type (line "
-        )
-        assert result.startswith(expected_prefix)
+        assert results == []
 
-    def test_title_abstract_not_supported(self, skgif_api_manager):
-        status, result = _exec_raw(
+    def test_unsupported_title_abstract_returns_empty(self, skgif_api_manager):
+        results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.search.title_abstract:adaptive",
         )
-        assert status == 500
-        assert "The filter cf.search.title_abstract is not supported" in result
+        assert results == []
+
+    def test_unsupported_combined_with_supported_returns_empty(self, skgif_api_manager):
+        results = _exec(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=cf.search.title:adaptive,cf.search.title_abstract:test",
+        )
+        assert results == []
+
+    def test_unsupported_funding_filter_returns_empty(self, skgif_api_manager):
+        results = _exec(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=funding.local_identifier:some-grant",
+        )
+        assert results == []
 
 
 class TestCitesFilter:
@@ -374,3 +385,83 @@ class TestCustomParamsInDocumentation:
         assert "require=" not in html
         assert "sort=" not in html
         assert 'id="parameters"' not in html
+
+    def test_mock_endpoints_in_openapi(self, skgif_api_manager):
+        handler = OpenAPIDocumentationHandler(skgif_api_manager)
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        for entity in ["grants", "topics", "datasources"]:
+            assert f"/{entity}" in spec["paths"]
+            assert f"/{entity}/{{local_identifier}}" in spec["paths"]
+
+    def test_mock_list_endpoints_have_filter_param(self, skgif_api_manager):
+        handler = OpenAPIDocumentationHandler(skgif_api_manager)
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        for entity in ["grants", "topics", "datasources"]:
+            op_spec = spec["paths"][f"/{entity}"]["get"]
+            inline_params = [p for p in op_spec["parameters"] if isinstance(p, dict) and p.get("name") == "filter"]
+            assert len(inline_params) == 1
+
+
+class TestGrantsEndpoints:
+    def test_list_returns_empty(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/grants")
+        assert results == []
+
+    def test_list_with_filter_returns_empty(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/grants?filter=grant_number:12345")
+        assert results == []
+
+    def test_list_invalid_filter_returns_error(self, skgif_api_manager):
+        status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/grants?filter=invalid_field:value")
+        assert status == 500
+
+    def test_single_returns_empty_graph(self, skgif_api_manager):
+        status, result = _exec_raw(skgif_api_manager, "/skgif/v1/grants/example-id")
+        assert status == 200
+        parsed = json.loads(result)
+        assert parsed["@graph"] == []
+        assert "@context" in parsed
+
+
+class TestTopicsEndpoints:
+    def test_list_returns_empty(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/topics")
+        assert results == []
+
+    def test_list_with_filter_returns_empty(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/topics?filter=cf.search.labels:biology")
+        assert results == []
+
+    def test_list_invalid_filter_returns_error(self, skgif_api_manager):
+        status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/topics?filter=invalid_field:value")
+        assert status == 500
+
+    def test_single_returns_empty_graph(self, skgif_api_manager):
+        status, result = _exec_raw(skgif_api_manager, "/skgif/v1/topics/example-id")
+        assert status == 200
+        parsed = json.loads(result)
+        assert parsed["@graph"] == []
+        assert "@context" in parsed
+
+
+class TestDatasourcesEndpoints:
+    def test_list_returns_empty(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/datasources")
+        assert results == []
+
+    def test_list_with_filter_returns_empty(self, skgif_api_manager):
+        results = _exec(skgif_api_manager, "/skgif/v1/datasources?filter=research_product_type:literature")
+        assert results == []
+
+    def test_list_invalid_filter_returns_error(self, skgif_api_manager):
+        status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/datasources?filter=invalid_field:value")
+        assert status == 500
+
+    def test_single_returns_empty_graph(self, skgif_api_manager):
+        status, result = _exec_raw(skgif_api_manager, "/skgif/v1/datasources/example-id")
+        assert status == 200
+        parsed = json.loads(result)
+        assert parsed["@graph"] == []
+        assert "@context" in parsed

@@ -235,6 +235,23 @@ SUPPORTED_PRODUCT_FILTERS = {
     "product_type",
 }
 
+UNSUPPORTED_PRODUCT_FILTERS = {
+    "cf.contributions_aff_country",
+    "cf.contributions_aff_ror",
+    "cf.search.title_abstract",
+    "contributions.declared_affiliations.identifiers.id",
+    "contributions.declared_affiliations.identifiers.scheme",
+    "contributions.declared_affiliations.local_identifier",
+    "contributions.declared_affiliations.name",
+    "contributions.declared_affiliations.short_name",
+    "funding.grant_number",
+    "funding.identifiers.id",
+    "funding.identifiers.scheme",
+    "funding.local_identifier",
+}
+
+ALL_VALID_PRODUCT_FILTERS = SUPPORTED_PRODUCT_FILTERS | UNSUPPORTED_PRODUCT_FILTERS
+
 
 VALID_PRODUCT_TYPES = {"literature", "research data", "research software", "other"}
 
@@ -347,18 +364,13 @@ _CITATION_FILTER_BUILDERS: dict[str, Callable[[str], str]] = {
 }
 
 
-def handle_skgif_product_filter(values: list[str]) -> dict[str, str]:
-    raw = values[0]
-    pairs = [pair.strip() for pair in raw.split(",") if pair.strip()]
+def _build_supported_product_filter(pairs: list[str]) -> dict[str, str]:
     clauses: list[str] = []
     agent_clauses: list[str] = []
     preamble_parts: list[str] = []
 
     for pair in pairs:
         key, value = pair.split(":", 1)
-        if key not in SUPPORTED_PRODUCT_FILTERS:
-            msg = f"The filter {key} is not supported, valid filters are {', '.join(sorted(SUPPORTED_PRODUCT_FILTERS))}"
-            raise ValueError(msg)
 
         if key in _CITATION_FILTER_BUILDERS:
             preamble_parts.append(_CITATION_FILTER_BUILDERS[key](value))
@@ -383,6 +395,25 @@ def handle_skgif_product_filter(values: list[str]) -> dict[str, str]:
         "filter_preamble": "\n".join(preamble_parts),
         "filter": "\n".join(clauses),
     }
+
+
+def handle_skgif_product_filter(values: list[str]) -> dict[str, str]:
+    raw = values[0]
+    pairs = [pair.strip() for pair in raw.split(",") if pair.strip()]
+
+    has_unsupported = False
+    for pair in pairs:
+        key, _ = pair.split(":", 1)
+        if key not in ALL_VALID_PRODUCT_FILTERS:
+            msg = f"The filter {key} is not supported, valid filters are {', '.join(sorted(ALL_VALID_PRODUCT_FILTERS))}"
+            raise ValueError(msg)
+        if key in UNSUPPORTED_PRODUCT_FILTERS:
+            has_unsupported = True
+
+    if has_unsupported:
+        return {"filter_preamble": "", "filter": "FILTER(false)"}
+
+    return _build_supported_product_filter(pairs)
 
 
 def to_skgif(csv_str: str) -> str:
@@ -424,3 +455,88 @@ def to_skgif(csv_str: str) -> str:
 
     result = {"@context": SKGIF_CONTEXT, "@graph": [product]}
     return json.dumps(result, ensure_ascii=False, indent=4)
+
+
+VALID_GRANT_FILTERS = frozenset(
+    {
+        "acronym",
+        "beneficiaries.country",
+        "beneficiaries.identifiers.scheme",
+        "beneficiaries.identifiers.value",
+        "beneficiaries.name",
+        "beneficiaries.short_name",
+        "beneficiaries.website",
+        "cf.duration.end.from",
+        "cf.duration.start.from",
+        "cf.duration.start.to",
+        "cf.funded_amount.from",
+        "cf.funded_amount.to",
+        "cf.search.title",
+        "cf.search.title_abstract",
+        "contributions.by.family_name",
+        "contributions.by.given_name",
+        "contributions.by.identifiers.scheme",
+        "contributions.by.identifiers.value",
+        "contributions.by.local_identifier",
+        "contributions.by.name",
+        "contributions.declared_affiliations.country",
+        "contributions.declared_affiliations.identifiers.scheme",
+        "contributions.declared_affiliations.identifiers.value",
+        "contributions.declared_affiliations.local_identifier",
+        "contributions.declared_affiliations.name",
+        "contributions.declared_affiliations.short_name",
+        "contributions.declared_affiliations.website",
+        "contributions.role",
+        "currency",
+        "funding_agency.country",
+        "funding_agency.identifiers.scheme",
+        "funding_agency.identifiers.value",
+        "funding_agency.name",
+        "funding_agency.short_name",
+        "funding_agency.website",
+        "funding_stream",
+        "grant_number",
+        "identifiers.scheme",
+        "identifiers.value",
+        "website",
+    }
+)
+
+VALID_TOPIC_FILTERS = frozenset(
+    {
+        "cf.search.labels",
+        "cf.search.language",
+        "identifiers.scheme",
+        "identifiers.value",
+    }
+)
+
+VALID_DATASOURCE_FILTERS = frozenset(
+    {
+        "acronym",
+        "cf.search.name",
+        "data_source_classification",
+        "identifiers.scheme",
+        "identifiers.value",
+        "research_product_type",
+    }
+)
+
+
+def _make_mock_filter_handler(valid_filters: frozenset[str]):
+    def handler(values: list[str]) -> dict[str, str]:
+        raw = values[0]
+        pairs = [pair.strip() for pair in raw.split(",") if pair.strip()]
+        for pair in pairs:
+            key, _ = pair.split(":", 1)
+            if key not in valid_filters:
+                msg = f"The filter {key} is not supported, valid filters are {', '.join(sorted(valid_filters))}"
+                raise ValueError(msg)
+        return {}
+
+    return handler
+
+
+handle_skgif_grant_filter = _make_mock_filter_handler(VALID_GRANT_FILTERS)
+handle_skgif_topic_filter = _make_mock_filter_handler(VALID_TOPIC_FILTERS)
+handle_skgif_datasource_filter = _make_mock_filter_handler(VALID_DATASOURCE_FILTERS)

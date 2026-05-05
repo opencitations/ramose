@@ -16,7 +16,7 @@
 #type operation
 #method get
 #description Returns a list of research products matching the given filters.
-#custom_params filter,handle_skgif_product_filter,preprocess,Search filter. Format: comma-separated filter_name:filter_value pairs (AND logic). Supported: cf.cited_by, cf.cited_by_doi, cf.cites, cf.cites_doi, cf.contributions_orcid, cf.search.title, contributions.by.family_name, contributions.by.given_name, contributions.by.identifiers.id, contributions.by.identifiers.scheme, contributions.by.local_identifier, contributions.by.name, identifiers.id, identifiers.scheme, product_type
+#custom_params filter,handle_skgif_product_filter,preprocess,Search filter. Format: comma-separated filter_name:filter_value pairs (AND logic). Filters with data: cf.cited_by, cf.cited_by_doi, cf.cites, cf.cites_doi, cf.contributions_orcid, cf.search.title, contributions.by.family_name, contributions.by.given_name, contributions.by.identifiers.id, contributions.by.identifiers.scheme, contributions.by.local_identifier, contributions.by.name, identifiers.id, identifiers.scheme, product_type. Accepted but always empty (OpenCitations does not hold this data): cf.contributions_aff_country, cf.contributions_aff_ror, cf.search.title_abstract, contributions.declared_affiliations.identifiers.id, contributions.declared_affiliations.identifiers.scheme, contributions.declared_affiliations.local_identifier, contributions.declared_affiliations.name, contributions.declared_affiliations.short_name, funding.grant_number, funding.identifiers.id, funding.identifiers.scheme, funding.local_identifier
 #call /products?filter=cf.search.title:adaptive
 #field_type str(br_uri) str(title)
 #output_json [{"br_uri": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"}]
@@ -149,3 +149,63 @@ WHERE {
   BIND(STR(?citing_entity) AS ?br_uri)
   BIND(STR(?cited_entity) AS ?cited_br)
 }
+
+#url /grants
+#type operation
+#method get
+#description Returns a list of grants matching the given filters. Note: OpenCitations does not currently hold grant data; this endpoint always returns an empty result.
+#custom_params filter,handle_skgif_grant_filter,preprocess,Search filter. Format: comma-separated filter_name:filter_value pairs (AND logic). Accepted but always empty (OpenCitations does not hold grant data): acronym, beneficiaries.country, beneficiaries.identifiers.scheme, beneficiaries.identifiers.value, beneficiaries.name, beneficiaries.short_name, beneficiaries.website, cf.duration.end.from, cf.duration.start.from, cf.duration.start.to, cf.funded_amount.from, cf.funded_amount.to, cf.search.title, cf.search.title_abstract, contributions.by.family_name, contributions.by.given_name, contributions.by.identifiers.scheme, contributions.by.identifiers.value, contributions.by.local_identifier, contributions.by.name, contributions.declared_affiliations.country, contributions.declared_affiliations.identifiers.scheme, contributions.declared_affiliations.identifiers.value, contributions.declared_affiliations.local_identifier, contributions.declared_affiliations.name, contributions.declared_affiliations.short_name, contributions.declared_affiliations.website, contributions.role, currency, funding_agency.country, funding_agency.identifiers.scheme, funding_agency.identifiers.value, funding_agency.name, funding_agency.short_name, funding_agency.website, funding_stream, grant_number, identifiers.scheme, identifiers.value, website
+#call /grants?filter=grant_number:12345
+#field_type str(dummy)
+#output_json []
+#sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
+
+#url /grants/{local_identifier}
+#type operation
+#method get
+#description Returns a single grant in SKG-IF JSON-LD format. Note: OpenCitations does not currently hold grant data; this endpoint always returns an empty graph.
+#call /grants/example-grant-id
+#field_type str(dummy)
+#format skgif,to_skgif
+#default_format skgif
+#sparql SELECT ?dummy WHERE { FILTER(false) }
+
+#url /topics
+#type operation
+#method get
+#description Returns a list of topics matching the given filters. Note: OpenCitations does not currently hold topic data; this endpoint always returns an empty result.
+#custom_params filter,handle_skgif_topic_filter,preprocess,Search filter. Format: comma-separated filter_name:filter_value pairs (AND logic). Accepted but always empty (OpenCitations does not hold topic data): cf.search.labels, cf.search.language, identifiers.scheme, identifiers.value
+#call /topics?filter=cf.search.labels:biology
+#field_type str(dummy)
+#output_json []
+#sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
+
+#url /topics/{local_identifier}
+#type operation
+#method get
+#description Returns a single topic in SKG-IF JSON-LD format. Note: OpenCitations does not currently hold topic data; this endpoint always returns an empty graph.
+#call /topics/example-topic-id
+#field_type str(dummy)
+#format skgif,to_skgif
+#default_format skgif
+#sparql SELECT ?dummy WHERE { FILTER(false) }
+
+#url /datasources
+#type operation
+#method get
+#description Returns a list of data sources matching the given filters. Note: OpenCitations does not currently hold data source records as standalone entities; this endpoint always returns an empty result.
+#custom_params filter,handle_skgif_datasource_filter,preprocess,Search filter. Format: comma-separated filter_name:filter_value pairs (AND logic). Accepted but always empty (OpenCitations does not hold data source records): acronym, cf.search.name, data_source_classification, identifiers.scheme, identifiers.value, research_product_type
+#call /datasources?filter=research_product_type:literature
+#field_type str(dummy)
+#output_json []
+#sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
+
+#url /datasources/{local_identifier}
+#type operation
+#method get
+#description Returns a single data source in SKG-IF JSON-LD format. Note: OpenCitations does not currently hold data source records as standalone entities; this endpoint always returns an empty graph.
+#call /datasources/example-datasource-id
+#field_type str(dummy)
+#format skgif,to_skgif
+#default_format skgif
+#sparql SELECT ?dummy WHERE { FILTER(false) }
