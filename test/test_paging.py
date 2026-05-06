@@ -86,6 +86,5 @@ class TestBuildLinkHeader:
         info = build_pagination_info("/api/v1/test", {}, 1, 50, 10)
         header = build_link_header(info)
         assert header == (
-            '</api/v1/test?page=1&page_size=50>; rel="first", '
-            '</api/v1/test?page=1&page_size=50>; rel="last"'
+            '</api/v1/test?page=1&page_size=50>; rel="first", </api/v1/test?page=1&page_size=50>; rel="last"'
         )
