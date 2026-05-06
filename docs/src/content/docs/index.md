@@ -20,6 +20,12 @@ pip install ramose
 
 Requires Python 3.10 or later.
 
+To use the [SPARQL Anything](https://sparql-anything.cc/) engine, install the optional extra:
+
+```sh
+pip install ramose[sparql-anything]
+```
+
 ## Create a spec file
 
 Save this as `meta_v1.hf`:

@@ -17,7 +17,6 @@ from operator import eq, gt, itemgetter, lt
 from re import findall, match, search, sub
 from urllib.parse import parse_qs, quote, urlsplit
 
-import pysparql_anything
 from requests.exceptions import RequestException
 
 from ramose._constants import DEFAULT_HTTP_TIMEOUT, FIELD_TYPE_RE, _http_session
@@ -682,8 +681,9 @@ class Operation:
         values: optional dict of template parameters for the query
                     (name -> value), passed to SPARQL Anything's `values=`.
         """
-        # Lazily create and cache the engine so we don't re-initialise the JVM
         if self._sa_engine is None:
+            import pysparql_anything  # noqa: PLC0415
+
             self._sa_engine = pysparql_anything.SparqlAnything()
 
         kwargs = {"query": query_text}

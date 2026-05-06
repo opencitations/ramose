@@ -184,6 +184,12 @@ This fetches the title from Meta, then joins the citation count from Index. The 
 
 [SPARQL Anything](https://sparql-anything.cc/) lets you query non-RDF data sources (CSV, JSON, XML, etc.) using SPARQL. RAMOSE integrates it via [PySPARQL-Anything](https://pypi.org/project/pysparql-anything/).
 
+This requires the optional extra:
+
+```sh
+pip install ramose[sparql-anything]
+```
+
 Set the engine in the API section (applies to all operations) or in a single operation section (overrides the API-level setting):
 
 ```
