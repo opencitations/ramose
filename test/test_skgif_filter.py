@@ -115,7 +115,7 @@ class TestProductTypeFilter:
 
     def test_invalid_type_returns_error(self, skgif_api_manager):
         status, result = _exec_raw(skgif_api_manager, "/skgif/v1/products?filter=product_type:nonexistent")
-        assert status == 500
+        assert status == 400
         assert "The product type 'nonexistent' is not valid" in result
 
 
@@ -223,9 +223,9 @@ class TestUnsupportedFilter:
             skgif_api_manager,
             "/skgif/v1/products?filter=unsupported_field:value",
         )
-        assert status == 500
+        assert status == 400
         expected_prefix = (
-            "HTTP status code 500: something unexpected happened - ValueError: "
+            "HTTP status code 400: parameter in the request not compliant with the type specified - ValueError: "
             "The filter unsupported_field is not supported, "
             "valid filters are "
             "cf.cited_by, cf.cited_by_doi, cf.cites, cf.cites_doi, "
@@ -415,7 +415,7 @@ class TestGrantsEndpoints:
 
     def test_list_invalid_filter_returns_error(self, skgif_api_manager):
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/grants?filter=invalid_field:value")
-        assert status == 500
+        assert status == 400
 
     def test_single_returns_empty_graph(self, skgif_api_manager):
         status, result = _exec_raw(skgif_api_manager, "/skgif/v1/grants/example-id")
@@ -436,7 +436,7 @@ class TestTopicsEndpoints:
 
     def test_list_invalid_filter_returns_error(self, skgif_api_manager):
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/topics?filter=invalid_field:value")
-        assert status == 500
+        assert status == 400
 
     def test_single_returns_empty_graph(self, skgif_api_manager):
         status, result = _exec_raw(skgif_api_manager, "/skgif/v1/topics/example-id")
@@ -457,7 +457,7 @@ class TestDatasourcesEndpoints:
 
     def test_list_invalid_filter_returns_error(self, skgif_api_manager):
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/datasources?filter=invalid_field:value")
-        assert status == 500
+        assert status == 400
 
     def test_single_returns_empty_graph(self, skgif_api_manager):
         status, result = _exec_raw(skgif_api_manager, "/skgif/v1/datasources/example-id")

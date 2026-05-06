@@ -20,6 +20,7 @@ from ramose.api_manager import APIManager
 from ramose.html_documentation import HTMLDocumentationHandler
 from ramose.openapi_documentation import OpenAPIDocumentationHandler
 from ramose.operation import Operation
+from ramose.paging import build_link_header
 
 
 def main():  # pragma: no cover
@@ -82,9 +83,30 @@ def main():  # pragma: no cover
         dest="css",
         help="The path of a .css file for styling the API documentation (to be specified either with '-w' or with '-d' and '-o' arguments).",
     )
+    arg_parser.add_argument(
+        "--cache-dir",
+        dest="cache_dir",
+        default=".cache",
+        help="Directory for result caching (default: .cache). Use --no-cache to disable.",
+    )
+    arg_parser.add_argument(
+        "--no-cache",
+        dest="no_cache",
+        default=False,
+        action="store_true",
+        help="Disable result caching.",
+    )
+    arg_parser.add_argument(
+        "--cache-ttl",
+        dest="cache_ttl",
+        type=int,
+        default=86400,
+        help="Cache TTL in seconds (default: 86400 = 1 day).",
+    )
 
     args = arg_parser.parse_args()
-    am = APIManager(args.spec)
+    cache_dir = None if args.no_cache else args.cache_dir
+    am = APIManager(args.spec, cache_dir=cache_dir, cache_ttl=args.cache_ttl)
     dh = HTMLDocumentationHandler(am)
     oah = OpenAPIDocumentationHandler(am)
 
@@ -144,6 +166,10 @@ def main():  # pragma: no cover
                     if status == 200:
                         response = make_response(res, status)
                         response.headers.set("Content-Type", c_type)
+                        if isinstance(op, Operation) and op.pagination_info is not None:
+                            link_header = build_link_header(op.pagination_info)
+                            if link_header:
+                                response.headers.set("Link", link_header)
                     else:
                         # The API Manager returns a text/plain message when there is an error.
                         # Now set to return the header requested by the user

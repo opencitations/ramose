@@ -27,6 +27,9 @@ python -m ramose -s <spec.hf> [options]
 | `-o`, `--output` | Write response to file instead of stdout. |
 | `-w`, `--webserver` | Start Flask server at `host:port`. |
 | `-css`, `--css` | Custom CSS file path for documentation styling. |
+| `--cache-dir` | Directory for result caching. Default: `.cache`. |
+| `--no-cache` | Disable result caching entirely. |
+| `--cache-ttl` | Cache TTL in seconds. Default: `86400` (1 day). |
 
 ## Local mode
 
@@ -99,3 +102,21 @@ Apply custom CSS to the documentation:
 ```sh
 python -m ramose -s meta_v1.hf -w 127.0.0.1:8080 -css style.css
 ```
+
+## Caching
+
+RAMOSE caches processed query results in a local SQLite-backed store. Subsequent requests for the same query hit the cache instead of re-querying the SPARQL endpoint.
+
+By default, the cache lives in `.cache/` in the working directory with a 1-day TTL. Override with:
+
+```sh
+python -m ramose -s meta_v1.hf -w 127.0.0.1:8080 --cache-dir /tmp/ramose-cache --cache-ttl 3600
+```
+
+To disable caching:
+
+```sh
+python -m ramose -s meta_v1.hf -w 127.0.0.1:8080 --no-cache
+```
+
+Per-operation cache control is available via `#cache_duration` and `#cache_disable` in the [spec file](/ramose/spec_file/).

@@ -12,6 +12,7 @@ from csv import DictReader, reader, writer
 from io import StringIO
 from itertools import product
 from json import dumps
+from math import ceil
 from operator import eq, gt, itemgetter, lt
 from re import findall, match, search, sub
 from urllib.parse import parse_qs, quote, urlsplit
@@ -21,6 +22,7 @@ from requests.exceptions import RequestException
 
 from ramose._constants import DEFAULT_HTTP_TIMEOUT, FIELD_TYPE_RE, _http_session
 from ramose.datatype import DataType
+from ramose.paging import PaginationInfo, build_pagination_info
 
 
 class Operation:
@@ -37,6 +39,8 @@ class Operation:
         engine="sparql",
         custom_params=None,
         disabled_params=None,
+        cache=None,
+        default_cache_ttl=86400,
     ):
         """This class is responsible for materialising a API operation to be run against a SPARQL endpoint
         (or, depending on configuration, through the SPARQL.Anything engine).
@@ -64,6 +68,9 @@ class Operation:
         self.custom_params = custom_params or {}
         self.disabled_params = disabled_params or set()
         self._sa_engine = None
+        self._cache = cache
+        self._default_cache_ttl = default_cache_ttl
+        self.pagination_info: PaginationInfo | None = None
 
         self.operation = {"=": eq, "<": lt, ">": gt}
 
@@ -826,20 +833,68 @@ class Operation:
                 table = handler(table, q_string[param_name])
         return table
 
+    @property
+    def _cache_ttl(self):
+        if "cache_duration" in self.i:
+            return int(self.i["cache_duration"])
+        return self._default_cache_ttl
+
+    def _build_cache_key(self, q_string):
+        relevant = sorted(
+            (k, tuple(sorted(v))) for k, v in q_string.items() if k not in ("page", "page_size", "format", "json")
+        )
+        return f"{self.tp}:{self.op_url}:{relevant}"
+
+    def _extract_pagination_params(self, q_string):
+        if "page_size" not in q_string or "page_size" in self.disabled_params:
+            return None
+        page_size = int(q_string["page_size"][0])
+        if page_size < 1:
+            msg = f"page_size must be >= 1, got {page_size}"
+            raise ValueError(msg)
+        page = 1
+        if "page" in q_string and "page" not in self.disabled_params:
+            page = int(q_string["page"][0])
+            if page < 1:
+                msg = f"page must be >= 1, got {page}"
+                raise ValueError(msg)
+        return page, page_size
+
+    def _paginate_and_format(self, table, q_string, content_type):
+        page_params = self._extract_pagination_params(q_string)
+        if page_params is not None:
+            page, page_size = page_params
+            total_items = len(table) - 1
+            total_pages = ceil(total_items / page_size)
+            if page > total_pages:
+                msg = f"page {page} exceeds total pages {total_pages}"
+                raise ValueError(msg)
+            start = (page - 1) * page_size
+            end = start + page_size
+            table = [table[0], *table[1 + start : 1 + end]]
+            self.pagination_info = build_pagination_info(self.op_url, q_string, page, page_size, total_items)
+        else:
+            self.pagination_info = None
+
+        s_res = StringIO()
+        writer(s_res).writerows(table)
+        body, ctype = self.conv(s_res.getvalue(), q_string, content_type)
+
+        return 200, body, ctype
+
     def _finalize_result(self, csv_rows, content_type):
-        """Run the shared pipeline: type fields, postprocess, filter, remove types, convert format."""
+        """Run the shared pipeline: type fields, postprocess, filter, remove types, cache, paginate, format."""
+        q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
         res = self.type_fields(csv_rows, self.i)
         if self.addon is not None:
             res = self.postprocess(res, self.i, self.addon)
-        q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
         res = self.handling_params(q_string, res)
         res = self.remove_types(res)
         if self.custom_params:
             res = self._apply_custom_postprocess_params(res, q_string)
-        s_res = StringIO()
-        writer(s_res).writerows(res)
-        body, ctype = self.conv(s_res.getvalue(), q_string, content_type)
-        return 200, body, ctype
+        if self._cache is not None and "cache_disable" not in self.i:
+            self._cache.set(self._build_cache_key(q_string), res, expire=self._cache_ttl)
+        return self._paginate_and_format(res, q_string, content_type)
 
     @staticmethod
     def _header_from_field_type(op_item, acc):
@@ -1045,7 +1100,7 @@ class Operation:
             return self._dispatch_exec(content_type)
         except TimeoutError as e:
             return self._format_error(408, e, "request timeout - ")
-        except TypeError as e:
+        except (TypeError, ValueError) as e:
             return self._format_error(400, e, "parameter in the request not compliant with the type specified - ")
         except Exception as e:  # noqa: BLE001
             return self._format_error(500, e, "something unexpected happened - ")
@@ -1057,6 +1112,12 @@ class Operation:
             self.preprocess(par_dict, self.i, self.addon)
         if self.custom_params:
             self._apply_custom_preprocess_params(par_dict)
+
+        if self._cache is not None and "cache_disable" not in self.i:
+            q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
+            cached_table = self._cache.get(self._build_cache_key(q_string))
+            if cached_table is not None:
+                return self._paginate_and_format(cached_table, q_string, content_type)
 
         sparql_text = self.i["sparql"]
         resolved_text = sparql_text

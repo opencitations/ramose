@@ -124,7 +124,7 @@ max-complexity = 12
 
 [tool.ruff.lint.pylint]
 # Operation.__init__ has 11 params
-max-args = 11
+max-args = 13
 
 [dependency-groups]
 dev = [

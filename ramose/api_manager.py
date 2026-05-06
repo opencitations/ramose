@@ -16,6 +16,7 @@ from sys import maxsize, path
 from urllib.parse import urlsplit
 
 from ramose._constants import PARAM_NAME
+from ramose.cache import ResultCache
 from ramose.hash_format import HashFormatHandler, parse_custom_params, parse_disable_params
 from ramose.operation import Operation
 
@@ -32,7 +33,7 @@ class APIManager:
             except OverflowError:  # pragma: no cover
                 max_int = int(max_int / 10)
 
-    def __init__(self, conf_files, endpoint_override=None):
+    def __init__(self, conf_files, endpoint_override=None, cache_dir=None, cache_ttl=86400):
         """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
         defined according to the Hash Format and following a particular structure, and stores all the operations
         defined within a dictionary. Optionally, an endpoint_override parameter can be provided to override the
@@ -57,6 +58,9 @@ class APIManager:
         values returned by a SPARQL query, some operations that can be used for filtering the results, and the
         HTTP methods to call for making the request to the SPARQL endpoint specified in the configuration file."""
         APIManager.__max_size_csv()
+
+        self._cache = ResultCache(cache_dir) if cache_dir else None
+        self._cache_ttl = cache_ttl
 
         self.all_conf = OrderedDict()
         self.base_url = []
@@ -209,6 +213,8 @@ class APIManager:
                 op_engine,
                 custom_params_map,
                 effective_disabled,
+                cache=self._cache,
+                default_cache_ttl=self._cache_ttl,
             )
 
         for prefix, base_url, item in self._operation_prefixes:

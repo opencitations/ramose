@@ -10,7 +10,7 @@
 from pathlib import Path
 from re import DOTALL, search
 
-BUILTIN_PARAMS = frozenset({"require", "filter", "sort", "format", "json"})
+BUILTIN_PARAMS = frozenset({"require", "filter", "sort", "format", "json", "page", "page_size"})
 
 
 def parse_disable_params(raw: str) -> set[str]:

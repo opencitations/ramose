@@ -23,7 +23,7 @@ class TestParseDisableParams:
         assert parse_disable_params("require,filter,sort") == {"require", "filter", "sort"}
 
     def test_wildcard(self):
-        assert parse_disable_params("*") == {"require", "filter", "sort", "format", "json"}
+        assert parse_disable_params("*") == {"require", "filter", "sort", "format", "json", "page", "page_size"}
 
     def test_wildcard_matches_builtin(self):
         assert parse_disable_params("*") == set(BUILTIN_PARAMS)

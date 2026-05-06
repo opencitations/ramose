@@ -25,6 +25,16 @@ To override the SPARQL endpoint defined in the spec files (useful for staging or
 am = APIManager(["meta_v1.hf"], endpoint_override="http://localhost:9999/sparql")
 ```
 
+### Caching
+
+Result caching is enabled by passing `cache_dir`:
+
+```python
+am = APIManager(["meta_v1.hf"], cache_dir=".cache", cache_ttl=86400)
+```
+
+`cache_dir` sets the directory for the SQLite-backed cache store. `cache_ttl` sets the default TTL in seconds (default: 86400). Pass `cache_dir=None` to disable caching.
+
 ### get_op(url)
 
 Returns an `Operation` for the given call URL, or a `(status_code, message, content_type)` tuple if no operation matches.
@@ -57,16 +67,32 @@ status, body, content_type = op.exec(
 
 Both arguments are optional. Defaults: `method="get"`, `content_type="application/json"`.
 
+### pagination_info
+
+After calling `exec()` with `page`/`page_size` query parameters, `op.pagination_info` holds a `PaginationInfo` named tuple with `page`, `page_size`, `total_items`, `next_url`, and `prev_url` fields. When pagination is not active, this attribute is `None`.
+
+```python
+from ramose.paging import build_link_header
+
+status, body, content_type = op.exec()
+if op.pagination_info is not None:
+    print(op.pagination_info.total_items)
+    print(build_link_header(op.pagination_info))
+```
+
 ### Pipeline
 
 The execution follows these steps in order:
 
 1. Extract parameters from the URL path
 2. Run `#preprocess` functions on parameters
-3. Execute the SPARQL query (single or [multi-source](/ramose/multi_source/))
-4. Run `#postprocess` functions on results
-5. Apply [query string filters](/ramose/parameters/) (require, filter, sort)
-6. Convert to the requested output format
+3. Check the result cache; on hit, skip to step 8
+4. Execute the SPARQL query (single or [multi-source](/ramose/multi_source/))
+5. Run `#postprocess` functions on results
+6. Apply [query string filters](/ramose/parameters/) (require, filter, sort)
+7. Cache the processed result (if caching is enabled)
+8. Apply pagination slicing (if `page_size` is present)
+9. Convert to the requested output format
 
 ### Error codes
 
