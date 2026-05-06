@@ -843,9 +843,9 @@ class Operation:
         return self._default_cache_ttl
 
     def _build_cache_key(self, q_string):
-        _PRESENTATION_PARAMS = {"page", "page_size", "format", "json"}
+        presentation_params = {"page", "page_size", "format", "json"}
         data_params = sorted(
-            (name, values) for name, values in q_string.items() if name not in _PRESENTATION_PARAMS
+            (name, values) for name, values in q_string.items() if name not in presentation_params
         )
         if data_params:
             query_string = "&".join(f"{name}={value}" for name, values in data_params for value in values)
@@ -872,9 +872,8 @@ class Operation:
             for req_format in q_string["format"]:
                 if req_format in self.format:
                     return True
-        elif "default_format" in self.i:
-            if self.i["default_format"].strip() in self.format:
-                return True
+        elif "default_format" in self.i and self.i["default_format"].strip() in self.format:
+            return True
         return False
 
     def _paginate_and_format(self, table, q_string, content_type):

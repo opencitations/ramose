@@ -3,11 +3,17 @@
 # SPDX-License-Identifier: ISC
 
 import json
+import sys
 from pathlib import Path
-from types import SimpleNamespace
-from unittest.mock import patch
+from types import ModuleType, SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 from ramose import APIManager, Operation
+
+if "pysparql_anything" not in sys.modules:
+    _mock_module = ModuleType("pysparql_anything")
+    _mock_module.SparqlAnything = MagicMock()  # type: ignore[attr-defined]
+    sys.modules["pysparql_anything"] = _mock_module
 
 TESTS_DIR = str(Path(__file__).resolve().parent.parent / "tests")
 
