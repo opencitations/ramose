@@ -434,16 +434,17 @@ def _build_meta(request_url, graph_size):
         total_items = int(params["total_items"][0])
         page = int(params["page"][0])
         page_size = int(params["page_size"][0])
+    elif "page_size" in params:
+        total_items = graph_size
+        page = int(params.get("page", ["1"])[0])
+        page_size = int(params["page_size"][0])
     else:
         total_items = graph_size
         page = 1
         page_size = max(graph_size, 1)
     total_pages = ceil(total_items / page_size) if page_size > 0 else 0
-    clean_params = {k: v for k, v in params.items() if k != "total_items"}
-    if "page" not in clean_params:
-        clean_params["page"] = [str(page)]
-    if "page_size" not in clean_params:
-        clean_params["page_size"] = [str(page_size)]
+    non_pagination_params = {k: v for k, v in params.items() if k not in ("page", "page_size", "total_items")}
+    clean_params = {**non_pagination_params, "page": [str(page)], "page_size": [str(page_size)]}
     self_url = f"{parsed.path}?{urlencode(clean_params, doseq=True)}"
     meta = _build_search_result_page(self_url)
     if page < total_pages:
@@ -494,9 +495,24 @@ def to_skgif(csv_str, request_url=""):
         graph = _build_product_graph(rows)
     else:
         graph = [dict(row) for row in rows]
+
+    total_entities = len(graph)
+
+    parsed = urlsplit(request_url)
+    params = parse_qs(parsed.query)
+    if "page_size" in params:
+        page_size = int(params["page_size"][0])
+        page = int(params.get("page", ["1"])[0])
+        total_pages = ceil(total_entities / page_size) if page_size > 0 else 0
+        if total_pages > 0 and page > total_pages:
+            msg = f"page {page} exceeds total pages {total_pages}"
+            raise ValueError(msg)
+        start = (page - 1) * page_size
+        graph = graph[start : start + page_size]
+
     result = {
         "@context": SKGIF_CONTEXT,
-        "meta": _build_meta(request_url, len(graph)),
+        "meta": _build_meta(request_url, total_entities),
         "@graph": graph,
     }
     return json.dumps(result, ensure_ascii=False, indent=4)

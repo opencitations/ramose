@@ -867,21 +867,34 @@ class Operation:
                 raise ValueError(msg)
         return page, page_size
 
+    def _has_custom_converter(self, q_string):
+        if "format" in q_string and "format" not in self.disabled_params:
+            for req_format in q_string["format"]:
+                if req_format in self.format:
+                    return True
+        elif "default_format" in self.i:
+            if self.i["default_format"].strip() in self.format:
+                return True
+        return False
+
     def _paginate_and_format(self, table, q_string, content_type):
-        page_params = self._extract_pagination_params(q_string)
-        if page_params is not None:
-            page, page_size = page_params
-            total_items = len(table) - 1
-            total_pages = ceil(total_items / page_size)
-            if page > total_pages:
-                msg = f"page {page} exceeds total pages {total_pages}"
-                raise ValueError(msg)
-            start = (page - 1) * page_size
-            end = start + page_size
-            table = [table[0], *table[1 + start : 1 + end]]
-            self.pagination_info = build_pagination_info(self.op_url, q_string, page, page_size, total_items)
-        else:
+        if self._has_custom_converter(q_string):
             self.pagination_info = None
+        else:
+            page_params = self._extract_pagination_params(q_string)
+            if page_params is not None:
+                page, page_size = page_params
+                total_items = len(table) - 1
+                total_pages = ceil(total_items / page_size)
+                if page > total_pages:
+                    msg = f"page {page} exceeds total pages {total_pages}"
+                    raise ValueError(msg)
+                start = (page - 1) * page_size
+                end = start + page_size
+                table = [table[0], *table[1 + start : 1 + end]]
+                self.pagination_info = build_pagination_info(self.op_url, q_string, page, page_size, total_items)
+            else:
+                self.pagination_info = None
 
         s_res = StringIO()
         writer(s_res).writerows(table)

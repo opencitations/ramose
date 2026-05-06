@@ -566,6 +566,14 @@ class TestSkgifEnvelope:
         assert status == 400
         assert ctype == "text/plain"
 
+    def test_single_product_with_pagination_counts_entities_not_rows(self, skgif_api_manager):
+        base_url = "/skgif/v1/products/https://w3id.org/oc/meta/br/0612058700"
+        without_pagination = _envelope(skgif_api_manager, base_url)
+        with_pagination = _envelope(skgif_api_manager, f"{base_url}?page_size=10&page=1")
+        assert with_pagination["meta"]["part_of"]["total_items"] == 1
+        assert "next_page" not in with_pagination["meta"]
+        assert with_pagination["@graph"] == without_pagination["@graph"]
+
     def test_envelope_context_structure(self, skgif_api_manager):
         result = _envelope(skgif_api_manager, "/skgif/v1/products?page_size=5")
         assert result["@context"] == SKGIF_CONTEXT

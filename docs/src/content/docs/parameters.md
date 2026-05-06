@@ -128,7 +128,7 @@ Link: </v1/metadata/doi:10.1162/qss_a_00292?page=3&page_size=10>; rel="next",
 
 Each comma-separated entry is a separate link. `rel="first"` and `rel="last"` are always present. `rel="next"` is omitted on the last page; `rel="prev"` is omitted on the first page.
 
-The response body contains only the sliced results for the requested page, in the same format as a non-paginated response (JSON array or CSV rows).
+The response body contains only the results for the requested page, in the same format as a non-paginated response (JSON array or CSV rows). When a [custom format](/ramose/addons/#format-converters) is configured, pagination is delegated to the format converter because custom formats can change the number of entities in the output. The `Link` header is only generated when no custom format is active.
 
 Invalid values (`page_size=0`, `page=-1`, non-integer values, `page` exceeding total pages) return HTTP 400.
 
