@@ -844,9 +844,7 @@ class Operation:
 
     def _build_cache_key(self, q_string):
         presentation_params = {"page", "page_size", "format", "json"}
-        data_params = sorted(
-            (name, values) for name, values in q_string.items() if name not in presentation_params
-        )
+        data_params = sorted((name, values) for name, values in q_string.items() if name not in presentation_params)
         if data_params:
             query_string = "&".join(f"{name}={value}" for name, values in data_params for value in values)
             return f"{self.tp}:{self.op_url}?{query_string}"
