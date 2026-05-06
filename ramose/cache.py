@@ -12,7 +12,7 @@ class ResultCache:
     def __init__(self, directory):
         db_dir = Path(directory)
         db_dir.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(str(db_dir / "cache.db"))
+        self._conn = sqlite3.connect(str(db_dir / "cache.db"), check_same_thread=False)
         self._conn.execute(
             "CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires_at REAL NOT NULL)"
         )

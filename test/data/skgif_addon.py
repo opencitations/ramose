@@ -427,16 +427,23 @@ def _page_url(base_path, params, page):
     return f"{base_path}?{urlencode(page_params, doseq=True)}"
 
 
-def _build_meta(request_url):
+def _build_meta(request_url, graph_size):
     parsed = urlsplit(request_url)
     params = parse_qs(parsed.query)
-    if "total_items" not in params:
-        return _build_search_result_page(request_url)
-    total_items = int(params["total_items"][0])
-    page = int(params["page"][0])
-    page_size = int(params["page_size"][0])
+    if "total_items" in params:
+        total_items = int(params["total_items"][0])
+        page = int(params["page"][0])
+        page_size = int(params["page_size"][0])
+    else:
+        total_items = graph_size
+        page = 1
+        page_size = max(graph_size, 1)
     total_pages = ceil(total_items / page_size) if page_size > 0 else 0
     clean_params = {k: v for k, v in params.items() if k != "total_items"}
+    if "page" not in clean_params:
+        clean_params["page"] = [str(page)]
+    if "page_size" not in clean_params:
+        clean_params["page_size"] = [str(page_size)]
     self_url = f"{parsed.path}?{urlencode(clean_params, doseq=True)}"
     meta = _build_search_result_page(self_url)
     if page < total_pages:
@@ -489,7 +496,7 @@ def to_skgif(csv_str, request_url=""):
         graph = [dict(row) for row in rows]
     result = {
         "@context": SKGIF_CONTEXT,
-        "meta": _build_meta(request_url),
+        "meta": _build_meta(request_url, len(graph)),
         "@graph": graph,
     }
     return json.dumps(result, ensure_ascii=False, indent=4)

@@ -491,8 +491,21 @@ class TestSkgifEnvelope:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:adaptive")
         assert result["@context"] == SKGIF_CONTEXT
         assert result["meta"] == {
-            "local_identifier": "/skgif/v1/products?filter=cf.search.title:adaptive",
+            "local_identifier": "/skgif/v1/products?filter=cf.search.title%3Aadaptive&page=1&page_size=3",
             "entity_type": "search_result_page",
+            "part_of": {
+                "local_identifier": "/skgif/v1/products?filter=cf.search.title%3Aadaptive",
+                "entity_type": "search_result",
+                "total_items": 3,
+                "first_page": {
+                    "local_identifier": "/skgif/v1/products?filter=cf.search.title%3Aadaptive&page=1&page_size=3",
+                    "entity_type": "search_result_page",
+                },
+                "last_page": {
+                    "local_identifier": "/skgif/v1/products?filter=cf.search.title%3Aadaptive&page=1&page_size=3",
+                    "entity_type": "search_result_page",
+                },
+            },
         }
         assert len(result["@graph"]) == 3
 

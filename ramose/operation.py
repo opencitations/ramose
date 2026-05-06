@@ -682,7 +682,7 @@ class Operation:
                     (name -> value), passed to SPARQL Anything's `values=`.
         """
         if self._sa_engine is None:
-            import pysparql_anything  # noqa: PLC0415
+            import pysparql_anything  # noqa: PLC0415  # type: ignore[import-not-found]
 
             self._sa_engine = pysparql_anything.SparqlAnything()
 
@@ -843,10 +843,14 @@ class Operation:
         return self._default_cache_ttl
 
     def _build_cache_key(self, q_string):
-        relevant = sorted(
-            (k, tuple(sorted(v))) for k, v in q_string.items() if k not in ("page", "page_size", "format", "json")
+        _PRESENTATION_PARAMS = {"page", "page_size", "format", "json"}
+        data_params = sorted(
+            (name, values) for name, values in q_string.items() if name not in _PRESENTATION_PARAMS
         )
-        return f"{self.tp}:{self.op_url}:{relevant}"
+        if data_params:
+            query_string = "&".join(f"{name}={value}" for name, values in data_params for value in values)
+            return f"{self.tp}:{self.op_url}?{query_string}"
+        return f"{self.tp}:{self.op_url}"
 
     def _extract_pagination_params(self, q_string):
         if "page_size" not in q_string or "page_size" in self.disabled_params:
