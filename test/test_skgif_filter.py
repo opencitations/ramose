@@ -14,17 +14,20 @@ def _exec(skgif_api_manager: APIManager, url: str) -> list[dict]:
     op = skgif_api_manager.get_op(url)
     if isinstance(op, tuple):
         raise TypeError(f"Operation not found: {url}")
-    status, result, _ = op.exec(method="get", content_type="application/json")
+    status, result, _, _ = op.exec(method="get", content_type="application/json")
     if status != 200:
         raise RuntimeError(f"API returned status {status}: {result}")
-    return json.loads(result)
+    parsed = json.loads(result)
+    if isinstance(parsed, dict) and "@graph" in parsed:
+        return list(parsed["@graph"])
+    return list(parsed)
 
 
 def _exec_raw(skgif_api_manager: APIManager, url: str) -> tuple[int, str]:
     op = skgif_api_manager.get_op(url)
     if isinstance(op, tuple):
         raise TypeError(f"Operation not found: {url}")
-    status, result, _ = op.exec(method="get", content_type="application/json")
+    status, result, _, _ = op.exec(method="get", content_type="application/json")
     return status, result
 
 
@@ -465,3 +468,91 @@ class TestDatasourcesEndpoints:
         parsed = json.loads(result)
         assert parsed["@graph"] == []
         assert "@context" in parsed
+
+
+SKGIF_CONTEXT = [
+    "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+    "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+    {"@base": "https://w3id.org/skg-if/sandbox/opencitations/"},
+]
+
+TOTAL_PRODUCTS = 1098
+
+
+def _envelope(skgif_api_manager, url):
+    op = skgif_api_manager.get_op(url)
+    status, result, _, _ = op.exec(method="get", content_type="application/json")
+    assert status == 200
+    return json.loads(result)
+
+
+class TestSkgifEnvelope:
+    def test_envelope_without_pagination(self, skgif_api_manager):
+        result = _envelope(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:adaptive")
+        assert result["@context"] == SKGIF_CONTEXT
+        assert result["meta"] == {
+            "local_identifier": "/skgif/v1/products?filter=cf.search.title:adaptive",
+            "entity_type": "search_result_page",
+        }
+        assert len(result["@graph"]) == 3
+
+    def test_envelope_first_page(self, skgif_api_manager):
+        result = _envelope(skgif_api_manager, "/skgif/v1/products?page_size=10")
+        meta = result["meta"]
+        assert meta["entity_type"] == "search_result_page"
+        assert meta["local_identifier"] == "/skgif/v1/products?page=1&page_size=10"
+        assert meta["next_page"] == {
+            "local_identifier": "/skgif/v1/products?page=2&page_size=10",
+            "entity_type": "search_result_page",
+        }
+        assert "prev_page" not in meta
+        assert meta["part_of"] == {
+            "local_identifier": "/skgif/v1/products",
+            "entity_type": "search_result",
+            "total_items": TOTAL_PRODUCTS,
+            "first_page": {
+                "local_identifier": "/skgif/v1/products?page=1&page_size=10",
+                "entity_type": "search_result_page",
+            },
+            "last_page": {
+                "local_identifier": f"/skgif/v1/products?page={-(-TOTAL_PRODUCTS // 10)}&page_size=10",
+                "entity_type": "search_result_page",
+            },
+        }
+        assert len(result["@graph"]) == 10
+
+    def test_envelope_middle_page(self, skgif_api_manager):
+        result = _envelope(skgif_api_manager, "/skgif/v1/products?page=2&page_size=10")
+        meta = result["meta"]
+        assert meta["local_identifier"] == "/skgif/v1/products?page=2&page_size=10"
+        assert meta["next_page"]["local_identifier"] == "/skgif/v1/products?page=3&page_size=10"
+        assert meta["prev_page"]["local_identifier"] == "/skgif/v1/products?page=1&page_size=10"
+        assert len(result["@graph"]) == 10
+
+    def test_envelope_last_page(self, skgif_api_manager):
+        last_page = -(-TOTAL_PRODUCTS // 10)
+        result = _envelope(skgif_api_manager, f"/skgif/v1/products?page={last_page}&page_size=10")
+        meta = result["meta"]
+        assert "next_page" not in meta
+        assert meta["prev_page"]["local_identifier"] == f"/skgif/v1/products?page={last_page - 1}&page_size=10"
+        assert meta["part_of"]["total_items"] == TOTAL_PRODUCTS
+
+    def test_envelope_with_filter_and_pagination(self, skgif_api_manager):
+        result = _envelope(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=identifiers.scheme:isbn&page=1&page_size=5",
+        )
+        meta = result["meta"]
+        assert meta["local_identifier"] == "/skgif/v1/products?filter=identifiers.scheme%3Aisbn&page=1&page_size=5"
+        assert meta["part_of"]["local_identifier"] == "/skgif/v1/products?filter=identifiers.scheme%3Aisbn"
+        assert len(result["@graph"]) == 5
+
+    def test_envelope_page_beyond_total_returns_400(self, skgif_api_manager):
+        op = skgif_api_manager.get_op("/skgif/v1/products?page=9999&page_size=10")
+        status, _, ctype, _ = op.exec(method="get", content_type="application/json")
+        assert status == 400
+        assert ctype == "text/plain"
+
+    def test_envelope_context_structure(self, skgif_api_manager):
+        result = _envelope(skgif_api_manager, "/skgif/v1/products?page_size=5")
+        assert result["@context"] == SKGIF_CONTEXT

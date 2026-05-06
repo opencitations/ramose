@@ -10,13 +10,15 @@
 #method post
 #sources meta=https://sparql.opencitations.net/meta;index=https://sparql.opencitations.net/index
 #addon skgif_addon
-#disable_params *
+#disable_params require,filter,sort,format,json
 
 #url /products
 #type operation
 #method get
 #description Returns a list of research products matching the given filters.
 #custom_params filter,handle_skgif_product_filter,preprocess,Search filter. Format: comma-separated filter_name:filter_value pairs (AND logic). Filters with data: cf.cited_by, cf.cited_by_doi, cf.cites, cf.cites_doi, cf.contributions_orcid, cf.search.title, contributions.by.family_name, contributions.by.given_name, contributions.by.identifiers.id, contributions.by.identifiers.scheme, contributions.by.local_identifier, contributions.by.name, identifiers.id, identifiers.scheme, product_type. Accepted but always empty (OpenCitations does not hold this data): cf.contributions_aff_country, cf.contributions_aff_ror, cf.search.title_abstract, contributions.declared_affiliations.identifiers.id, contributions.declared_affiliations.identifiers.scheme, contributions.declared_affiliations.local_identifier, contributions.declared_affiliations.name, contributions.declared_affiliations.short_name, funding.grant_number, funding.identifiers.id, funding.identifiers.scheme, funding.local_identifier
+#format skgif,to_skgif
+#default_format skgif
 #call /products?filter=cf.search.title:adaptive
 #field_type str(br_uri) str(title)
 #output_json [{"br_uri": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"}]

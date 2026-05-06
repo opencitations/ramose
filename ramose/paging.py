@@ -13,6 +13,7 @@ class PaginationInfo(NamedTuple):
     page: int
     page_size: int
     total_items: int
+    self_url: str
     next_url: str
     prev_url: str
     first_url: str
@@ -21,11 +22,12 @@ class PaginationInfo(NamedTuple):
 
 def build_pagination_info(base_path, query_params, page, page_size, total_items) -> PaginationInfo:
     total_pages = ceil(total_items / page_size) if page_size > 0 else 0
-    next_url = _page_url(base_path, query_params, page + 1, page_size) if page < total_pages else ""
-    prev_url = _page_url(base_path, query_params, page - 1, page_size) if page > 1 else ""
-    first_url = _page_url(base_path, query_params, 1, page_size)
-    last_url = _page_url(base_path, query_params, max(total_pages, 1), page_size)
-    return PaginationInfo(page, page_size, total_items, next_url, prev_url, first_url, last_url)
+    self_url = _page_url(base_path, query_params, page, page_size, total_items)
+    next_url = _page_url(base_path, query_params, page + 1, page_size, total_items) if page < total_pages else ""
+    prev_url = _page_url(base_path, query_params, page - 1, page_size, total_items) if page > 1 else ""
+    first_url = _page_url(base_path, query_params, 1, page_size, total_items)
+    last_url = _page_url(base_path, query_params, max(total_pages, 1), page_size, total_items)
+    return PaginationInfo(page, page_size, total_items, self_url, next_url, prev_url, first_url, last_url)
 
 
 def build_link_header(pagination_info: PaginationInfo) -> str:
@@ -39,8 +41,9 @@ def build_link_header(pagination_info: PaginationInfo) -> str:
     return ", ".join(links)
 
 
-def _page_url(base_path, query_params, page, page_size):
+def _page_url(base_path, query_params, page, page_size, total_items):
     params = {k: v for k, v in query_params.items() if k not in _PAGINATION_KEYS}
     params["page"] = [str(page)]
     params["page_size"] = [str(page_size)]
+    params["total_items"] = [str(total_items)]
     return f"{base_path}?{urlencode(params, doseq=True)}"

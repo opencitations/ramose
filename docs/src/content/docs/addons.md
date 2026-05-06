@@ -192,13 +192,14 @@ The `#format` field in an operation registers custom output formats. Each entry 
 #format xml,to_xml;turtle,to_turtle
 ```
 
-The function receives the result as a CSV string and returns the converted output:
+The function receives the result as a CSV string and a `request_url` keyword argument:
 
 ```python
-def to_xml(csv_string: str) -> str:
-    # parse csv_string, convert to XML
+def to_xml(csv_string, request_url=""):
     return xml_output
 ```
+
+`request_url` is the full request path with query string. When pagination is active, the URL includes `page`, `page_size`, and `total_items` parameters (e.g., `/products?page=1&page_size=10&total_items=50`). Converters can parse these to embed pagination metadata directly in the output.
 
 These formats become available via `?format=` in the query string and `-f` on the CLI.
 

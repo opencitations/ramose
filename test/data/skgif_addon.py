@@ -6,6 +6,8 @@ import csv
 import json
 from collections.abc import Callable
 from io import StringIO
+from math import ceil
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 from oc_constants import FABIO_TYPE_LABELS
 
@@ -416,44 +418,80 @@ def handle_skgif_product_filter(values: list[str]) -> dict[str, str]:
     return _build_supported_product_filter(pairs)
 
 
-def to_skgif(csv_str: str) -> str:
-    rows = list(csv.DictReader(StringIO(csv_str)))
-    if not rows:
-        return json.dumps({"@context": SKGIF_CONTEXT, "@graph": []}, ensure_ascii=False, indent=4)
+def _build_search_result_page(url) -> dict:
+    return {"local_identifier": url, "entity_type": "search_result_page"}
 
-    first_row = rows[0]
-    br_uri = first_row["br_uri"]
-    title = first_row["title"]
-    fabio_type = first_row["fabio_type"]
 
-    product_type = FABIO_TO_SKGIF_PRODUCT_TYPE.get(fabio_type, "literature")
+def _page_url(base_path, params, page):
+    page_params = {**params, "page": [str(page)]}
+    return f"{base_path}?{urlencode(page_params, doseq=True)}"
 
-    product: dict = {
-        "local_identifier": br_uri,
-        "entity_type": "product",
-        "product_type": product_type,
+
+def _build_meta(request_url):
+    parsed = urlsplit(request_url)
+    params = parse_qs(parsed.query)
+    if "total_items" not in params:
+        return _build_search_result_page(request_url)
+    total_items = int(params["total_items"][0])
+    page = int(params["page"][0])
+    page_size = int(params["page_size"][0])
+    total_pages = ceil(total_items / page_size) if page_size > 0 else 0
+    clean_params = {k: v for k, v in params.items() if k != "total_items"}
+    self_url = f"{parsed.path}?{urlencode(clean_params, doseq=True)}"
+    meta = _build_search_result_page(self_url)
+    if page < total_pages:
+        meta["next_page"] = _build_search_result_page(_page_url(parsed.path, clean_params, page + 1))
+    if page > 1:
+        meta["prev_page"] = _build_search_result_page(_page_url(parsed.path, clean_params, page - 1))
+    base_params = {k: v for k, v in clean_params.items() if k not in ("page", "page_size")}
+    base_url = f"{parsed.path}?{urlencode(base_params, doseq=True)}" if base_params else parsed.path
+    meta["part_of"] = {
+        "local_identifier": base_url,
+        "entity_type": "search_result",
+        "total_items": total_items,
+        "first_page": _build_search_result_page(_page_url(parsed.path, clean_params, 1)),
+        "last_page": _build_search_result_page(_page_url(parsed.path, clean_params, max(total_pages, 1))),
     }
+    return meta
 
-    if title:
-        product["titles"] = {"none": [title]}
 
+def _build_product_graph(rows):
+    first_row = rows[0]
+    product: dict = {
+        "local_identifier": first_row["br_uri"],
+        "entity_type": "product",
+        "product_type": FABIO_TO_SKGIF_PRODUCT_TYPE.get(first_row["fabio_type"], "literature"),
+    }
+    if first_row["title"]:
+        product["titles"] = {"none": [first_row["title"]]}
     identifiers = _collect_identifiers(rows)
     if identifiers:
         product["identifiers"] = identifiers
-
     contributions = _collect_contributors(rows)
     if contributions:
         product["contributions"] = contributions
-
     manifestation = _build_manifestation(rows)
     if manifestation:
         product["manifestations"] = [manifestation]
-
     citations = _collect_citations(rows)
     if citations:
         product["related_products"] = {"cites": citations}
+    return [product]
 
-    result = {"@context": SKGIF_CONTEXT, "@graph": [product]}
+
+def to_skgif(csv_str, request_url=""):
+    rows = list(csv.DictReader(StringIO(csv_str)))
+    if not rows:
+        graph = []
+    elif "fabio_type" in rows[0]:
+        graph = _build_product_graph(rows)
+    else:
+        graph = [dict(row) for row in rows]
+    result = {
+        "@context": SKGIF_CONTEXT,
+        "meta": _build_meta(request_url),
+        "@graph": graph,
+    }
     return json.dumps(result, ensure_ascii=False, indent=4)
 
 

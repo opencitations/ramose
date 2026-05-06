@@ -20,7 +20,6 @@ from ramose.api_manager import APIManager
 from ramose.html_documentation import HTMLDocumentationHandler
 from ramose.openapi_documentation import OpenAPIDocumentationHandler
 from ramose.operation import Operation
-from ramose.paging import build_link_header
 
 
 def main():  # pragma: no cover
@@ -159,17 +158,16 @@ def main():  # pragma: no cover
 
                     op = am.get_op(cur_call + "?" + unquote(request.query_string.decode("utf8")))
                     if isinstance(op, Operation):
-                        status, res, c_type = op.exec(content_type=content_type)
+                        status, res, c_type, headers = op.exec(content_type=content_type)
                     else:
                         status, res, c_type = op
+                        headers = {}
 
                     if status == 200:
                         response = make_response(res, status)
                         response.headers.set("Content-Type", c_type)
-                        if isinstance(op, Operation) and op.pagination_info is not None:
-                            link_header = build_link_header(op.pagination_info)
-                            if link_header:
-                                response.headers.set("Link", link_header)
+                        for header_name, header_value in headers.items():
+                            response.headers.set(header_name, header_value)
                     else:
                         # The API Manager returns a text/plain message when there is an error.
                         # Now set to return the header requested by the user
@@ -202,18 +200,23 @@ def main():  # pragma: no cover
     else:
         # run locally via shell
         if args.openapi:
-            res = (*oah.get_documentation(base_url=args.api_base), "application/yaml")
+            status, body = oah.get_documentation(base_url=args.api_base)
+            ctype = "application/yaml"
         elif args.doc:
-            res = (*dh.get_documentation(css_path), "text/html")
+            status, body = dh.get_documentation(css_path)
+            ctype = "text/html"
         else:
             op = am.get_op(args.call)
-            res = op.exec(args.method, args.format) if isinstance(op, Operation) else op
+            if isinstance(op, Operation):
+                status, body, ctype, _ = op.exec(args.method, args.format)
+            else:
+                status, body, ctype = op
 
         if args.output is None:
-            print("# Response HTTP code: {}\n# Body:\n{}\n# Content-type: {}".format(*res))
+            print(f"# Response HTTP code: {status}\n# Body:\n{body}\n# Content-type: {ctype}")
         else:
             with open(args.output, "w") as f:  # noqa: PTH123
-                f.write(res[1])
+                f.write(body)
 
 
 if __name__ == "__main__":  # pragma: no cover

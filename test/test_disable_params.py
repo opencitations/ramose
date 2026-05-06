@@ -117,7 +117,7 @@ class TestConvFormatDisabled:
     def test_default_format_still_works_when_format_disabled(self):
         class FakeAddon:
             @staticmethod
-            def to_custom(s):
+            def to_custom(s, request_url=""):
                 return '{"custom": true}'
 
         op = _make_op(
@@ -154,7 +154,7 @@ class TestApiManagerDisableParams:
             endpoint_override="http://localhost:9999/sparql",
         )
         for conf in mgr.all_conf.values():
-            assert conf["disable_params"] == set(BUILTIN_PARAMS)
+            assert conf["disable_params"] == {"require", "filter", "sort", "format", "json"}
 
     def test_operation_gets_disabled_params(self):
         mgr = APIManager(
@@ -163,7 +163,7 @@ class TestApiManagerDisableParams:
         )
         op = mgr.get_op("/skgif/v1/products/https://w3id.org/oc/meta/br/0612058700")
         assert isinstance(op, Operation)
-        assert op.disabled_params == set(BUILTIN_PARAMS)
+        assert op.disabled_params == {"require", "filter", "sort", "format", "json"}
 
     def test_no_disable_params_defaults_to_empty(self):
         mgr = APIManager(

@@ -68,7 +68,7 @@ class TestDefaultFormat:
 
         class FakeAddon:
             @staticmethod
-            def to_upper(csv_str):
+            def to_upper(csv_str, request_url=""):
                 return csv_str.upper()
 
         op = Operation(
@@ -96,11 +96,11 @@ class TestDefaultFormat:
 
         class FakeAddon:
             @staticmethod
-            def to_upper(csv_str):
+            def to_upper(csv_str, request_url=""):
                 return csv_str.upper()
 
             @staticmethod
-            def to_dummyxml(csv_str):
+            def to_dummyxml(csv_str, request_url=""):
                 return f"<xml>\n{csv_str}\n</xml>"
 
         op = Operation(
@@ -178,7 +178,7 @@ class TestCustomFormatThroughExec:
         )
         with patch("ramose.operation._http_session") as mock_session:
             mock_session.post.return_value = resp
-            sc, body, ctype = op.exec(method="get", content_type="text/csv")
+            sc, body, ctype, _ = op.exec(method="get", content_type="text/csv")
 
         assert sc == 200
         assert ctype == "xml"
@@ -232,7 +232,7 @@ class TestSparqlAnythingSingleQueryExec:
         )
 
         with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"title": "Test Paper"}]):
-            sc, body, ctype = op.exec(method="get", content_type="application/json")
+            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
         assert ctype == "application/json"
@@ -389,7 +389,7 @@ class TestSparqlAnythingSingleQueryWithAddon:
         )
 
         with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"title": "Test"}]):
-            sc, _body, _ctype = op.exec(method="get", content_type="application/json")
+            sc, _body, _ctype, _ = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
 

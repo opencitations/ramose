@@ -97,7 +97,7 @@ def execute_operation(api_manager: APIManager, operation_url: str) -> str:
     op = api_manager.get_op(operation_url)
     if isinstance(op, tuple):
         raise TypeError(f"Operation not found: {operation_url}")
-    status, result, _ = op.exec(method="get", content_type="application/json")
+    status, result, _, _ = op.exec(method="get", content_type="application/json")
     if status != 200:
         raise RuntimeError(f"API returned status {status}: {result}")
     return result

@@ -68,7 +68,7 @@ def _execute_skgif(skgif_api_manager: APIManager, local_identifier: str) -> dict
     operation = skgif_api_manager.get_op(f"/skgif/v1/products/{local_identifier}")
     if isinstance(operation, tuple):
         raise TypeError(f"Operation not found: {local_identifier}")
-    status, result, _ = operation.exec(method="get", content_type="application/json")
+    status, result, _, _ = operation.exec(method="get", content_type="application/json")
     if status != 200:
         raise RuntimeError(f"API returned status {status}: {result}")
     return json.loads(result)

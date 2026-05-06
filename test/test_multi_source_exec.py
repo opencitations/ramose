@@ -109,7 +109,7 @@ class TestMultiSourceJoinEndpointForeachRemove:
             return []
 
         with patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
-            sc, body, ctype = op.exec(method="get", content_type="application/json")
+            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
         assert ctype == "application/json"
@@ -158,7 +158,7 @@ class TestMultiSourceWithSparqlAnything:
             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
             patch.object(op, "_run_sparql_anything_dicts", side_effect=mock_run_sa),
         ):
-            sc, body, _ctype = op.exec(method="get", content_type="application/json")
+            sc, body, _ctype, _ = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
         rows = json.loads(body)
@@ -185,7 +185,7 @@ class TestMultiSourceErrorHandling:
             raise RuntimeError("SPARQL 500: Internal Server Error")
 
         with patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
-            sc, msg, ct = op.exec(method="get", content_type="application/json")
+            sc, msg, ct, _ = op.exec(method="get", content_type="application/json")
 
         assert sc == 502
         assert msg == "HTTP status code 502: SPARQL 500: Internal Server Error"
@@ -201,7 +201,7 @@ class TestMultiSourceUnknownStepTag:
             return [("BOGUS_TAG",)]
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
-            sc, msg, ct = op.exec(method="get", content_type="application/json")
+            sc, msg, ct, _ = op.exec(method="get", content_type="application/json")
 
         assert sc == 502
         assert msg == "HTTP status code 502: Unknown step tag BOGUS_TAG"
@@ -217,7 +217,7 @@ class TestMultiSourceValueError:
             raise ValueError("bad config")
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
-            sc, msg, ct = op.exec(method="get", content_type="application/json")
+            sc, msg, ct, _ = op.exec(method="get", content_type="application/json")
 
         assert sc == 400
         assert msg == "HTTP status code 400: bad config"
@@ -249,7 +249,7 @@ class TestMultiSourceValuesInject:
             patch.object(op, "_parse_steps", side_effect=mock_parse_steps),
             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
         ):
-            sc, _body, _ctype = op.exec(method="get", content_type="application/json")
+            sc, _body, _ctype, _ = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
 
@@ -272,7 +272,7 @@ class TestMultiSourceMissingJoin:
             patch.object(op, "_parse_steps", side_effect=mock_parse_steps),
             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
         ):
-            sc, msg, _ct = op.exec(method="get", content_type="application/json")
+            sc, msg, _ct, _ = op.exec(method="get", content_type="application/json")
 
         assert sc == 400
         assert msg == "HTTP status code 400: Multiple QUERY steps without an explicit @@join directive"
@@ -298,7 +298,7 @@ class TestMultiSourceForeachNoMatchingColumn:
             patch.object(op, "_parse_steps", side_effect=mock_parse_steps),
             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
         ):
-            sc, body, _ct = op.exec(method="get", content_type="application/json")
+            sc, body, _ct, _ = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
         assert json.loads(body) == []

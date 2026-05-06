@@ -39,7 +39,7 @@ def _make_op(
 class TestExecMethodNotAllowed:
     def test_returns_405_for_wrong_method(self):
         op = _make_op()
-        sc, msg, ct = op.exec(method="delete")
+        sc, msg, ct, _ = op.exec(method="delete")
         assert sc == 405
         assert msg == "HTTP status code 405: 'delete' method not allowed"
         assert ct == "text/plain"
@@ -68,7 +68,7 @@ class TestExecNon200:
     def test_sparql_endpoint_error(self, mock_session):
         mock_session.get.return_value = _mock_response(status_code=500, reason="Internal Server Error")
         op = _make_op()
-        sc, msg, ct = op.exec(method="get")
+        sc, msg, ct, _ = op.exec(method="get")
         assert sc == 500
         assert msg == "HTTP status code 500: Internal Server Error"
         assert ct == "text/plain"
@@ -79,7 +79,7 @@ class TestExecTimeout:
     def test_timeout_returns_408(self, mock_session):
         mock_session.get.side_effect = TimeoutError("timed out")
         op = _make_op()
-        sc, msg, ct = op.exec(method="get")
+        sc, msg, ct, _ = op.exec(method="get")
         assert sc == 408
         assert msg.startswith("HTTP status code 408: request timeout - TimeoutError: timed out (line ")
         assert ct == "text/plain"
@@ -90,7 +90,7 @@ class TestExecTypeError:
     def test_type_error_returns_400(self, mock_session):
         mock_session.get.side_effect = TypeError("bad type")
         op = _make_op()
-        sc, msg, ct = op.exec(method="get")
+        sc, msg, ct, _ = op.exec(method="get")
         assert sc == 400
         assert msg.startswith(
             "HTTP status code 400: parameter in the request not compliant with the type specified - TypeError: bad type (line "
@@ -103,7 +103,7 @@ class TestExecGenericError:
     def test_generic_error_returns_500(self, mock_session):
         mock_session.get.side_effect = RuntimeError("unexpected")
         op = _make_op()
-        sc, msg, ct = op.exec(method="get")
+        sc, msg, ct, _ = op.exec(method="get")
         assert sc == 500
         assert msg.startswith("HTTP status code 500: something unexpected happened - RuntimeError: unexpected (line ")
         assert ct == "text/plain"

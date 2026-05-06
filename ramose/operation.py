@@ -22,7 +22,7 @@ from requests.exceptions import RequestException
 
 from ramose._constants import DEFAULT_HTTP_TIMEOUT, FIELD_TYPE_RE, _http_session
 from ramose.datatype import DataType
-from ramose.paging import PaginationInfo, build_pagination_info
+from ramose.paging import PaginationInfo, build_link_header, build_pagination_info
 
 
 class Operation:
@@ -94,8 +94,13 @@ class Operation:
         to what content type is specified as input."""
 
         content_type = Operation.get_content_type(c_type)
+        if self.pagination_info is not None:
+            request_url = self.pagination_info.self_url
+        elif self.url_parsed.query:
+            request_url = f"{self.op_url}?{self.url_parsed.query}"
+        else:
+            request_url = self.op_url
 
-        # Overwrite if requesting a particular format via the URL
         if "format" in query_string and "format" not in self.disabled_params:
             req_formats = query_string["format"]
 
@@ -104,16 +109,14 @@ class Operation:
 
                 if req_format in self.format:
                     converter_func = getattr(self.addon, self.format[req_format])
-                    return converter_func(s), content_type
+                    return converter_func(s, request_url=request_url), content_type
         elif "default_format" in self.i:
             default_fmt = self.i["default_format"].strip()
             content_type = Operation.get_content_type(default_fmt)
             if default_fmt in self.format:
                 converter_func = getattr(self.addon, self.format[default_fmt])
-                return converter_func(s), content_type
+                return converter_func(s, request_url=request_url), content_type
 
-        # If a non built-in format was requested but no converter ran,
-        # force CSV Content-Type instead of echoing the requested token.
         if content_type not in ("text/csv", "application/json"):
             content_type = "text/csv"
 
@@ -1094,16 +1097,23 @@ class Operation:
         7. the conversion in the format requested by the user."""
         str_method = method.lower()
         if str_method not in self.i["method"].split():
-            return 405, f"HTTP status code 405: '{str_method}' method not allowed", "text/plain"
+            return 405, f"HTTP status code 405: '{str_method}' method not allowed", "text/plain", {}
 
         try:
-            return self._dispatch_exec(content_type)
+            status, body, ctype = self._dispatch_exec(content_type)
         except TimeoutError as e:
-            return self._format_error(408, e, "request timeout - ")
+            return *self._format_error(408, e, "request timeout - "), {}
         except (TypeError, ValueError) as e:
-            return self._format_error(400, e, "parameter in the request not compliant with the type specified - ")
+            return *self._format_error(400, e, "parameter in the request not compliant with the type specified - "), {}
         except Exception as e:  # noqa: BLE001
-            return self._format_error(500, e, "something unexpected happened - ")
+            return *self._format_error(500, e, "something unexpected happened - "), {}
+
+        headers = {}
+        if self.pagination_info is not None:
+            link_header = build_link_header(self.pagination_info)
+            if link_header:
+                headers["Link"] = link_header
+        return status, body, ctype, headers
 
     def _dispatch_exec(self, content_type):
         """Dispatch to the appropriate execution path based on SPARQL text content."""

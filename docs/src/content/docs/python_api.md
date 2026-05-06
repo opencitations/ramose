@@ -45,7 +45,7 @@ from ramose import Operation
 op = am.get_op("/v1/metadata/doi:10.1162/qss_a_00292")
 
 if isinstance(op, Operation):
-    status, body, content_type = op.exec()
+    status, body, content_type, headers = op.exec()
 else:
     status, message, content_type = op
 ```
@@ -56,10 +56,10 @@ Represents a single API operation ready to execute.
 
 ### exec(method, content_type)
 
-Runs the full pipeline and returns `(http_status_code, response_body, content_type)`.
+Runs the full pipeline and returns `(http_status_code, response_body, content_type, headers)`.
 
 ```python
-status, body, content_type = op.exec(
+status, body, content_type, headers = op.exec(
     method="get",
     content_type="text/csv",
 )
@@ -67,17 +67,12 @@ status, body, content_type = op.exec(
 
 Both arguments are optional. Defaults: `method="get"`, `content_type="application/json"`.
 
-### pagination_info
-
-After calling `exec()` with `page`/`page_size` query parameters, `op.pagination_info` holds a `PaginationInfo` named tuple with `page`, `page_size`, `total_items`, `next_url`, and `prev_url` fields. When pagination is not active, this attribute is `None`.
+The `headers` dict contains HTTP headers that should be forwarded to the client. When pagination is active (the request URL includes `page` and `page_size` parameters), it includes a `Link` header with `rel="next"`, `rel="prev"`, `rel="first"`, and `rel="last"` URLs following [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288).
 
 ```python
-from ramose.paging import build_link_header
-
-status, body, content_type = op.exec()
-if op.pagination_info is not None:
-    print(op.pagination_info.total_items)
-    print(build_link_header(op.pagination_info))
+op = am.get_op("/v1/author/orcid:0000-0002-8420-0696?page=2&page_size=10")
+status, body, content_type, headers = op.exec()
+print(headers.get("Link"))
 ```
 
 ### Pipeline

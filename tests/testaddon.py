@@ -16,17 +16,15 @@ def split_dois(s):
     return ('"{}"'.format('" "'.join(s.split("__"))),)
 
 
-def to_upper(csv_str):
-    """Dummy example: convert entire CSV to uppercase."""
+def to_upper(csv_str, request_url=""):  # noqa: ARG001
     return csv_str.upper()
 
 
-def to_dummyxml(csv_str):
-    """Dummy: wrap CSV in <xml> tags."""
+def to_dummyxml(csv_str, request_url=""):  # noqa: ARG001
     return f"<xml>\n{csv_str}\n</xml>"
 
 
-def to_xml(csv_str):
+def to_xml(csv_str, request_url=""):  # noqa: ARG001
     """
     Convert a CSV document (given as a string) into an XML document string.
 
