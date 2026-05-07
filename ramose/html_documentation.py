@@ -200,7 +200,7 @@ The operations that this API implements are:
               aside { display: none; }
               main, #operations, .dashboard, body>footer {margin-left: 15% !important;}
               #operations > ul:nth-of-type(1) li { display:block !important; max-width: 100% !important; }
-              h3 a[href] {display:block !important; float: none !important; font-size: 0.5em !important;}
+              h3 a[href] {display:block !important; float: none !important; font-size: 1rem !important;}
               a {overflow: hidden; text-overflow: ellipsis;}
               .info_api, .api_calls {display: block !important; max-width: 100% !important;}
             }
@@ -234,7 +234,7 @@ The operations that this API implements are:
         }
         p strong {
             text-transform: uppercase;
-            font-size: 0.9em;
+            font-size: 1rem;
         }
         aside h4 {
             padding: 20px 9%;
@@ -252,13 +252,13 @@ The operations that this API implements are:
 
         .sidebar_menu > li {
             padding: 2% 0px;
-            border-top : solid 0.7px grey;
+            border-top : solid 0.7px #595959;
         }
 
         .sidebar_menu a {
             padding: 1% 9%;
             background-image: none !important;
-            color: grey;
+            color: #595959;
             display: block;
         }
 
@@ -270,7 +270,7 @@ The operations that this API implements are:
         .sidebar_submenu > li {
             padding-left:0px !important;
             background-color:#edf0f2;
-            font-size: 0.8em;
+            font-size: 1rem;
         }
 
         main , #operations , .dashboard, body>footer {
@@ -280,7 +280,7 @@ The operations that this API implements are:
         main h1+p , .info_api{
 
             padding-left: 3%;
-            font-size: 0.9em;
+            font-size: 1rem;
             line-height: 1.4em;
         }
 
@@ -301,10 +301,10 @@ The operations that this API implements are:
             background-color: white;
             text-align: left;
             display: inline-block;
-            overflow: hidden;
+            overflow: visible;
             text-overflow: ellipsis;
             max-width: 35%;
-            height: 200px;
+            min-height: 200px;
             padding:4%;
             margin: 1% 2% 1% 0px;
             border-radius: 10px;
@@ -326,7 +326,7 @@ The operations that this API implements are:
 
         #operations > div ul, .params+ul{
             list-style-type: none;
-            font-size: 0.85em;
+            font-size: 1rem;
         }
         #operations > div ul:nth-of-type(1) li, .params+ul li {
             margin: 10px 0px;
@@ -345,13 +345,13 @@ The operations that this API implements are:
             padding: 2% !important;
             display:block;
             vertical-align: top;
-            font-size: 0.8em;
+            font-size: 1rem;
             text-align: left;
         }
 
         .attr strong {
             width: 30%;
-            color: grey;
+            color: #595959;
             font-weight: 400;
             font-style: normal;
             display:inline-block;
@@ -406,11 +406,11 @@ The operations that this API implements are:
 
         :not(pre) > code {
             background-color:  #f0f0f5;
-            color: #8585ad;
+            color: #54547a;
             padding: 0 2px 0 2px;
             border-radius: 3px;
             font-family : monospace;
-            font-size: 1.2em !important;
+            font-size: 1em !important;
         }
 
         /**:not(div) > p {
@@ -439,7 +439,7 @@ The operations that this API implements are:
             background-image: none;
             text-transform:uppercase;
             padding: 1px 3px 1px 3px;
-            font-size: 12pt;
+            font-size: 1rem;
             float: right;
             position:relative;
             top: -3px;
@@ -477,8 +477,8 @@ The operations that this API implements are:
         a {
             color : black;
             text-decoration: none;
-            background-image: -webkit-gradient(linear,left top, left bottom,color-stop(50%, transparent),color-stop(0, rgba(154, 49, 252,.5)));
-            background-image: linear-gradient(180deg,transparent 50%,rgba(154, 49, 252,.5) 0);
+            background-image: -webkit-gradient(linear,left top, left bottom,color-stop(70%, transparent),color-stop(0, rgba(154, 49, 252,.5)));
+            background-image: linear-gradient(180deg,transparent 70%,rgba(154, 49, 252,.5) 0);
             background-position-y: 3px;
             background-position-x: 0px;
             background-repeat: no-repeat;
@@ -489,16 +489,16 @@ The operations that this API implements are:
         a:hover {
             color: #282828;
             background-position: top 6px right 0px;
-            background-image: -webkit-gradient(linear,left top, left bottom,color-stop(60%, transparent),color-stop(0, #9931FC));
-            background-image: linear-gradient(180deg,transparent 60%,#9931FC 0);
+            background-image: -webkit-gradient(linear,left top, left bottom,color-stop(70%, transparent),color-stop(0, #9931FC));
+            background-image: linear-gradient(180deg,transparent 70%,#9931FC 0);
         }
 
         footer {
             margin-top: 20px;
             border-top: 1px solid lightgrey;
             text-align: center;
-            color: grey;
-            font-size: 9pt;
+            color: #595959;
+            font-size: 1rem;
         }
         /* dashboard */
 
@@ -530,8 +530,10 @@ The operations that this API implements are:
             overflow-y: scroll;
             scrollbar-color: #9931FC rgb(154, 49, 252);
             border-radius: 10px;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
-        .api_calls div {padding-bottom:2%;}
+        .api_calls div {padding-bottom:2%; overflow-wrap: break-word; word-break: break-word;}
 
         .api_calls:hover {
           overflow-y: scroll;
@@ -543,8 +545,8 @@ The operations that this API implements are:
         }
 
         .date_log , .method_log {
-          color: grey;
-          font-size: 0.8em;
+          color: #595959;
+          font-size: 1rem;
 
         }
         .method_log {margin-left: 15px;}
@@ -552,7 +554,7 @@ The operations that this API implements are:
 
         .group_log:nth-child(odd) {
           margin-right:5px;
-          font-size: 0.9em;
+          font-size: 1rem;
         }
 
         .group_log:nth-child(even) {
@@ -569,7 +571,7 @@ The operations that this API implements are:
            -moz-border-radius: 50%;
            -webkit-border-radius: 50%;
            border-radius: 50%;
-           background-color: grey;
+           background-color: #595959;
            margin-right: 0.8em;
         }
 
@@ -669,7 +671,7 @@ The operations that this API implements are:
         return (
             200,
             f"""<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <title>{self.__title(conf)}</title>
         {self.__htmlmetadescription(conf)}
