@@ -159,7 +159,9 @@ The operations that this API implements are:
                 if p in op:
                     p_type, p_shape = findall(r"^\s*([^\(]+)\((.+)\)\s*$", op[p])[0]
 
-                params.append(f"<em>{p}</em>: type <code>{p_type}</code>, regular expression shape <code>{p_shape}</code>")
+                params.append(
+                    f"<em>{p}</em>: type <code>{p_type}</code>, regular expression shape <code>{p_shape}</code>"
+                )
 
             if "custom_params" in op:
                 for param_name, param_conf in parse_custom_params(op["custom_params"]).items():
@@ -168,9 +170,10 @@ The operations that this API implements are:
             op_url = op["url"]
             methods = ", ".join(split(r"\s+", op["method"].strip()))
             params_html = "<ul><li>" + "</li>\n<li>".join(params) + "</li></ul>" if params else ""
+            has_custom_default = "default_format" in op and op["default_format"].strip().lower() not in ("csv", "json")
             fields_html = (
                 ", ".join(f"{f} <em>({t})</em>" for t, f in findall(FIELD_TYPE_RE, op["field_type"]))
-                if "field_type" in op
+                if "field_type" in op and not has_custom_default
                 else ""
             )
             example_url = conf["website"] + conf["base_url"] + op["call"]

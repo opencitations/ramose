@@ -229,3 +229,5 @@ Content types are inferred from the format name:
 | `trig` | `application/trig` |
 
 Unrecognized names default to `text/plain`.
+
+When `#default_format` is set to a custom format, the "Result fields type" section is not shown in the HTML documentation. The output structure of a custom converter typically does not match the tabular columns declared in `#field_type`, so displaying them would be misleading. The `#field_type` field is still required: it controls column selection, ordering, and type casting internally.

@@ -389,6 +389,11 @@ class TestCustomParamsInDocumentation:
         assert "sort=" not in html
         assert 'id="parameters"' not in html
 
+    def test_result_fields_type_hidden_with_custom_default_format(self, skgif_api_manager):
+        handler = HTMLDocumentationHandler(skgif_api_manager)
+        _, html = handler.get_documentation()
+        assert "Result fields type" not in html
+
     def test_mock_endpoints_in_openapi(self, skgif_api_manager):
         handler = OpenAPIDocumentationHandler(skgif_api_manager)
         _, yml = handler.get_documentation()
