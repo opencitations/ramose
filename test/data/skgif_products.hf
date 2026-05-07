@@ -2,10 +2,11 @@
 #type api
 #base https://w3id.org/skg-if/sandbox/opencitations
 #title SKG-IF API for OpenCitations
-#description SKG-IF compliant API exposing OpenCitations bibliographic data as JSON-LD, following the Scholarly Knowledge Graph Interoperability Framework specification.
+#description SKG-IF compliant API exposing OpenCitations bibliographic data as JSON-LD, following the <a href="https://skg-if.github.io/interoperability-framework/" target="_blank">Scholarly Knowledge Graph Interoperability Framework specification</a>.
+#html_meta_description SKG-IF API for OpenCitations: access bibliographic metadata, citations, authors, and venues as JSON-LD via the Scholarly Knowledge Graph Interoperability Framework.
 #version 1.0.0
-#contacts [contact@opencitations.net](mailto:contact@opencitations.net)
-#license [ISC](https://opensource.org/licenses/ISC)
+#contacts <a href="mailto:contact@opencitations.net" target="_blank">contact@opencitations.net</a>
+#license <a href="https://opensource.org/licenses/ISC" target="_blank">ISC</a>
 #endpoint https://sparql.opencitations.net/meta
 #method post
 #sources meta=https://sparql.opencitations.net/meta;index=https://sparql.opencitations.net/index

@@ -190,7 +190,7 @@ The operations that this API implements are:
 
     def __footer(self):
         """This method returns the footer of the API documentation."""
-        result = """This API and the related documentation has been created with <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE</a>, the *Restful API Manager Over SPARQL Endpoints*, developed by <a href="http://orcid.org/0000-0003-0530-4305" target="_blank">Silvio Peroni</a> and <a href="https://marilenadaquino.github.io">Marilena Daquino</a>."""
+        result = """This API and the related documentation has been created with <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE</a>, the *Restful API Manager Over SPARQL Endpoints*, developed by <a href="https://orcid.org/0000-0003-0530-4305" target="_blank">Silvio Peroni</a>, <a href="https://orcid.org/0000-0002-1113-7550" target="_blank">Marilena Daquino</a> and <a href="https://orcid.org/0000-0002-8420-0696" target="_blank">Arcangelo Massari</a>."""
         return markdown(result)
 
     def __css(self):
@@ -488,9 +488,8 @@ The operations that this API implements are:
 
         a:hover {
             color: #282828;
-            background-position: top 6px right 0px;
-            background-image: -webkit-gradient(linear,left top, left bottom,color-stop(70%, transparent),color-stop(0, #9931FC));
-            background-image: linear-gradient(180deg,transparent 70%,#9931FC 0);
+            background-image: -webkit-gradient(linear,left top, left bottom,color-stop(70%, transparent),color-stop(0, rgba(154, 49, 252,.25)));
+            background-image: linear-gradient(180deg,transparent 70%,rgba(154, 49, 252,.25) 0);
         }
 
         footer {
@@ -648,7 +647,7 @@ The operations that this API implements are:
                 <div class="info_api">
                     <h2>{api_title}</h2>
                     <a id="view_doc" href="{api_url}">VIEW DOCUMENTATION</a><br/>
-                    <a href="{api_dict["tp"]}">GO TO SPARQL ENDPOINT</a><br/>
+                    <a href="{api_dict["tp"]}" target="_blank">GO TO SPARQL ENDPOINT</a><br/>
                 </div>
                 <div class="api_calls">
                     <h4>Last calls</h4>
