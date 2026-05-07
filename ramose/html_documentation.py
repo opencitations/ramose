@@ -159,7 +159,7 @@ The operations that this API implements are:
                 if p in op:
                     p_type, p_shape = findall(r"^\s*([^\(]+)\((.+)\)\s*$", op[p])[0]
 
-                params.append(f"<em>{p}</em>: type <em>{p_type}</em>, regular expression shape <code>{p_shape}</code>")
+                params.append(f"<em>{p}</em>: type <code>{p_type}</code>, regular expression shape <code>{p_shape}</code>")
 
             if "custom_params" in op:
                 for param_name, param_conf in parse_custom_params(op["custom_params"]).items():
@@ -349,7 +349,7 @@ The operations that this API implements are:
             text-align: left;
         }
 
-        .attr strong {
+        .attr > strong {
             width: 30%;
             color: #595959;
             font-weight: 400;
