@@ -479,7 +479,7 @@ get(API_CALL, headers=HTTP_HEADERS)
 </ul>
 
 <p class="attr"><strong>Accepted HTTP method(s)</strong> <span class="attr_val method">get</span></p>
-<p class="attr params"><strong>Parameter(s)</strong> <span class="attr_val"><em>ids</em>: type <em>str</em>, regular expression shape <code>(doi|issn|isbn|omid|openalex|pmid|pmcid):.+?(__(doi|issn|isbn|omid|openalex|pmid|pmcid):.+?)*$</code></span></p>
+<div class="attr params"><strong>Parameter(s)</strong><ul><li><em>ids</em>: type <em>str</em>, regular expression shape <code>(doi|issn|isbn|omid|openalex|pmid|pmcid):.+?(__(doi|issn|isbn|omid|openalex|pmid|pmcid):.+?)*$</code></li></ul></div>
 <p class="attr"><strong>Result fields type</strong><span class="attr_val">id <em>(str)</em>, title <em>(str)</em>, author <em>(str)</em>, pub_date <em>(datetime)</em>, issue <em>(str)</em>, volume <em>(str)</em>, venue <em>(str)</em>, page <em>(str)</em>, type <em>(str)</em>, publisher <em>(str)</em>, editor <em>(str)</em></span></p>
 <p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="https://api.opencitations.net/meta/v1/metadata/doi:10.1007/978-1-4020-9632-7">/metadata/doi:10.1007/978-1-4020-9632-7</a></span></p>
 <p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
@@ -516,7 +516,7 @@ get(API_CALL, headers=HTTP_HEADERS)
 </ul>
 
 <p class="attr"><strong>Accepted HTTP method(s)</strong> <span class="attr_val method">get</span></p>
-<p class="attr params"><strong>Parameter(s)</strong> <span class="attr_val"><em>id</em>: type <em>str</em>, regular expression shape <code>((orcid:)?([0-9]{4}-){3}[0-9]{3}[0-9X])|(omid:ra\/06[1-9]*0\d+)</code></span></p>
+<div class="attr params"><strong>Parameter(s)</strong><ul><li><em>id</em>: type <em>str</em>, regular expression shape <code>((orcid:)?([0-9]{4}-){3}[0-9]{3}[0-9X])|(omid:ra\/06[1-9]*0\d+)</code></li></ul></div>
 <p class="attr"><strong>Result fields type</strong><span class="attr_val">id <em>(str)</em>, title <em>(str)</em>, author <em>(str)</em>, pub_date <em>(datetime)</em>, issue <em>(str)</em>, volume <em>(str)</em>, venue <em>(str)</em>, page <em>(str)</em>, type <em>(str)</em>, publisher <em>(str)</em>, editor <em>(str)</em></span></p>
 <p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="https://api.opencitations.net/meta/v1/author/orcid:0000-0002-8420-0696">/author/orcid:0000-0002-8420-0696</a></span></p>
 <p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
@@ -579,7 +579,7 @@ get(API_CALL, headers=HTTP_HEADERS)
 </ul>
 
 <p class="attr"><strong>Accepted HTTP method(s)</strong> <span class="attr_val method">get</span></p>
-<p class="attr params"><strong>Parameter(s)</strong> <span class="attr_val"><em>id</em>: type <em>str</em>, regular expression shape <code>((orcid:)?([0-9]{4}-){3}[0-9]{3}[0-9X])|(omid:ra\/06[1-9]*0\d+)</code></span></p>
+<div class="attr params"><strong>Parameter(s)</strong><ul><li><em>id</em>: type <em>str</em>, regular expression shape <code>((orcid:)?([0-9]{4}-){3}[0-9]{3}[0-9X])|(omid:ra\/06[1-9]*0\d+)</code></li></ul></div>
 <p class="attr"><strong>Result fields type</strong><span class="attr_val">id <em>(str)</em>, title <em>(str)</em>, author <em>(str)</em>, pub_date <em>(datetime)</em>, issue <em>(str)</em>, volume <em>(str)</em>, venue <em>(str)</em>, page <em>(str)</em>, type <em>(str)</em>, publisher <em>(str)</em>, editor <em>(str)</em></span></p>
 <p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="https://api.opencitations.net/meta/v1/editor/orcid:0000-0003-2098-4759">/editor/orcid:0000-0003-2098-4759</a></span></p>
 <p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
