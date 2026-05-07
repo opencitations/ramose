@@ -167,8 +167,8 @@ The operations that this API implements are:
 
             op_url = op["url"]
             methods = ", ".join(split(r"\s+", op["method"].strip()))
-            params_html = "</li><li>".join(params)
-            fields_html = ", ".join(f"{f} <em>({t})</em>" for t, f in findall(FIELD_TYPE_RE, op["field_type"]))
+            params_html = "<ul><li>" + "</li>\n<li>".join(params) + "</li></ul>" if params else ""
+            fields_html = ", ".join(f"{f} <em>({t})</em>" for t, f in findall(FIELD_TYPE_RE, op["field_type"])) if "field_type" in op else ""
             example_url = conf["website"] + conf["base_url"] + op["call"]
 
             result += f"\n* [{op_url}](#{op_url}): {op['description'].split(chr(10))[0]}"
@@ -178,8 +178,8 @@ The operations that this API implements are:
 {markdown(op["description"])}
 
 <p class="attr"><strong>Accepted HTTP method(s)</strong> <span class="attr_val method">{methods}</span></p>
-<p class="attr params"><strong>Parameter(s)</strong> <span class="attr_val">{params_html}</span></p>
-<p class="attr"><strong>Result fields type</strong><span class="attr_val">{fields_html}</span></p>
+<div class="attr params"><strong>Parameter(s)</strong>{params_html}</div>
+{'<p class="attr"><strong>Result fields type</strong><span class="attr_val">' + fields_html + '</span></p>' if fields_html else ""}
 <p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="{example_url}">{op["call"]}</a></span></p>
 {'<p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>' + chr(10) + "<pre><code>" + op["output_json"] + "</code></pre>" if "output_json" in op else ""}</div>"""
         return markdown(result) + ops
