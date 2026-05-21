@@ -8,7 +8,7 @@ import yaml
 
 from ramose import APIManager, OpenAPIDocumentationHandler
 
-TESTS_DIR = Path(__file__).resolve().parent.parent / "tests"
+TESTS_DIR = Path(__file__).resolve().parent / "fixtures"
 
 
 def _build_handler(*hf_files):

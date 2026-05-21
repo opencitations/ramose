@@ -108,7 +108,7 @@ ignore = [
 "test/data/**" = [
     "INP001", # implicit namespace package
 ]
-"tests/**" = [
+"test/fixtures/**" = [
     "INP001", # implicit namespace package
 ]
 "ramose/__init__.py" = [

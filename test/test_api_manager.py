@@ -93,7 +93,7 @@ class TestGetOpInvalidParam:
 class TestSourcesParsing:
     def test_sources_map_populated(self):
         am = APIManager(
-            ["tests/test_with_sources.hf"],
+            ["test/fixtures/test_with_sources.hf"],
             endpoint_override="http://localhost:9999/sparql",
         )
         base = am.base_url[0]
@@ -103,7 +103,7 @@ class TestSourcesParsing:
 
     def test_empty_sources_pairs_skipped(self):
         am = APIManager(
-            ["tests/test_with_sources.hf"],
+            ["test/fixtures/test_with_sources.hf"],
             endpoint_override="http://localhost:9999/sparql",
         )
         base = am.base_url[0]
@@ -114,7 +114,7 @@ class TestSourcesParsing:
 class TestPerOperationEngine:
     def test_operation_level_engine_override(self):
         am = APIManager(
-            ["tests/test_with_sources.hf"],
+            ["test/fixtures/test_with_sources.hf"],
             endpoint_override="http://localhost:9999/sparql",
         )
         op = am.get_op("/api/v2/data/test")
@@ -123,7 +123,7 @@ class TestPerOperationEngine:
 
     def test_api_level_engine(self):
         am = APIManager(
-            ["tests/mixed_scholarly_crossref.hf"],
+            ["test/fixtures/mixed_scholarly_crossref.hf"],
             endpoint_override="http://localhost:9999/sparql",
         )
         base = am.base_url[0]
@@ -133,7 +133,7 @@ class TestPerOperationEngine:
 class TestFormatParsingEmptyPart:
     def test_trailing_semicolon_ignored(self):
         am = APIManager(
-            ["tests/test_openapi_edge.hf"],
+            ["test/fixtures/test_openapi_edge.hf"],
             endpoint_override="http://localhost:9999/sparql",
         )
         op = am.get_op("/edge/lookup/wikidata/Q42")

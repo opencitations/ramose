@@ -15,7 +15,7 @@ if "pysparql_anything" not in sys.modules:
     _mock_module.SparqlAnything = MagicMock()  # type: ignore[attr-defined]
     sys.modules["pysparql_anything"] = _mock_module
 
-TESTS_DIR = str(Path(__file__).resolve().parent.parent / "tests")
+TESTS_DIR = str(Path(__file__).resolve().parent / "fixtures")
 
 
 class TestCustomFormatConversion:

@@ -11,7 +11,7 @@ import pytest
 
 from ramose import APIManager, Operation
 
-TESTS_DIR = str(Path(__file__).resolve().parent.parent / "tests")
+TESTS_DIR = str(Path(__file__).resolve().parent / "fixtures")
 
 # Realistic mock data captured from real endpoints (Wikidata, OpenCitations, Crossref)
 

@@ -13,3 +13,7 @@ docs/dist/
 docs/node_modules/
 docs/.astro/
 .cache/
+oc_skgo_mappings.csv
+SKG-O Mappings.xlsx
+slide_csv_to_skgif.png
+slide_csv_to_skgif.puml

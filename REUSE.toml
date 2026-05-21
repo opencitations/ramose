@@ -29,8 +29,8 @@ SPDX-License-Identifier = "ISC"
 
 [[annotations]]
 path = [
-    "tests/*.hf",
-    "tests/*.yaml",
+    "test/fixtures/*.hf",
+    "test/fixtures/*.yaml",
 ]
 SPDX-FileCopyrightText = "2026 Sergei Slinkin"
 SPDX-License-Identifier = "ISC"
