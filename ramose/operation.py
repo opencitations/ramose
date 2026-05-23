@@ -24,6 +24,12 @@ from ramose.datatype import DataType
 from ramose.paging import PaginationInfo, build_link_header, build_pagination_info
 
 
+class HttpError(Exception):
+    def __init__(self, status_code, message):
+        super().__init__(message)
+        self.status_code = status_code
+
+
 class Operation:
     def __init__(
         self,
@@ -1115,6 +1121,8 @@ class Operation:
 
         try:
             status, body, ctype = self._dispatch_exec(content_type)
+        except HttpError as err:
+            return err.status_code, str(err), "text/plain", {}
         except TimeoutError as e:
             return *self._format_error(408, e, "request timeout - "), {}
         except (TypeError, ValueError) as e:

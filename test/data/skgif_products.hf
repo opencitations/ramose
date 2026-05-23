@@ -56,8 +56,8 @@ Format: comma-separated <code>filter_name:filter_value</code> pairs (AND logic).
 #format skgif,to_skgif
 #default_format skgif
 #call /products?filter=cf.search.title:adaptive
-#field_type str(local_identifier) str(title)
-#output_json [{"local_identifier": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"}]
+#field_type str(local_identifier) str(title) str(entity_type) str(product_type)
+#output_json [{"local_identifier": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management", "entity_type": "product", "product_type": "literature"}]
 #sparql [[filter_preamble]]
 PREFIX fabio: <http://purl.org/spar/fabio/>
 PREFIX dcterm: <http://purl.org/dc/terms/>
@@ -66,10 +66,13 @@ PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX pro: <http://purl.org/spar/pro/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT DISTINCT ?local_identifier ?title
+SELECT DISTINCT ?local_identifier ?title ?entity_type ?product_type
 WHERE {
   ?local_identifier a fabio:Expression ;
           dcterm:title ?title .
+  BIND("product" AS ?entity_type)
+  OPTIONAL { ?local_identifier a ?_type_class . FILTER(?_type_class != fabio:Expression) }
+  BIND(IF(!BOUND(?_type_class), "literature", IF(?_type_class IN (<http://purl.org/spar/fabio/DataFile>, <http://purl.org/spar/fabio/DataManagementPlan>), "research data", IF(?_type_class = <http://purl.org/spar/fabio/ComputerProgram>, "research software", "literature"))) AS ?product_type)
   [[filter]]
 }
 ORDER BY ?title
@@ -308,7 +311,7 @@ ORDER BY ?title
         }
     ]
 }
-#field_type str(local_identifier) str(identifier_scheme) str(identifier_value) str(title) str(title_lang) str(abstract) str(abstract_lang) str(product_type) str(topic_term) str(topic_identifier_scheme) str(topic_identifier_value) str(topic_label) str(topic_label_lang) str(topic_provenance_associated_with) str(topic_provenance_trust) str(contribution_by_family_name) str(contribution_by_given_name) str(contribution_by_name) str(contribution_by_identifier_scheme) str(contribution_by_identifier_value) str(contribution_by_local_identifier) str(contribution_role) str(contribution_type) str(_contribution_key) str(_contribution_next_key) str(contribution_declared_affiliation_name) str(contribution_declared_affiliation_short_name) str(contribution_declared_affiliation_country) str(contribution_declared_affiliation_local_identifier) str(contribution_declared_affiliation_identifier_scheme) str(contribution_declared_affiliation_identifier_value) str(contribution_declared_affiliation_type) str(contribution_declared_affiliation_website) str(contribution_declared_affiliation_other_name) str(manifestation_type_class) str(manifestation_type_label) str(manifestation_type_label_lang) str(manifestation_identifier_scheme) str(manifestation_identifier_value) str(manifestation_dates_type) str(manifestation_dates_value) str(manifestation_peer_review_status) str(manifestation_peer_review_description) str(manifestation_access_rights_status) str(manifestation_access_rights_description) str(manifestation_licence) str(manifestation_version) str(manifestation_biblio_volume) str(manifestation_biblio_issue) str(manifestation_biblio_edition) str(manifestation_biblio_number) str(manifestation_biblio_pages_first) str(manifestation_biblio_pages_last) str(manifestation_biblio_in_name) str(manifestation_biblio_in_local_identifier) str(manifestation_biblio_in_identifier_scheme) str(manifestation_biblio_in_identifier_value) str(manifestation_biblio_in_acronym) str(manifestation_biblio_hosting_data_source_local_identifier) str(manifestation_biblio_hosting_data_source_name) str(manifestation_biblio_hosting_data_source_identifier_scheme) str(manifestation_biblio_hosting_data_source_identifier_value) str(related_products_cites) str(related_products_is_supplemented_by) str(related_products_is_documented_by) str(related_products_is_new_version_of) str(related_products_is_part_of) str(funding_local_identifier) str(funding_grant_number) str(funding_title) str(funding_title_lang) str(funding_abstract) str(funding_abstract_lang) str(funding_acronym) str(funding_identifier_scheme) str(funding_identifier_value) str(funding_stream) str(funding_agency_name) str(funding_agency_short_name) str(funding_agency_country) str(funding_agency_local_identifier) str(funding_agency_identifier_scheme) str(funding_agency_identifier_value) str(funding_agency_type) str(funding_agency_website) str(relevant_organisation_name) str(relevant_organisation_short_name) str(relevant_organisation_country) str(relevant_organisation_local_identifier) str(relevant_organisation_identifier_scheme) str(relevant_organisation_identifier_value) str(relevant_organisation_type) str(relevant_organisation_website) str(relevant_organisation_other_name)
+#field_type str(local_identifier) str(entity_type) str(identifier_scheme) str(identifier_value) str(title) str(title_lang) str(abstract) str(abstract_lang) str(product_type) str(topic_term) str(topic_identifier_scheme) str(topic_identifier_value) str(topic_label) str(topic_label_lang) str(topic_provenance_associated_with) str(topic_provenance_trust) str(contribution_by_family_name) str(contribution_by_given_name) str(contribution_by_name) str(contribution_by_identifier_scheme) str(contribution_by_identifier_value) str(contribution_by_local_identifier) str(contribution_role) str(contribution_type) str(_contribution_key) str(_contribution_next_key) str(contribution_declared_affiliation_name) str(contribution_declared_affiliation_short_name) str(contribution_declared_affiliation_country) str(contribution_declared_affiliation_local_identifier) str(contribution_declared_affiliation_identifier_scheme) str(contribution_declared_affiliation_identifier_value) str(contribution_declared_affiliation_type) str(contribution_declared_affiliation_website) str(contribution_declared_affiliation_other_name) str(manifestation_type_class) str(manifestation_type_label) str(manifestation_type_label_lang) str(manifestation_identifier_scheme) str(manifestation_identifier_value) str(manifestation_dates_type) str(manifestation_dates_value) str(manifestation_peer_review_status) str(manifestation_peer_review_description) str(manifestation_access_rights_status) str(manifestation_access_rights_description) str(manifestation_licence) str(manifestation_version) str(manifestation_biblio_volume) str(manifestation_biblio_issue) str(manifestation_biblio_edition) str(manifestation_biblio_number) str(manifestation_biblio_pages_first) str(manifestation_biblio_pages_last) str(manifestation_biblio_in_name) str(manifestation_biblio_in_local_identifier) str(manifestation_biblio_in_identifier_scheme) str(manifestation_biblio_in_identifier_value) str(manifestation_biblio_in_acronym) str(manifestation_biblio_hosting_data_source_local_identifier) str(manifestation_biblio_hosting_data_source_name) str(manifestation_biblio_hosting_data_source_identifier_scheme) str(manifestation_biblio_hosting_data_source_identifier_value) str(related_products_cites) str(related_products_is_supplemented_by) str(related_products_is_documented_by) str(related_products_is_new_version_of) str(related_products_is_part_of) str(funding_local_identifier) str(funding_grant_number) str(funding_title) str(funding_title_lang) str(funding_abstract) str(funding_abstract_lang) str(funding_acronym) str(funding_identifier_scheme) str(funding_identifier_value) str(funding_stream) str(funding_agency_name) str(funding_agency_short_name) str(funding_agency_country) str(funding_agency_local_identifier) str(funding_agency_identifier_scheme) str(funding_agency_identifier_value) str(funding_agency_type) str(funding_agency_website) str(relevant_organisation_name) str(relevant_organisation_short_name) str(relevant_organisation_country) str(relevant_organisation_local_identifier) str(relevant_organisation_identifier_scheme) str(relevant_organisation_identifier_value) str(relevant_organisation_type) str(relevant_organisation_website) str(relevant_organisation_other_name)
 #format skgif,to_skgif
 #default_format skgif
 #sparql PREFIX fabio: <http://purl.org/spar/fabio/>
@@ -318,19 +321,23 @@ PREFIX frbr: <http://purl.org/vocab/frbr/core#>
 PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 
-SELECT ?local_identifier ?identifier_scheme ?identifier_value
+SELECT ?local_identifier ?entity_type ?identifier_scheme ?identifier_value
        ?title ?product_type
-       ?manifestation_type_class ?manifestation_dates_type ?manifestation_dates_value
+       ?manifestation_type_class ?manifestation_type_label ?manifestation_type_label_lang
+       ?manifestation_dates_type ?manifestation_dates_value
        ?manifestation_biblio_volume ?manifestation_biblio_issue
        ?manifestation_biblio_pages_first ?manifestation_biblio_pages_last
        ?manifestation_biblio_in_name ?manifestation_biblio_in_local_identifier
        ?manifestation_biblio_in_identifier_scheme ?manifestation_biblio_in_identifier_value
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
+  BIND("product" AS ?entity_type)
   ?local_identifier a fabio:Expression .
   OPTIONAL { ?local_identifier dcterm:title ?title }
   OPTIONAL { ?local_identifier a ?manifestation_type_class . FILTER(?manifestation_type_class != fabio:Expression) }
   BIND(IF(!BOUND(?manifestation_type_class), "literature", IF(?manifestation_type_class IN (<http://purl.org/spar/fabio/DataFile>, <http://purl.org/spar/fabio/DataManagementPlan>), "research data", IF(?manifestation_type_class = <http://purl.org/spar/fabio/ComputerProgram>, "research software", "literature"))) AS ?product_type)
+  BIND(IF(BOUND(?manifestation_type_class), LCASE(REPLACE(REPLACE(STR(?manifestation_type_class), "^.*[/#]", ""), "([a-z])([A-Z])", "$1 $2")), "") AS ?manifestation_type_label)
+  BIND(IF(BOUND(?manifestation_type_class), "en", "") AS ?manifestation_type_label_lang)
   OPTIONAL {
     ?local_identifier prism:publicationDate ?manifestation_dates_value .
     BIND("publication" AS ?manifestation_dates_type)
@@ -510,37 +517,11 @@ Format: comma-separated <code>filter_name:filter_value</code> pairs (AND logic).
 #url /grants/{local_identifier}
 #type operation
 #method get
-#description Returns a single grant. Note: OpenCitations does not currently hold grant data; this endpoint always returns an empty graph.
+#description Returns a single grant. Note: OpenCitations does not currently hold grant data; this endpoint always returns 404.
 #call /grants/example-grant-id
 #format skgif,to_skgif
 #default_format skgif
-#output_json {
-    "@context": [
-        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-        {
-            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
-        }
-    ],
-    "meta": {
-        "local_identifier": "/skgif/v1/grants/example-grant-id?page=1&page_size=1",
-        "entity_type": "search_result_page",
-        "part_of": {
-            "local_identifier": "/skgif/v1/grants/example-grant-id",
-            "entity_type": "search_result",
-            "total_items": 0,
-            "first_page": {
-                "local_identifier": "/skgif/v1/grants/example-grant-id?page=1&page_size=1",
-                "entity_type": "search_result_page"
-            },
-            "last_page": {
-                "local_identifier": "/skgif/v1/grants/example-grant-id?page=1&page_size=1",
-                "entity_type": "search_result_page"
-            }
-        }
-    },
-    "@graph": []
-}
+#output_json HTTP status code 404: entity not found
 #sparql SELECT ?dummy WHERE { FILTER(false) }
 
 #url /topics
@@ -592,37 +573,11 @@ Format: comma-separated <code>filter_name:filter_value</code> pairs (AND logic).
 #url /topics/{local_identifier}
 #type operation
 #method get
-#description Returns a single topic. Note: OpenCitations does not currently hold topic data; this endpoint always returns an empty graph.
+#description Returns a single topic. Note: OpenCitations does not currently hold topic data; this endpoint always returns 404.
 #call /topics/example-topic-id
 #format skgif,to_skgif
 #default_format skgif
-#output_json {
-    "@context": [
-        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-        {
-            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
-        }
-    ],
-    "meta": {
-        "local_identifier": "/skgif/v1/topics/example-topic-id?page=1&page_size=1",
-        "entity_type": "search_result_page",
-        "part_of": {
-            "local_identifier": "/skgif/v1/topics/example-topic-id",
-            "entity_type": "search_result",
-            "total_items": 0,
-            "first_page": {
-                "local_identifier": "/skgif/v1/topics/example-topic-id?page=1&page_size=1",
-                "entity_type": "search_result_page"
-            },
-            "last_page": {
-                "local_identifier": "/skgif/v1/topics/example-topic-id?page=1&page_size=1",
-                "entity_type": "search_result_page"
-            }
-        }
-    },
-    "@graph": []
-}
+#output_json HTTP status code 404: entity not found
 #sparql SELECT ?dummy WHERE { FILTER(false) }
 
 #url /datasources
@@ -676,35 +631,9 @@ Format: comma-separated <code>filter_name:filter_value</code> pairs (AND logic).
 #url /datasources/{local_identifier}
 #type operation
 #method get
-#description Returns a single data source. Note: OpenCitations does not currently hold data source records; this endpoint always returns an empty graph.
+#description Returns a single data source. Note: OpenCitations does not currently hold data source records; this endpoint always returns 404.
 #call /datasources/example-datasource-id
 #format skgif,to_skgif
 #default_format skgif
-#output_json {
-    "@context": [
-        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-        {
-            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
-        }
-    ],
-    "meta": {
-        "local_identifier": "/skgif/v1/datasources/example-datasource-id?page=1&page_size=1",
-        "entity_type": "search_result_page",
-        "part_of": {
-            "local_identifier": "/skgif/v1/datasources/example-datasource-id",
-            "entity_type": "search_result",
-            "total_items": 0,
-            "first_page": {
-                "local_identifier": "/skgif/v1/datasources/example-datasource-id?page=1&page_size=1",
-                "entity_type": "search_result_page"
-            },
-            "last_page": {
-                "local_identifier": "/skgif/v1/datasources/example-datasource-id?page=1&page_size=1",
-                "entity_type": "search_result_page"
-            }
-        }
-    },
-    "@graph": []
-}
+#output_json HTTP status code 404: entity not found
 #sparql SELECT ?dummy WHERE { FILTER(false) }

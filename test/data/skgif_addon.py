@@ -9,6 +9,8 @@ from io import StringIO
 from math import ceil
 from urllib.parse import parse_qs, quote, urlencode, urlsplit
 
+from ramose import HttpError
+
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
@@ -745,42 +747,96 @@ def _build_meta(request_url, graph_size):
     return meta
 
 
-def _build_product_graph(rows):
+_BUILDER_COLUMN_PREFIXES = (
+    "identifier_",
+    "contribution_",
+    "manifestation_",
+    "related_products_",
+    "topic_",
+    "funding_",
+    "relevant_organisation_",
+)
+
+
+def _collect_passthrough_fields(first_row: dict, active_formatted: set[str]) -> dict:
+    entity: dict = {}
+    for col, val in first_row.items():
+        if col.startswith("_") or col in active_formatted:
+            continue
+        if any(col.startswith(prefix) for prefix in _BUILDER_COLUMN_PREFIXES):
+            continue
+        if val:
+            entity[col] = val
+    return entity
+
+
+def _add_formatted_text(entity: dict, first_row: dict, field: str, lang_field: str, output_key: str) -> None:
+    if lang_field not in first_row:
+        return
+    if first_row[field]:
+        entity[output_key] = {(first_row[lang_field] or "none"): [first_row[field]]}
+    else:
+        entity[output_key] = {}
+
+
+def _build_entity(rows: list[dict]) -> dict:
     first_row = rows[0]
-    product: dict = {
-        "local_identifier": first_row["local_identifier"],
-        "entity_type": "product",
-        "product_type": first_row["product_type"],
-    }
-    if first_row["title"]:
-        lang_key = first_row["title_lang"] or "none"
-        product["titles"] = {lang_key: [first_row["title"]]}
-    else:
-        product["titles"] = {}
-    if first_row["abstract"]:
-        abs_lang = first_row["abstract_lang"] or "none"
-        product["abstracts"] = {abs_lang: [first_row["abstract"]]}
-    else:
-        product["abstracts"] = {}
-    product["identifiers"] = _collect_identifiers(rows)
-    product["contributions"] = _collect_contributors(rows)
-    manifestation = _build_manifestation(rows)
-    product["manifestations"] = [manifestation] if manifestation else []
-    product["related_products"] = _collect_related_products(rows)
-    product["topics"] = _collect_topics(rows)
-    product["funding"] = _collect_funding(rows)
-    product["relevant_organisations"] = _collect_organisation(rows, "relevant_organisation")
-    return [product]
+    columns = set(first_row)
+
+    active_formatted: set[str] = set()
+    if "title_lang" in columns:
+        active_formatted.update(("title", "title_lang"))
+    if "abstract_lang" in columns:
+        active_formatted.update(("abstract", "abstract_lang"))
+
+    entity = _collect_passthrough_fields(first_row, active_formatted)
+    _add_formatted_text(entity, first_row, "title", "title_lang", "titles")
+    _add_formatted_text(entity, first_row, "abstract", "abstract_lang", "abstracts")
+
+    if "identifier_scheme" in columns:
+        entity["identifiers"] = _collect_identifiers(rows)
+    if "contribution_role" in columns:
+        entity["contributions"] = _collect_contributors(rows)
+    if "manifestation_type_class" in columns:
+        manifestation = _build_manifestation(rows)
+        entity["manifestations"] = [manifestation] if manifestation else []
+    if columns & set(_RELATED_PRODUCT_COLUMNS):
+        entity["related_products"] = _collect_related_products(rows)
+    if "topic_term" in columns:
+        entity["topics"] = _collect_topics(rows)
+    if "funding_local_identifier" in columns:
+        entity["funding"] = _collect_funding(rows)
+    if "relevant_organisation_name" in columns:
+        entity["relevant_organisations"] = _collect_organisation(rows, "relevant_organisation")
+
+    return entity
+
+
+def _build_entities(rows: list[dict]) -> list[dict]:
+    if not rows:
+        return []
+    groups: dict[str, list[dict]] = {}
+    for row in rows:
+        groups.setdefault(row["local_identifier"], []).append(row)
+    return [_build_entity(group) for group in groups.values()]
+
+
+ENTITY_TYPES = frozenset({"products", "persons", "organisations", "grants", "venues", "topics", "datasources"})
+
+
+def _is_single_entity_request(request_url):
+    segments = [s for s in urlsplit(request_url).path.split("/") if s]
+    for i, segment in enumerate(segments):
+        if segment in ENTITY_TYPES:
+            return i + 1 < len(segments)
+    return False
 
 
 def to_skgif(csv_str, request_url=""):
     rows = list(csv.DictReader(StringIO(csv_str)))
-    if not rows:
-        graph = []
-    elif "product_type" in rows[0]:
-        graph = _build_product_graph(rows)
-    else:
-        graph = [dict(row) for row in rows]
+    if not rows and _is_single_entity_request(request_url):
+        raise HttpError(404, "HTTP status code 404: entity not found")
+    graph = _build_entities(rows)
 
     total_entities = len(graph)
 

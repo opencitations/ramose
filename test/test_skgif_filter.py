@@ -44,14 +44,20 @@ class TestTitleFilter:
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
                 "title": "Adaptive Environmental Management",
+                "entity_type": "product",
+                "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0615065546",
                 "title": "Adaptive System: The Study Of Information, Pattern, And Behavior",
+                "entity_type": "product",
+                "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
                 "title": "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology",
+                "entity_type": "product",
+                "product_type": "literature",
             },
         ]
 
@@ -67,29 +73,56 @@ class TestIdentifierFilter:
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
                 "title": "Adaptive Environmental Management",
+                "entity_type": "product",
+                "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/061702785338",
                 "title": "Advances In Intelligent Systems And Computing",
+                "entity_type": "product",
+                "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/06302611905",
                 "title": "Communications In Computer And Information Science",
+                "entity_type": "product",
+                "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/06402611083",
                 "title": "Lecture Notes In Computer Science",
+                "entity_type": "product",
+                "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/06603870331",
                 "title": "OECD Economic Surveys: China 2022",
+                "entity_type": "product",
+                "product_type": "literature",
             },
-            {"local_identifier": "https://w3id.org/oc/meta/br/0611064823", "title": "The Semantic Web"},
-            {"local_identifier": "https://w3id.org/oc/meta/br/06401297735", "title": "The Semantic Web"},
-            {"local_identifier": "https://w3id.org/oc/meta/br/0611064985", "title": "The Semantic Web"},
+            {
+                "local_identifier": "https://w3id.org/oc/meta/br/0611064823",
+                "title": "The Semantic Web",
+                "entity_type": "product",
+                "product_type": "literature",
+            },
+            {
+                "local_identifier": "https://w3id.org/oc/meta/br/06401297735",
+                "title": "The Semantic Web",
+                "entity_type": "product",
+                "product_type": "literature",
+            },
+            {
+                "local_identifier": "https://w3id.org/oc/meta/br/0611064985",
+                "title": "The Semantic Web",
+                "entity_type": "product",
+                "product_type": "literature",
+            },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612056541",
                 "title": "The Semantic Web: ESWC 2014 Satellite Events",
+                "entity_type": "product",
+                "product_type": "literature",
             },
         ]
 
@@ -99,6 +132,8 @@ class TestIdentifierFilter:
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
                 "title": "Adaptive Environmental Management",
+                "entity_type": "product",
+                "product_type": "literature",
             },
         ]
 
@@ -113,6 +148,8 @@ class TestCombinedFilters:
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
                 "title": "Adaptive Environmental Management",
+                "entity_type": "product",
+                "product_type": "literature",
             },
         ]
 
@@ -149,6 +186,8 @@ class TestContributorFamilyNameFilter:
                 "title": "Response To The Letter Of Hanley Et Al. "
                 "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
                 "([1998] Teratology 58:62-68)",
+                "entity_type": "product",
+                "product_type": "literature",
             },
         ]
 
@@ -162,6 +201,8 @@ class TestContributorGivenNameFilter:
                 "title": "Response To The Letter Of Hanley Et Al. "
                 "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
                 "([1998] Teratology 58:62-68)",
+                "entity_type": "product",
+                "product_type": "literature",
             },
         ]
 
@@ -173,14 +214,20 @@ class TestContributorNameFilter:
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/060504627",
                 "title": "Classes Of Errors In DOI Names (Data Management Plan)",
+                "entity_type": "product",
+                "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/060504628",
                 "title": "Classes Of Errors In DOI Names (Data Management Plan)",
+                "entity_type": "product",
+                "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/060504675",
                 "title": "Cleaning Different Types Of DOI Errors Found In Cited References On Crossref Using Automated Methods",
+                "entity_type": "product",
+                "product_type": "literature",
             },
         ]
 
@@ -197,6 +244,8 @@ class TestContributorLocalIdentifierFilter:
                 "title": "Response To The Letter Of Hanley Et Al. "
                 "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
                 "([1998] Teratology 58:62-68)",
+                "entity_type": "product",
+                "product_type": "literature",
             },
         ]
 
@@ -218,6 +267,8 @@ class TestContributionsOrcidFilter:
                 "local_identifier": "https://w3id.org/oc/meta/br/06035",
                 "title": "H-ras, But Not N-ras, Induces An Invasive Phenotype In Human Breast Epithelial Cells: "
                 "A Role For MMP-2 In The H-Ras-Induced Invasive Phenotype",
+                "entity_type": "product",
+                "product_type": "literature",
             },
         ]
 
@@ -234,6 +285,8 @@ class TestCombinedContributorFilters:
                 "title": "Response To The Letter Of Hanley Et Al. "
                 "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
                 "([1998] Teratology 58:62-68)",
+                "entity_type": "product",
+                "product_type": "literature",
             },
         ]
 
@@ -369,14 +422,20 @@ class TestBuiltinFilterOverride:
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
                 "title": "Adaptive Environmental Management",
+                "entity_type": "product",
+                "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0615065546",
                 "title": "Adaptive System: The Study Of Information, Pattern, And Behavior",
+                "entity_type": "product",
+                "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
                 "title": "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology",
+                "entity_type": "product",
+                "product_type": "literature",
             },
         ]
 
@@ -446,12 +505,9 @@ class TestGrantsEndpoints:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/grants?filter=invalid_field:value")
         assert status == 400
 
-    def test_single_returns_empty_graph(self, skgif_api_manager):
-        status, result = _exec_raw(skgif_api_manager, "/skgif/v1/grants/example-id")
-        assert status == 200
-        parsed = json.loads(result)
-        assert parsed["@graph"] == []
-        assert "@context" in parsed
+    def test_single_returns_404(self, skgif_api_manager):
+        status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/grants/example-id")
+        assert status == 404
 
 
 class TestTopicsEndpoints:
@@ -467,12 +523,9 @@ class TestTopicsEndpoints:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/topics?filter=invalid_field:value")
         assert status == 400
 
-    def test_single_returns_empty_graph(self, skgif_api_manager):
-        status, result = _exec_raw(skgif_api_manager, "/skgif/v1/topics/example-id")
-        assert status == 200
-        parsed = json.loads(result)
-        assert parsed["@graph"] == []
-        assert "@context" in parsed
+    def test_single_returns_404(self, skgif_api_manager):
+        status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/topics/example-id")
+        assert status == 404
 
 
 class TestDatasourcesEndpoints:
@@ -488,12 +541,9 @@ class TestDatasourcesEndpoints:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/datasources?filter=invalid_field:value")
         assert status == 400
 
-    def test_single_returns_empty_graph(self, skgif_api_manager):
-        status, result = _exec_raw(skgif_api_manager, "/skgif/v1/datasources/example-id")
-        assert status == 200
-        parsed = json.loads(result)
-        assert parsed["@graph"] == []
-        assert "@context" in parsed
+    def test_single_returns_404(self, skgif_api_manager):
+        status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/datasources/example-id")
+        assert status == 404
 
 
 SKGIF_CONTEXT = [
