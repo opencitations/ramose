@@ -1,14 +1,12 @@
 ---
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: CC-BY-4.0
+
 title: Quick start
 description: Install RAMOSE and run your first API in under five minutes.
 template: doc
 ---
-
-<!--
-SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-
-SPDX-License-Identifier: ISC
--->
 
 RAMOSE turns SPARQL endpoints into documented REST APIs. You write a spec file describing your queries, and RAMOSE handles routing, type casting, filtering, and documentation generation.
 

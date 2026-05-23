@@ -1,13 +1,11 @@
 ---
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: CC-BY-4.0
+
 title: Spec file format
 description: Reference for the .hf hash format configuration file.
 ---
-
-<!--
-SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-
-SPDX-License-Identifier: ISC
--->
 
 A spec file (`.hf`) defines your API: metadata, operations, SPARQL queries, and processing pipelines. RAMOSE parses it to route requests and generate documentation.
 

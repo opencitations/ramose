@@ -1,13 +1,11 @@
 ---
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: CC-BY-4.0
+
 title: Query parameters
 description: Filtering, sorting, and formatting API responses.
 ---
-
-<!--
-SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-
-SPDX-License-Identifier: ISC
--->
 
 Query parameters are passed as standard HTTP query string arguments. They are applied after the SPARQL query returns and after postprocessing, in this fixed order: require, filter, sort, format/json. Pagination (`page`, `page_size`) is applied last, after all filtering and sorting.
 

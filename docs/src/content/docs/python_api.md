@@ -1,13 +1,11 @@
 ---
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: CC-BY-4.0
+
 title: Python API
 description: Using RAMOSE programmatically with APIManager and Operation.
 ---
-
-<!--
-SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-
-SPDX-License-Identifier: ISC
--->
 
 ## APIManager
 

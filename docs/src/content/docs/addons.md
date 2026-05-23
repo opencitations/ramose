@@ -1,13 +1,11 @@
 ---
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: CC-BY-4.0
+
 title: Addon modules
 description: Custom preprocessing, postprocessing, and format converters.
 ---
-
-<!--
-SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-
-SPDX-License-Identifier: ISC
--->
 
 Addons are Python modules referenced by the `#addon` field in the API section. The path is relative to the spec file.
 

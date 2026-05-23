@@ -23,6 +23,8 @@ path = [
     "test/data/meta_v1_doc.html",
     "test/data/meta_v1_doc_css.html",
     "test/data/meta_v1_index.html",
+    "test/data/orkg_skgif.hf",
+    "test/data/wikidata_skgif.hf",
 ]
 SPDX-FileCopyrightText = "2026 Arcangelo Massari <arcangelo.massari@unibo.it>"
 SPDX-License-Identifier = "ISC"

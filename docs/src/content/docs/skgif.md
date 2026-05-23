@@ -1,13 +1,11 @@
 ---
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: CC-BY-4.0
+
 title: SKG-IF integration
 description: Using RAMOSE to serve SKG-IF compliant APIs from SPARQL endpoints.
 ---
-
-<!--
-SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-
-SPDX-License-Identifier: ISC
--->
 
 RAMOSE can expose any SPARQL triplestore as a [SKG-IF](https://skg-if.github.io/interoperability-framework/) compliant REST API. The architecture has three layers:
 
