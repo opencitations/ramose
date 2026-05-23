@@ -1,11 +1,10 @@
----
-# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-#
-# SPDX-License-Identifier: CC-BY-4.0
+<!--
+SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 
-title: CLI
-description: Command-line interface for running RAMOSE locally or as a web server.
----
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+# CLI
 
 ## Arguments
 
@@ -117,4 +116,4 @@ To disable caching:
 python -m ramose -s meta_v1.hf -w 127.0.0.1:8080 --no-cache
 ```
 
-Per-operation cache control is available via `#cache_duration` and `#cache_disable` in the [spec file](/ramose/spec_file/).
+Per-operation cache control is available via `#cache_duration` and `#cache_disable` in the [spec file](01-spec-file.md).

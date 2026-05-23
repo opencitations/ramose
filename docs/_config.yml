@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: CC-BY-4.0
+
+title: RAMOSE
+author: Silvio Peroni, Marilena Daquino, Davide Brembilla, Ivan Heibi, Arcangelo Massari
+logo: favicon.svg
+
+exclude_patterns:
+  - _build
+  - node_modules
+
+execute:
+  execute_notebooks: "off"
+
+repository:
+  url: https://github.com/opencitations/ramose
+  branch: master
+
+html:
+  use_issues_button: true
+  use_repository_button: true
+  baseurl: https://opencitations.github.io/ramose
+  extra_footer: |
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var links = document.querySelectorAll('a[href^="http"]');
+        links.forEach(function(link) {
+          if (link.hostname !== window.location.hostname) {
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer');
+          }
+        });
+      });
+    </script>

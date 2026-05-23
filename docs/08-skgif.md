@@ -1,11 +1,10 @@
----
-# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-#
-# SPDX-License-Identifier: CC-BY-4.0
+<!--
+SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 
-title: SKG-IF integration
-description: Using RAMOSE to serve SKG-IF compliant APIs from SPARQL endpoints.
----
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+# SKG-IF integration
 
 RAMOSE can expose any SPARQL triplestore as a [SKG-IF](https://skg-if.github.io/interoperability-framework/) compliant REST API. The architecture has three layers:
 
@@ -77,6 +76,7 @@ A contributor row is processed only when both `contribution_role` and `_contribu
 
 See also [Internal columns](#internal) for contributor deduplication and ordering.
 
+(internal)=
 #### Internal
 
 These columns are consumed by the converter for deduplication and ordering. They do not appear in the JSON-LD output.

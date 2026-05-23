@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: CC-BY-4.0
+
+format: jb-book
+root: intro
+parts:
+  - caption: Guide
+    numbered: false
+    chapters:
+    - file: 01-spec-file
+    - file: 02-cli
+    - file: 03-python-api
+    - file: 04-parameters
+  - caption: Advanced
+    numbered: false
+    chapters:
+    - file: 05-addons
+    - file: 06-multi-source
+    - file: 07-openapi
+    - file: 08-skgif

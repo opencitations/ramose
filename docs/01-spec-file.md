@@ -1,11 +1,10 @@
----
-# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-#
-# SPDX-License-Identifier: CC-BY-4.0
+<!--
+SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 
-title: Spec file format
-description: Reference for the .hf hash format configuration file.
----
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+# Spec file format
 
 A spec file (`.hf`) defines your API: metadata, operations, SPARQL queries, and processing pipelines. RAMOSE parses it to route requests and generate documentation.
 
@@ -40,7 +39,7 @@ The file contains sections separated by blank lines. The first section defines t
 | `#endpoint` | yes | Default SPARQL endpoint URL. |
 | `#method` | no | HTTP method for SPARQL requests: `get` or `post`. Default: `post`. |
 | `#addon` | no | Python module name for custom functions. Path relative to the spec file. |
-| `#engine` | no | Execution backend: `sparql` (default) or `sparql-anything`. See [multi-source queries](/ramose/multi_source/). |
+| `#engine` | no | Execution backend: `sparql` (default) or `sparql-anything`. See [multi-source queries](06-multi-source.md). |
 | `#sources` | no | Named endpoints for multi-source queries: `name1=url1; name2=url2`. |
 | `#disable_params` | no | Comma-separated list of built-in query parameters to suppress (`require`, `filter`, `sort`, `format`, `json`, `page`, `page_size`). Use `*` to disable all. Applies to all operations in this API. Operation-level `#disable_params` extends this set. |
 | `#html_meta_description` | no | HTML meta description for documentation pages. |
@@ -96,12 +95,12 @@ SELECT DISTINCT ?id ?title ?author ?pub_date ... WHERE {
 | `#call` | yes | Example call URL with real parameter values. Shown in documentation. |
 | `#field_type` | yes | Space-separated `type(field_name)` pairs defining output columns and their types. |
 | `#output_json` | no | Example JSON response for documentation. |
-| `#preprocess` | no | Preprocessing chain: `func1(param) --> func2(param)`. See [addon modules](/ramose/addons/). |
-| `#postprocess` | no | Postprocessing chain: `func1() --> func2("arg")`. See [addon modules](/ramose/addons/). |
+| `#preprocess` | no | Preprocessing chain: `func1(param) --> func2(param)`. See [addon modules](05-addons.md). |
+| `#postprocess` | no | Postprocessing chain: `func1() --> func2("arg")`. See [addon modules](05-addons.md). |
 | `#sparql` | yes | SPARQL query. Parameters injected via `[[param_name]]` placeholders. |
-| `#format` | no | Custom output format converters: `name,function;...`. See [addon modules](/ramose/addons/#format-converters). |
+| `#format` | no | Custom output format converters: `name,function;...`. See [addon modules](format-converters). |
 | `#default_format` | no | Default output format when no `?format=` query parameter is provided. Must match a name registered in `#format` or a built-in format (`csv`, `json`). Without this field, the default is CSV. When set to a custom format, the "Result fields type" section is hidden from the HTML documentation since the output structure does not match the tabular columns declared in `#field_type`. |
-| `#custom_params` | no | Custom query parameters with addon handlers: `name,handler,phase,description;...`. See [addon modules](/ramose/addons/#custom-parameters). |
+| `#custom_params` | no | Custom query parameters with addon handlers: `name,handler,phase,description;...`. See [addon modules](custom-parameters). |
 | `#engine` | no | Override the API-level engine for this operation only. |
 | `#disable_params` | no | Comma-separated list of built-in query parameters to suppress for this operation. Use `*` to disable all. Merged with any API-level `#disable_params`. |
 | `#cache_duration` | no | Cache TTL in seconds for this operation. Overrides the global `--cache-ttl` value. |

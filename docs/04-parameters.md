@@ -1,15 +1,14 @@
----
-# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-#
-# SPDX-License-Identifier: CC-BY-4.0
+<!--
+SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 
-title: Query parameters
-description: Filtering, sorting, and formatting API responses.
----
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+# Query parameters
 
 Query parameters are passed as standard HTTP query string arguments. They are applied after the SPARQL query returns and after postprocessing, in this fixed order: require, filter, sort, format/json. Pagination (`page`, `page_size`) is applied last, after all filtering and sorting.
 
-Operations can override any of these built-in parameters with a [custom parameter handler](/ramose/addons/#custom-parameters) via the `#custom_params` field. When overridden, the built-in behavior is replaced by the addon function.
+Operations can override any of these built-in parameters with a [custom parameter handler](custom-parameters) via the `#custom_params` field. When overridden, the built-in behavior is replaced by the addon function.
 
 ## require
 
@@ -68,7 +67,7 @@ Override the response format. Takes priority over the `Accept` header.
 ?format=json
 ```
 
-Custom formats registered via [`#format`](/ramose/addons/#format-converters) are also available (e.g., `?format=xml`).
+Custom formats registered via [`#format`](format-converters) are also available (e.g., `?format=xml`).
 
 ## json
 
@@ -126,7 +125,7 @@ Link: </v1/metadata/doi:10.1162/qss_a_00292?page=3&page_size=10>; rel="next",
 
 Each comma-separated entry is a separate link. `rel="first"` and `rel="last"` are always present. `rel="next"` is omitted on the last page; `rel="prev"` is omitted on the first page.
 
-The response body contains only the results for the requested page, in the same format as a non-paginated response (JSON array or CSV rows). When a [custom format](/ramose/addons/#format-converters) is configured, pagination is delegated to the format converter because custom formats can change the number of entities in the output. The `Link` header is only generated when no custom format is active.
+The response body contains only the results for the requested page, in the same format as a non-paginated response (JSON array or CSV rows). When a [custom format](format-converters) is configured, pagination is delegated to the format converter because custom formats can change the number of entities in the output. The `Link` header is only generated when no custom format is active.
 
 Invalid values (`page_size=0`, `page=-1`, non-integer values, `page` exceeding total pages) return HTTP 400.
 
@@ -152,4 +151,4 @@ Use `*` to disable all built-in parameters at once
 #disable_params *
 ```
 
-See the [spec file reference](/ramose/spec_file/) for placement and syntax.
+See the [spec file reference](01-spec-file.md) for placement and syntax.

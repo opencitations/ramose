@@ -1,11 +1,10 @@
----
-# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-#
-# SPDX-License-Identifier: CC-BY-4.0
+<!--
+SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 
-title: OpenAPI export
-description: Exporting RAMOSE API specs to OpenAPI 3.0 YAML.
----
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+# OpenAPI export
 
 RAMOSE can export your API definition as an [OpenAPI 3.0](https://spec.openapis.org/oas/v3.0.3) YAML document. This lets you plug into the OpenAPI ecosystem: Swagger UI, client generators, API gateways, and so on.
 

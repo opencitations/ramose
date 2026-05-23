@@ -1,11 +1,10 @@
----
-# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-#
-# SPDX-License-Identifier: CC-BY-4.0
+<!--
+SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 
-title: Python API
-description: Using RAMOSE programmatically with APIManager and Operation.
----
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+# Python API
 
 ## APIManager
 
@@ -80,9 +79,9 @@ The execution follows these steps in order:
 1. Extract parameters from the URL path
 2. Run `#preprocess` functions on parameters
 3. Check the result cache; on hit, skip to step 8
-4. Execute the SPARQL query (single or [multi-source](/ramose/multi_source/))
+4. Execute the SPARQL query (single or [multi-source](06-multi-source.md))
 5. Run `#postprocess` functions on results
-6. Apply [query string filters](/ramose/parameters/) (require, filter, sort)
+6. Apply [query string filters](04-parameters.md) (require, filter, sort)
 7. Cache the processed result (if caching is enabled)
 8. Apply pagination slicing (if `page_size` is present)
 9. Convert to the requested output format

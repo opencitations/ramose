@@ -1,11 +1,10 @@
----
-# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-#
-# SPDX-License-Identifier: CC-BY-4.0
+<!--
+SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 
-title: Multi-source queries
-description: Querying multiple SPARQL endpoints and using SPARQL Anything.
----
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+# Multi-source queries
 
 RAMOSE can combine results from multiple SPARQL endpoints in a single operation. This is driven by directives: lines starting with `@@` inside the `#sparql` block.
 

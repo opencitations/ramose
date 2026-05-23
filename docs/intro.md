@@ -1,12 +1,10 @@
----
-# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-#
-# SPDX-License-Identifier: CC-BY-4.0
+<!--
+SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 
-title: Quick start
-description: Install RAMOSE and run your first API in under five minutes.
-template: doc
----
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+# Quick start
 
 RAMOSE turns SPARQL endpoints into documented REST APIs. You write a spec file describing your queries, and RAMOSE handles routing, type casting, filtering, and documentation generation.
 
@@ -95,7 +93,7 @@ Open `http://localhost:8080/v1` for auto-generated documentation, or query `http
 
 ## What's next
 
-- [Spec file format](/ramose/spec_file/) for the full `.hf` reference
-- [CLI](/ramose/cli/) for all command-line options
-- [Python API](/ramose/python_api/) for programmatic usage
-- [Query parameters](/ramose/parameters/) for filtering and sorting results
+- [Spec file format](01-spec-file.md) for the full `.hf` reference
+- [CLI](02-cli.md) for all command-line options
+- [Python API](03-python-api.md) for programmatic usage
+- [Query parameters](04-parameters.md) for filtering and sorting results

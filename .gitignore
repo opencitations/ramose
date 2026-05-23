@@ -8,10 +8,7 @@ coverage.xml
 htmlcov/
 ramose.log*
 __pycache__/
-docs/build/*
-docs/dist/
-docs/node_modules/
-docs/.astro/
+docs/_build/
 .cache/
 oc_skgo_mappings.csv
 SKG-O Mappings.xlsx

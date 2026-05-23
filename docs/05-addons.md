@@ -1,11 +1,10 @@
----
-# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-#
-# SPDX-License-Identifier: CC-BY-4.0
+<!--
+SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 
-title: Addon modules
-description: Custom preprocessing, postprocessing, and format converters.
----
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
+# Addon modules
 
 Addons are Python modules referenced by the `#addon` field in the API section. The path is relative to the spec file.
 
@@ -104,6 +103,7 @@ Functions are chained with `-->`:
 #postprocess create_metadata_output() --> distinct()
 ```
 
+(custom-parameters)=
 ## Custom parameters
 
 The `#custom_params` field defines query string parameters handled by addon functions instead of the built-in RAMOSE pipeline. Each entry specifies the parameter name, handler function, processing phase, and description:
@@ -166,7 +166,7 @@ def handle_search(values: list[str]) -> dict[str, str]:
     }
 ```
 
-When the handler returns `@@` directives (such as `@@with`, `@@join`, `@@values`), the engine detects them after placeholder substitution and switches from single-query to [multi-source execution](/ramose/multi_source/). This allows a handler to dynamically activate cross-endpoint queries without changing the spec file. Directives injected this way follow the same syntax and rules as directives written directly in the `#sparql` block.
+When the handler returns `@@` directives (such as `@@with`, `@@join`, `@@values`), the engine detects them after placeholder substitution and switches from single-query to [multi-source execution](06-multi-source.md). This allows a handler to dynamically activate cross-endpoint queries without changing the spec file. Directives injected this way follow the same syntax and rules as directives written directly in the `#sparql` block.
 
 ### Postprocessing parameters
 
@@ -182,6 +182,7 @@ def handle_limit(table: list[list], values: list[str]) -> list[list]:
 
 If a custom parameter has the same name as a built-in query parameter (`filter`, `sort`, `require`), the built-in behavior is disabled for that operation.
 
+(format-converters)=
 ## Format converters
 
 The `#format` field in an operation registers custom output formats. Each entry maps a format name to a function in the addon module.
