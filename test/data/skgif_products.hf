@@ -56,8 +56,8 @@ Format: comma-separated <code>filter_name:filter_value</code> pairs (AND logic).
 #format skgif,to_skgif
 #default_format skgif
 #call /products?filter=cf.search.title:adaptive
-#field_type str(br_uri) str(title)
-#output_json [{"br_uri": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"}]
+#field_type str(local_identifier) str(title)
+#output_json [{"local_identifier": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"}]
 #sparql [[filter_preamble]]
 PREFIX fabio: <http://purl.org/spar/fabio/>
 PREFIX dcterm: <http://purl.org/dc/terms/>
@@ -66,9 +66,9 @@ PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX pro: <http://purl.org/spar/pro/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT DISTINCT ?br_uri ?title
+SELECT DISTINCT ?local_identifier ?title
 WHERE {
-  ?br_uri a fabio:Expression ;
+  ?local_identifier a fabio:Expression ;
           dcterm:title ?title .
   [[filter]]
 }
@@ -308,7 +308,7 @@ ORDER BY ?title
         }
     ]
 }
-#field_type str(br_uri) str(title) str(fabio_type) str(pub_date) str(volume) str(issue) str(start_page) str(end_page) str(id_scheme) str(id_value) str(venue_name) str(venue_br_id) str(venue_id_scheme) str(venue_id_value) str(contributor_role) str(contributor_family_name) str(contributor_given_name) str(contributor_name) str(contributor_orcid) str(contributor_ra_id) str(contributor_role_uri) str(contributor_next_role_uri) str(cited_br)
+#field_type str(local_identifier) str(identifier_scheme) str(identifier_value) str(title) str(title_lang) str(abstract) str(abstract_lang) str(product_type) str(topic_term) str(topic_identifier_scheme) str(topic_identifier_value) str(topic_label) str(topic_label_lang) str(topic_provenance_associated_with) str(topic_provenance_trust) str(contribution_by_family_name) str(contribution_by_given_name) str(contribution_by_name) str(contribution_by_identifier_scheme) str(contribution_by_identifier_value) str(contribution_by_local_identifier) str(contribution_role) str(contribution_type) str(_contribution_key) str(_contribution_next_key) str(contribution_declared_affiliation_name) str(contribution_declared_affiliation_short_name) str(contribution_declared_affiliation_country) str(contribution_declared_affiliation_local_identifier) str(contribution_declared_affiliation_identifier_scheme) str(contribution_declared_affiliation_identifier_value) str(contribution_declared_affiliation_type) str(contribution_declared_affiliation_website) str(contribution_declared_affiliation_other_name) str(manifestation_type_class) str(manifestation_type_label) str(manifestation_type_label_lang) str(manifestation_identifier_scheme) str(manifestation_identifier_value) str(manifestation_dates_type) str(manifestation_dates_value) str(manifestation_peer_review_status) str(manifestation_peer_review_description) str(manifestation_access_rights_status) str(manifestation_access_rights_description) str(manifestation_licence) str(manifestation_version) str(manifestation_biblio_volume) str(manifestation_biblio_issue) str(manifestation_biblio_edition) str(manifestation_biblio_number) str(manifestation_biblio_pages_first) str(manifestation_biblio_pages_last) str(manifestation_biblio_in_name) str(manifestation_biblio_in_local_identifier) str(manifestation_biblio_in_identifier_scheme) str(manifestation_biblio_in_identifier_value) str(manifestation_biblio_in_acronym) str(manifestation_biblio_hosting_data_source_local_identifier) str(manifestation_biblio_hosting_data_source_name) str(manifestation_biblio_hosting_data_source_identifier_scheme) str(manifestation_biblio_hosting_data_source_identifier_value) str(related_products_cites) str(related_products_is_supplemented_by) str(related_products_is_documented_by) str(related_products_is_new_version_of) str(related_products_is_part_of) str(funding_local_identifier) str(funding_grant_number) str(funding_title) str(funding_title_lang) str(funding_abstract) str(funding_abstract_lang) str(funding_acronym) str(funding_identifier_scheme) str(funding_identifier_value) str(funding_stream) str(funding_agency_name) str(funding_agency_short_name) str(funding_agency_country) str(funding_agency_local_identifier) str(funding_agency_identifier_scheme) str(funding_agency_identifier_value) str(funding_agency_type) str(funding_agency_website) str(relevant_organisation_name) str(relevant_organisation_short_name) str(relevant_organisation_country) str(relevant_organisation_local_identifier) str(relevant_organisation_identifier_scheme) str(relevant_organisation_identifier_value) str(relevant_organisation_type) str(relevant_organisation_website) str(relevant_organisation_other_name)
 #format skgif,to_skgif
 #default_format skgif
 #sparql PREFIX fabio: <http://purl.org/spar/fabio/>
@@ -318,102 +318,111 @@ PREFIX frbr: <http://purl.org/vocab/frbr/core#>
 PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 
-SELECT ?br_uri ?title ?fabio_type ?pub_date
-       ?volume ?issue ?start_page ?end_page
-       ?id_scheme ?id_value
-       ?venue_name ?venue_br_id ?venue_id_scheme ?venue_id_value
+SELECT ?local_identifier ?identifier_scheme ?identifier_value
+       ?title ?product_type
+       ?manifestation_type_class ?manifestation_dates_type ?manifestation_dates_value
+       ?manifestation_biblio_volume ?manifestation_biblio_issue
+       ?manifestation_biblio_pages_first ?manifestation_biblio_pages_last
+       ?manifestation_biblio_in_name ?manifestation_biblio_in_local_identifier
+       ?manifestation_biblio_in_identifier_scheme ?manifestation_biblio_in_identifier_value
 WHERE {
-  BIND(<[[local_identifier]]> AS ?br_uri)
-  ?br_uri a fabio:Expression .
-  OPTIONAL { ?br_uri dcterm:title ?title }
-  OPTIONAL { ?br_uri a ?fabio_type . FILTER(?fabio_type != fabio:Expression) }
-  OPTIONAL { ?br_uri prism:publicationDate ?pub_date }
+  BIND(<[[local_identifier]]> AS ?local_identifier)
+  ?local_identifier a fabio:Expression .
+  OPTIONAL { ?local_identifier dcterm:title ?title }
+  OPTIONAL { ?local_identifier a ?manifestation_type_class . FILTER(?manifestation_type_class != fabio:Expression) }
+  BIND(IF(!BOUND(?manifestation_type_class), "literature", IF(?manifestation_type_class IN (<http://purl.org/spar/fabio/DataFile>, <http://purl.org/spar/fabio/DataManagementPlan>), "research data", IF(?manifestation_type_class = <http://purl.org/spar/fabio/ComputerProgram>, "research software", "literature"))) AS ?product_type)
   OPTIONAL {
-    ?br_uri frbr:embodiment ?resource_embodiment .
-    ?resource_embodiment prism:startingPage ?start_page ;
-                         prism:endingPage ?end_page .
+    ?local_identifier prism:publicationDate ?manifestation_dates_value .
+    BIND("publication" AS ?manifestation_dates_type)
   }
   OPTIONAL {
-    ?br_uri frbr:partOf ?journal_issue .
+    ?local_identifier frbr:embodiment ?resource_embodiment .
+    ?resource_embodiment prism:startingPage ?manifestation_biblio_pages_first ;
+                         prism:endingPage ?manifestation_biblio_pages_last .
+  }
+  OPTIONAL {
+    ?local_identifier frbr:partOf ?journal_issue .
     ?journal_issue a fabio:JournalIssue ;
-                   fabio:hasSequenceIdentifier ?issue .
+                   fabio:hasSequenceIdentifier ?manifestation_biblio_issue .
   }
   OPTIONAL {
-    ?br_uri frbr:partOf+ ?journal_volume .
+    ?local_identifier frbr:partOf+ ?journal_volume .
     ?journal_volume a fabio:JournalVolume ;
-                    fabio:hasSequenceIdentifier ?volume .
+                    fabio:hasSequenceIdentifier ?manifestation_biblio_volume .
   }
   OPTIONAL {
-    ?br_uri datacite:hasIdentifier ?identifier_node .
-    ?identifier_node datacite:usesIdentifierScheme ?id_scheme_uri ;
-                     literal:hasLiteralValue ?id_value .
-    BIND(STRAFTER(STR(?id_scheme_uri), "http://purl.org/spar/datacite/") AS ?id_scheme)
+    ?local_identifier datacite:hasIdentifier ?identifier_node .
+    ?identifier_node datacite:usesIdentifierScheme ?identifier_scheme_uri ;
+                     literal:hasLiteralValue ?identifier_value .
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
   }
   OPTIONAL {
     {
-      ?br_uri a fabio:JournalArticle ;
+      ?local_identifier a fabio:JournalArticle ;
               frbr:partOf+ ?venue_resource .
       ?venue_resource a fabio:Journal .
     } UNION {
-      ?br_uri frbr:partOf ?venue_resource .
+      ?local_identifier frbr:partOf ?venue_resource .
       FILTER NOT EXISTS { ?venue_resource a fabio:JournalIssue }
       FILTER NOT EXISTS { ?venue_resource a fabio:JournalVolume }
     }
-    ?venue_resource dcterm:title ?venue_name .
-    BIND(STRAFTER(STR(?venue_resource), "/br/") AS ?venue_br_id)
+    ?venue_resource dcterm:title ?manifestation_biblio_in_name .
+    BIND(STRAFTER(STR(?venue_resource), "/br/") AS ?manifestation_biblio_in_local_identifier)
     OPTIONAL {
-      ?venue_resource datacite:hasIdentifier ?venue_id_node .
-      ?venue_id_node datacite:usesIdentifierScheme ?venue_id_scheme_uri ;
-                     literal:hasLiteralValue ?venue_id_value .
-      BIND(STRAFTER(STR(?venue_id_scheme_uri), "http://purl.org/spar/datacite/") AS ?venue_id_scheme)
+      ?venue_resource datacite:hasIdentifier ?venue_identifier_node .
+      ?venue_identifier_node datacite:usesIdentifierScheme ?venue_identifier_scheme_uri ;
+                     literal:hasLiteralValue ?manifestation_biblio_in_identifier_value .
+      BIND(STRAFTER(STR(?venue_identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?manifestation_biblio_in_identifier_scheme)
     }
   }
 }
 
-@@join ?br_uri ?br_uri type=left
+@@join ?local_identifier ?local_identifier type=left
 PREFIX pro: <http://purl.org/spar/pro/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX oco: <https://w3id.org/oc/ontology/>
 
-SELECT ?br_uri ?contributor_role ?contributor_family_name ?contributor_given_name
-       ?contributor_name ?contributor_orcid ?contributor_ra_id
-       ?contributor_role_uri ?contributor_next_role_uri
+SELECT ?local_identifier ?contribution_by_family_name ?contribution_by_given_name
+       ?contribution_by_name ?contribution_by_identifier_scheme ?contribution_by_identifier_value
+       ?contribution_by_local_identifier
+       ?contribution_role ?_contribution_key ?_contribution_next_key
 WHERE {
-  BIND(<[[local_identifier]]> AS ?br_uri)
-  ?br_uri pro:isDocumentContextFor ?agent_role .
+  BIND(<[[local_identifier]]> AS ?local_identifier)
+  ?local_identifier pro:isDocumentContextFor ?agent_role .
   ?agent_role pro:withRole ?role_type ;
               pro:isHeldBy ?responsible_agent .
   FILTER(?role_type IN (pro:author, pro:editor, pro:publisher))
-  BIND(IF(?role_type = pro:author, "author", IF(?role_type = pro:editor, "editor", "publisher")) AS ?contributor_role)
-  BIND(STR(?agent_role) AS ?contributor_role_uri)
+  BIND(IF(?role_type = pro:author, "author", IF(?role_type = pro:editor, "editor", "publisher")) AS ?contribution_role)
+  BIND(STR(?agent_role) AS ?_contribution_key)
   OPTIONAL {
     ?agent_role oco:hasNext ?next_agent_role .
-    BIND(STR(?next_agent_role) AS ?contributor_next_role_uri)
+    BIND(STR(?next_agent_role) AS ?_contribution_next_key)
   }
-  OPTIONAL { ?responsible_agent foaf:familyName ?contributor_family_name }
-  OPTIONAL { ?responsible_agent foaf:givenName ?contributor_given_name }
-  OPTIONAL { ?responsible_agent foaf:name ?contributor_name }
-  BIND(STRAFTER(STR(?responsible_agent), "/ra/") AS ?contributor_ra_id)
+  OPTIONAL { ?responsible_agent foaf:familyName ?contribution_by_family_name }
+  OPTIONAL { ?responsible_agent foaf:givenName ?contribution_by_given_name }
+  OPTIONAL { ?responsible_agent foaf:name ?contribution_by_name }
+  BIND(STRAFTER(STR(?responsible_agent), "/ra/") AS ?contribution_by_local_identifier)
   OPTIONAL {
     ?responsible_agent datacite:hasIdentifier ?orcid_node .
     ?orcid_node datacite:usesIdentifierScheme datacite:orcid ;
-                literal:hasLiteralValue ?contributor_orcid .
+                literal:hasLiteralValue ?contribution_by_identifier_value .
+    BIND("orcid" AS ?contribution_by_identifier_scheme)
   }
 }
 
-@@join ?br_uri ?br_uri type=left
+@@join ?local_identifier ?local_identifier type=left
 @@with source=index
 PREFIX cito: <http://purl.org/spar/cito/>
 
-SELECT ?br_uri ?cited_br
+SELECT ?local_identifier ?related_products_cites
 WHERE {
   BIND(<[[local_identifier]]> AS ?citing_entity)
   ?citation cito:hasCitingEntity ?citing_entity ;
             cito:hasCitedEntity ?cited_entity .
-  BIND(STR(?citing_entity) AS ?br_uri)
-  BIND(STR(?cited_entity) AS ?cited_br)
+  BIND(STR(?citing_entity) AS ?local_identifier)
+  BIND(STR(?cited_entity) AS ?related_products_cites)
 }
 
 #url /grants

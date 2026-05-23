@@ -7,15 +7,14 @@ import json
 from collections.abc import Callable
 from io import StringIO
 from math import ceil
-from urllib.parse import parse_qs, urlencode, urlsplit
-
-from oc_constants import FABIO_TYPE_LABELS
+from urllib.parse import parse_qs, quote, urlencode, urlsplit
 
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-    {"@base": "https://w3id.org/skg-if/sandbox/opencitations/"},
+    {"@base": "https://w3id.org/skg-if/sandbox/"},
 ]
+
 
 FABIO_TO_SKGIF_PRODUCT_TYPE = {
     "http://purl.org/spar/fabio/DataFile": "research data",
@@ -30,12 +29,14 @@ for _fabio_uri, _skgif_type in FABIO_TO_SKGIF_PRODUCT_TYPE.items():
     SKGIF_TO_FABIO_PRODUCT_TYPE.setdefault(_skgif_type, []).append(_fabio_uri)
 
 
-def _collect_identifiers(rows: list[dict]) -> list[dict]:
+def _collect_identifiers(
+    rows: list[dict], scheme_col: str = "identifier_scheme", value_col: str = "identifier_value"
+) -> list[dict]:
     seen = set()
     identifiers = []
     for row in rows:
-        scheme = row["id_scheme"]
-        value = row["id_value"]
+        scheme = row[scheme_col]
+        value = row[value_col]
         if scheme and value and (scheme, value) not in seen:
             seen.add((scheme, value))
             identifiers.append({"value": value, "scheme": scheme})
@@ -47,7 +48,7 @@ def _order_linked_list(items: dict[str, dict], next_map: dict[str, str | None]) 
         return []
 
     next_values = set(next_map.values()) - {None}
-    start_candidates = [role_uri for role_uri in items if role_uri not in next_values]
+    start_candidates = [key for key in items if key not in next_values]
     if not start_candidates:
         return list(items.values())
 
@@ -59,20 +60,21 @@ def _order_linked_list(items: dict[str, dict], next_map: dict[str, str | None]) 
         ordered.append(items[current])
         current = next_map.get(current)
 
-    for role_uri, contributor in items.items():
-        if role_uri not in visited:
+    for key, contributor in items.items():
+        if key not in visited:
             ordered.append(contributor)
 
     return ordered
 
 
 def _build_agent(row: dict) -> dict | None:
-    family_name = row["contributor_family_name"]
-    given_name = row["contributor_given_name"]
-    full_name = row["contributor_name"]
-    orcid = row["contributor_orcid"]
-    ra_id = row["contributor_ra_id"]
-    role = row["contributor_role"]
+    family_name = row["contribution_by_family_name"]
+    given_name = row["contribution_by_given_name"]
+    full_name = row["contribution_by_name"]
+    id_scheme = row["contribution_by_identifier_scheme"]
+    id_value = row["contribution_by_identifier_value"]
+    ra_id = row["contribution_by_local_identifier"]
+    role = row["contribution_role"]
 
     is_person = bool(family_name or given_name)
 
@@ -91,40 +93,115 @@ def _build_agent(row: dict) -> dict | None:
             agent["family_name"] = family_name
         if given_name:
             agent["given_name"] = given_name
-    if orcid:
-        agent["identifiers"] = [{"value": orcid, "scheme": "orcid"}]
-    if ra_id:
-        agent["local_identifier"] = f"{entity_type}s/ra/{ra_id}"
+    if id_scheme and id_value:
+        agent["identifiers"] = [{"value": id_value, "scheme": id_scheme}]
+    agent["local_identifier"] = (
+        f"{entity_type}s/ra/{ra_id}" if ra_id else f"{entity_type}s/ra/{quote(display_name, safe='')}"
+    )
     return agent
+
+
+def _build_org(row: dict, prefix: str) -> dict:
+    org: dict = {"entity_type": "organisation"}
+    name = row[f"{prefix}_name"]
+    if name:
+        org["name"] = name
+    for field in ("short_name", "country", "website"):
+        val = row[f"{prefix}_{field}"]
+        if val:
+            org[field] = val
+    local_id = row[f"{prefix}_local_identifier"]
+    if local_id:
+        org["local_identifier"] = f"organisations/ra/{local_id}"
+    return org
+
+
+def _merge_org_multivalued(entry: dict, row: dict, prefix: str) -> None:
+    id_scheme = row[f"{prefix}_identifier_scheme"]
+    id_value = row[f"{prefix}_identifier_value"]
+    if id_scheme and id_value and (id_scheme, id_value) not in entry["seen_ids"]:
+        entry["seen_ids"].add((id_scheme, id_value))
+        entry["obj"].setdefault("identifiers", []).append({"value": id_value, "scheme": id_scheme})
+    org_type = row[f"{prefix}_type"]
+    if org_type and org_type not in entry["seen_types"]:
+        entry["seen_types"].add(org_type)
+        entry["obj"].setdefault("types", []).append(org_type)
+    if f"{prefix}_other_name" in row:
+        other_name = row[f"{prefix}_other_name"]
+        if other_name and other_name not in entry["seen_other_names"]:
+            entry["seen_other_names"].add(other_name)
+            entry["obj"].setdefault("other_names", []).append(other_name)
+
+
+def _collect_declared_affiliations(rows: list[dict], role: str, key: str, store: dict) -> None:
+    prefix = "contribution_declared_affiliation"
+    role_store = store.setdefault(role, {}).setdefault(key, {})
+    for row in rows:
+        if row["contribution_role"] != role or row["_contribution_key"] != key:
+            continue
+        aff_name = row[f"{prefix}_name"]
+        aff_local_id = row[f"{prefix}_local_identifier"]
+        if not aff_name and not aff_local_id:
+            continue
+        aff_key = aff_local_id or aff_name
+        if aff_key not in role_store:
+            role_store[aff_key] = {
+                "obj": _build_org(row, prefix),
+                "seen_ids": set(),
+                "seen_types": set(),
+                "seen_other_names": set(),
+            }
+        _merge_org_multivalued(role_store[aff_key], row, prefix)
+
+
+def _enrich_contributor(
+    contributor: dict, key: str, role_type: str, contribution_types: dict, affiliations: dict
+) -> None:
+    types = contribution_types.get(role_type, {}).get(key)
+    if types:
+        contributor["contribution_types"] = types
+    affs = affiliations.get(role_type, {}).get(key)
+    if affs:
+        contributor["declared_affiliations"] = [entry["obj"] for entry in affs.values()]
 
 
 def _collect_contributors(rows: list[dict]) -> list[dict]:
     contributors_by_role_type: dict[str, dict[str, dict]] = {}
     next_map_by_role_type: dict[str, dict[str, str | None]] = {}
+    contribution_types: dict[str, dict[str, list[str]]] = {}
+    affiliations_store: dict = {}
 
     for row in rows:
-        role = row["contributor_role"]
-        role_uri = row["contributor_role_uri"]
-        if not role or not role_uri:
+        role = row["contribution_role"]
+        key = row["_contribution_key"]
+        if not role or not key:
             continue
 
         if role not in contributors_by_role_type:
             contributors_by_role_type[role] = {}
             next_map_by_role_type[role] = {}
+            contribution_types[role] = {}
 
-        if role_uri in contributors_by_role_type[role]:
-            existing = contributors_by_role_type[role][role_uri]
-            orcid = row["contributor_orcid"]
-            if orcid and not existing["by"].get("identifiers"):
-                existing["by"]["identifiers"] = [{"value": orcid, "scheme": "orcid"}]
+        contribution_type = row["contribution_type"]
+        if contribution_type:
+            type_list = contribution_types[role].setdefault(key, [])
+            if contribution_type not in type_list:
+                type_list.append(contribution_type)
+
+        if key in contributors_by_role_type[role]:
+            existing = contributors_by_role_type[role][key]
+            id_scheme = row["contribution_by_identifier_scheme"]
+            id_value = row["contribution_by_identifier_value"]
+            if id_scheme and id_value and not existing["by"].get("identifiers"):
+                existing["by"]["identifiers"] = [{"value": id_value, "scheme": id_scheme}]
             continue
 
+        _collect_declared_affiliations(rows, role, key, affiliations_store)
         agent = _build_agent(row)
         if not agent:
             continue
-
-        contributors_by_role_type[role][role_uri] = {"role": role, "by": agent}
-        next_map_by_role_type[role][role_uri] = row["contributor_next_role_uri"] or None
+        contributors_by_role_type[role][key] = {"role": role, "by": agent}
+        next_map_by_role_type[role][key] = row["_contribution_next_key"] or None
 
     result = []
     for role_type in ["author", "editor", "publisher"]:
@@ -133,21 +210,26 @@ def _collect_contributors(rows: list[dict]) -> list[dict]:
         ordered = _order_linked_list(contributors_by_role_type[role_type], next_map_by_role_type[role_type])
         for rank, contributor in enumerate(ordered, start=1):
             contributor["rank"] = rank
+            key = next(k for k, v in contributors_by_role_type[role_type].items() if v is contributor)
+            _enrich_contributor(contributor, key, role_type, contribution_types, affiliations_store)
             result.append(contributor)
 
     return result
 
 
-def _build_venue(rows: list[dict], venue_name: str, venue_br_id: str) -> dict:
+def _build_venue(rows: list[dict], venue_name: str, venue_local_id: str) -> dict:
     venue: dict = {"name": venue_name, "entity_type": "venue"}
-    if venue_br_id:
-        venue["local_identifier"] = f"venues/br/{venue_br_id}"
+    if venue_local_id:
+        venue["local_identifier"] = f"venues/br/{venue_local_id}"
+    acronym = rows[0]["manifestation_biblio_in_acronym"]
+    if acronym:
+        venue["acronym"] = acronym
 
     venue_ids_seen = set()
     venue_identifiers = []
     for row in rows:
-        venue_scheme = row["venue_id_scheme"]
-        venue_value = row["venue_id_value"]
+        venue_scheme = row["manifestation_biblio_in_identifier_scheme"]
+        venue_value = row["manifestation_biblio_in_identifier_value"]
         if venue_scheme and venue_value and (venue_scheme, venue_value) not in venue_ids_seen:
             venue_ids_seen.add((venue_scheme, venue_value))
             venue_identifiers.append({"value": venue_value, "scheme": venue_scheme})
@@ -167,56 +249,254 @@ def _normalize_datetime(date_str: str) -> str:
     return date_str
 
 
-def _build_manifestation(rows: list[dict]) -> dict | None:
+def _collect_manifestation_dates(rows: list[dict]) -> dict[str, list[str]]:
+    dates: dict[str, list[str]] = {}
+    seen: set[tuple[str, str]] = set()
+    for row in rows:
+        date_type = row["manifestation_dates_type"]
+        date_value = row["manifestation_dates_value"]
+        if date_type and date_value and (date_type, date_value) not in seen:
+            seen.add((date_type, date_value))
+            dates.setdefault(date_type, []).append(_normalize_datetime(date_value))
+    return dates
+
+
+def _build_biblio(rows: list[dict]) -> dict:
     first_row = rows[0]
-    fabio_type = first_row["fabio_type"]
-    pub_date = first_row["pub_date"]
-    volume = first_row["volume"]
-    issue = first_row["issue"]
-    start_page = first_row["start_page"]
-    end_page = first_row["end_page"]
-    venue_name = first_row["venue_name"]
-    venue_br_id = first_row["venue_br_id"]
-
-    manifestation: dict = {}
-
-    if fabio_type:
-        manifestation_type: dict = {
-            "class": fabio_type,
-            "defined_in": "http://purl.org/spar/fabio",
-        }
-        label = FABIO_TYPE_LABELS.get(fabio_type)
-        if label:
-            manifestation_type["labels"] = {"en": label}
-        manifestation["type"] = manifestation_type
-
     biblio: dict = {}
+    volume = first_row["manifestation_biblio_volume"]
     if volume:
         biblio["volume"] = volume
+    issue = first_row["manifestation_biblio_issue"]
     if issue:
         biblio["issue"] = issue
-    if start_page and end_page:
-        biblio["pages"] = {"first": start_page, "last": end_page}
+    edition = first_row["manifestation_biblio_edition"]
+    if edition:
+        biblio["edition"] = edition
+    number = first_row["manifestation_biblio_number"]
+    if number:
+        biblio["number"] = number
+    first_page = first_row["manifestation_biblio_pages_first"]
+    last_page = first_row["manifestation_biblio_pages_last"]
+    if first_page and last_page:
+        biblio["pages"] = {"first": first_page, "last": last_page}
+    venue_name = first_row["manifestation_biblio_in_name"]
     if venue_name:
-        biblio["in"] = _build_venue(rows, venue_name, venue_br_id)
+        venue_local_id = first_row["manifestation_biblio_in_local_identifier"]
+        biblio["in"] = _build_venue(rows, venue_name, venue_local_id)
+    hosting_local_id = first_row["manifestation_biblio_hosting_data_source_local_identifier"]
+    if hosting_local_id:
+        hosting: dict = {"local_identifier": hosting_local_id, "entity_type": "datasource"}
+        hosting_name = first_row["manifestation_biblio_hosting_data_source_name"]
+        if hosting_name:
+            hosting["name"] = hosting_name
+        hosting_ids_seen: set[tuple[str, str]] = set()
+        hosting_identifiers: list[dict] = []
+        for row in rows:
+            hosting_scheme = row["manifestation_biblio_hosting_data_source_identifier_scheme"]
+            hosting_value = row["manifestation_biblio_hosting_data_source_identifier_value"]
+            if hosting_scheme and hosting_value and (hosting_scheme, hosting_value) not in hosting_ids_seen:
+                hosting_ids_seen.add((hosting_scheme, hosting_value))
+                hosting_identifiers.append({"value": hosting_value, "scheme": hosting_scheme})
+        if hosting_identifiers:
+            hosting["identifiers"] = hosting_identifiers
+        biblio["hosting_data_source"] = hosting
+    return biblio
+
+
+def _build_manifestation(rows: list[dict]) -> dict | None:
+    first_row = rows[0]
+    manifestation: dict = {}
+
+    type_class = first_row["manifestation_type_class"]
+    if type_class:
+        separator = "#" if "#" in type_class else "/"
+        defined_in = type_class.rsplit(separator, 1)[0]
+        manifestation_type: dict = {"class": type_class, "defined_in": defined_in}
+        type_label = first_row["manifestation_type_label"]
+        if type_label:
+            label_lang = first_row["manifestation_type_label_lang"] or "none"
+            manifestation_type["labels"] = {label_lang: type_label}
+        manifestation["type"] = manifestation_type
+
+    dates = _collect_manifestation_dates(rows)
+    if dates:
+        manifestation["dates"] = dates
+
+    identifiers = _collect_identifiers(rows, "manifestation_identifier_scheme", "manifestation_identifier_value")
+    if identifiers:
+        manifestation["identifiers"] = identifiers
+
+    peer_review_status = first_row["manifestation_peer_review_status"]
+    if peer_review_status:
+        peer_review: dict = {"status": peer_review_status}
+        peer_review_desc = first_row["manifestation_peer_review_description"]
+        if peer_review_desc:
+            peer_review["description"] = peer_review_desc
+        manifestation["peer_review"] = peer_review
+
+    access_status = first_row["manifestation_access_rights_status"]
+    if access_status:
+        access_rights: dict = {"status": access_status}
+        access_desc = first_row["manifestation_access_rights_description"]
+        if access_desc:
+            access_rights["description"] = access_desc
+        manifestation["access_rights"] = access_rights
+
+    licence = first_row["manifestation_licence"]
+    if licence:
+        manifestation["licence"] = licence
+
+    version = first_row["manifestation_version"]
+    if version:
+        manifestation["version"] = version
+
+    biblio = _build_biblio(rows)
     if biblio:
         manifestation["biblio"] = biblio
-
-    if pub_date:
-        manifestation["dates"] = {"publication": [_normalize_datetime(pub_date)]}
 
     return manifestation or None
 
 
-def _collect_citations(rows: list[dict]) -> list[str]:
-    seen = set()
-    citations = []
+_RELATED_PRODUCT_COLUMNS = [
+    "related_products_cites",
+    "related_products_is_supplemented_by",
+    "related_products_is_documented_by",
+    "related_products_is_new_version_of",
+    "related_products_is_part_of",
+]
+
+
+def _collect_related_products(rows: list[dict]) -> dict:
+    result: dict[str, list[str]] = {}
+    for column in _RELATED_PRODUCT_COLUMNS:
+        key = column.replace("related_products_", "")
+        seen: set[str] = set()
+        values: list[str] = []
+        for row in rows:
+            val = row[column]
+            if val and val not in seen:
+                seen.add(val)
+                values.append(val)
+        if values:
+            result[key] = values
+    return result
+
+
+def _collect_topics(rows: list[dict]) -> list[dict]:
+    topics_by_uri: dict[str, dict] = {}
+    seen_identifiers: dict[str, set] = {}
+    seen_provenance: dict[str, set] = {}
+
     for row in rows:
-        cited = row["cited_br"]
-        if cited and cited not in seen:
-            seen.add(cited)
-            citations.append(cited)
-    return citations
+        uri = row["topic_term"]
+        if not uri:
+            continue
+
+        if uri not in topics_by_uri:
+            topics_by_uri[uri] = {"term": {"local_identifier": uri, "entity_type": "topic"}}
+            seen_identifiers[uri] = set()
+            seen_provenance[uri] = set()
+
+        topic = topics_by_uri[uri]
+        term = topic["term"]
+
+        label = row["topic_label"]
+        if label:
+            lang = row["topic_label_lang"] or "none"
+            term.setdefault("labels", {})[lang] = label
+
+        id_scheme = row["topic_identifier_scheme"]
+        id_value = row["topic_identifier_value"]
+        if id_scheme and id_value and (id_scheme, id_value) not in seen_identifiers[uri]:
+            seen_identifiers[uri].add((id_scheme, id_value))
+            term.setdefault("identifiers", []).append({"scheme": id_scheme, "value": id_value})
+
+        prov_agent = row["topic_provenance_associated_with"]
+        prov_trust = row["topic_provenance_trust"]
+        if prov_agent and prov_trust and prov_agent not in seen_provenance[uri]:
+            seen_provenance[uri].add(prov_agent)
+            topic.setdefault("provenance", []).append({"associated_with": prov_agent, "trust": float(prov_trust)})
+
+    return list(topics_by_uri.values())
+
+
+def _collect_organisation(rows: list[dict], prefix: str) -> list[dict]:
+    entries: dict[str, dict] = {}
+    for row in rows:
+        name = row[f"{prefix}_name"]
+        local_id = row[f"{prefix}_local_identifier"]
+        if not name and not local_id:
+            continue
+        org_key = local_id or name
+        if org_key not in entries:
+            entries[org_key] = {
+                "obj": _build_org(row, prefix),
+                "seen_ids": set(),
+                "seen_types": set(),
+                "seen_other_names": set(),
+            }
+        _merge_org_multivalued(entries[org_key], row, prefix)
+    return [entry["obj"] for entry in entries.values()]
+
+
+def _build_grant(row: dict) -> dict:
+    grant: dict = {"local_identifier": f"grants/{row['funding_local_identifier']}", "entity_type": "grant"}
+    for field, csv_col in (
+        ("grant_number", "funding_grant_number"),
+        ("acronym", "funding_acronym"),
+        ("funding_stream", "funding_stream"),
+    ):
+        val = row[csv_col]
+        if val:
+            grant[field] = val
+    title = row["funding_title"]
+    if title:
+        grant["titles"] = {row["funding_title_lang"] or "none": title}
+    abstract = row["funding_abstract"]
+    if abstract:
+        grant["abstracts"] = {row["funding_abstract_lang"] or "none": abstract}
+    agency_name = row["funding_agency_name"]
+    if agency_name:
+        grant["funding_agency"] = _build_org(row, "funding_agency")
+    return grant
+
+
+def _collect_funding(rows: list[dict]) -> list[dict]:
+    funding_by_key: dict[str, dict] = {}
+    seen_ids: dict[str, set[tuple[str, str]]] = {}
+    agency_trackers: dict[str, dict] = {}
+
+    for row in rows:
+        local_id = row["funding_local_identifier"]
+        if not local_id:
+            continue
+        if local_id not in funding_by_key:
+            funding_by_key[local_id] = _build_grant(row)
+            seen_ids[local_id] = set()
+            agency_trackers[local_id] = {"seen_ids": set(), "seen_types": set()}
+
+        id_scheme = row["funding_identifier_scheme"]
+        id_value = row["funding_identifier_value"]
+        if id_scheme and id_value and (id_scheme, id_value) not in seen_ids[local_id]:
+            seen_ids[local_id].add((id_scheme, id_value))
+            funding_by_key[local_id].setdefault("identifiers", []).append({"value": id_value, "scheme": id_scheme})
+
+        if "funding_agency" not in funding_by_key[local_id]:
+            continue
+        tracker = agency_trackers[local_id]
+        agency = funding_by_key[local_id]["funding_agency"]
+        a_scheme = row["funding_agency_identifier_scheme"]
+        a_value = row["funding_agency_identifier_value"]
+        if a_scheme and a_value and (a_scheme, a_value) not in tracker["seen_ids"]:
+            tracker["seen_ids"].add((a_scheme, a_value))
+            agency.setdefault("identifiers", []).append({"value": a_value, "scheme": a_scheme})
+        a_type = row["funding_agency_type"]
+        if a_type and a_type not in tracker["seen_types"]:
+            tracker["seen_types"].add(a_type)
+            agency.setdefault("types", []).append(a_type)
+
+    return list(funding_by_key.values())
 
 
 SUPPORTED_PRODUCT_FILTERS = {
@@ -263,10 +543,10 @@ def _filter_product_type(value: str) -> list[str]:
         msg = f"The product type '{value}' is not valid, valid types are {', '.join(sorted(VALID_PRODUCT_TYPES))}"
         raise ValueError(msg)
     if value == "literature":
-        return [f"FILTER NOT EXISTS {{ ?br_uri a <{fc}> }}" for fc in NON_LITERATURE_FABIO_CLASSES]
+        return [f"FILTER NOT EXISTS {{ ?local_identifier a <{fc}> }}" for fc in NON_LITERATURE_FABIO_CLASSES]
     if value in SKGIF_TO_FABIO_PRODUCT_TYPE:
         values_list = " ".join(f"<{fc}>" for fc in SKGIF_TO_FABIO_PRODUCT_TYPE[value])
-        return [f"VALUES ?_filter_type {{ {values_list} }}\n?br_uri a ?_filter_type ."]
+        return [f"VALUES ?_filter_type {{ {values_list} }}\n?local_identifier a ?_filter_type ."]
     return ["FILTER(false)"]
 
 
@@ -292,12 +572,12 @@ def _build_cites_preamble(target_uri: str) -> str:
     return (
         f"@@with source=index\n"
         f"{_CITATION_CITO_PREFIX}\n"
-        f"SELECT ?br_uri WHERE {{\n"
+        f"SELECT ?local_identifier WHERE {{\n"
         f"  ?_ci cito:hasCitingEntity ?_citing ;\n"
         f"       cito:hasCitedEntity <{target_uri}> .\n"
-        f"  BIND(STR(?_citing) AS ?br_uri)\n"
+        f"  BIND(STR(?_citing) AS ?local_identifier)\n"
         f"}}\n"
-        f"@@join ?br_uri ?br_uri type=inner"
+        f"@@join ?local_identifier ?local_identifier type=inner"
     )
 
 
@@ -305,12 +585,12 @@ def _build_cited_by_preamble(target_uri: str) -> str:
     return (
         f"@@with source=index\n"
         f"{_CITATION_CITO_PREFIX}\n"
-        f"SELECT ?br_uri WHERE {{\n"
+        f"SELECT ?local_identifier WHERE {{\n"
         f"  ?_ci cito:hasCitingEntity <{target_uri}> ;\n"
         f"       cito:hasCitedEntity ?_cited .\n"
-        f"  BIND(STR(?_cited) AS ?br_uri)\n"
+        f"  BIND(STR(?_cited) AS ?local_identifier)\n"
         f"}}\n"
-        f"@@join ?br_uri ?br_uri type=inner"
+        f"@@join ?local_identifier ?local_identifier type=inner"
     )
 
 
@@ -326,13 +606,13 @@ def _build_cites_doi_preamble(doi: str) -> str:
         f"@@join ?_target ?_target type=inner\n"
         f"@@with source=index\n"
         f"{_CITATION_CITO_PREFIX}\n"
-        f"SELECT ?_target ?br_uri WHERE {{\n"
+        f"SELECT ?_target ?local_identifier WHERE {{\n"
         f"  ?_ci cito:hasCitingEntity ?_citing ;\n"
         f"       cito:hasCitedEntity ?_target .\n"
-        f"  BIND(STR(?_citing) AS ?br_uri)\n"
+        f"  BIND(STR(?_citing) AS ?local_identifier)\n"
         f"}}\n"
         f"@@remove ?_target\n"
-        f"@@join ?br_uri ?br_uri type=inner"
+        f"@@join ?local_identifier ?local_identifier type=inner"
     )
 
 
@@ -348,13 +628,13 @@ def _build_cited_by_doi_preamble(doi: str) -> str:
         f"@@join ?_target ?_target type=inner\n"
         f"@@with source=index\n"
         f"{_CITATION_CITO_PREFIX}\n"
-        f"SELECT ?_target ?br_uri WHERE {{\n"
+        f"SELECT ?_target ?local_identifier WHERE {{\n"
         f"  ?_ci cito:hasCitingEntity ?_target ;\n"
         f"       cito:hasCitedEntity ?_cited .\n"
-        f"  BIND(STR(?_cited) AS ?br_uri)\n"
+        f"  BIND(STR(?_cited) AS ?local_identifier)\n"
         f"}}\n"
         f"@@remove ?_target\n"
-        f"@@join ?br_uri ?br_uri type=inner"
+        f"@@join ?local_identifier ?local_identifier type=inner"
     )
 
 
@@ -379,18 +659,20 @@ def _build_supported_product_filter(pairs: list[str]) -> dict[str, str]:
         elif key == "cf.search.title":
             clauses.append(f'FILTER(CONTAINS(LCASE(?title), LCASE("{value}")))')
         elif key == "identifiers.id":
-            clauses.append(f'?br_uri datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .')
+            clauses.append(f'?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .')
         elif key == "identifiers.scheme":
-            clauses.append(f"?br_uri datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{value} ] .")
+            clauses.append(
+                f"?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{value} ] ."
+            )
         elif key == "product_type":
             clauses.extend(_filter_product_type(value))
         elif key == "contributions.by.local_identifier":
-            clauses.append(f"?br_uri pro:isDocumentContextFor [ pro:isHeldBy <{value}> ] .")
+            clauses.append(f"?local_identifier pro:isDocumentContextFor [ pro:isHeldBy <{value}> ] .")
         elif key in _AGENT_FILTER_TEMPLATES:
             agent_clauses.append(_AGENT_FILTER_TEMPLATES[key].format(value=value))
 
     if agent_clauses:
-        clauses.insert(0, "?br_uri pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .")
+        clauses.insert(0, "?local_identifier pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .")
         clauses.extend(agent_clauses)
 
     return {
@@ -466,24 +748,28 @@ def _build_meta(request_url, graph_size):
 def _build_product_graph(rows):
     first_row = rows[0]
     product: dict = {
-        "local_identifier": first_row["br_uri"],
+        "local_identifier": first_row["local_identifier"],
         "entity_type": "product",
-        "product_type": FABIO_TO_SKGIF_PRODUCT_TYPE.get(first_row["fabio_type"], "literature"),
+        "product_type": first_row["product_type"],
     }
     if first_row["title"]:
-        product["titles"] = {"none": [first_row["title"]]}
-    identifiers = _collect_identifiers(rows)
-    if identifiers:
-        product["identifiers"] = identifiers
-    contributions = _collect_contributors(rows)
-    if contributions:
-        product["contributions"] = contributions
+        lang_key = first_row["title_lang"] or "none"
+        product["titles"] = {lang_key: [first_row["title"]]}
+    else:
+        product["titles"] = {}
+    if first_row["abstract"]:
+        abs_lang = first_row["abstract_lang"] or "none"
+        product["abstracts"] = {abs_lang: [first_row["abstract"]]}
+    else:
+        product["abstracts"] = {}
+    product["identifiers"] = _collect_identifiers(rows)
+    product["contributions"] = _collect_contributors(rows)
     manifestation = _build_manifestation(rows)
-    if manifestation:
-        product["manifestations"] = [manifestation]
-    citations = _collect_citations(rows)
-    if citations:
-        product["related_products"] = {"cites": citations}
+    product["manifestations"] = [manifestation] if manifestation else []
+    product["related_products"] = _collect_related_products(rows)
+    product["topics"] = _collect_topics(rows)
+    product["funding"] = _collect_funding(rows)
+    product["relevant_organisations"] = _collect_organisation(rows, "relevant_organisation")
     return [product]
 
 
@@ -491,7 +777,7 @@ def to_skgif(csv_str, request_url=""):
     rows = list(csv.DictReader(StringIO(csv_str)))
     if not rows:
         graph = []
-    elif "fabio_type" in rows[0]:
+    elif "product_type" in rows[0]:
         graph = _build_product_graph(rows)
     else:
         graph = [dict(row) for row in rows]

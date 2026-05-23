@@ -37,6 +37,7 @@ export default defineConfig({
 						"addons",
 						"multi_source",
 						"openapi",
+						"skgif",
 					],
 				},
 			],

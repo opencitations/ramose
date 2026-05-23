@@ -88,7 +88,7 @@ def _validate_skgif_shacl(response: dict) -> None:
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-    {"@base": "https://w3id.org/skg-if/sandbox/opencitations/"},
+    {"@base": "https://w3id.org/skg-if/sandbox/"},
 ]
 
 
@@ -109,6 +109,9 @@ class TestSkgifJournalArticle:
                 "([1998] Teratology 58:62-68)"
             ]
         }
+        assert product["abstracts"] == {}
+        assert product["funding"] == []
+        assert product["relevant_organisations"] == []
 
     def test_identifiers(self, skgif_api_manager):
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
@@ -188,6 +191,9 @@ class TestSkgifBook:
         assert product["local_identifier"] == "https://w3id.org/oc/meta/br/0612058700"
         assert product["product_type"] == "literature"
         assert product["titles"] == {"none": ["Adaptive Environmental Management"]}
+        assert product["abstracts"] == {}
+        assert product["funding"] == []
+        assert product["relevant_organisations"] == []
 
     def test_multiple_identifiers(self, skgif_api_manager):
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")["@graph"][0]

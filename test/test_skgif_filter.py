@@ -41,13 +41,16 @@ class TestTitleFilter:
     def test_title_search_matches_content(self, skgif_api_manager):
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:adaptive")
         assert results == [
-            {"br_uri": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"},
             {
-                "br_uri": "https://w3id.org/oc/meta/br/0615065546",
+                "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
+                "title": "Adaptive Environmental Management",
+            },
+            {
+                "local_identifier": "https://w3id.org/oc/meta/br/0615065546",
                 "title": "Adaptive System: The Study Of Information, Pattern, And Behavior",
             },
             {
-                "br_uri": "https://w3id.org/oc/meta/br/0615066104",
+                "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
                 "title": "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology",
             },
         ]
@@ -61,22 +64,31 @@ class TestIdentifierFilter:
     def test_filter_by_identifier_scheme(self, skgif_api_manager):
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=identifiers.scheme:isbn")
         assert results == [
-            {"br_uri": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"},
             {
-                "br_uri": "https://w3id.org/oc/meta/br/061702785338",
+                "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
+                "title": "Adaptive Environmental Management",
+            },
+            {
+                "local_identifier": "https://w3id.org/oc/meta/br/061702785338",
                 "title": "Advances In Intelligent Systems And Computing",
             },
             {
-                "br_uri": "https://w3id.org/oc/meta/br/06302611905",
+                "local_identifier": "https://w3id.org/oc/meta/br/06302611905",
                 "title": "Communications In Computer And Information Science",
             },
-            {"br_uri": "https://w3id.org/oc/meta/br/06402611083", "title": "Lecture Notes In Computer Science"},
-            {"br_uri": "https://w3id.org/oc/meta/br/06603870331", "title": "OECD Economic Surveys: China 2022"},
-            {"br_uri": "https://w3id.org/oc/meta/br/0611064823", "title": "The Semantic Web"},
-            {"br_uri": "https://w3id.org/oc/meta/br/06401297735", "title": "The Semantic Web"},
-            {"br_uri": "https://w3id.org/oc/meta/br/0611064985", "title": "The Semantic Web"},
             {
-                "br_uri": "https://w3id.org/oc/meta/br/0612056541",
+                "local_identifier": "https://w3id.org/oc/meta/br/06402611083",
+                "title": "Lecture Notes In Computer Science",
+            },
+            {
+                "local_identifier": "https://w3id.org/oc/meta/br/06603870331",
+                "title": "OECD Economic Surveys: China 2022",
+            },
+            {"local_identifier": "https://w3id.org/oc/meta/br/0611064823", "title": "The Semantic Web"},
+            {"local_identifier": "https://w3id.org/oc/meta/br/06401297735", "title": "The Semantic Web"},
+            {"local_identifier": "https://w3id.org/oc/meta/br/0611064985", "title": "The Semantic Web"},
+            {
+                "local_identifier": "https://w3id.org/oc/meta/br/0612056541",
                 "title": "The Semantic Web: ESWC 2014 Satellite Events",
             },
         ]
@@ -84,7 +96,10 @@ class TestIdentifierFilter:
     def test_filter_by_identifier_value(self, skgif_api_manager):
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=identifiers.id:9781402096327")
         assert results == [
-            {"br_uri": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"},
+            {
+                "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
+                "title": "Adaptive Environmental Management",
+            },
         ]
 
 
@@ -95,7 +110,10 @@ class TestCombinedFilters:
             "/skgif/v1/products?filter=cf.search.title:adaptive,identifiers.scheme:isbn",
         )
         assert results == [
-            {"br_uri": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"},
+            {
+                "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
+                "title": "Adaptive Environmental Management",
+            },
         ]
 
 
@@ -127,7 +145,7 @@ class TestContributorFamilyNameFilter:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.family_name:Slotkin")
         assert results == [
             {
-                "br_uri": "https://w3id.org/oc/meta/br/0601",
+                "local_identifier": "https://w3id.org/oc/meta/br/0601",
                 "title": "Response To The Letter Of Hanley Et Al. "
                 "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
                 "([1998] Teratology 58:62-68)",
@@ -140,7 +158,7 @@ class TestContributorGivenNameFilter:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.given_name:Theodore A.")
         assert results == [
             {
-                "br_uri": "https://w3id.org/oc/meta/br/0601",
+                "local_identifier": "https://w3id.org/oc/meta/br/0601",
                 "title": "Response To The Letter Of Hanley Et Al. "
                 "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
                 "([1998] Teratology 58:62-68)",
@@ -153,15 +171,15 @@ class TestContributorNameFilter:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.name:Zenodo")
         assert results == [
             {
-                "br_uri": "https://w3id.org/oc/meta/br/060504627",
+                "local_identifier": "https://w3id.org/oc/meta/br/060504627",
                 "title": "Classes Of Errors In DOI Names (Data Management Plan)",
             },
             {
-                "br_uri": "https://w3id.org/oc/meta/br/060504628",
+                "local_identifier": "https://w3id.org/oc/meta/br/060504628",
                 "title": "Classes Of Errors In DOI Names (Data Management Plan)",
             },
             {
-                "br_uri": "https://w3id.org/oc/meta/br/060504675",
+                "local_identifier": "https://w3id.org/oc/meta/br/060504675",
                 "title": "Cleaning Different Types Of DOI Errors Found In Cited References On Crossref Using Automated Methods",
             },
         ]
@@ -175,7 +193,7 @@ class TestContributorLocalIdentifierFilter:
         )
         assert results == [
             {
-                "br_uri": "https://w3id.org/oc/meta/br/0601",
+                "local_identifier": "https://w3id.org/oc/meta/br/0601",
                 "title": "Response To The Letter Of Hanley Et Al. "
                 "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
                 "([1998] Teratology 58:62-68)",
@@ -197,7 +215,7 @@ class TestContributionsOrcidFilter:
         )
         assert results == [
             {
-                "br_uri": "https://w3id.org/oc/meta/br/06035",
+                "local_identifier": "https://w3id.org/oc/meta/br/06035",
                 "title": "H-ras, But Not N-ras, Induces An Invasive Phenotype In Human Breast Epithelial Cells: "
                 "A Role For MMP-2 In The H-Ras-Induced Invasive Phenotype",
             },
@@ -212,7 +230,7 @@ class TestCombinedContributorFilters:
         )
         assert results == [
             {
-                "br_uri": "https://w3id.org/oc/meta/br/0601",
+                "local_identifier": "https://w3id.org/oc/meta/br/0601",
                 "title": "Response To The Letter Of Hanley Et Al. "
                 "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
                 "([1998] Teratology 58:62-68)",
@@ -280,8 +298,8 @@ class TestUnsupportedFilter:
 class TestCitesFilter:
     def test_cites_returns_citing_products(self, skgif_api_manager):
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035")
-        br_uris = [r["br_uri"] for r in results]
-        assert br_uris == ["https://w3id.org/oc/meta/br/0601"]
+        local_identifiers = [r["local_identifier"] for r in results]
+        assert local_identifiers == ["https://w3id.org/oc/meta/br/0601"]
 
     def test_cites_no_match(self, skgif_api_manager):
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/9999999")
@@ -291,8 +309,8 @@ class TestCitesFilter:
 class TestCitedByFilter:
     def test_cited_by_returns_cited_products(self, skgif_api_manager):
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by:https://w3id.org/oc/meta/br/0601")
-        br_uris = [r["br_uri"] for r in results]
-        assert br_uris == ["https://w3id.org/oc/meta/br/06035"]
+        local_identifiers = [r["local_identifier"] for r in results]
+        assert local_identifiers == ["https://w3id.org/oc/meta/br/06035"]
 
     def test_cited_by_no_match(self, skgif_api_manager):
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by:https://w3id.org/oc/meta/br/9999999")
@@ -305,8 +323,8 @@ class TestCitesDoiFilter:
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.cites_doi:10.1002/(sici)1097-0215(20000115)85:2<176::aid-ijc5>3.0.co;2-e",
         )
-        br_uris = [r["br_uri"] for r in results]
-        assert br_uris == ["https://w3id.org/oc/meta/br/0601"]
+        local_identifiers = [r["local_identifier"] for r in results]
+        assert local_identifiers == ["https://w3id.org/oc/meta/br/0601"]
 
     def test_cites_doi_no_match(self, skgif_api_manager):
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cites_doi:10.9999/nonexistent")
@@ -319,8 +337,8 @@ class TestCitedByDoiFilter:
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.cited_by_doi:10.1002/(sici)1096-9926(199910)60:4<177::aid-tera1>3.0.co;2-z",
         )
-        br_uris = [r["br_uri"] for r in results]
-        assert br_uris == ["https://w3id.org/oc/meta/br/06035"]
+        local_identifiers = [r["local_identifier"] for r in results]
+        assert local_identifiers == ["https://w3id.org/oc/meta/br/06035"]
 
     def test_cited_by_doi_no_match(self, skgif_api_manager):
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by_doi:10.9999/nonexistent")
@@ -333,8 +351,8 @@ class TestMixedCitationAndRegularFilter:
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035,cf.search.title:Response",
         )
-        br_uris = [r["br_uri"] for r in results]
-        assert br_uris == ["https://w3id.org/oc/meta/br/0601"]
+        local_identifiers = [r["local_identifier"] for r in results]
+        assert local_identifiers == ["https://w3id.org/oc/meta/br/0601"]
 
     def test_cites_with_nonmatching_title(self, skgif_api_manager):
         results = _exec(
@@ -348,13 +366,16 @@ class TestBuiltinFilterOverride:
     def test_skgif_filter_overrides_builtin(self, skgif_api_manager):
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:adaptive")
         assert results == [
-            {"br_uri": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management"},
             {
-                "br_uri": "https://w3id.org/oc/meta/br/0615065546",
+                "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
+                "title": "Adaptive Environmental Management",
+            },
+            {
+                "local_identifier": "https://w3id.org/oc/meta/br/0615065546",
                 "title": "Adaptive System: The Study Of Information, Pattern, And Behavior",
             },
             {
-                "br_uri": "https://w3id.org/oc/meta/br/0615066104",
+                "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
                 "title": "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology",
             },
         ]
@@ -478,7 +499,7 @@ class TestDatasourcesEndpoints:
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-    {"@base": "https://w3id.org/skg-if/sandbox/opencitations/"},
+    {"@base": "https://w3id.org/skg-if/sandbox/"},
 ]
 
 TOTAL_PRODUCTS = 1098
