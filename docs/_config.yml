@@ -4,7 +4,6 @@
 
 title: RAMOSE
 author: Silvio Peroni, Marilena Daquino, Davide Brembilla, Ivan Heibi, Arcangelo Massari
-logo: favicon.svg
 
 exclude_patterns:
   - _build
