@@ -14,7 +14,6 @@
 #method get
 #description Product without title_lang/abstract_lang in field_type.
 #call /products/https://w3id.org/oc/meta/br/0601
-#field_type str(local_identifier) str(entity_type) str(title) str(product_type) str(identifier_scheme) str(identifier_value)
 #format skgif,to_skgif
 #default_format skgif
 #sparql PREFIX fabio: <http://purl.org/spar/fabio/>

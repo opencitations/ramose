@@ -37,7 +37,6 @@ Each operation maps a URL pattern to a SPARQL query. The query must return the c
 #method get
 #description Returns a single research product.
 #call /products/https://example.org/product/1
-#field_type str(local_identifier) str(product_type) str(title) str(title_lang)
 #format skgif,to_skgif
 #default_format skgif
 #sparql PREFIX dcterm: <http://purl.org/dc/terms/>
@@ -50,7 +49,7 @@ WHERE {
 }
 ```
 
-`#field_type` lists the columns that appear in the query output with their types. `#format skgif,to_skgif` registers the converter; `#default_format skgif` makes JSON-LD the default output instead of CSV.
+`#format skgif,to_skgif` registers the converter; `#default_format skgif` makes JSON-LD the default output instead of CSV.
 
 For a complete example, see the [OpenCitations spec](https://github.com/opencitations/ramose/blob/master/test/data/skgif_products.hf).
 

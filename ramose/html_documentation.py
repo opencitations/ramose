@@ -65,7 +65,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
 # {i["title"]}
 
 **Version:** {i["version"]} <br/>
-**API URL:** <a href="{api_url}">{api_url}</a><br/>
+**API URL:** <a href="{i["url"]}">{api_url}</a><br/>
 **Contact:** {i["contacts"]}<br/>
 **License:** {i["license"]}<br/>
 
@@ -199,7 +199,7 @@ The operations that this API implements are:
                 if "field_type" in op and not has_custom_default
                 else ""
             )
-            example_url = conf["website"] + conf["base_url"] + op["call"]
+            example_url = conf["base_url"] + op["call"]
 
             fields_type_html = (
                 '<p class="attr"><strong>Result fields type</strong>'

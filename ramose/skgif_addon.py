@@ -15,6 +15,107 @@ from ramose import HttpError
 
 _YEAR_MONTH_PART_COUNT = 2
 
+_PRODUCT_COLUMNS: dict[str, str] = dict.fromkeys(
+    (
+        "local_identifier",
+        "entity_type",
+        "identifier_scheme",
+        "identifier_value",
+        "title",
+        "title_lang",
+        "abstract",
+        "abstract_lang",
+        "product_type",
+        "topic_term",
+        "topic_identifier_scheme",
+        "topic_identifier_value",
+        "topic_label",
+        "topic_label_lang",
+        "topic_provenance_associated_with",
+        "topic_provenance_trust",
+        "contribution_by_family_name",
+        "contribution_by_given_name",
+        "contribution_by_name",
+        "contribution_by_identifier_scheme",
+        "contribution_by_identifier_value",
+        "contribution_by_local_identifier",
+        "contribution_role",
+        "contribution_type",
+        "_contribution_key",
+        "_contribution_next_key",
+        "contribution_declared_affiliation_name",
+        "contribution_declared_affiliation_short_name",
+        "contribution_declared_affiliation_country",
+        "contribution_declared_affiliation_local_identifier",
+        "contribution_declared_affiliation_identifier_scheme",
+        "contribution_declared_affiliation_identifier_value",
+        "contribution_declared_affiliation_type",
+        "contribution_declared_affiliation_website",
+        "contribution_declared_affiliation_other_name",
+        "manifestation_type_class",
+        "manifestation_type_label",
+        "manifestation_type_label_lang",
+        "manifestation_identifier_scheme",
+        "manifestation_identifier_value",
+        "manifestation_dates_type",
+        "manifestation_dates_value",
+        "manifestation_peer_review_status",
+        "manifestation_peer_review_description",
+        "manifestation_access_rights_status",
+        "manifestation_access_rights_description",
+        "manifestation_licence",
+        "manifestation_version",
+        "manifestation_biblio_volume",
+        "manifestation_biblio_issue",
+        "manifestation_biblio_edition",
+        "manifestation_biblio_number",
+        "manifestation_biblio_pages_first",
+        "manifestation_biblio_pages_last",
+        "manifestation_biblio_in_name",
+        "manifestation_biblio_in_local_identifier",
+        "manifestation_biblio_in_identifier_scheme",
+        "manifestation_biblio_in_identifier_value",
+        "manifestation_biblio_in_acronym",
+        "manifestation_biblio_hosting_data_source_local_identifier",
+        "manifestation_biblio_hosting_data_source_name",
+        "manifestation_biblio_hosting_data_source_identifier_scheme",
+        "manifestation_biblio_hosting_data_source_identifier_value",
+        "related_products_cites",
+        "related_products_is_supplemented_by",
+        "related_products_is_documented_by",
+        "related_products_is_new_version_of",
+        "related_products_is_part_of",
+        "funding_local_identifier",
+        "funding_grant_number",
+        "funding_title",
+        "funding_title_lang",
+        "funding_abstract",
+        "funding_abstract_lang",
+        "funding_acronym",
+        "funding_identifier_scheme",
+        "funding_identifier_value",
+        "funding_stream",
+        "funding_agency_name",
+        "funding_agency_short_name",
+        "funding_agency_country",
+        "funding_agency_local_identifier",
+        "funding_agency_identifier_scheme",
+        "funding_agency_identifier_value",
+        "funding_agency_type",
+        "funding_agency_website",
+        "relevant_organisation_name",
+        "relevant_organisation_short_name",
+        "relevant_organisation_country",
+        "relevant_organisation_local_identifier",
+        "relevant_organisation_identifier_scheme",
+        "relevant_organisation_identifier_value",
+        "relevant_organisation_type",
+        "relevant_organisation_website",
+        "relevant_organisation_other_name",
+    ),
+    "",
+)
+
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
@@ -840,6 +941,14 @@ def _add_formatted_text(entity: dict, first_row: dict, field: str, lang_field: s
         entity[output_key] = {}
 
 
+_SECTION_BUILDERS: tuple[tuple[str, str, Callable], ...] = (
+    ("identifier_scheme", "identifiers", _collect_identifiers),
+    ("contribution_role", "contributions", _collect_contributors),
+    ("topic_term", "topics", _collect_topics),
+    ("funding_local_identifier", "funding", _collect_funding),
+)
+
+
 def _build_entity(rows: list[dict]) -> dict:
     first_row = rows[0]
     columns = set(first_row)
@@ -854,23 +963,34 @@ def _build_entity(rows: list[dict]) -> dict:
     _add_formatted_text(entity, first_row, "title", "title_lang", "titles")
     _add_formatted_text(entity, first_row, "abstract", "abstract_lang", "abstracts")
 
-    if "identifier_scheme" in columns:
-        entity["identifiers"] = _collect_identifiers(rows)
-    if "contribution_role" in columns:
-        entity["contributions"] = _collect_contributors(rows)
+    for anchor, key, builder in _SECTION_BUILDERS:
+        if anchor in columns:
+            entity[key] = builder(rows)
     if "manifestation_type_class" in columns:
         manifestation = _build_manifestation(rows)
         entity["manifestations"] = [manifestation] if manifestation else []
     if columns & set(_RELATED_PRODUCT_COLUMNS):
         entity["related_products"] = _collect_related_products(rows)
-    if "topic_term" in columns:
-        entity["topics"] = _collect_topics(rows)
-    if "funding_local_identifier" in columns:
-        entity["funding"] = _collect_funding(rows)
     if "relevant_organisation_name" in columns:
         entity["relevant_organisations"] = _collect_organisation(rows, "relevant_organisation")
 
+    if columns - _CORE_COLUMNS:
+        _set_section_defaults(entity)
+
     return entity
+
+
+def _set_section_defaults(entity: dict) -> None:
+    for key, default in (
+        ("identifiers", []),
+        ("contributions", []),
+        ("manifestations", []),
+        ("related_products", {}),
+        ("topics", []),
+        ("funding", []),
+        ("relevant_organisations", []),
+    ):
+        entity.setdefault(key, default)
 
 
 def _build_entities(rows: list[dict]) -> list[dict]:
@@ -893,8 +1013,38 @@ def _is_single_entity_request(request_url: str) -> bool:
     return False
 
 
+_COLUMN_GROUP_PREFIXES = (
+    "identifier_",
+    "contribution_",
+    "_contribution_",
+    "manifestation_",
+    "related_products_",
+    "topic_",
+    "funding_",
+    "relevant_organisation_",
+)
+
+_CORE_COLUMNS = frozenset(col for col in _PRODUCT_COLUMNS if not any(col.startswith(p) for p in _COLUMN_GROUP_PREFIXES))
+
+
+def _fill_missing_columns(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    if not rows:
+        return rows
+    present = set(rows[0])
+    active_prefixes = {prefix for prefix in _COLUMN_GROUP_PREFIXES if any(col.startswith(prefix) for col in present)}
+    missing = {
+        col: ""
+        for col in _PRODUCT_COLUMNS
+        if col not in present
+        and ((active_prefixes and col in _CORE_COLUMNS) or any(col.startswith(p) for p in active_prefixes))
+    }
+    if not missing:
+        return rows
+    return [missing | row for row in rows]
+
+
 def to_skgif(csv_str: str, request_url: str = "") -> str:
-    rows = list(csv.DictReader(StringIO(csv_str)))
+    rows = _fill_missing_columns(list(csv.DictReader(StringIO(csv_str))))
     if not rows and _is_single_entity_request(request_url):
         msg = "HTTP status code 404: entity not found"
         raise HttpError(404, msg)
