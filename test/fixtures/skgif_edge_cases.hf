@@ -1,0 +1,39 @@
+#url /skgif-edge/v1
+#type api
+#base https://w3id.org/skg-if/sandbox/test
+#title SKG-IF edge case tests
+#description Minimal SKG-IF spec for testing edge cases in the converter.
+#version 0.1.0
+#endpoint http://localhost:7019
+#addon ramose.skgif_addon
+#disable_params require,filter,sort,format,json
+
+#url /products/{local_identifier}
+#type operation
+#local_identifier str(https://w3id\.org/oc/meta/br/.+)
+#method get
+#description Product without title_lang/abstract_lang in field_type.
+#call /products/https://w3id.org/oc/meta/br/0601
+#field_type str(local_identifier) str(entity_type) str(title) str(product_type) str(identifier_scheme) str(identifier_value)
+#format skgif,to_skgif
+#default_format skgif
+#sparql PREFIX fabio: <http://purl.org/spar/fabio/>
+PREFIX dcterm: <http://purl.org/dc/terms/>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+
+SELECT ?local_identifier ?entity_type ?title ?product_type
+       ?identifier_scheme ?identifier_value
+WHERE {
+  BIND(<[[local_identifier]]> AS ?local_identifier)
+  BIND("product" AS ?entity_type)
+  BIND("literature" AS ?product_type)
+  ?local_identifier a fabio:Expression .
+  OPTIONAL { ?local_identifier dcterm:title ?title }
+  OPTIONAL {
+    ?local_identifier datacite:hasIdentifier ?id_node .
+    ?id_node datacite:usesIdentifierScheme ?scheme_uri ;
+             literal:hasLiteralValue ?identifier_value .
+    BIND(STRAFTER(STR(?scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
+  }
+}

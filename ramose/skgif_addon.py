@@ -771,10 +771,11 @@ def _collect_passthrough_fields(first_row: dict, active_formatted: set[str]) -> 
 
 
 def _add_formatted_text(entity: dict, first_row: dict, field: str, lang_field: str, output_key: str) -> None:
-    if lang_field not in first_row:
+    if field not in first_row:
         return
     if first_row[field]:
-        entity[output_key] = {(first_row[lang_field] or "none"): [first_row[field]]}
+        lang = first_row.get(lang_field) or "none"
+        entity[output_key] = {lang: [first_row[field]]}
     else:
         entity[output_key] = {}
 
@@ -784,9 +785,9 @@ def _build_entity(rows: list[dict]) -> dict:
     columns = set(first_row)
 
     active_formatted: set[str] = set()
-    if "title_lang" in columns:
+    if "title" in columns:
         active_formatted.update(("title", "title_lang"))
-    if "abstract_lang" in columns:
+    if "abstract" in columns:
         active_formatted.update(("abstract", "abstract_lang"))
 
     entity = _collect_passthrough_fields(first_row, active_formatted)

@@ -93,6 +93,17 @@ def skgif_api_manager(qlever_endpoint: str) -> APIManager:
     return manager
 
 
+FIXTURES_DIR = TEST_DIR / "fixtures"
+
+
+@pytest.fixture(scope="session")
+def skgif_edge_api_manager(qlever_endpoint: str) -> APIManager:
+    return APIManager(
+        [str(FIXTURES_DIR / "skgif_edge_cases.hf")],
+        endpoint_override=qlever_endpoint,
+    )
+
+
 def execute_operation(api_manager: APIManager, operation_url: str) -> str:
     op = api_manager.get_op(operation_url)
     if isinstance(op, tuple):
