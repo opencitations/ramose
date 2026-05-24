@@ -128,13 +128,12 @@
 PREFIX orkgp: <http://orkg.org/orkg/predicate/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?local_identifier ?entity_type ?identifier_scheme ?identifier_value
+SELECT ?local_identifier ?identifier_scheme ?identifier_value
        ?title ?title_lang ?product_type
        ?manifestation_dates_type ?manifestation_dates_value
        ?manifestation_biblio_in_name ?manifestation_biblio_in_local_identifier
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
-  BIND("product" AS ?entity_type)
   ?local_identifier a orkgc:Paper .
   OPTIONAL {
     ?local_identifier rdfs:label ?title_raw .

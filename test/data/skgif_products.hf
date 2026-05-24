@@ -56,7 +56,6 @@ Format: comma-separated <code>filter_name:filter_value</code> pairs (AND logic).
 #format skgif,to_skgif
 #default_format skgif
 #call /products?filter=cf.search.title:adaptive
-#field_type str(local_identifier) str(title) str(entity_type) str(product_type)
 #output_json [{"local_identifier": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management", "entity_type": "product", "product_type": "literature"}]
 #sparql [[filter_preamble]]
 PREFIX fabio: <http://purl.org/spar/fabio/>
@@ -66,11 +65,10 @@ PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX pro: <http://purl.org/spar/pro/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT DISTINCT ?local_identifier ?title ?entity_type ?product_type
+SELECT DISTINCT ?local_identifier ?title ?product_type
 WHERE {
   ?local_identifier a fabio:Expression ;
           dcterm:title ?title .
-  BIND("product" AS ?entity_type)
   OPTIONAL { ?local_identifier a ?_type_class . FILTER(?_type_class != fabio:Expression) }
   BIND(IF(!BOUND(?_type_class), "literature", IF(?_type_class IN (<http://purl.org/spar/fabio/DataFile>, <http://purl.org/spar/fabio/DataManagementPlan>), "research data", IF(?_type_class = <http://purl.org/spar/fabio/ComputerProgram>, "research software", "literature"))) AS ?product_type)
   [[filter]]
@@ -320,7 +318,7 @@ PREFIX frbr: <http://purl.org/vocab/frbr/core#>
 PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 
-SELECT ?local_identifier ?entity_type ?identifier_scheme ?identifier_value
+SELECT ?local_identifier ?identifier_scheme ?identifier_value
        ?title ?product_type
        ?manifestation_type_class ?manifestation_type_label ?manifestation_type_label_lang
        ?manifestation_dates_type ?manifestation_dates_value
@@ -330,7 +328,6 @@ SELECT ?local_identifier ?entity_type ?identifier_scheme ?identifier_value
        ?manifestation_biblio_in_identifier_scheme ?manifestation_biblio_in_identifier_value
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
-  BIND("product" AS ?entity_type)
   ?local_identifier a fabio:Expression .
   OPTIONAL { ?local_identifier dcterm:title ?title }
   OPTIONAL { ?local_identifier a ?manifestation_type_class . FILTER(?manifestation_type_class != fabio:Expression) }

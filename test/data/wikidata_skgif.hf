@@ -26,7 +26,7 @@ PREFIX p: <http://www.wikidata.org/prop/>
 PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?local_identifier ?entity_type ?title ?title_lang ?product_type
+SELECT ?local_identifier ?title ?title_lang ?product_type
        ?manifestation_dates_type ?manifestation_dates_value
        ?manifestation_biblio_volume ?manifestation_biblio_issue
        ?manifestation_biblio_pages_first ?manifestation_biblio_pages_last
@@ -34,7 +34,6 @@ SELECT ?local_identifier ?entity_type ?title ?title_lang ?product_type
        ?manifestation_licence ?manifestation_access_rights_status
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
-  BIND("product" AS ?entity_type)
   ?local_identifier wdt:P1476 ?title_raw .
   BIND(STR(?title_raw) AS ?title)
   BIND(LANG(?title_raw) AS ?title_lang)

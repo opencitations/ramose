@@ -21,11 +21,10 @@ PREFIX dcterm: <http://purl.org/dc/terms/>
 PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 
-SELECT ?local_identifier ?entity_type ?title ?product_type
+SELECT ?local_identifier ?title ?product_type
        ?identifier_scheme ?identifier_value
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
-  BIND("product" AS ?entity_type)
   BIND("literature" AS ?product_type)
   ?local_identifier a fabio:Expression .
   OPTIONAL { ?local_identifier dcterm:title ?title }

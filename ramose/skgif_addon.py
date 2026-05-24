@@ -18,7 +18,7 @@ _YEAR_MONTH_PART_COUNT = 2
 _PRODUCT_COLUMNS: dict[str, str] = dict.fromkeys(
     (
         "local_identifier",
-        "entity_type",
+
         "identifier_scheme",
         "identifier_value",
         "title",
@@ -1004,6 +1004,23 @@ def _build_entities(rows: list[dict]) -> list[dict]:
 
 ENTITY_TYPES = frozenset({"products", "persons", "organisations", "grants", "venues", "topics", "datasources"})
 
+_ENTITY_TYPE_MAP: dict[str, str] = {
+    "products": "product",
+    "persons": "person",
+    "organisations": "organisation",
+    "grants": "grant",
+    "venues": "venue",
+    "topics": "topic",
+    "datasources": "datasource",
+}
+
+
+def _extract_entity_type(request_url: str) -> str | None:
+    for segment in urlsplit(request_url).path.split("/"):
+        if segment in _ENTITY_TYPE_MAP:
+            return _ENTITY_TYPE_MAP[segment]
+    return None
+
 
 def _is_single_entity_request(request_url: str) -> bool:
     segments = [s for s in urlsplit(request_url).path.split("/") if s]
@@ -1063,6 +1080,11 @@ def to_skgif(csv_str: str, request_url: str = "") -> str:
             raise ValueError(msg)
         start = (page - 1) * page_size
         graph = graph[start : start + page_size]
+
+    entity_type = _extract_entity_type(request_url)
+    if entity_type:
+        for entity in graph:
+            entity["entity_type"] = entity_type
 
     result = {
         "@context": SKGIF_CONTEXT,
