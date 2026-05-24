@@ -8,8 +8,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
+from requests.exceptions import ConnectionError as RequestsConnectionError
 
-from ramose import APIManager, Operation
+from ramose import APIManager, Operation, OperationConfig
 
 TESTS_DIR = str(Path(__file__).resolve().parent / "fixtures")
 
@@ -182,7 +183,8 @@ class TestMultiSourceErrorHandling:
         op = _get_operation(am, "10.1108/jd-12-2013-0166")
 
         def mock_run_sparql(endpoint_url, query_text):
-            raise RuntimeError("SPARQL 500: Internal Server Error")
+            msg = "SPARQL 500: Internal Server Error"
+            raise RuntimeError(msg)
 
         with patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
             sc, msg, ct, _ = op.exec(method="get", content_type="application/json")
@@ -214,7 +216,8 @@ class TestMultiSourceValueError:
         op = _get_operation(am, "10.1108/jd-12-2013-0166")
 
         def mock_parse_steps(text, tp, par_dict):
-            raise ValueError("bad config")
+            msg = "bad config"
+            raise ValueError(msg)
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
             sc, msg, ct, _ = op.exec(method="get", content_type="application/json")
@@ -320,8 +323,7 @@ class TestParseSteps:
             "http://default-endpoint/sparql",
             "get",
             None,
-            format_map={},
-            sources_map=sources_map or {},
+            OperationConfig(format_map={}, sources_map=sources_map or {}),
         )
 
     def test_simple_query_no_directives(self):
@@ -362,7 +364,10 @@ class TestParseSteps:
 
     def test_foreach_directive(self):
         op = self._make_op()
-        text = "SELECT ?br WHERE { }\n@@join ?br ?br type=left\n@@foreach ?br item wait=0.5\nSELECT ?br ?count WHERE { BIND(<[[item]]> AS ?br) }"
+        text = (
+            "SELECT ?br WHERE { }\n@@join ?br ?br type=left\n"
+            "@@foreach ?br item wait=0.5\nSELECT ?br ?count WHERE { BIND(<[[item]]> AS ?br) }"
+        )
         steps = op._parse_steps(text, "http://ep/sparql", {})
         tags = [s[0] for s in steps]
         assert tags == ["QUERY", "JOIN", "FOREACH", "QUERY"]
@@ -731,9 +736,7 @@ class TestRunSparqlDicts:
 
     @patch("ramose.operation._http_session")
     def test_request_exception_raises(self, mock_session):
-        from requests.exceptions import ConnectionError
-
-        mock_session.get.side_effect = ConnectionError("refused")
+        mock_session.get.side_effect = RequestsConnectionError("refused")
 
         op = self._make_op("get")
         with pytest.raises(RuntimeError, match="SPARQL request failed: refused"):

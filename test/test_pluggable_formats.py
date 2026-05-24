@@ -8,7 +8,7 @@ from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from ramose import APIManager, Operation
+from ramose import APIManager, Operation, OperationConfig
 
 if "pysparql_anything" not in sys.modules:
     _mock_module = ModuleType("pysparql_anything")
@@ -84,7 +84,7 @@ class TestDefaultFormat:
             "http://unused/sparql",
             "get",
             FakeAddon,
-            format_map={"upper": "to_upper"},
+            OperationConfig(format_map={"upper": "to_upper"}),
         )
         csv_str = "name,age\narcangelo,30\n"
         result, _ = op.conv(csv_str, {})
@@ -116,7 +116,7 @@ class TestDefaultFormat:
             "http://unused/sparql",
             "get",
             FakeAddon,
-            format_map={"upper": "to_upper", "dummyxml": "to_dummyxml"},
+            OperationConfig(format_map={"upper": "to_upper", "dummyxml": "to_dummyxml"}),
         )
         csv_str = "name,age\narcangelo,30\n"
         result, _ = op.conv(csv_str, {"format": ["dummyxml"]})
@@ -178,7 +178,7 @@ class TestCustomFormatThroughExec:
 
         resp = SimpleNamespace(
             status_code=200,
-            text="qid,author,year,title,source_title,source_id,volume,issue,page,doi,reference,citation_count\nQ24260641,,2015,Setting our bibliographic references free,,,,,,10.1108/JD-12-2013-0166,,1\n",
+            text="qid,author,year,title,source_title,source_id,volume,issue,page,doi,reference,citation_count\nQ24260641,,2015,Setting our bibliographic references free,,,,,,10.1108/JD-12-2013-0166,,1\n",  # noqa: E501
             reason="OK",
             encoding=None,
         )
@@ -232,9 +232,7 @@ class TestSparqlAnythingSingleQueryExec:
             "http://unused/sparql",
             "get",
             None,
-            format_map={},
-            sources_map={},
-            engine="sparql-anything",
+            OperationConfig(format_map={}, sources_map={}, engine="sparql-anything"),
         )
 
         with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"title": "Test Paper"}]):
@@ -257,13 +255,19 @@ class TestRunSparqlAnythingDictsNormalization:
             "field_type": "str(x)",
         }
         return Operation(
-            "/api/test/v", r"/api/test/(.+)", op_item, "http://ep/sparql", "get", None, engine="sparql-anything"
+            "/api/test/v",
+            r"/api/test/(.+)",
+            op_item,
+            "http://ep/sparql",
+            "get",
+            None,
+            OperationConfig(engine="sparql-anything"),
         )
 
     def test_list_of_dicts(self):
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as MockSA:
-            MockSA.return_value.select.return_value = [{"x": "a"}, {"x": "b"}]
+        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+            mock_sa.return_value.select.return_value = [{"x": "a"}, {"x": "b"}]
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "a"}, {"x": "b"}]
 
@@ -275,11 +279,11 @@ class TestRunSparqlAnythingDictsNormalization:
                 "bindings": [
                     {"x": {"type": "literal", "value": "a"}, "y": {"type": "literal", "value": "1"}},
                     {"x": {"type": "literal", "value": "b"}, "y": {"type": "literal", "value": "2"}},
-                ]
+                ],
             },
         }
-        with patch("pysparql_anything.SparqlAnything") as MockSA:
-            MockSA.return_value.select.return_value = sparql_result
+        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+            mock_sa.return_value.select.return_value = sparql_result
             rows = op._run_sparql_anything_dicts("SELECT ?x ?y WHERE { }")
         assert len(rows) == 2
         assert rows[0] == {"x": "a", "y": "1"}
@@ -287,8 +291,8 @@ class TestRunSparqlAnythingDictsNormalization:
 
     def test_columnar_dict(self):
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as MockSA:
-            MockSA.return_value.select.return_value = {"x": ["a", "b"], "y": ["1", "2"]}
+        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+            mock_sa.return_value.select.return_value = {"x": ["a", "b"], "y": ["1", "2"]}
             rows = op._run_sparql_anything_dicts("SELECT ?x ?y WHERE { }")
         assert len(rows) == 2
         assert rows[0] == {"x": "a", "y": "1"}
@@ -296,22 +300,22 @@ class TestRunSparqlAnythingDictsNormalization:
 
     def test_single_dict_fallback(self):
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as MockSA:
-            MockSA.return_value.select.return_value = {"x": "a"}
+        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+            mock_sa.return_value.select.return_value = {"x": "a"}
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "a"}]
 
     def test_non_dict_result(self):
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as MockSA:
-            MockSA.return_value.select.return_value = "raw_string"
+        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+            mock_sa.return_value.select.return_value = "raw_string"
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"result": "raw_string"}]
 
     def test_list_of_non_dicts_coerced(self):
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as MockSA:
-            MockSA.return_value.select.return_value = [[("x", "a")], [("x", "b")]]
+        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+            mock_sa.return_value.select.return_value = [[("x", "a")], [("x", "b")]]
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "a"}, {"x": "b"}]
 
@@ -322,18 +326,18 @@ class TestRunSparqlAnythingDictsNormalization:
             "results": {
                 "bindings": [
                     {"x": "plain_value"},
-                ]
+                ],
             },
         }
-        with patch("pysparql_anything.SparqlAnything") as MockSA:
-            MockSA.return_value.select.return_value = sparql_result
+        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+            mock_sa.return_value.select.return_value = sparql_result
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "plain_value"}]
 
     def test_columnar_dict_with_scalar(self):
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as MockSA:
-            MockSA.return_value.select.return_value = {"x": ["a", "b"], "label": "fixed"}
+        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+            mock_sa.return_value.select.return_value = {"x": ["a", "b"], "label": "fixed"}
             rows = op._run_sparql_anything_dicts("SELECT ?x ?label WHERE { }")
         assert len(rows) == 2
         assert rows[0] == {"x": "a", "label": "fixed"}
@@ -341,10 +345,10 @@ class TestRunSparqlAnythingDictsNormalization:
 
     def test_values_param_passed(self):
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as MockSA:
-            MockSA.return_value.select.return_value = [{"x": "a"}]
+        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+            mock_sa.return_value.select.return_value = [{"x": "a"}]
             op._run_sparql_anything_dicts("Q", values={"doi": "10.1"})
-        call_kwargs = MockSA.return_value.select.call_args
+        call_kwargs = mock_sa.return_value.select.call_args
         assert call_kwargs[1]["values"] == {"doi": "10.1"}
 
 
@@ -357,7 +361,15 @@ class TestRunQueryDictsDispatch:
             "method": "get",
             "field_type": "str(x)",
         }
-        return Operation("/api/test/v", r"/api/test/(.+)", op_item, "http://ep/sparql", "get", None, engine=engine)
+        return Operation(
+            "/api/test/v",
+            r"/api/test/(.+)",
+            op_item,
+            "http://ep/sparql",
+            "get",
+            None,
+            OperationConfig(engine=engine),
+        )
 
     def test_op_level_sparql_anything_engine(self):
         op = self._make_op(engine="sparql-anything")
@@ -389,9 +401,7 @@ class TestSparqlAnythingSingleQueryWithAddon:
             "http://unused/sparql",
             "get",
             FakeAddon,
-            format_map={},
-            sources_map={},
-            engine="sparql-anything",
+            OperationConfig(format_map={}, sources_map={}, engine="sparql-anything"),
         )
 
         with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"title": "Test"}]):

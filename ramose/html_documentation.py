@@ -88,7 +88,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
             builtin_params.append(
                 "`require=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are "
                 "removed from the result set - e.g. `require=given_name` removes all the rows that do not have any "
-                "string specified in the `given_name` field."
+                "string specified in the `given_name` field.",
             )
         if "filter" not in overridden:
             builtin_params.append(
@@ -97,14 +97,14 @@ class HTMLDocumentationHandler(DocumentationHandler):
                 "`<value>` is interpreted as a regular expression, otherwise it is compared by means of the specified "
                 'operation. Possible operators are "=", "<", and ">". For instance, `filter=title:semantics?` returns '
                 'all the rows that contain the string "semantic" or "semantics" in the field `title`, while '
-                "`filter=date:>2016-05` returns all the rows that have a `date` greater than May 2016."
+                "`filter=date:>2016-05` returns all the rows that have a `date` greater than May 2016.",
             )
         if "sort" not in overridden:
             builtin_params.append(
                 '`sort=<order>(<field_name>)`: sort in ascending (`<order>` set to "asc") or descending (`<order>` '
                 'set to "desc") order the rows in the result set according to the values in `<field_name>`. For '
                 "instance, `sort=desc(date)` sorts all the rows according to the value specified in the field `date` "
-                "in descending order."
+                "in descending order.",
             )
         if "format" not in overridden:
             builtin_params.append(
@@ -112,7 +112,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
                 'can be either "csv" or "json" - e.g. `format=csv` returns the final table in CSV format. This '
                 'parameter has higher priority of the type specified through the "Accept" header of the request. Thus, '
                 "if the header of a request to the API specifies `Accept: text/csv` and the URL of such request "
-                "includes `format=json`, the final table is returned in JSON."
+                "includes `format=json`, the final table is returned in JSON.",
             )
         if "json" not in overridden:
             builtin_params.append(
@@ -126,7 +126,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
                 "converted into a dictionary by splitting the various textual parts by means of `<separator>` and by "
                 "associating the new fields `<new_field_1>`, `<new_field_2>`, etc., to these new parts. For instance, "
                 'considering the JSON table `[ { "name": "Doe, John" }, ... ]`, the execution of '
-                '`dict(", ",name,fname,gname)` returns `[ { "name": { "fname": "Doe", "gname": "John" }, ... ]`.'
+                '`dict(", ",name,fname,gname)` returns `[ { "name": { "fname": "Doe", "gname": "John" }, ... ]`.',
             )
 
         if not builtin_params:
@@ -160,7 +160,7 @@ The operations that this API implements are:
                     p_type, p_shape = findall(r"^\s*([^\(]+)\((.+)\)\s*$", op[p])[0]
 
                 params.append(
-                    f"<em>{p}</em>: type <code>{p_type}</code>, regular expression shape <code>{p_shape}</code>"
+                    f"<em>{p}</em>: type <code>{p_type}</code>, regular expression shape <code>{p_shape}</code>",
                 )
 
             if "custom_params" in op:

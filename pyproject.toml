@@ -55,43 +55,23 @@ line-length = 120
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    # Docstrings: not required in this project
     "D",      # pydocstyle
     "DOC",    # pydoclint
-    # Type annotations: handled by pyright
-    "ANN",    # flake8-annotations
-    # Framework-specific: not used
-    "DJ",     # flake8-django
-    "PD",     # pandas-vet
-    "NPY",    # NumPy-specific
-    "AIR",    # Airflow
-    "FAST",   # FastAPI
-    # Copyright: handled by REUSE
-    "CPY",    # flake8-copyright
-    # TODOs: not enforcing format
+    "ANN",    # flake8-annotations (pyright)
+    "DJ",     # flake8-django (unused)
+    "PD",     # pandas-vet (unused)
+    "NPY",    # NumPy (unused)
+    "AIR",    # Airflow (unused)
+    "FAST",   # FastAPI (unused)
+    "CPY",    # flake8-copyright (REUSE)
     "FIX",    # flake8-fixme
     "TD",     # flake8-todos
-    # Trailing commas: formatter handles this
-    "COM",    # flake8-commas
-    # Quote style: formatter handles this
     "Q",      # flake8-quotes
-    # Boolean trap: too restrictive for this codebase
-    "FBT",    # flake8-boolean-trap
-    # Conflicts with formatter
-    "ISC001", # implicit-str-concat (single line)
-    # Raise vanilla args: forces extracting every message to a variable
-    "TRY003", # raise-vanilla-args
-    # Exception message in f-string: related to TRY003, same rationale
-    "EM",     # flake8-errmsg
-    # Implicit string concat on multiple lines: formatter handles this
-    "ISC002", # multi-line-implicit-string-concatenation
-    # Line too long: templates and docstrings make this impractical
-    "E501",   # line-too-long
-    # Magic values: HTTP status codes (200, 404) are universally understood
-    "PLR2004", # magic-value-comparison
+    "ISC001", # conflicts with Ruff formatter
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"ramose/html_documentation.py" = ["E501"]  # HTML/CSS template strings
 "test/**" = [
     "S101",   # assert allowed in tests
     "ARG",    # unused args in fixtures
@@ -100,10 +80,7 @@ ignore = [
     "S603",   # subprocess in test fixtures
     "S607",   # partial path in test fixtures
     "PLW1510", # subprocess.run without check in fixtures
-    "PLC0415", # import inside test function
-    "N806",   # MockSA and similar mock class names
-    "PLW2901", # loop variable overwrite in test helpers
-    "A004",   # shadowing builtin (ConnectionError import)
+    "PLR2004", # magic values in assertions
 ]
 "test/data/**" = [
     "INP001", # implicit namespace package
@@ -116,17 +93,13 @@ ignore = [
 ]
 "ramose/__main__.py" = [
     "T20",    # print statements in CLI
-    "C901",   # complexity: pragma no cover
-    "PLR0915", # too many statements: pragma no cover
-    "S201",   # flask debug=True: development server only
 ]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 12
 
 [tool.ruff.lint.pylint]
-# Operation.__init__ has 11 params
-max-args = 13
+max-args = 7
 
 [dependency-groups]
 dev = [

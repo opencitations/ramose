@@ -33,7 +33,8 @@ def _wait_for_qlever(port: int, timeout: int = 60) -> None:
         except requests.ConnectionError:
             pass
         time.sleep(1)
-    raise TimeoutError(f"QLever did not become ready on port {port} within {timeout}s")
+    msg = f"QLever did not become ready on port {port} within {timeout}s"
+    raise TimeoutError(msg)
 
 
 @pytest.fixture(scope="session")
@@ -107,8 +108,10 @@ def skgif_edge_api_manager(qlever_endpoint: str) -> APIManager:
 def execute_operation(api_manager: APIManager, operation_url: str) -> str:
     op = api_manager.get_op(operation_url)
     if isinstance(op, tuple):
-        raise TypeError(f"Operation not found: {operation_url}")
+        msg = f"Operation not found: {operation_url}"
+        raise TypeError(msg)
     status, result, _, _ = op.exec(method="get", content_type="application/json")
     if status != 200:
-        raise RuntimeError(f"API returned status {status}: {result}")
+        msg = f"API returned status {status}: {result}"
+        raise RuntimeError(msg)
     return result

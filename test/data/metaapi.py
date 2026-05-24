@@ -38,7 +38,7 @@ def generate_id_search(ids: str) -> tuple[str]:
                         ^datacite:hasIdentifier ?res.
                     ?res a fabio:Expression.
                 }}
-            """
+            """,
             )
 
     if omid_values:

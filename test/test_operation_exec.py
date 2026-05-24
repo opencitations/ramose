@@ -93,7 +93,8 @@ class TestExecTypeError:
         sc, msg, ct, _ = op.exec(method="get")
         assert sc == 400
         assert msg.startswith(
-            "HTTP status code 400: parameter in the request not compliant with the type specified - TypeError: bad type (line "
+            "HTTP status code 400: parameter in the request not compliant with the type specified"
+            " - TypeError: bad type (line ",
         )
         assert ct == "text/plain"
 

@@ -13,7 +13,7 @@ from ramose.documentation import DocumentationHandler
 from ramose.hash_format import HashFormatHandler
 from ramose.html_documentation import HTMLDocumentationHandler
 from ramose.openapi_documentation import OpenAPIDocumentationHandler
-from ramose.operation import HttpError, Operation
+from ramose.operation import HttpError, Operation, OperationConfig
 
 __all__ = [
     "APIManager",
@@ -24,4 +24,5 @@ __all__ = [
     "HttpError",
     "OpenAPIDocumentationHandler",
     "Operation",
+    "OperationConfig",
 ]

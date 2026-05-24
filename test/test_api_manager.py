@@ -35,7 +35,7 @@ class TestBestMatch:
         conf, pat = api_mgr.best_match(api_mgr.base_url[0] + "/metadata/doi:10.1234")
         assert (
             pat
-            == "/v1/metadata/((doi|issn|isbn|omid|openalex|pmid|pmcid):.+?(__(doi|issn|isbn|omid|openalex|pmid|pmcid):.+?)*$)"
+            == "/v1/metadata/((doi|issn|isbn|omid|openalex|pmid|pmcid):.+?(__(doi|issn|isbn|omid|openalex|pmid|pmcid):.+?)*$)"  # noqa: E501
         )
         assert set(conf) == {
             "conf",

@@ -10,7 +10,7 @@ import yaml
 
 from ramose import APIManager, HTMLDocumentationHandler, OpenAPIDocumentationHandler
 from ramose.hash_format import BUILTIN_PARAMS, parse_disable_params
-from ramose.operation import Operation
+from ramose.operation import Operation, OperationConfig
 
 DATA_DIR = Path(__file__).parent / "data"
 
@@ -54,8 +54,7 @@ def _make_op(disabled_params=None, format_map=None, addon=None, op_item_extra=No
         "http://localhost:9999/sparql",
         "get",
         addon,
-        format_map=format_map or {},
-        disabled_params=disabled_params,
+        OperationConfig(format_map=format_map or {}, disabled_params=disabled_params or set()),
     )
 
 

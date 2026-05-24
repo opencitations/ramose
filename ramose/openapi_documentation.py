@@ -87,7 +87,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             return None
         s = str(v).strip()
         # Strip wrapping quotes if parser stored them as part of the value
-        if len(s) >= 2 and ((s[0] == s[-1] == '"') or (s[0] == s[-1] == "'")):
+        if len(s) >= 2 and ((s[0] == s[-1] == '"') or (s[0] == s[-1] == "'")):  # noqa: PLR2004
             s = s[1:-1].strip()
         # Convert literal backslash-n sequences to actual newlines
         return s.replace("\\n", "\n")
@@ -390,7 +390,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             [
                 ("200", {"description": "Successful response", "content": ok_content}),
                 ("default", {"description": "Error", "content": err_content}),
-            ]
+            ],
         )
 
         return op_obj

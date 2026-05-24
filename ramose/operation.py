@@ -9,6 +9,9 @@
 
 import time
 from csv import DictReader, reader, writer
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
+from http import HTTPStatus
 from io import StringIO
 from itertools import product
 from json import dumps
@@ -20,6 +23,7 @@ from urllib.parse import parse_qs, quote, urlsplit
 from requests.exceptions import RequestException
 
 from ramose._constants import DEFAULT_HTTP_TIMEOUT, FIELD_TYPE_RE, _http_session
+from ramose.cache import ResultCache
 from ramose.datatype import DataType
 from ramose.paging import PaginationInfo, build_link_header, build_pagination_info
 
@@ -28,6 +32,17 @@ class HttpError(Exception):
     def __init__(self, status_code, message):
         super().__init__(message)
         self.status_code = status_code
+
+
+@dataclass
+class OperationConfig:
+    format_map: dict = dataclass_field(default_factory=dict)
+    sources_map: dict = dataclass_field(default_factory=dict)
+    engine: str = "sparql"
+    custom_params: dict = dataclass_field(default_factory=dict)
+    disabled_params: set = dataclass_field(default_factory=set)
+    cache: ResultCache | None = None
+    default_cache_ttl: int = 86400
 
 
 class Operation:
@@ -39,27 +54,10 @@ class Operation:
         tp,
         sparql_http_method,
         addon,
-        format_map=None,
-        sources_map=None,
-        engine="sparql",
-        custom_params=None,
-        disabled_params=None,
-        cache=None,
-        default_cache_ttl=86400,
+        config=None,
     ):
-        """This class is responsible for materialising a API operation to be run against a SPARQL endpoint
-        (or, depending on configuration, through the SPARQL.Anything engine).
-
-        It takes in input a full URL referring to a call to an operation (parameter 'op_complete_url'),
-        the particular shape representing an operation (parameter 'op_key'), the definition (in JSON) of such
-        operation (parameter 'i'), the URL of the triplestore to contact (parameter 'tp'), the HTTP method
-        to use for the SPARQL request (parameter 'sparql_http_method', set to either 'get' or 'post'), the path
-        of the Python file which defines additional functions for use in the operation (parameter 'addon'), and formats
-        with the names of the corresponding functions responsible for converting CSV data into the specified formats
-        (parameter 'format').
-        It also accepts a mapping of named sources to endpoint URLs referenced by @@with directives
-        (parameter 'sources_map') and the engine identifier selecting the execution
-        backend (parameter 'engine')."""
+        if config is None:
+            config = OperationConfig()
         self.url_parsed = urlsplit(op_complete_url)
         self.op_url = self.url_parsed.path
         self.op = op_key
@@ -67,14 +65,14 @@ class Operation:
         self.tp = tp
         self.sparql_http_method = sparql_http_method
         self.addon = addon
-        self.format = format_map or {}
-        self.sources_map = sources_map or {}
-        self.engine = engine
-        self.custom_params = custom_params or {}
-        self.disabled_params = disabled_params or set()
+        self.format = config.format_map
+        self.sources_map = config.sources_map
+        self.engine = config.engine
+        self.custom_params = config.custom_params
+        self.disabled_params = config.disabled_params
         self._sa_engine = None
-        self._cache = cache
-        self._default_cache_ttl = default_cache_ttl
+        self._cache = config.cache
+        self._default_cache_ttl = config.default_cache_ttl
         self.pagination_info: PaginationInfo | None = None
 
         self.operation = {"=": eq, "<": lt, ">": gt}
@@ -492,14 +490,17 @@ class Operation:
                 key, value = token.split("=", 1)
                 if key in all_names:
                     if key in result:
-                        raise ValueError(f"Duplicate parameter {key!r}")
+                        msg = f"Duplicate parameter {key!r}"
+                        raise ValueError(msg)
                     seen_keyword = True
                     result[key] = value
                     continue
             if seen_keyword:
-                raise ValueError(f"Positional argument {token!r} cannot follow keyword argument")
+                msg = f"Positional argument {token!r} cannot follow keyword argument"
+                raise ValueError(msg)
             if positional_index >= len(param_names):
-                raise ValueError(f"Unexpected argument {token!r}")
+                msg = f"Unexpected argument {token!r}"
+                raise ValueError(msg)
             result[param_names[positional_index]] = token
             positional_index += 1
 
@@ -509,7 +510,8 @@ class Operation:
 
         missing = [name for name in param_names if name not in result]
         if missing:
-            raise ValueError(f"Missing required parameter(s): {', '.join(missing)}")
+            msg = f"Missing required parameter(s): {', '.join(missing)}"
+            raise ValueError(msg)
 
         return result
 
@@ -517,7 +519,8 @@ class Operation:
         args = Operation._parse_directive_args(parts[1:], ["source"])
         name = args["source"]
         if name not in self.sources_map:
-            raise ValueError(f"Unknown source '{name}' in @@with; declare it in #sources.")
+            msg = f"Unknown source '{name}' in @@with; declare it in #sources."
+            raise ValueError(msg)
         return self.sources_map[name], None
 
     @staticmethod
@@ -534,7 +537,8 @@ class Operation:
     def _handle_directive_values(parts):
         tokens = parts[1:]
         if not tokens:
-            raise ValueError("@@values needs at least one variable")
+            msg = "@@values needs at least one variable"
+            raise ValueError(msg)
         return None, ("VALUES_INJECT", tokens)
 
     @staticmethod
@@ -542,11 +546,13 @@ class Operation:
         args = Operation._parse_directive_args(parts[1:], ["variable", "placeholder"], defaults={"wait": "0"})
         var_name = args["variable"]
         if not var_name.startswith("?"):
-            raise ValueError(f"@@foreach variable must start with '?', got {var_name!r}")
+            msg = f"@@foreach variable must start with '?', got {var_name!r}"
+            raise ValueError(msg)
         try:
             delay = float(args["wait"])
         except ValueError:
-            raise ValueError(f"Invalid wait value in @@foreach: {args['wait']!r}") from None
+            msg = f"Invalid wait value in @@foreach: {args['wait']!r}"
+            raise ValueError(msg) from None
         return None, ("FOREACH", var_name, args["placeholder"], delay)
 
     def _parse_steps(self, text, default_endpoint, params):
@@ -598,7 +604,8 @@ class Operation:
 
             handler = directive_handlers.get(cmd)
             if handler is None:
-                raise ValueError(f"Unknown directive @@{cmd}")
+                msg = f"Unknown directive @@{cmd}"
+                raise ValueError(msg)
 
             new_endpoint, step = handler(parts)
             if new_endpoint is not None:
@@ -637,11 +644,13 @@ class Operation:
                     timeout=DEFAULT_HTTP_TIMEOUT,
                 )
         except RequestException as e:
-            raise RuntimeError(f"SPARQL request failed: {e}") from e
+            msg = f"SPARQL request failed: {e}"
+            raise RuntimeError(msg) from e
 
         r.encoding = "utf-8"
-        if r.status_code != 200:
-            raise RuntimeError(f"SPARQL {r.status_code}: {r.reason}")
+        if r.status_code != HTTPStatus.OK:
+            msg = f"SPARQL {r.status_code}: {r.reason}"
+            raise RuntimeError(msg)
         text = r.content.decode("utf-8-sig", errors="replace")
         list_of_lines = text.splitlines()
         return list(DictReader(list_of_lines))
@@ -1004,7 +1013,7 @@ class Operation:
                 )
             r.encoding = "utf-8"
 
-            if r.status_code != 200:
+            if r.status_code != HTTPStatus.OK:
                 return r.status_code, f"HTTP status code {r.status_code}: {r.reason}", "text/plain"
 
             # Re-encode to handle non-UTF8 characters in splitlines
@@ -1062,7 +1071,8 @@ class Operation:
             state["acc"] = self._join(state["acc"], rows, lvar, rvar, how)
             state["pending_join"] = None
         else:
-            raise ValueError("Multiple QUERY steps without an explicit @@join directive")
+            msg = "Multiple QUERY steps without an explicit @@join directive"
+            raise ValueError(msg)
 
     def _exec_multi_source(self, par_dict, content_type):
         """Execute a multi-source query pipeline with @@ directives."""
@@ -1089,7 +1099,8 @@ class Operation:
             elif tag == "FOREACH":
                 state["pending_foreach"] = (st[1], st[2], st[3])
             else:
-                raise RuntimeError(f"Unknown step tag {tag}")
+                msg = f"Unknown step tag {tag}"
+                raise RuntimeError(msg)
 
         header = self._header_from_field_type(self.i, state["acc"] or [])
         csv_rows = self._to_csv_rows(header, state["acc"] or [])

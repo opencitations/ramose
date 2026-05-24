@@ -26,7 +26,7 @@ _DURATION_PATTERN = re_compile(
     r"(?:(?P<hours>\d+)H)?"
     r"(?:(?P<minutes>\d+)M)?"
     r"(?:(?P<seconds>\d+(?:\.\d+)?)S)?"
-    r")?"
+    r")?",
 )
 
 
@@ -51,7 +51,7 @@ def _parse_datetime(date_str: str) -> datetime:
     compatibility, where fromisoformat does not recognize it.
     """
     date_str = date_str.strip()
-    if len(date_str) == 4 and date_str.isdigit():
+    if len(date_str) == 4 and date_str.isdigit():  # noqa: PLR2004
         return datetime(int(date_str), 1, 1, tzinfo=timezone.utc)
     if len(date_str) in (6, 7) and date_str[4] == "-":
         year, month = date_str.split("-")

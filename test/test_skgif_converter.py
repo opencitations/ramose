@@ -67,10 +67,12 @@ SKGIF_SHACL_SHAPES = _load_shacl_shapes()
 def _execute_skgif(skgif_api_manager: APIManager, local_identifier: str) -> dict:
     operation = skgif_api_manager.get_op(f"/skgif/v1/products/{local_identifier}")
     if isinstance(operation, tuple):
-        raise TypeError(f"Operation not found: {local_identifier}")
+        msg = f"Operation not found: {local_identifier}"
+        raise TypeError(msg)
     status, result, _, _ = operation.exec(method="get", content_type="application/json")
     if status != 200:
-        raise RuntimeError(f"API returned status {status}: {result}")
+        msg = f"API returned status {status}: {result}"
+        raise RuntimeError(msg)
     return json.loads(result)
 
 
@@ -106,8 +108,8 @@ class TestSkgifJournalArticle:
             "none": [
                 "Response To The Letter Of Hanley Et Al. "
                 "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                "([1998] Teratology 58:62-68)"
-            ]
+                "([1998] Teratology 58:62-68)",
+            ],
         }
         assert product["abstracts"] == {}
         assert product["funding"] == []
@@ -116,7 +118,7 @@ class TestSkgifJournalArticle:
     def test_identifiers(self, skgif_api_manager):
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
         assert product["identifiers"] == [
-            {"value": "10.1002/(sici)1096-9926(199910)60:4<177::aid-tera1>3.0.co;2-z", "scheme": "doi"}
+            {"value": "10.1002/(sici)1096-9926(199910)60:4<177::aid-tera1>3.0.co;2-z", "scheme": "doi"},
         ]
 
     def test_author_contributions(self, skgif_api_manager):

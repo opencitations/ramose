@@ -32,7 +32,9 @@ for _fabio_uri, _skgif_type in FABIO_TO_SKGIF_PRODUCT_TYPE.items():
 
 
 def _collect_identifiers(
-    rows: list[dict], scheme_col: str = "identifier_scheme", value_col: str = "identifier_value"
+    rows: list[dict],
+    scheme_col: str = "identifier_scheme",
+    value_col: str = "identifier_value",
 ) -> list[dict]:
     seen = set()
     identifiers = []
@@ -98,7 +100,8 @@ def _build_agent(row: dict) -> dict | None:
     if id_scheme and id_value:
         agent["identifiers"] = [{"value": id_value, "scheme": id_scheme}]
     if not agent_local_id:
-        raise ValueError(f"Missing required local_identifier for {entity_type} '{display_name}'")
+        msg = f"Missing required local_identifier for {entity_type} '{display_name}'"
+        raise ValueError(msg)
     agent["local_identifier"] = agent_local_id
     return agent
 
@@ -114,7 +117,8 @@ def _build_org(row: dict, prefix: str) -> dict:
             org[field] = val
     local_id = row[f"{prefix}_local_identifier"]
     if not local_id:
-        raise ValueError(f"Missing required local_identifier for organisation '{row[f'{prefix}_name']}'")
+        msg = f"Missing required local_identifier for organisation '{row[f'{prefix}_name']}'"
+        raise ValueError(msg)
     org["local_identifier"] = local_id
     return org
 
@@ -157,7 +161,11 @@ def _collect_declared_affiliations(rows: list[dict], role: str, key: str, store:
 
 
 def _enrich_contributor(
-    contributor: dict, key: str, role_type: str, contribution_types: dict, affiliations: dict
+    contributor: dict,
+    key: str,
+    role_type: str,
+    contribution_types: dict,
+    affiliations: dict,
 ) -> None:
     types = contribution_types.get(role_type, {}).get(key)
     if types:
@@ -222,7 +230,8 @@ def _collect_contributors(rows: list[dict]) -> list[dict]:
 def _build_venue(rows: list[dict], venue_name: str, venue_local_id: str) -> dict:
     venue: dict = {"name": venue_name, "entity_type": "venue"}
     if not venue_local_id:
-        raise ValueError(f"Missing required local_identifier for venue '{venue_name}'")
+        msg = f"Missing required local_identifier for venue '{venue_name}'"
+        raise ValueError(msg)
     venue["local_identifier"] = venue_local_id
     acronym = rows[0]["manifestation_biblio_in_acronym"]
     if acronym:
@@ -245,7 +254,7 @@ def _normalize_datetime(date_str: str) -> str:
     parts = date_str.split("-")
     if len(parts) == 1:
         return f"{parts[0]}-01-01T00:00:00"
-    if len(parts) == 2:
+    if len(parts) == 2:  # noqa: PLR2004
         return f"{parts[0]}-{parts[1]}-01T00:00:00"
     if "T" not in date_str:
         return f"{date_str}T00:00:00"
@@ -445,7 +454,8 @@ def _collect_organisation(rows: list[dict], prefix: str) -> list[dict]:
 def _build_grant(row: dict) -> dict:
     funding_local_id = row["funding_local_identifier"]
     if not funding_local_id:
-        raise ValueError("Missing required local_identifier for grant")
+        msg = "Missing required local_identifier for grant"
+        raise ValueError(msg)
     grant: dict = {"local_identifier": funding_local_id, "entity_type": "grant"}
     for field, csv_col in (
         ("grant_number", "funding_grant_number"),
@@ -557,11 +567,16 @@ def _filter_product_type(value: str) -> list[str]:
 
 _AGENT_FILTER_TEMPLATES: dict[str, str] = {
     "contributions.by.identifiers.id": '?_filter_agent datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .',
-    "contributions.by.identifiers.scheme": "?_filter_agent datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{value} ] .",
+    "contributions.by.identifiers.scheme": (
+        "?_filter_agent datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{value} ] ."
+    ),
     "contributions.by.family_name": '?_filter_agent foaf:familyName "{value}" .',
     "contributions.by.given_name": '?_filter_agent foaf:givenName "{value}" .',
     "contributions.by.name": '?_filter_agent foaf:name "{value}" .',
-    "cf.contributions_orcid": '?_filter_agent datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ; datacite:usesIdentifierScheme datacite:orcid ] .',
+    "cf.contributions_orcid": (
+        '?_filter_agent datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ;'
+        " datacite:usesIdentifierScheme datacite:orcid ] ."
+    ),
 }
 
 
@@ -667,7 +682,7 @@ def _build_supported_product_filter(pairs: list[str]) -> dict[str, str]:
             clauses.append(f'?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .')
         elif key == "identifiers.scheme":
             clauses.append(
-                f"?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{value} ] ."
+                f"?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{value} ] .",
             )
         elif key == "product_type":
             clauses.extend(_filter_product_type(value))
@@ -839,7 +854,8 @@ def _is_single_entity_request(request_url):
 def to_skgif(csv_str, request_url=""):
     rows = list(csv.DictReader(StringIO(csv_str)))
     if not rows and _is_single_entity_request(request_url):
-        raise HttpError(404, "HTTP status code 404: entity not found")
+        msg = "HTTP status code 404: entity not found"
+        raise HttpError(404, msg)
     graph = _build_entities(rows)
 
     total_entities = len(graph)
@@ -906,7 +922,7 @@ VALID_GRANT_FILTERS = frozenset(
         "identifiers.scheme",
         "identifiers.value",
         "website",
-    }
+    },
 )
 
 VALID_TOPIC_FILTERS = frozenset(
@@ -915,7 +931,7 @@ VALID_TOPIC_FILTERS = frozenset(
         "cf.search.language",
         "identifiers.scheme",
         "identifiers.value",
-    }
+    },
 )
 
 VALID_DATASOURCE_FILTERS = frozenset(
@@ -926,7 +942,7 @@ VALID_DATASOURCE_FILTERS = frozenset(
         "identifiers.scheme",
         "identifiers.value",
         "research_product_type",
-    }
+    },
 )
 
 

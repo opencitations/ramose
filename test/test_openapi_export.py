@@ -55,7 +55,7 @@ class TestOpenAPIFromScholarlyHf:
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
         examples = spec["paths"]["/metadata/{dois}"]["get"]["responses"]["200"]["content"]["application/json"].get(
-            "examples"
+            "examples",
         )
         assert examples is not None
         example_value = examples["example"]["value"]
@@ -211,7 +211,10 @@ class TestBuildResponseContent:
     def test_extra_format_added(self):
         handler = _build_handler("test_scholarly.hf")
         ok_and_err = handler._build_response_content(
-            {"type": "array"}, ["csv", "json", "xml"], None, "#/components/schemas/Error"
+            {"type": "array"},
+            ["csv", "json", "xml"],
+            None,
+            "#/components/schemas/Error",
         )
         assert isinstance(ok_and_err, tuple)
         assert set(ok_and_err[1].keys()) == {"application/json", "text/csv", "application/xml"}

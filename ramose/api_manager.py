@@ -18,7 +18,7 @@ from urllib.parse import urlsplit
 from ramose._constants import PARAM_NAME
 from ramose.cache import ResultCache
 from ramose.hash_format import HashFormatHandler, parse_custom_params, parse_disable_params
-from ramose.operation import Operation
+from ramose.operation import Operation, OperationConfig
 
 
 class APIManager:
@@ -207,6 +207,15 @@ class APIManager:
             op_disabled = parse_disable_params(op_conf["disable_params"]) if "disable_params" in op_conf else set()
             effective_disabled = api_disabled | op_disabled
 
+            config = OperationConfig(
+                format_map=op_format_map,
+                sources_map=conf.get("sources_map", {}),
+                engine=op_engine,
+                custom_params=custom_params_map,
+                disabled_params=effective_disabled,
+                cache=self._cache,
+                default_cache_ttl=self._cache_ttl,
+            )
             return Operation(
                 op_complete_url,
                 op,
@@ -214,13 +223,7 @@ class APIManager:
                 conf["tp"],
                 conf["sparql_http_method"],
                 conf["addon"],
-                op_format_map,
-                conf.get("sources_map", {}),
-                op_engine,
-                custom_params_map,
-                effective_disabled,
-                cache=self._cache,
-                default_cache_ttl=self._cache_ttl,
+                config,
             )
 
         for prefix, base_url, item in self._operation_prefixes:
@@ -230,9 +233,15 @@ class APIManager:
                 param_value = op_url[len(prefix) :]
                 param_names = findall(PARAM_NAME, template)
                 if not param_value:
-                    msg = f"HTTP status code 400: the operation '{full_template}' requires a value for parameter '{param_names[0]}'"
+                    msg = (
+                        f"HTTP status code 400: the operation '{full_template}' "
+                        f"requires a value for parameter '{param_names[0]}'"
+                    )
                 else:
-                    msg = f"HTTP status code 400: the value '{param_value}' is not valid for parameter '{param_names[0]}' in operation '{full_template}'"
+                    msg = (
+                        f"HTTP status code 400: the value '{param_value}' is not valid for parameter "
+                        f"'{param_names[0]}' in operation '{full_template}'"
+                    )
                 if "call" in item:
                     msg += f". Example: {base_url}{item['call']}"
                 return 400, msg, "text/plain"

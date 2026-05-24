@@ -30,7 +30,12 @@ class TestConv:
             "field_type": "str(name) int(age)",
         }
         return Operation(
-            "/api/v1/test/value", "/api/v1/test/(.+)", op_item, "http://localhost:9999/sparql", "get", None
+            "/api/v1/test/value",
+            "/api/v1/test/(.+)",
+            op_item,
+            "http://localhost:9999/sparql",
+            "get",
+            None,
         )
 
     def test_csv_output(self, op):

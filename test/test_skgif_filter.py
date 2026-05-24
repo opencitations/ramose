@@ -13,10 +13,12 @@ from ramose.hash_format import BUILTIN_PARAMS
 def _exec(skgif_api_manager: APIManager, url: str) -> list[dict]:
     op = skgif_api_manager.get_op(url)
     if isinstance(op, tuple):
-        raise TypeError(f"Operation not found: {url}")
+        msg = f"Operation not found: {url}"
+        raise TypeError(msg)
     status, result, _, _ = op.exec(method="get", content_type="application/json")
     if status != 200:
-        raise RuntimeError(f"API returned status {status}: {result}")
+        msg = f"API returned status {status}: {result}"
+        raise RuntimeError(msg)
     parsed = json.loads(result)
     if isinstance(parsed, dict) and "@graph" in parsed:
         return list(parsed["@graph"])
@@ -26,7 +28,8 @@ def _exec(skgif_api_manager: APIManager, url: str) -> list[dict]:
 def _exec_raw(skgif_api_manager: APIManager, url: str) -> tuple[int, str]:
     op = skgif_api_manager.get_op(url)
     if isinstance(op, tuple):
-        raise TypeError(f"Operation not found: {url}")
+        msg = f"Operation not found: {url}"
+        raise TypeError(msg)
     status, result, _, _ = op.exec(method="get", content_type="application/json")
     return status, result
 
@@ -57,8 +60,8 @@ class TestTitleFilter:
                 "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
                 "titles": {
                     "none": [
-                        "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology"
-                    ]
+                        "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology",  # noqa: E501
+                    ],
                 },
                 "entity_type": "product",
                 "product_type": "literature",
@@ -191,8 +194,8 @@ class TestContributorFamilyNameFilter:
                     "none": [
                         "Response To The Letter Of Hanley Et Al. "
                         "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                        "([1998] Teratology 58:62-68)"
-                    ]
+                        "([1998] Teratology 58:62-68)",
+                    ],
                 },
                 "entity_type": "product",
                 "product_type": "literature",
@@ -210,8 +213,8 @@ class TestContributorGivenNameFilter:
                     "none": [
                         "Response To The Letter Of Hanley Et Al. "
                         "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                        "([1998] Teratology 58:62-68)"
-                    ]
+                        "([1998] Teratology 58:62-68)",
+                    ],
                 },
                 "entity_type": "product",
                 "product_type": "literature",
@@ -239,8 +242,8 @@ class TestContributorNameFilter:
                 "local_identifier": "https://w3id.org/oc/meta/br/060504675",
                 "titles": {
                     "none": [
-                        "Cleaning Different Types Of DOI Errors Found In Cited References On Crossref Using Automated Methods"
-                    ]
+                        "Cleaning Different Types Of DOI Errors Found In Cited References On Crossref Using Automated Methods",  # noqa: E501
+                    ],
                 },
                 "entity_type": "product",
                 "product_type": "literature",
@@ -261,8 +264,8 @@ class TestContributorLocalIdentifierFilter:
                     "none": [
                         "Response To The Letter Of Hanley Et Al. "
                         "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                        "([1998] Teratology 58:62-68)"
-                    ]
+                        "([1998] Teratology 58:62-68)",
+                    ],
                 },
                 "entity_type": "product",
                 "product_type": "literature",
@@ -288,8 +291,8 @@ class TestContributionsOrcidFilter:
                 "titles": {
                     "none": [
                         "H-ras, But Not N-ras, Induces An Invasive Phenotype In Human Breast Epithelial Cells: "
-                        "A Role For MMP-2 In The H-Ras-Induced Invasive Phenotype"
-                    ]
+                        "A Role For MMP-2 In The H-Ras-Induced Invasive Phenotype",
+                    ],
                 },
                 "entity_type": "product",
                 "product_type": "literature",
@@ -310,8 +313,8 @@ class TestCombinedContributorFilters:
                     "none": [
                         "Response To The Letter Of Hanley Et Al. "
                         "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                        "([1998] Teratology 58:62-68)"
-                    ]
+                        "([1998] Teratology 58:62-68)",
+                    ],
                 },
                 "entity_type": "product",
                 "product_type": "literature",
@@ -463,8 +466,8 @@ class TestBuiltinFilterOverride:
                 "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
                 "titles": {
                     "none": [
-                        "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology"
-                    ]
+                        "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology",  # noqa: E501
+                    ],
                 },
                 "entity_type": "product",
                 "product_type": "literature",
