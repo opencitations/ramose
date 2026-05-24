@@ -268,7 +268,7 @@ class TestRunSparqlAnythingDictsNormalization:
 
     def test_list_of_dicts(self) -> None:
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = [{"x": "a"}, {"x": "b"}]
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "a"}, {"x": "b"}]
@@ -284,7 +284,7 @@ class TestRunSparqlAnythingDictsNormalization:
                 ],
             },
         }
-        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = sparql_result
             rows = op._run_sparql_anything_dicts("SELECT ?x ?y WHERE { }")
         assert len(rows) == 2
@@ -293,7 +293,7 @@ class TestRunSparqlAnythingDictsNormalization:
 
     def test_columnar_dict(self) -> None:
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = {"x": ["a", "b"], "y": ["1", "2"]}
             rows = op._run_sparql_anything_dicts("SELECT ?x ?y WHERE { }")
         assert len(rows) == 2
@@ -302,21 +302,21 @@ class TestRunSparqlAnythingDictsNormalization:
 
     def test_single_dict_fallback(self) -> None:
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = {"x": "a"}
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "a"}]
 
     def test_non_dict_result(self) -> None:
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = "raw_string"
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"result": "raw_string"}]
 
     def test_list_of_non_dicts_coerced(self) -> None:
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = [[("x", "a")], [("x", "b")]]
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "a"}, {"x": "b"}]
@@ -331,14 +331,14 @@ class TestRunSparqlAnythingDictsNormalization:
                 ],
             },
         }
-        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = sparql_result
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "plain_value"}]
 
     def test_columnar_dict_with_scalar(self) -> None:
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = {"x": ["a", "b"], "label": "fixed"}
             rows = op._run_sparql_anything_dicts("SELECT ?x ?label WHERE { }")
         assert len(rows) == 2
@@ -347,7 +347,7 @@ class TestRunSparqlAnythingDictsNormalization:
 
     def test_values_param_passed(self) -> None:
         op = self._make_op()
-        with patch("pysparql_anything.SparqlAnything") as mock_sa:
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = [{"x": "a"}]
             op._run_sparql_anything_dicts("Q", values={"doi": "10.1"})
         call_kwargs = mock_sa.return_value.select.call_args
