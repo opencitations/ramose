@@ -12,7 +12,6 @@ from csv import writer
 from http import HTTPStatus
 from io import StringIO
 from json import dumps
-from os import path as pt
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -96,6 +95,13 @@ def _parse_args():  # pragma: no cover
         ),
     )
     arg_parser.add_argument(
+        "--debug",
+        dest="debug",
+        default=False,
+        action="store_true",
+        help="Enable Flask debug mode (auto-reload, interactive debugger).",
+    )
+    arg_parser.add_argument(
         "--cache-dir",
         dest="cache_dir",
         default=".cache",
@@ -167,44 +173,37 @@ def _handle_api_call(api_url, api_manager, content_type):  # pragma: no cover
 
 
 def _run_webserver(api_manager, html_handler, openapi_handler, css_path, args):  # pragma: no cover
-    try:
-        html_handler.logger_ramose()
+    html_handler.logger_ramose()
 
-        host_name = args.webserver.rsplit(":", 1)[0] if ":" in args.webserver else "127.0.0.1"
-        port = args.webserver.rsplit(":", 1)[1] if ":" in args.webserver else "8080"
+    host_name = args.webserver.rsplit(":", 1)[0] if ":" in args.webserver else "127.0.0.1"
+    port = args.webserver.rsplit(":", 1)[1] if ":" in args.webserver else "8080"
 
-        app = Flask(__name__)
+    app = Flask(__name__)
 
-        if args.call:
-            args.call = args.call[1:]
+    if args.call:
+        args.call = args.call[1:]
 
-        @app.route("/")
-        def home():
-            return html_handler.get_index(css_path)
+    @app.route("/")
+    def home():
+        return html_handler.get_index(css_path)
 
-        @app.route("/<path:api_url>")
-        def doc(api_url):
-            if api_url.endswith(("openapi.yaml", "openapi.yml")):
-                return _handle_openapi_export(api_url, api_manager, openapi_handler, html_handler.get_index(css_path))
+    @app.route("/<path:api_url>")
+    def doc(api_url):
+        if api_url.endswith(("openapi.yaml", "openapi.yml")):
+            return _handle_openapi_export(api_url, api_manager, openapi_handler, html_handler.get_index(css_path))
 
-            if not any(api_base in "/" + api_url for api_base in api_manager.all_conf):
-                return html_handler.get_index(css_path), 404
+        if not any(api_base in "/" + api_url for api_base in api_manager.all_conf):
+            return html_handler.get_index(css_path), 404
 
-            if any(api_base == "/" + api_url for api_base in api_manager.all_conf):
-                status, page = html_handler.get_documentation(css_path, api_url)
-                return page, status
+        if any(api_base == "/" + api_url for api_base in api_manager.all_conf):
+            status, page = html_handler.get_documentation(css_path, api_url)
+            return page, status
 
-            fmt = request.args.get("format")
-            content_type = "text/csv" if fmt is not None and "csv" in fmt else "application/json"
-            return _handle_api_call(api_url, api_manager, content_type)
+        fmt = request.args.get("format")
+        content_type = "text/csv" if fmt is not None and "csv" in fmt else "application/json"
+        return _handle_api_call(api_url, api_manager, content_type)
 
-        app.run(host=str(host_name), debug=True, port=int(port))  # noqa: S201
-
-    except Exception as exc:  # noqa: BLE001
-        traceback = exc.__traceback__
-        filename = pt.split(traceback.tb_frame.f_code.co_filename)[1] if traceback else "?"
-        line_number = traceback.tb_lineno if traceback else "?"
-        print(f"[ERROR] {type(exc).__name__} {filename} {line_number}")
+    app.run(host=str(host_name), debug=args.debug, port=int(port))
 
 
 def _run_cli(api_manager, html_handler, openapi_handler, css_path, args):  # pragma: no cover

@@ -24,6 +24,7 @@ python -m ramose -s <spec.hf> [options]
 | `-o`, `--output` | Write response to file instead of stdout. |
 | `-w`, `--webserver` | Start Flask server at `host:port`. |
 | `-css`, `--css` | Custom CSS file path for documentation styling. |
+| `--debug` | Enable Flask debug mode (auto-reload, interactive debugger). |
 | `--cache-dir` | Directory for result caching. Default: `.cache`. |
 | `--no-cache` | Disable result caching entirely. |
 | `--cache-ttl` | Cache TTL in seconds. Default: `86400` (1 day). |

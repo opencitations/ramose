@@ -12,7 +12,6 @@ from csv import DictReader, reader, writer
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from http import HTTPStatus
-from importlib import import_module
 from io import StringIO
 from itertools import product
 from json import dumps
@@ -22,6 +21,11 @@ from re import findall, match, search, sub
 from urllib.parse import parse_qs, quote, urlsplit
 
 from requests.exceptions import RequestException
+
+try:
+    from pysparql_anything import SparqlAnything
+except ImportError:
+    SparqlAnything = None
 
 from ramose._constants import DEFAULT_HTTP_TIMEOUT, FIELD_TYPE_RE, _http_session
 from ramose.cache import ResultCache
@@ -698,8 +702,10 @@ class Operation:
                     (name -> value), passed to SPARQL Anything's `values=`.
         """
         if self._sa_engine is None:
-            sa_module = import_module("pysparql_anything")
-            self._sa_engine = sa_module.SparqlAnything()  # type: ignore[attr-defined]
+            if SparqlAnything is None:
+                msg = "pysparql_anything not installed. Install with: pip install ramose[sparql-anything]"
+                raise ImportError(msg)
+            self._sa_engine = SparqlAnything()
 
         kwargs = {"query": query_text}
         if values:
