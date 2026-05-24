@@ -51,7 +51,7 @@ WHERE {
   OPTIONAL {
     ?local_identifier orkgp:HAS_VENUE ?venue_resource .
     ?venue_resource rdfs:label ?manifestation_biblio_in_name .
-    BIND(STRAFTER(STR(?venue_resource), "http://orkg.org/orkg/resource/") AS ?manifestation_biblio_in_local_identifier)
+    BIND(STR(?venue_resource) AS ?manifestation_biblio_in_local_identifier)
   }
 }
 
@@ -68,7 +68,7 @@ WHERE {
   FILTER(STRSTARTS(STR(?seq_pred), "http://www.w3.org/1999/02/22-rdf-syntax-ns#_"))
   BIND("author" AS ?contribution_role)
   ?author rdfs:label ?contribution_by_name .
-  BIND(STRAFTER(STR(?author), "http://orkg.org/orkg/resource/") AS ?contribution_by_local_identifier)
+  BIND(STR(?author) AS ?contribution_by_local_identifier)
   BIND(CONCAT(STR(?local_identifier), "/author/", STRAFTER(STR(?seq_pred), "http://www.w3.org/1999/02/22-rdf-syntax-ns#_")) AS ?_contribution_key)
 }
 ORDER BY xsd:integer(STRAFTER(STR(?seq_pred), "http://www.w3.org/1999/02/22-rdf-syntax-ns#_"))

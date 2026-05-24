@@ -374,7 +374,7 @@ WHERE {
       FILTER NOT EXISTS { ?venue_resource a fabio:JournalVolume }
     }
     ?venue_resource dcterm:title ?manifestation_biblio_in_name .
-    BIND(STRAFTER(STR(?venue_resource), "/br/") AS ?manifestation_biblio_in_local_identifier)
+    BIND(STR(?venue_resource) AS ?manifestation_biblio_in_local_identifier)
     OPTIONAL {
       ?venue_resource datacite:hasIdentifier ?venue_identifier_node .
       ?venue_identifier_node datacite:usesIdentifierScheme ?venue_identifier_scheme_uri ;
@@ -410,7 +410,7 @@ WHERE {
   OPTIONAL { ?responsible_agent foaf:familyName ?contribution_by_family_name }
   OPTIONAL { ?responsible_agent foaf:givenName ?contribution_by_given_name }
   OPTIONAL { ?responsible_agent foaf:name ?contribution_by_name }
-  BIND(STRAFTER(STR(?responsible_agent), "/ra/") AS ?contribution_by_local_identifier)
+  BIND(STR(?responsible_agent) AS ?contribution_by_local_identifier)
   OPTIONAL {
     ?responsible_agent datacite:hasIdentifier ?orcid_node .
     ?orcid_node datacite:usesIdentifierScheme datacite:orcid ;

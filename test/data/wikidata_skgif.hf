@@ -48,7 +48,7 @@ WHERE {
   OPTIONAL {
     ?local_identifier p:P1433 ?venue_stmt .
     ?venue_stmt <http://www.wikidata.org/prop/statement/P1433> ?venue .
-    BIND(STRAFTER(STR(?venue), "http://www.wikidata.org/entity/") AS ?manifestation_biblio_in_local_identifier)
+    BIND(STR(?venue) AS ?manifestation_biblio_in_local_identifier)
     OPTIONAL { ?venue_stmt pq:P478 ?manifestation_biblio_volume }
     OPTIONAL { ?venue_stmt pq:P433 ?manifestation_biblio_issue }
     OPTIONAL {
@@ -106,7 +106,7 @@ WHERE {
     ?stmt ps:P2093 ?contribution_by_name .
     OPTIONAL { ?stmt pq:P1545 ?author_order }
     BIND(CONCAT(STR(?local_identifier), "/author/str/", ENCODE_FOR_URI(?contribution_by_name)) AS ?_contribution_key)
-    BIND("" AS ?contribution_by_local_identifier)
+    BIND(CONCAT("wikidata-str-author/", ENCODE_FOR_URI(?contribution_by_name)) AS ?contribution_by_local_identifier)
     BIND("" AS ?contribution_by_identifier_scheme)
     BIND("" AS ?contribution_by_identifier_value)
   } UNION {
@@ -117,7 +117,7 @@ WHERE {
       ?author wdt:P496 ?contribution_by_identifier_value .
       BIND("orcid" AS ?contribution_by_identifier_scheme)
     }
-    BIND(STRAFTER(STR(?author), "http://www.wikidata.org/entity/") AS ?contribution_by_local_identifier)
+    BIND(STR(?author) AS ?contribution_by_local_identifier)
     BIND(CONCAT(STR(?local_identifier), "/author/", STRAFTER(STR(?author), "http://www.wikidata.org/entity/")) AS ?_contribution_key)
     SERVICE <https://query.wikidata.org/sparql> {
       ?author rdfs:label ?contribution_by_name . FILTER(LANG(?contribution_by_name) = "en")

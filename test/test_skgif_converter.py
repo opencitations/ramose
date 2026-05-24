@@ -128,7 +128,7 @@ class TestSkgifJournalArticle:
         assert authors[0]["by"]["name"] == "Slotkin, Theodore A."
         assert authors[0]["by"]["family_name"] == "Slotkin"
         assert authors[0]["by"]["given_name"] == "Theodore A."
-        assert authors[0]["by"]["local_identifier"] == "persons/ra/0601"
+        assert authors[0]["by"]["local_identifier"] == "https://w3id.org/oc/meta/ra/0601"
         assert authors[0]["by"]["entity_type"] == "person"
 
         assert authors[1]["rank"] == 2
@@ -143,7 +143,7 @@ class TestSkgifJournalArticle:
         assert publishers[0]["rank"] == 1
         assert publishers[0]["by"]["name"] == "Wiley"
         assert publishers[0]["by"]["entity_type"] == "organisation"
-        assert publishers[0]["by"]["local_identifier"] == "organisations/ra/0610116001"
+        assert publishers[0]["by"]["local_identifier"] == "https://w3id.org/oc/meta/ra/0610116001"
         assert "family_name" not in publishers[0]["by"]
         assert "given_name" not in publishers[0]["by"]
 
@@ -168,7 +168,7 @@ class TestSkgifJournalArticle:
         venue = product["manifestations"][0]["biblio"]["in"]
         assert venue["name"] == "Teratology"
         assert venue["entity_type"] == "venue"
-        assert venue["local_identifier"] == "venues/br/06101018"
+        assert venue["local_identifier"] == "https://w3id.org/oc/meta/br/06101018"
         venue_schemes = {(identifier["scheme"], identifier["value"]) for identifier in venue["identifiers"]}
         assert venue_schemes == {
             ("issn", "1096-9926"),

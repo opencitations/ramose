@@ -7,7 +7,7 @@ import json
 from collections.abc import Callable
 from io import StringIO
 from math import ceil
-from urllib.parse import parse_qs, quote, urlencode, urlsplit
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 from ramose import HttpError
 
@@ -75,7 +75,7 @@ def _build_agent(row: dict) -> dict | None:
     full_name = row["contribution_by_name"]
     id_scheme = row["contribution_by_identifier_scheme"]
     id_value = row["contribution_by_identifier_value"]
-    ra_id = row["contribution_by_local_identifier"]
+    agent_local_id = row["contribution_by_local_identifier"]
     role = row["contribution_role"]
 
     is_person = bool(family_name or given_name)
@@ -97,9 +97,9 @@ def _build_agent(row: dict) -> dict | None:
             agent["given_name"] = given_name
     if id_scheme and id_value:
         agent["identifiers"] = [{"value": id_value, "scheme": id_scheme}]
-    agent["local_identifier"] = (
-        f"{entity_type}s/ra/{ra_id}" if ra_id else f"{entity_type}s/ra/{quote(display_name, safe='')}"
-    )
+    if not agent_local_id:
+        raise ValueError(f"Missing required local_identifier for {entity_type} '{display_name}'")
+    agent["local_identifier"] = agent_local_id
     return agent
 
 
@@ -113,8 +113,9 @@ def _build_org(row: dict, prefix: str) -> dict:
         if val:
             org[field] = val
     local_id = row[f"{prefix}_local_identifier"]
-    if local_id:
-        org["local_identifier"] = f"organisations/ra/{local_id}"
+    if not local_id:
+        raise ValueError(f"Missing required local_identifier for organisation '{row[f'{prefix}_name']}'")
+    org["local_identifier"] = local_id
     return org
 
 
@@ -145,15 +146,14 @@ def _collect_declared_affiliations(rows: list[dict], role: str, key: str, store:
         aff_local_id = row[f"{prefix}_local_identifier"]
         if not aff_name and not aff_local_id:
             continue
-        aff_key = aff_local_id or aff_name
-        if aff_key not in role_store:
-            role_store[aff_key] = {
+        if aff_local_id not in role_store:
+            role_store[aff_local_id] = {
                 "obj": _build_org(row, prefix),
                 "seen_ids": set(),
                 "seen_types": set(),
                 "seen_other_names": set(),
             }
-        _merge_org_multivalued(role_store[aff_key], row, prefix)
+        _merge_org_multivalued(role_store[aff_local_id], row, prefix)
 
 
 def _enrich_contributor(
@@ -221,8 +221,9 @@ def _collect_contributors(rows: list[dict]) -> list[dict]:
 
 def _build_venue(rows: list[dict], venue_name: str, venue_local_id: str) -> dict:
     venue: dict = {"name": venue_name, "entity_type": "venue"}
-    if venue_local_id:
-        venue["local_identifier"] = f"venues/br/{venue_local_id}"
+    if not venue_local_id:
+        raise ValueError(f"Missing required local_identifier for venue '{venue_name}'")
+    venue["local_identifier"] = venue_local_id
     acronym = rows[0]["manifestation_biblio_in_acronym"]
     if acronym:
         venue["acronym"] = acronym
@@ -430,20 +431,22 @@ def _collect_organisation(rows: list[dict], prefix: str) -> list[dict]:
         local_id = row[f"{prefix}_local_identifier"]
         if not name and not local_id:
             continue
-        org_key = local_id or name
-        if org_key not in entries:
-            entries[org_key] = {
+        if local_id not in entries:
+            entries[local_id] = {
                 "obj": _build_org(row, prefix),
                 "seen_ids": set(),
                 "seen_types": set(),
                 "seen_other_names": set(),
             }
-        _merge_org_multivalued(entries[org_key], row, prefix)
+        _merge_org_multivalued(entries[local_id], row, prefix)
     return [entry["obj"] for entry in entries.values()]
 
 
 def _build_grant(row: dict) -> dict:
-    grant: dict = {"local_identifier": f"grants/{row['funding_local_identifier']}", "entity_type": "grant"}
+    funding_local_id = row["funding_local_identifier"]
+    if not funding_local_id:
+        raise ValueError("Missing required local_identifier for grant")
+    grant: dict = {"local_identifier": funding_local_id, "entity_type": "grant"}
     for field, csv_col in (
         ("grant_number", "funding_grant_number"),
         ("acronym", "funding_acronym"),
