@@ -43,19 +43,23 @@ class TestTitleFilter:
         assert results == [
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
-                "title": "Adaptive Environmental Management",
+                "titles": {"none": ["Adaptive Environmental Management"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0615065546",
-                "title": "Adaptive System: The Study Of Information, Pattern, And Behavior",
+                "titles": {"none": ["Adaptive System: The Study Of Information, Pattern, And Behavior"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
-                "title": "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology",
+                "titles": {
+                    "none": [
+                        "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology"
+                    ]
+                },
                 "entity_type": "product",
                 "product_type": "literature",
             },
@@ -72,55 +76,55 @@ class TestIdentifierFilter:
         assert results == [
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
-                "title": "Adaptive Environmental Management",
+                "titles": {"none": ["Adaptive Environmental Management"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/061702785338",
-                "title": "Advances In Intelligent Systems And Computing",
+                "titles": {"none": ["Advances In Intelligent Systems And Computing"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/06302611905",
-                "title": "Communications In Computer And Information Science",
+                "titles": {"none": ["Communications In Computer And Information Science"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/06402611083",
-                "title": "Lecture Notes In Computer Science",
+                "titles": {"none": ["Lecture Notes In Computer Science"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/06603870331",
-                "title": "OECD Economic Surveys: China 2022",
+                "titles": {"none": ["OECD Economic Surveys: China 2022"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0611064823",
-                "title": "The Semantic Web",
+                "titles": {"none": ["The Semantic Web"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/06401297735",
-                "title": "The Semantic Web",
+                "titles": {"none": ["The Semantic Web"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0611064985",
-                "title": "The Semantic Web",
+                "titles": {"none": ["The Semantic Web"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612056541",
-                "title": "The Semantic Web: ESWC 2014 Satellite Events",
+                "titles": {"none": ["The Semantic Web: ESWC 2014 Satellite Events"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
@@ -131,7 +135,7 @@ class TestIdentifierFilter:
         assert results == [
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
-                "title": "Adaptive Environmental Management",
+                "titles": {"none": ["Adaptive Environmental Management"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
@@ -147,7 +151,7 @@ class TestCombinedFilters:
         assert results == [
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
-                "title": "Adaptive Environmental Management",
+                "titles": {"none": ["Adaptive Environmental Management"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
@@ -183,9 +187,13 @@ class TestContributorFamilyNameFilter:
         assert results == [
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0601",
-                "title": "Response To The Letter Of Hanley Et Al. "
-                "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                "([1998] Teratology 58:62-68)",
+                "titles": {
+                    "none": [
+                        "Response To The Letter Of Hanley Et Al. "
+                        "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
+                        "([1998] Teratology 58:62-68)"
+                    ]
+                },
                 "entity_type": "product",
                 "product_type": "literature",
             },
@@ -198,9 +206,13 @@ class TestContributorGivenNameFilter:
         assert results == [
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0601",
-                "title": "Response To The Letter Of Hanley Et Al. "
-                "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                "([1998] Teratology 58:62-68)",
+                "titles": {
+                    "none": [
+                        "Response To The Letter Of Hanley Et Al. "
+                        "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
+                        "([1998] Teratology 58:62-68)"
+                    ]
+                },
                 "entity_type": "product",
                 "product_type": "literature",
             },
@@ -213,19 +225,23 @@ class TestContributorNameFilter:
         assert results == [
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/060504627",
-                "title": "Classes Of Errors In DOI Names (Data Management Plan)",
+                "titles": {"none": ["Classes Of Errors In DOI Names (Data Management Plan)"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/060504628",
-                "title": "Classes Of Errors In DOI Names (Data Management Plan)",
+                "titles": {"none": ["Classes Of Errors In DOI Names (Data Management Plan)"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/060504675",
-                "title": "Cleaning Different Types Of DOI Errors Found In Cited References On Crossref Using Automated Methods",
+                "titles": {
+                    "none": [
+                        "Cleaning Different Types Of DOI Errors Found In Cited References On Crossref Using Automated Methods"
+                    ]
+                },
                 "entity_type": "product",
                 "product_type": "literature",
             },
@@ -241,9 +257,13 @@ class TestContributorLocalIdentifierFilter:
         assert results == [
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0601",
-                "title": "Response To The Letter Of Hanley Et Al. "
-                "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                "([1998] Teratology 58:62-68)",
+                "titles": {
+                    "none": [
+                        "Response To The Letter Of Hanley Et Al. "
+                        "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
+                        "([1998] Teratology 58:62-68)"
+                    ]
+                },
                 "entity_type": "product",
                 "product_type": "literature",
             },
@@ -265,8 +285,12 @@ class TestContributionsOrcidFilter:
         assert results == [
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/06035",
-                "title": "H-ras, But Not N-ras, Induces An Invasive Phenotype In Human Breast Epithelial Cells: "
-                "A Role For MMP-2 In The H-Ras-Induced Invasive Phenotype",
+                "titles": {
+                    "none": [
+                        "H-ras, But Not N-ras, Induces An Invasive Phenotype In Human Breast Epithelial Cells: "
+                        "A Role For MMP-2 In The H-Ras-Induced Invasive Phenotype"
+                    ]
+                },
                 "entity_type": "product",
                 "product_type": "literature",
             },
@@ -282,9 +306,13 @@ class TestCombinedContributorFilters:
         assert results == [
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0601",
-                "title": "Response To The Letter Of Hanley Et Al. "
-                "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                "([1998] Teratology 58:62-68)",
+                "titles": {
+                    "none": [
+                        "Response To The Letter Of Hanley Et Al. "
+                        "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
+                        "([1998] Teratology 58:62-68)"
+                    ]
+                },
                 "entity_type": "product",
                 "product_type": "literature",
             },
@@ -421,19 +449,23 @@ class TestBuiltinFilterOverride:
         assert results == [
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
-                "title": "Adaptive Environmental Management",
+                "titles": {"none": ["Adaptive Environmental Management"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0615065546",
-                "title": "Adaptive System: The Study Of Information, Pattern, And Behavior",
+                "titles": {"none": ["Adaptive System: The Study Of Information, Pattern, And Behavior"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
                 "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
-                "title": "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology",
+                "titles": {
+                    "none": [
+                        "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology"
+                    ]
+                },
                 "entity_type": "product",
                 "product_type": "literature",
             },
