@@ -11,6 +11,8 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 
 from ramose import HttpError
 
+_YEAR_MONTH_PART_COUNT = 2
+
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
@@ -254,7 +256,7 @@ def _normalize_datetime(date_str: str) -> str:
     parts = date_str.split("-")
     if len(parts) == 1:
         return f"{parts[0]}-01-01T00:00:00"
-    if len(parts) == 2:  # noqa: PLR2004
+    if len(parts) == _YEAR_MONTH_PART_COUNT:
         return f"{parts[0]}-{parts[1]}-01T00:00:00"
     if "T" not in date_str:
         return f"{date_str}T00:00:00"

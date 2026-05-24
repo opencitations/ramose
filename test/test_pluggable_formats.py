@@ -178,7 +178,10 @@ class TestCustomFormatThroughExec:
 
         resp = SimpleNamespace(
             status_code=200,
-            text="qid,author,year,title,source_title,source_id,volume,issue,page,doi,reference,citation_count\nQ24260641,,2015,Setting our bibliographic references free,,,,,,10.1108/JD-12-2013-0166,,1\n",  # noqa: E501
+            text=(
+                "qid,author,year,title,source_title,source_id,volume,issue,page,doi,reference,citation_count\n"
+                "Q24260641,,2015,Setting our bibliographic references free,,,,,,10.1108/JD-12-2013-0166,,1\n"
+            ),
             reason="OK",
             encoding=None,
         )

@@ -39,7 +39,7 @@ def _wait_for_qlever(port: int, timeout: int = 60) -> None:
 
 @pytest.fixture(scope="session")
 def qlever_endpoint():
-    subprocess.run(["docker", "rm", "-f", QLEVER_CONTAINER], capture_output=True)
+    subprocess.run(["docker", "rm", "-f", QLEVER_CONTAINER], capture_output=True, check=False)
     subprocess.run(
         [
             "docker",
@@ -71,8 +71,8 @@ def qlever_endpoint():
 
     yield endpoint
 
-    subprocess.run(["docker", "stop", QLEVER_CONTAINER], capture_output=True)
-    subprocess.run(["docker", "rm", "-f", QLEVER_CONTAINER], capture_output=True)
+    subprocess.run(["docker", "stop", QLEVER_CONTAINER], capture_output=True, check=False)
+    subprocess.run(["docker", "rm", "-f", QLEVER_CONTAINER], capture_output=True, check=False)
 
 
 @pytest.fixture(scope="session")

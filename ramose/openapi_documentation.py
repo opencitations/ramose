@@ -20,6 +20,8 @@ from ramose._constants import FIELD_TYPE_RE, PARAM_NAME
 from ramose.documentation import DocumentationHandler
 from ramose.hash_format import parse_custom_params, parse_disable_params
 
+_MIN_QUOTED_LENGTH = 2
+
 
 class OpenAPIDocumentationHandler(DocumentationHandler):
     """
@@ -87,7 +89,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             return None
         s = str(v).strip()
         # Strip wrapping quotes if parser stored them as part of the value
-        if len(s) >= 2 and ((s[0] == s[-1] == '"') or (s[0] == s[-1] == "'")):  # noqa: PLR2004
+        if len(s) >= _MIN_QUOTED_LENGTH and ((s[0] == s[-1] == '"') or (s[0] == s[-1] == "'")):
             s = s[1:-1].strip()
         # Convert literal backslash-n sequences to actual newlines
         return s.replace("\\n", "\n")

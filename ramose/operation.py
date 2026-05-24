@@ -12,6 +12,7 @@ from csv import DictReader, reader, writer
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from http import HTTPStatus
+from importlib import import_module
 from io import StringIO
 from itertools import product
 from json import dumps
@@ -697,9 +698,8 @@ class Operation:
                     (name -> value), passed to SPARQL Anything's `values=`.
         """
         if self._sa_engine is None:
-            import pysparql_anything  # noqa: PLC0415  # type: ignore[import-not-found]
-
-            self._sa_engine = pysparql_anything.SparqlAnything()
+            sa_module = import_module("pysparql_anything")
+            self._sa_engine = sa_module.SparqlAnything()  # type: ignore[attr-defined]
 
         kwargs = {"query": query_text}
         if values:
@@ -946,7 +946,11 @@ class Operation:
     def _extract_params(self):
         """Extract URL parameters and apply type conversions based on the operation spec."""
         par_dict = {}
-        par_man = match(self.op, self.op_url).groups()  # type: ignore[union-attr]
+        url_match = match(self.op, self.op_url)
+        if url_match is None:
+            msg = f"URL {self.op_url} does not match pattern {self.op}"
+            raise ValueError(msg)
+        par_man = url_match.groups()
         for idx, par in enumerate(findall("{([^{}]+)}", self.i["url"])):
             try:
                 par_type = self.i[par].split("(")[0]

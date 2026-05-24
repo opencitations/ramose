@@ -133,13 +133,27 @@ class HTMLDocumentationHandler(DocumentationHandler):
             return ""
 
         items = "\n\n".join(f"{idx}. {text}" for idx, text in enumerate(builtin_params, 1))
+        params_intro = (
+            "Parameters can be used to filter and control the results returned by the API."
+            " They are passed as normal HTTP parameters in the URL of the call. They are:"
+        )
+        filtering_note = (
+            "It is possible to specify one or more filtering operation of the same kind"
+            " (e.g. `require=given_name&require=family_name`). In addition, these filtering"
+            " operations are applied in the order presented above - first all the `require`"
+            " operation, then all the `filter` operations followed by all the `sort`"
+            " operation, and finally the `format` and the `json` operation (if applicable)."
+            " It is worth mentioning that each of the aforementioned rules is applied in"
+            " order, and it works on the structure returned after the execution of the"
+            " previous rule."
+        )
         result = f"""## <a id="parameters"></a>Parameters [back to top](#toc)
 
-Parameters can be used to filter and control the results returned by the API. They are passed as normal HTTP parameters in the URL of the call. They are:
+{params_intro}
 
 {items}
 
-It is possible to specify one or more filtering operation of the same kind (e.g. `require=given_name&require=family_name`). In addition, these filtering operations are applied in the order presented above - first all the `require` operation, then all the `filter` operations followed by all the `sort` operation, and finally the `format` and the `json` operation (if applicable). It is worth mentioning that each of the aforementioned rules is applied in order, and it works on the structure returned after the execution of the previous rule.
+{filtering_note}
 
 Example: `<api_operation_url>?require=doi&filter=date:>2015&sort=desc(date)`."""
         return markdown(result)
@@ -178,6 +192,20 @@ The operations that this API implements are:
             )
             example_url = conf["website"] + conf["base_url"] + op["call"]
 
+            fields_type_html = (
+                '<p class="attr"><strong>Result fields type</strong>'
+                '<span class="attr_val">' + fields_html + "</span></p>"
+                if fields_html
+                else ""
+            )
+            exemplar_html = (
+                '<p class="ex attr"><strong>Exemplar output (in JSON)'
+                "</strong></p>" + chr(10) + "<pre><code>" + op["output_json"] + "</code></pre>"
+                if "output_json" in op
+                else ""
+            )
+            example_link = f'<a target="_blank" href="{example_url}">{op["call"]}</a>'
+
             result += f"\n* [{op_url}](#{op_url}): {op['description'].split(chr(10))[0]}"
             ops += f"""<div id="{op_url}">
 <h3>{op_url} <a href="#operations">back to operations</a></h3>
@@ -186,18 +214,30 @@ The operations that this API implements are:
 
 <p class="attr"><strong>Accepted HTTP method(s)</strong> <span class="attr_val method">{methods}</span></p>
 <div class="attr params"><strong>Parameter(s)</strong>{params_html}</div>
-{'<p class="attr"><strong>Result fields type</strong><span class="attr_val">' + fields_html + "</span></p>" if fields_html else ""}
-<p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="{example_url}">{op["call"]}</a></span></p>
-{'<p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>' + chr(10) + "<pre><code>" + op["output_json"] + "</code></pre>" if "output_json" in op else ""}</div>"""
+{fields_type_html}
+<p class="attr"><strong>Example</strong><span class="attr_val">{example_link}</span></p>
+{exemplar_html}</div>"""
         return markdown(result) + ops
 
     def __footer(self):
         """This method returns the footer of the API documentation."""
-        result = """This API and the related documentation has been created with <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE</a>, the *Restful API Manager Over SPARQL Endpoints*, developed by <a href="https://orcid.org/0000-0003-0530-4305" target="_blank">Silvio Peroni</a>, <a href="https://orcid.org/0000-0002-1113-7550" target="_blank">Marilena Daquino</a> and <a href="https://orcid.org/0000-0002-8420-0696" target="_blank">Arcangelo Massari</a>."""
+        result = (
+            "This API and the related documentation has been created with"
+            ' <a href="https://github.com/opencitations/ramose"'
+            ' target="_blank">RAMOSE</a>, the *Restful API Manager Over'
+            " SPARQL Endpoints*, developed by"
+            ' <a href="https://orcid.org/0000-0003-0530-4305"'
+            ' target="_blank">Silvio Peroni</a>,'
+            ' <a href="https://orcid.org/0000-0002-1113-7550"'
+            ' target="_blank">Marilena Daquino</a> and'
+            ' <a href="https://orcid.org/0000-0002-8420-0696"'
+            ' target="_blank">Arcangelo Massari</a>.'
+        )
         return markdown(result)
 
     def __css(self):
-        return """
+        return (
+            """
         @import url('https://fonts.googleapis.com/css2?family=Karla:wght@300;400&display=swap');
         @media screen and (max-width: 850px) {
               aside { display: none; }
@@ -480,8 +520,11 @@ The operations that this API implements are:
         a {
             color : black;
             text-decoration: none;
-            background-image: -webkit-gradient(linear,left top, left bottom,color-stop(70%, transparent),color-stop(0, rgba(154, 49, 252,.5)));
-            background-image: linear-gradient(180deg,transparent 70%,rgba(154, 49, 252,.5) 0);
+            background-image: -webkit-gradient(linear,"""
+            "left top, left bottom,"
+            "color-stop(70%, transparent),"
+            "color-stop(0, rgba(154, 49, 252,.5)));\n"
+            """            background-image: linear-gradient(180deg,transparent 70%,rgba(154, 49, 252,.5) 0);
             background-position-y: 3px;
             background-position-x: 0px;
             background-repeat: no-repeat;
@@ -491,8 +534,11 @@ The operations that this API implements are:
 
         a:hover {
             color: #282828;
-            background-image: -webkit-gradient(linear,left top, left bottom,color-stop(70%, transparent),color-stop(0, rgba(154, 49, 252,.25)));
-            background-image: linear-gradient(180deg,transparent 70%,rgba(154, 49, 252,.25) 0);
+            background-image: -webkit-gradient(linear,"""
+            "left top, left bottom,"
+            "color-stop(70%, transparent),"
+            "color-stop(0, rgba(154, 49, 252,.25)));\n"
+            """            background-image: linear-gradient(180deg,transparent 70%,rgba(154, 49, 252,.25) 0);
         }
 
         footer {
@@ -590,6 +636,7 @@ The operations that this API implements are:
         }
 
         """
+        )
 
     def __css_path(self, css_path=None):
         """Add link to a css file if specified in argument -css"""
@@ -626,7 +673,10 @@ The operations that this API implements are:
                 rev_list.append(x)
 
         sidebar_items = "".join(
-            f'\n                    <li><a class="btn active" href="{api_url}">{api_dict["conf_json"][0]["title"]}</a></li>\n                '
+            f"\n                    "
+            f'<li><a class="btn active" href="{api_url}">'
+            f"{api_dict['conf_json'][0]['title']}"
+            f"</a></li>\n                "
             for api_url, api_dict in self.conf_doc.items()
         )
 

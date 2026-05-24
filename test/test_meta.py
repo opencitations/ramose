@@ -66,7 +66,10 @@ def test_metadata_retrieval(api_manager):
         [
             {
                 "id": "doi:10.1002/(sici)1096-9926(199910)60:4<177::aid-tera1>3.0.co;2-z omid:br/0601",
-                "title": "Response To The Letter Of Hanley Et Al. ([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. ([1998] Teratology 58:62-68)",  # noqa: E501
+                "title": (
+                    "Response To The Letter Of Hanley Et Al. ([1999] Teratology 59:323-324), "
+                    "Concerning The Article By Roy Et Al. ([1998] Teratology 58:62-68)"
+                ),
                 "author": "Slotkin, Theodore A. [omid:ra/0601]; Andrews, James E. [omid:ra/0602]",
                 "pub_date": "1999-10",
                 "issue": "4",
@@ -89,15 +92,27 @@ def test_metadata_retrieval_editor_inbook(api_manager):
             {
                 "id": "doi:10.1007/978-3-642-30859-8_14 openalex:W1555136325 omid:br/061702784433",
                 "title": "Analysing Students' Use Of Recorded Lectures Through Methodological Triangulation",
-                "author": "Gorissen, Pierre [omid:ra/061707839728]; Van Bruggen, Jan [omid:ra/061707839729]; Jochems, Wim [omid:ra/061707839730]",  # noqa: E501
+                "author": (
+                    "Gorissen, Pierre [omid:ra/061707839728]; Van Bruggen, Jan [omid:ra/061707839729]; "
+                    "Jochems, Wim [omid:ra/061707839730]"
+                ),
                 "pub_date": "2012",
                 "issue": "",
                 "volume": "",
-                "venue": "Advances In Intelligent Systems And Computing [doi:10.1007/978-3-642-30859-8 isbn:9783642308581 isbn:9783642308598 openalex:W2221102889 omid:br/061702785338]",  # noqa: E501
+                "venue": (
+                    "Advances In Intelligent Systems And Computing "
+                    "[doi:10.1007/978-3-642-30859-8 isbn:9783642308581 isbn:9783642308598 "
+                    "openalex:W2221102889 omid:br/061702785338]"
+                ),
                 "type": "book chapter",
                 "page": "145-156",
                 "publisher": "Springer Science And Business Media Llc [crossref:297 omid:ra/0610116006]",
-                "editor": "Uden, Lorna [omid:ra/062409604521]; Corchado, Juan Manuel [orcid:0000-0002-2829-1829 omid:ra/0619011562087]; De Paz Santana, Juan F. [omid:ra/062409604522]; Prieta, Fernando De La [orcid:0000-0002-8239-5020 omid:ra/0611011366962]",  # noqa: E501
+                "editor": (
+                    "Uden, Lorna [omid:ra/062409604521]; "
+                    "Corchado, Juan Manuel [orcid:0000-0002-2829-1829 omid:ra/0619011562087]; "
+                    "De Paz Santana, Juan F. [omid:ra/062409604522]; "
+                    "Prieta, Fernando De La [orcid:0000-0002-8239-5020 omid:ra/0611011366962]"
+                ),
             },
         ],
     )
@@ -107,7 +122,13 @@ EXPECTED_AUTHOR_WORKS = [
     {
         "id": "doi:10.1162/qss_a_00292 omid:br/062104388184",
         "title": "OpenCitations Meta",
-        "author": "Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; Mariani, Fabio [orcid:0000-0002-7382-0187 omid:ra/0621012370562]; Heibi, Ivan [orcid:0000-0001-5366-5194 omid:ra/0621012370563]; Peroni, Silvio [orcid:0000-0003-0530-4305 omid:ra/0621012370564]; Shotton, David [orcid:0000-0001-5506-523X omid:ra/0621012370565]",  # noqa: E501
+        "author": (
+            "Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; "
+            "Mariani, Fabio [orcid:0000-0002-7382-0187 omid:ra/0621012370562]; "
+            "Heibi, Ivan [orcid:0000-0001-5366-5194 omid:ra/0621012370563]; "
+            "Peroni, Silvio [orcid:0000-0003-0530-4305 omid:ra/0621012370564]; "
+            "Shotton, David [orcid:0000-0001-5506-523X omid:ra/0621012370565]"
+        ),
         "pub_date": "2024",
         "issue": "1",
         "volume": "5",
@@ -120,7 +141,14 @@ EXPECTED_AUTHOR_WORKS = [
     {
         "id": "doi:10.5334/johd.178 omid:br/06404693975",
         "title": "The Integration Of The Japan Link Center's Bibliographic Data Into OpenCitations",
-        "author": "Moretti, Arianna [orcid:0000-0001-5486-7070 omid:ra/061206532421]; Soricetti, Marta [orcid:0009-0008-1466-7742 omid:ra/064013186641]; Heibi, Ivan [orcid:0000-0001-5366-5194 omid:ra/063011864088]; Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; Peroni, Silvio [orcid:0000-0003-0530-4305 omid:ra/0614010840729]; Rizzetto, Elia [orcid:0009-0003-7161-9310 omid:ra/064013186645]",  # noqa: E501
+        "author": (
+            "Moretti, Arianna [orcid:0000-0001-5486-7070 omid:ra/061206532421]; "
+            "Soricetti, Marta [orcid:0009-0008-1466-7742 omid:ra/064013186641]; "
+            "Heibi, Ivan [orcid:0000-0001-5366-5194 omid:ra/063011864088]; "
+            "Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; "
+            "Peroni, Silvio [orcid:0000-0003-0530-4305 omid:ra/0614010840729]; "
+            "Rizzetto, Elia [orcid:0009-0003-7161-9310 omid:ra/064013186645]"
+        ),
         "pub_date": "2024",
         "issue": "",
         "volume": "10",
@@ -133,7 +161,15 @@ EXPECTED_AUTHOR_WORKS = [
     {
         "id": "doi:10.1007/s11192-022-04367-w openalex:W3214893238 omid:br/061202127149",
         "title": "Identifying And Correcting Invalid Citations Due To DOI Errors In Crossref Data",
-        "author": "Cioffi, Alessia [orcid:0000-0002-9812-4065 omid:ra/061206532419]; Coppini, Sara [orcid:0000-0002-6279-3830 omid:ra/061206532420]; Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; Moretti, Arianna [orcid:0000-0001-5486-7070 omid:ra/061206532421]; Peroni, Silvio [orcid:0000-0003-0530-4305 omid:ra/0614010840729]; Santini, Cristian [orcid:0000-0001-7363-6737 omid:ra/067099715]; Shahidzadeh, Nooshin [orcid:0000-0003-4114-074X omid:ra/06220110984]",  # noqa: E501
+        "author": (
+            "Cioffi, Alessia [orcid:0000-0002-9812-4065 omid:ra/061206532419]; "
+            "Coppini, Sara [orcid:0000-0002-6279-3830 omid:ra/061206532420]; "
+            "Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; "
+            "Moretti, Arianna [orcid:0000-0001-5486-7070 omid:ra/061206532421]; "
+            "Peroni, Silvio [orcid:0000-0003-0530-4305 omid:ra/0614010840729]; "
+            "Santini, Cristian [orcid:0000-0001-7363-6737 omid:ra/067099715]; "
+            "Shahidzadeh, Nooshin [orcid:0000-0003-4114-074X omid:ra/06220110984]"
+        ),
         "pub_date": "2022-06",
         "issue": "6",
         "volume": "127",
@@ -159,7 +195,12 @@ EXPECTED_AUTHOR_WORKS = [
     {
         "id": "doi:10.5281/zenodo.4733919 omid:br/060504627",
         "title": "Classes Of Errors In DOI Names (Data Management Plan)",
-        "author": "Boente, Ricarda [orcid:0000-0002-2133-8735 omid:ra/06908359558]; Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; Santini, Cristian [orcid:0000-0001-7363-6737 omid:ra/067099715]; Tural, Deniz [orcid:0000-0002-6391-4198 omid:ra/06908359559]",  # noqa: E501
+        "author": (
+            "Boente, Ricarda [orcid:0000-0002-2133-8735 omid:ra/06908359558]; "
+            "Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; "
+            "Santini, Cristian [orcid:0000-0001-7363-6737 omid:ra/067099715]; "
+            "Tural, Deniz [orcid:0000-0002-6391-4198 omid:ra/06908359559]"
+        ),
         "pub_date": "2021-06-09",
         "issue": "",
         "volume": "",
@@ -172,7 +213,12 @@ EXPECTED_AUTHOR_WORKS = [
     {
         "id": "doi:10.5281/zenodo.4733920 omid:br/060504628",
         "title": "Classes Of Errors In DOI Names (Data Management Plan)",
-        "author": "Boente, Ricarda [orcid:0000-0002-2133-8735 omid:ra/06908359558]; Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; Santini, Cristian [orcid:0000-0001-7363-6737 omid:ra/067099715]; Tural, Deniz [orcid:0000-0002-6391-4198 omid:ra/06908359559]",  # noqa: E501
+        "author": (
+            "Boente, Ricarda [orcid:0000-0002-2133-8735 omid:ra/06908359558]; "
+            "Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; "
+            "Santini, Cristian [orcid:0000-0001-7363-6737 omid:ra/067099715]; "
+            "Tural, Deniz [orcid:0000-0002-6391-4198 omid:ra/06908359559]"
+        ),
         "pub_date": "2021-05-03",
         "issue": "",
         "volume": "",
@@ -185,7 +231,12 @@ EXPECTED_AUTHOR_WORKS = [
     {
         "id": "doi:10.5281/zenodo.4734512 omid:br/060504675",
         "title": "Cleaning Different Types Of DOI Errors Found In Cited References On Crossref Using Automated Methods",
-        "author": "Boente, Ricarda [orcid:0000-0002-2133-8735 omid:ra/06908359558]; Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; Santini, Cristian [orcid:0000-0001-7363-6737 omid:ra/067099715]; Tural, Deniz [orcid:0000-0002-6391-4198 omid:ra/06908359559]",  # noqa: E501
+        "author": (
+            "Boente, Ricarda [orcid:0000-0002-2133-8735 omid:ra/06908359558]; "
+            "Massari, Arcangelo [orcid:0000-0002-8420-0696 omid:ra/06250110138]; "
+            "Santini, Cristian [orcid:0000-0001-7363-6737 omid:ra/067099715]; "
+            "Tural, Deniz [orcid:0000-0002-6391-4198 omid:ra/06908359559]"
+        ),
         "pub_date": "2021-06-08",
         "issue": "",
         "volume": "",
@@ -199,7 +250,10 @@ EXPECTED_AUTHOR_WORKS = [
 
 EXPECTED_EDITOR_WORKS = [
     {
-        "id": "doi:10.1007/978-1-4020-9632-7 isbn:9781402096327 isbn:9789048127108 openalex:W4249829199 omid:br/0612058700",  # noqa: E501
+        "id": (
+            "doi:10.1007/978-1-4020-9632-7 isbn:9781402096327 isbn:9789048127108 "
+            "openalex:W4249829199 omid:br/0612058700"
+        ),
         "title": "Adaptive Environmental Management",
         "author": "",
         "pub_date": "2009",
@@ -209,7 +263,9 @@ EXPECTED_EDITOR_WORKS = [
         "type": "book",
         "page": "",
         "publisher": "Springer Science And Business Media Llc [crossref:297 omid:ra/0610116006]",
-        "editor": "Allan, Catherine [orcid:0000-0003-2098-4759 omid:ra/069012996]; Stankey, George H. [omid:ra/061808486861]",  # noqa: E501
+        "editor": (
+            "Allan, Catherine [orcid:0000-0003-2098-4759 omid:ra/069012996]; Stankey, George H. [omid:ra/061808486861]"
+        ),
     },
 ]
 
@@ -246,7 +302,11 @@ def test_venue_without_external_id(api_manager):
             {
                 "id": "doi:10.36106/gjra/9300981 openalex:W4306682982 omid:br/061903571196",
                 "title": "Lung Cavitation: An Unwanted Complication Of Covid-19 Lung Disease",
-                "author": "A Dosi, Ravi [omid:ra/061909585847]; Shivhare, Shailendra [omid:ra/061909585848]; Agrawal, Ankur [omid:ra/061909585849]; Jaiswal, Neha [omid:ra/061909585850]; Patidar, Ravindra [omid:ra/061909585851]",  # noqa: E501
+                "author": (
+                    "A Dosi, Ravi [omid:ra/061909585847]; Shivhare, Shailendra [omid:ra/061909585848]; "
+                    "Agrawal, Ankur [omid:ra/061909585849]; Jaiswal, Neha [omid:ra/061909585850]; "
+                    "Patidar, Ravindra [omid:ra/061909585851]"
+                ),
                 "pub_date": "2022-09-15",
                 "issue": "",
                 "volume": "",
@@ -329,7 +389,12 @@ def test_author_order_in_metadata(api_manager):
         "/v1/metadata/omid:br/0680773548",
         [
             {
-                "author": "Bilgin, H\u00fclya [orcid:0000-0001-6639-5533 omid:ra/0622032021]; Bozkurt, Merlin [omid:ra/06802276621]; Yilmazlar, Sel\u00e7uk [omid:ra/06802276622]; Korfali, G\u00fclsen [omid:ra/06802276623]",  # noqa: E501
+                "author": (
+                    "Bilgin, H\u00fclya [orcid:0000-0001-6639-5533 omid:ra/0622032021]; "
+                    "Bozkurt, Merlin [omid:ra/06802276621]; "
+                    "Yilmazlar, Sel\u00e7uk [omid:ra/06802276622]; "
+                    "Korfali, G\u00fclsen [omid:ra/06802276623]"
+                ),
                 "issue": "3",
                 "editor": "",
                 "pub_date": "2006-05",

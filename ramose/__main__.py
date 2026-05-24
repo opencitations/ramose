@@ -13,6 +13,7 @@ from http import HTTPStatus
 from io import StringIO
 from json import dumps
 from os import path as pt
+from pathlib import Path
 from urllib.parse import unquote
 
 from flask import Flask, make_response, request
@@ -223,7 +224,7 @@ def _run_cli(api_manager, html_handler, openapi_handler, css_path, args):  # pra
     if args.output is None:
         print(f"# Response HTTP code: {status}\n# Body:\n{body}\n# Content-type: {content_type}")
     else:
-        with open(args.output, "w") as output_file:  # noqa: PTH123
+        with Path(args.output).open("w") as output_file:
             output_file.write(body)
 
 

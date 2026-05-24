@@ -17,6 +17,10 @@ from typing import NamedTuple
 # Python's stdlib has no parser for this format, so we handle it manually.
 # Each component is optional. The T separator marks the transition from date to time components.
 # Examples: "P1Y", "P2M3D", "PT4H5M6S", "P1Y2M3DT4H5M6.5S"
+_YEAR_ONLY_LENGTH = 4
+_YEAR_MONTH_MIN_LENGTH = 6
+_YEAR_MONTH_MAX_LENGTH = 7
+
 _DURATION_PATTERN = re_compile(
     r"P"
     r"(?:(?P<years>\d+)Y)?"
@@ -51,9 +55,9 @@ def _parse_datetime(date_str: str) -> datetime:
     compatibility, where fromisoformat does not recognize it.
     """
     date_str = date_str.strip()
-    if len(date_str) == 4 and date_str.isdigit():  # noqa: PLR2004
+    if len(date_str) == _YEAR_ONLY_LENGTH and date_str.isdigit():
         return datetime(int(date_str), 1, 1, tzinfo=timezone.utc)
-    if len(date_str) in (6, 7) and date_str[4] == "-":
+    if len(date_str) in (_YEAR_MONTH_MIN_LENGTH, _YEAR_MONTH_MAX_LENGTH) and date_str[4] == "-":
         year, month = date_str.split("-")
         return datetime(int(year), int(month), 1, tzinfo=timezone.utc)
     if date_str.endswith("Z"):

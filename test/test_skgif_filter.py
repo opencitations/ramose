@@ -60,7 +60,10 @@ class TestTitleFilter:
                 "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
                 "titles": {
                     "none": [
-                        "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology",  # noqa: E501
+                        (
+                            "Boon Or Bust? Access To Electronic Publishing "
+                            "By Individuals Using Adaptive Computer Technology"
+                        ),
                     ],
                 },
                 "entity_type": "product",
@@ -242,7 +245,10 @@ class TestContributorNameFilter:
                 "local_identifier": "https://w3id.org/oc/meta/br/060504675",
                 "titles": {
                     "none": [
-                        "Cleaning Different Types Of DOI Errors Found In Cited References On Crossref Using Automated Methods",  # noqa: E501
+                        (
+                            "Cleaning Different Types Of DOI Errors Found In Cited "
+                            "References On Crossref Using Automated Methods"
+                        ),
                     ],
                 },
                 "entity_type": "product",
@@ -466,7 +472,10 @@ class TestBuiltinFilterOverride:
                 "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
                 "titles": {
                     "none": [
-                        "Boon Or Bust? Access To Electronic Publishing By Individuals Using Adaptive Computer Technology",  # noqa: E501
+                        (
+                            "Boon Or Bust? Access To Electronic Publishing "
+                            "By Individuals Using Adaptive Computer Technology"
+                        ),
                     ],
                 },
                 "entity_type": "product",

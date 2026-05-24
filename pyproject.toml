@@ -55,44 +55,26 @@ line-length = 120
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "D",      # pydocstyle
-    "DOC",    # pydoclint
-    "ANN",    # flake8-annotations (pyright)
-    "DJ",     # flake8-django (unused)
-    "PD",     # pandas-vet (unused)
-    "NPY",    # NumPy (unused)
-    "AIR",    # Airflow (unused)
-    "FAST",   # FastAPI (unused)
-    "CPY",    # flake8-copyright (REUSE)
-    "FIX",    # flake8-fixme
-    "TD",     # flake8-todos
-    "Q",      # flake8-quotes
+    "D",      # pydocstyle, project doesn't use docstrings
+    "DOC",    # pydoclint, same
+    "ANN",    # flake8-annotations, pyright handles this
+    "CPY",    # flake8-copyright, REUSE handles compliance
+    "COM812", # conflicts with Ruff formatter
     "ISC001", # conflicts with Ruff formatter
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"ramose/html_documentation.py" = ["E501"]  # HTML/CSS template strings
 "test/**" = [
-    "S101",   # assert allowed in tests
-    "ARG",    # unused args in fixtures
-    "SLF001", # private member access in tests
-    "INP001", # implicit namespace package
-    "S603",   # subprocess in test fixtures
-    "S607",   # partial path in test fixtures
-    "PLW1510", # subprocess.run without check in fixtures
+    "S101",    # assert
+    "ARG",     # unused fixture args (callback signatures)
+    "SLF001",  # private member access
+    "INP001",  # implicit namespace package
+    "S603",    # subprocess in fixtures
+    "S607",    # partial executable path
     "PLR2004", # magic values in assertions
 ]
-"test/data/**" = [
-    "INP001", # implicit namespace package
-]
-"test/fixtures/**" = [
-    "INP001", # implicit namespace package
-]
-"ramose/__init__.py" = [
-    "F401",   # unused imports for re-exports
-]
 "ramose/__main__.py" = [
-    "T20",    # print statements in CLI
+    "T20",     # print in CLI
 ]
 
 [tool.ruff.lint.mccabe]
