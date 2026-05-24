@@ -9,7 +9,7 @@
 #license <a href="https://opensource.org/licenses/ISC" target="_blank">ISC</a>
 #endpoint https://query-scholarly.wikidata.org/sparql
 #method post
-#addon skgif_addon
+#addon ramose.skgif_addon
 #disable_params require,filter,sort,format,json
 
 #url /products/{local_identifier}

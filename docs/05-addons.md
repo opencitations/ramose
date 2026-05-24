@@ -12,7 +12,7 @@ Addons are Python modules referenced by the `#addon` field in the API section. T
 #addon metaapi
 ```
 
-This loads `metaapi.py` from the same directory as the spec file.
+This loads `metaapi.py` from the same directory as the spec file. If the name contains dots (e.g. `ramose.skgif_addon`), it is resolved as a standard Python package import instead of a file-system path.
 
 ## Preprocessing
 

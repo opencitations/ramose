@@ -6,13 +6,63 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # SKG-IF integration
 
-RAMOSE can expose any SPARQL triplestore as a [SKG-IF](https://skg-if.github.io/interoperability-framework/) compliant REST API. The architecture has three layers:
+RAMOSE can expose any SPARQL triplestore as a [SKG-IF](https://skg-if.github.io/interoperability-framework/) compliant REST API.
 
-1. **Source-specific SPARQL queries** in `.hf` spec files map each triplestore's data model to a standardized CSV schema
-2. **A shared converter** (`to_skgif` format function in the addon module) transforms the CSV into JSON-LD following the SKG-IF data model
-3. **RAMOSE** handles routing, pagination, caching, and documentation
+## Getting started
 
-Each triplestore only needs its own `.hf` file with the appropriate SPARQL queries. The converter is reused without modification.
+### 1. Create the spec file
+
+Start with the API section. Set `#addon` to `ramose.skgif_addon` and disable the built-in query parameters that SKG-IF does not use.
+
+```
+#url /skgif/v1
+#type api
+#base https://w3id.org/skg-if/sandbox/my-source
+#title SKG-IF API for My Source
+#description SKG-IF compliant API for My Source.
+#version 1.0.0
+#endpoint https://my-triplestore.example.org/sparql
+#method get
+#addon ramose.skgif_addon
+#disable_params require,filter,sort,format,json
+```
+
+### 2. Add an operation
+
+Each operation maps a URL pattern to a SPARQL query. The query must return the columns listed in the reference tables below. Multiple rows per product are expected (one per combination of identifier, contributor, topic, etc.); the converter deduplicates and aggregates them.
+
+```
+#url /products/{local_identifier}
+#type operation
+#method get
+#description Returns a single research product.
+#call /products/https://example.org/product/1
+#field_type str(local_identifier) str(product_type) str(title) str(title_lang)
+#format skgif,to_skgif
+#default_format skgif
+#sparql PREFIX dcterm: <http://purl.org/dc/terms/>
+
+SELECT ?local_identifier ?product_type ?title ?title_lang
+WHERE {
+  BIND(<[[local_identifier]]> AS ?local_identifier)
+  ?local_identifier dcterm:title ?title .
+  # ... your triplestore-specific patterns here
+}
+```
+
+`#field_type` lists the columns that appear in the query output with their types. `#format skgif,to_skgif` registers the converter; `#default_format skgif` makes JSON-LD the default output instead of CSV.
+
+For a complete example, see the [OpenCitations spec](https://github.com/opencitations/ramose/blob/master/test/data/skgif_products.hf).
+
+### 3. Run
+
+Start the built-in dev server:
+
+```bash
+ramose -s my_source.hf -w 127.0.0.1:8080
+```
+
+The API serves JSON-LD at `http://127.0.0.1:8080/skgif/v1/products/{local_identifier}`.
 
 ## Product CSV columns
 

@@ -33,6 +33,14 @@ class APIManager:
             except OverflowError:  # pragma: no cover
                 max_int = int(max_int / 10)
 
+    @staticmethod
+    def _load_addon(addon_name, conf_file):
+        if "." in addon_name:
+            return import_module(addon_name)
+        addon_path = (Path(conf_file).parent / addon_name).resolve()
+        path.append(str(addon_path.parent))
+        return import_module(addon_path.name)
+
     def __init__(self, conf_files, endpoint_override=None, cache_dir=None, cache_ttl=86400):
         """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
         defined according to the Hash Format and following a particular structure, and stores all the operations
@@ -99,9 +107,7 @@ class APIManager:
                         disable_params_api = parse_disable_params(item["disable_params"])
 
                     if "addon" in item:
-                        addon_path = (Path(conf_file).parent / item["addon"]).resolve()
-                        path.append(str(addon_path.parent))
-                        addon = import_module(addon_path.name)
+                        addon = APIManager._load_addon(item["addon"], conf_file)
                     sparql_http_method = "get"
                     if "method" in item:
                         sparql_http_method = item["method"].strip().lower()

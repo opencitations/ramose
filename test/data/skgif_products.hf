@@ -10,7 +10,7 @@
 #endpoint https://sparql.opencitations.net/meta
 #method post
 #sources meta=https://sparql.opencitations.net/meta;index=https://sparql.opencitations.net/index
-#addon skgif_addon
+#addon ramose.skgif_addon
 #disable_params require,filter,sort,format,json
 
 #url /products
