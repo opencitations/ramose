@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 from oc_constants import FABIO_TYPE_LABELS
 
 
@@ -51,9 +53,12 @@ def generate_id_search(ids: str) -> tuple[str]:
     return (ids_search,)
 
 
+_SCHEME_VALUE_PARTS = 2
+
+
 def generate_ra_search(identifier: str) -> tuple[str]:
     scheme_literal_value = identifier.split(":")
-    if len(scheme_literal_value) == 2:
+    if len(scheme_literal_value) == _SCHEME_VALUE_PARTS:
         scheme = scheme_literal_value[0]
         literal_value = scheme_literal_value[1]
     else:
@@ -83,16 +88,16 @@ def generate_ra_search(identifier: str) -> tuple[str]:
     )
 
 
-def create_metadata_output(results):
+def create_metadata_output(results: list[list[tuple[object, str]]]) -> tuple[list[list[tuple[object, str]]], bool]:
     header = results[0]
     output_results = [header]
     for result in results[1:]:
         output_result = []
         for i, data in enumerate(result):
-            if i == header.index("type"):
+            if i == header.index("type"):  # type: ignore[arg-type]
                 beautiful_type = __postprocess_type(data[1])
                 output_result.append((data[0], beautiful_type))
-            elif i == header.index("author") or i == header.index("editor") or i == header.index("publisher"):
+            elif i == header.index("author") or i == header.index("editor") or i == header.index("publisher"):  # type: ignore[arg-type]
                 ordered_list = process_ordered_list(data[1])
                 output_result.append((data[0], ordered_list))
             else:
@@ -105,7 +110,7 @@ def __postprocess_type(type_uri: str) -> str:
     return FABIO_TYPE_LABELS[type_uri] if type_uri else ""
 
 
-def process_ordered_list(items):
+def process_ordered_list(items: str) -> str:
     if not items:
         return items
     items_dict = {}

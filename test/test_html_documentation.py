@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import pytest
@@ -12,7 +14,7 @@ DATA_DIR = Path(__file__).parent / "data"
 
 
 @pytest.fixture
-def doc_handler():
+def doc_handler() -> HTMLDocumentationHandler:
     mgr = APIManager(
         [str(DATA_DIR / "meta_v1.hf")],
         endpoint_override="http://localhost:9999/sparql",
@@ -25,37 +27,39 @@ def _read_expected(filename: str) -> str:
 
 
 class TestGetDocumentation:
-    def test_returns_200_and_expected_html(self, doc_handler):
+    def test_returns_200_and_expected_html(self, doc_handler: HTMLDocumentationHandler) -> None:
         status, html = doc_handler.get_documentation()
         assert status == 200
         assert html == _read_expected("meta_v1_doc.html")
 
-    def test_with_base_url(self, doc_handler):
+    def test_with_base_url(self, doc_handler: HTMLDocumentationHandler) -> None:
         status, html = doc_handler.get_documentation(base_url="v1")
         assert status == 200
         assert html == _read_expected("meta_v1_doc.html")
 
-    def test_with_css_path(self, doc_handler):
+    def test_with_css_path(self, doc_handler: HTMLDocumentationHandler) -> None:
         _, html = doc_handler.get_documentation(css_path="/static/custom.css")
         assert html == _read_expected("meta_v1_doc_css.html")
 
 
 class TestGetIndex:
-    def test_returns_expected_html(self, doc_handler, monkeypatch, tmp_path):
+    def test_returns_expected_html(
+        self, doc_handler: HTMLDocumentationHandler, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
         monkeypatch.chdir(tmp_path)
         html = doc_handler.get_index()
         assert html == _read_expected("meta_v1_index.html")
 
 
 class TestStoreDocumentation:
-    def test_writes_file(self, doc_handler, tmp_path):
+    def test_writes_file(self, doc_handler: HTMLDocumentationHandler, tmp_path: Path) -> None:
         file_path = tmp_path / "docs.html"
         doc_handler.store_documentation(str(file_path))
         assert file_path.read_text() == _read_expected("meta_v1_doc.html")
 
 
 class TestCleanLog:
-    def test_valid_log_line(self, doc_handler):
+    def test_valid_log_line(self, doc_handler: HTMLDocumentationHandler) -> None:
         log_line = '192.168.1.1 - - [01/Jan/2026:12:00:00] "GET /v1/metadata/doi:10.1234 HTTP/1.1" 200 1234'
         result = doc_handler.clean_log(log_line, "/v1")
         assert result == (
@@ -71,23 +75,27 @@ class TestCleanLog:
             "</span>"
         )
 
-    def test_log_line_without_separator(self, doc_handler):
+    def test_log_line_without_separator(self, doc_handler: HTMLDocumentationHandler) -> None:
         assert doc_handler.clean_log("some random log line", "/v1") == ""
 
-    def test_root_url_returns_empty(self, doc_handler):
+    def test_root_url_returns_empty(self, doc_handler: HTMLDocumentationHandler) -> None:
         log_line = '192.168.1.1 - - [01/Jan/2026:12:00:00] "GET /v1/ HTTP/1.1" 200 512'
         assert doc_handler.clean_log(log_line, "/v1") == ""
 
 
 class TestGetIndexNoLogFile:
-    def test_missing_ramose_log(self, doc_handler, monkeypatch, tmp_path):
+    def test_missing_ramose_log(
+        self, doc_handler: HTMLDocumentationHandler, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
         monkeypatch.chdir(tmp_path)
         html = doc_handler.get_index()
         assert "RAMOSE" in html
 
 
 class TestGetIndexWithLogFile:
-    def test_log_entries_appear_in_html(self, doc_handler, monkeypatch, tmp_path):
+    def test_log_entries_appear_in_html(
+        self, doc_handler: HTMLDocumentationHandler, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
         monkeypatch.chdir(tmp_path)
         log_line = '127.0.0.1 - - [03/Apr/2026:10:00:00] "GET /v1/metadata/doi:10.1234 HTTP/1.1" 200 512'
         (tmp_path / "ramose.log").write_text(log_line)

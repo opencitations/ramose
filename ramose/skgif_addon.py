@@ -5,6 +5,8 @@
 import csv
 import json
 from collections.abc import Callable
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from io import StringIO
 from math import ceil
 from urllib.parse import parse_qs, urlencode, urlsplit
@@ -177,53 +179,66 @@ def _enrich_contributor(
         contributor["declared_affiliations"] = [entry["obj"] for entry in affs.values()]
 
 
+@dataclass
+class _ContributorAccumulator:
+    by_role_type: dict[str, dict[str, dict]] = dataclass_field(default_factory=dict)
+    next_map: dict[str, dict[str, str | None]] = dataclass_field(default_factory=dict)
+    types: dict[str, dict[str, list[str]]] = dataclass_field(default_factory=dict)
+    affiliations: dict[str, dict[str, dict]] = dataclass_field(default_factory=dict)
+
+
+def _process_contributor_row(
+    row: dict,
+    rows: list[dict],
+    acc: _ContributorAccumulator,
+) -> None:
+    role = row["contribution_role"]
+    key = row["_contribution_key"]
+    if not role or not key:
+        return
+
+    if role not in acc.by_role_type:
+        acc.by_role_type[role] = {}
+        acc.next_map[role] = {}
+        acc.types[role] = {}
+
+    contribution_type = row["contribution_type"]
+    if contribution_type:
+        type_list = acc.types[role].setdefault(key, [])
+        if contribution_type not in type_list:
+            type_list.append(contribution_type)
+
+    if key in acc.by_role_type[role]:
+        existing = acc.by_role_type[role][key]
+        id_scheme = row["contribution_by_identifier_scheme"]
+        id_value = row["contribution_by_identifier_value"]
+        if id_scheme and id_value and not existing["by"].get("identifiers"):
+            existing["by"]["identifiers"] = [{"value": id_value, "scheme": id_scheme}]
+        return
+
+    _collect_declared_affiliations(rows, role, key, acc.affiliations)
+    agent = _build_agent(row)
+    if not agent:
+        return
+    acc.by_role_type[role][key] = {"role": role, "by": agent}
+    acc.next_map[role][key] = row["_contribution_next_key"] or None
+
+
 def _collect_contributors(rows: list[dict]) -> list[dict]:
-    contributors_by_role_type: dict[str, dict[str, dict]] = {}
-    next_map_by_role_type: dict[str, dict[str, str | None]] = {}
-    contribution_types: dict[str, dict[str, list[str]]] = {}
-    affiliations_store: dict = {}
+    acc = _ContributorAccumulator()
 
     for row in rows:
-        role = row["contribution_role"]
-        key = row["_contribution_key"]
-        if not role or not key:
-            continue
-
-        if role not in contributors_by_role_type:
-            contributors_by_role_type[role] = {}
-            next_map_by_role_type[role] = {}
-            contribution_types[role] = {}
-
-        contribution_type = row["contribution_type"]
-        if contribution_type:
-            type_list = contribution_types[role].setdefault(key, [])
-            if contribution_type not in type_list:
-                type_list.append(contribution_type)
-
-        if key in contributors_by_role_type[role]:
-            existing = contributors_by_role_type[role][key]
-            id_scheme = row["contribution_by_identifier_scheme"]
-            id_value = row["contribution_by_identifier_value"]
-            if id_scheme and id_value and not existing["by"].get("identifiers"):
-                existing["by"]["identifiers"] = [{"value": id_value, "scheme": id_scheme}]
-            continue
-
-        _collect_declared_affiliations(rows, role, key, affiliations_store)
-        agent = _build_agent(row)
-        if not agent:
-            continue
-        contributors_by_role_type[role][key] = {"role": role, "by": agent}
-        next_map_by_role_type[role][key] = row["_contribution_next_key"] or None
+        _process_contributor_row(row, rows, acc)
 
     result = []
     for role_type in ["author", "editor", "publisher"]:
-        if role_type not in contributors_by_role_type:
+        if role_type not in acc.by_role_type:
             continue
-        ordered = _order_linked_list(contributors_by_role_type[role_type], next_map_by_role_type[role_type])
+        ordered = _order_linked_list(acc.by_role_type[role_type], acc.next_map[role_type])
         for rank, contributor in enumerate(ordered, start=1):
             contributor["rank"] = rank
-            key = next(k for k, v in contributors_by_role_type[role_type].items() if v is contributor)
-            _enrich_contributor(contributor, key, role_type, contribution_types, affiliations_store)
+            key = next(k for k, v in acc.by_role_type[role_type].items() if v is contributor)
+            _enrich_contributor(contributor, key, role_type, acc.types, acc.affiliations)
             result.append(contributor)
 
     return result
@@ -275,62 +290,91 @@ def _collect_manifestation_dates(rows: list[dict]) -> dict[str, list[str]]:
     return dates
 
 
+_BIBLIO_SIMPLE_FIELDS: tuple[tuple[str, str], ...] = (
+    ("manifestation_biblio_volume", "volume"),
+    ("manifestation_biblio_issue", "issue"),
+    ("manifestation_biblio_edition", "edition"),
+    ("manifestation_biblio_number", "number"),
+)
+
+
+def _build_biblio_venue(rows: list[dict], first_row: dict) -> dict | None:
+    venue_name = first_row["manifestation_biblio_in_name"]
+    if not venue_name:
+        return None
+    venue_local_id = first_row["manifestation_biblio_in_local_identifier"]
+    return _build_venue(rows, venue_name, venue_local_id)
+
+
+def _build_biblio_hosting(rows: list[dict], first_row: dict) -> dict | None:
+    hosting_local_id = first_row["manifestation_biblio_hosting_data_source_local_identifier"]
+    if not hosting_local_id:
+        return None
+    hosting: dict = {"local_identifier": hosting_local_id, "entity_type": "datasource"}
+    hosting_name = first_row["manifestation_biblio_hosting_data_source_name"]
+    if hosting_name:
+        hosting["name"] = hosting_name
+    hosting_identifiers = _collect_identifiers(
+        rows,
+        "manifestation_biblio_hosting_data_source_identifier_scheme",
+        "manifestation_biblio_hosting_data_source_identifier_value",
+    )
+    if hosting_identifiers:
+        hosting["identifiers"] = hosting_identifiers
+    return hosting
+
+
 def _build_biblio(rows: list[dict]) -> dict:
     first_row = rows[0]
     biblio: dict = {}
-    volume = first_row["manifestation_biblio_volume"]
-    if volume:
-        biblio["volume"] = volume
-    issue = first_row["manifestation_biblio_issue"]
-    if issue:
-        biblio["issue"] = issue
-    edition = first_row["manifestation_biblio_edition"]
-    if edition:
-        biblio["edition"] = edition
-    number = first_row["manifestation_biblio_number"]
-    if number:
-        biblio["number"] = number
+    for sparql_var, json_key in _BIBLIO_SIMPLE_FIELDS:
+        value = first_row[sparql_var]
+        if value:
+            biblio[json_key] = value
     first_page = first_row["manifestation_biblio_pages_first"]
     last_page = first_row["manifestation_biblio_pages_last"]
     if first_page and last_page:
         biblio["pages"] = {"first": first_page, "last": last_page}
-    venue_name = first_row["manifestation_biblio_in_name"]
-    if venue_name:
-        venue_local_id = first_row["manifestation_biblio_in_local_identifier"]
-        biblio["in"] = _build_venue(rows, venue_name, venue_local_id)
-    hosting_local_id = first_row["manifestation_biblio_hosting_data_source_local_identifier"]
-    if hosting_local_id:
-        hosting: dict = {"local_identifier": hosting_local_id, "entity_type": "datasource"}
-        hosting_name = first_row["manifestation_biblio_hosting_data_source_name"]
-        if hosting_name:
-            hosting["name"] = hosting_name
-        hosting_ids_seen: set[tuple[str, str]] = set()
-        hosting_identifiers: list[dict] = []
-        for row in rows:
-            hosting_scheme = row["manifestation_biblio_hosting_data_source_identifier_scheme"]
-            hosting_value = row["manifestation_biblio_hosting_data_source_identifier_value"]
-            if hosting_scheme and hosting_value and (hosting_scheme, hosting_value) not in hosting_ids_seen:
-                hosting_ids_seen.add((hosting_scheme, hosting_value))
-                hosting_identifiers.append({"value": hosting_value, "scheme": hosting_scheme})
-        if hosting_identifiers:
-            hosting["identifiers"] = hosting_identifiers
+    venue = _build_biblio_venue(rows, first_row)
+    if venue:
+        biblio["in"] = venue
+    hosting = _build_biblio_hosting(rows, first_row)
+    if hosting:
         biblio["hosting_data_source"] = hosting
     return biblio
+
+
+def _build_manifestation_type(first_row: dict) -> dict | None:
+    type_class = first_row["manifestation_type_class"]
+    if not type_class:
+        return None
+    separator = "#" if "#" in type_class else "/"
+    defined_in = type_class.rsplit(separator, 1)[0]
+    manifestation_type: dict = {"class": type_class, "defined_in": defined_in}
+    type_label = first_row["manifestation_type_label"]
+    if type_label:
+        label_lang = first_row["manifestation_type_label_lang"] or "none"
+        manifestation_type["labels"] = {label_lang: type_label}
+    return manifestation_type
+
+
+def _build_status_with_description(first_row: dict, status_field: str, desc_field: str) -> dict | None:
+    status = first_row[status_field]
+    if not status:
+        return None
+    result: dict = {"status": status}
+    desc = first_row[desc_field]
+    if desc:
+        result["description"] = desc
+    return result
 
 
 def _build_manifestation(rows: list[dict]) -> dict | None:
     first_row = rows[0]
     manifestation: dict = {}
 
-    type_class = first_row["manifestation_type_class"]
-    if type_class:
-        separator = "#" if "#" in type_class else "/"
-        defined_in = type_class.rsplit(separator, 1)[0]
-        manifestation_type: dict = {"class": type_class, "defined_in": defined_in}
-        type_label = first_row["manifestation_type_label"]
-        if type_label:
-            label_lang = first_row["manifestation_type_label_lang"] or "none"
-            manifestation_type["labels"] = {label_lang: type_label}
+    manifestation_type = _build_manifestation_type(first_row)
+    if manifestation_type:
         manifestation["type"] = manifestation_type
 
     dates = _collect_manifestation_dates(rows)
@@ -341,20 +385,16 @@ def _build_manifestation(rows: list[dict]) -> dict | None:
     if identifiers:
         manifestation["identifiers"] = identifiers
 
-    peer_review_status = first_row["manifestation_peer_review_status"]
-    if peer_review_status:
-        peer_review: dict = {"status": peer_review_status}
-        peer_review_desc = first_row["manifestation_peer_review_description"]
-        if peer_review_desc:
-            peer_review["description"] = peer_review_desc
+    peer_review = _build_status_with_description(
+        first_row, "manifestation_peer_review_status", "manifestation_peer_review_description"
+    )
+    if peer_review:
         manifestation["peer_review"] = peer_review
 
-    access_status = first_row["manifestation_access_rights_status"]
-    if access_status:
-        access_rights: dict = {"status": access_status}
-        access_desc = first_row["manifestation_access_rights_description"]
-        if access_desc:
-            access_rights["description"] = access_desc
+    access_rights = _build_status_with_description(
+        first_row, "manifestation_access_rights_status", "manifestation_access_rights_description"
+    )
+    if access_rights:
         manifestation["access_rights"] = access_rights
 
     licence = first_row["manifestation_licence"]
@@ -722,16 +762,16 @@ def handle_skgif_product_filter(values: list[str]) -> dict[str, str]:
     return _build_supported_product_filter(pairs)
 
 
-def _build_search_result_page(url) -> dict:
+def _build_search_result_page(url: str) -> dict:
     return {"local_identifier": url, "entity_type": "search_result_page"}
 
 
-def _page_url(base_path, params, page):
+def _page_url(base_path: str, params: dict[str, list[str]], page: int) -> str:
     page_params = {**params, "page": [str(page)]}
     return f"{base_path}?{urlencode(page_params, doseq=True)}"
 
 
-def _build_meta(request_url, graph_size):
+def _build_meta(request_url: str, graph_size: int) -> dict:
     parsed = urlsplit(request_url)
     params = parse_qs(parsed.query)
     if "total_items" in params:
@@ -845,7 +885,7 @@ def _build_entities(rows: list[dict]) -> list[dict]:
 ENTITY_TYPES = frozenset({"products", "persons", "organisations", "grants", "venues", "topics", "datasources"})
 
 
-def _is_single_entity_request(request_url):
+def _is_single_entity_request(request_url: str) -> bool:
     segments = [s for s in urlsplit(request_url).path.split("/") if s]
     for i, segment in enumerate(segments):
         if segment in ENTITY_TYPES:
@@ -853,7 +893,7 @@ def _is_single_entity_request(request_url):
     return False
 
 
-def to_skgif(csv_str, request_url=""):
+def to_skgif(csv_str: str, request_url: str = "") -> str:
     rows = list(csv.DictReader(StringIO(csv_str)))
     if not rows and _is_single_entity_request(request_url):
         msg = "HTTP status code 404: entity not found"
@@ -948,7 +988,7 @@ VALID_DATASOURCE_FILTERS = frozenset(
 )
 
 
-def _make_mock_filter_handler(valid_filters: frozenset[str]):
+def _make_mock_filter_handler(valid_filters: frozenset[str]) -> Callable[[list[str]], dict[str, str]]:
     def handler(values: list[str]) -> dict[str, str]:
         raw = values[0]
         pairs = [pair.strip() for pair in raw.split(",") if pair.strip()]

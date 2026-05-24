@@ -2,29 +2,31 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 import csv
 import io
 import re
 import xml.etree.ElementTree as ET
 
 
-def lower(s):
-    return (s.lower(),)
+def lower(value: str) -> tuple[str]:
+    return (value.lower(),)
 
 
-def split_dois(s):
-    return ('"{}"'.format('" "'.join(s.split("__"))),)
+def split_dois(value: str) -> tuple[str]:
+    return ('"{}"'.format('" "'.join(value.split("__"))),)
 
 
-def to_upper(csv_str, request_url=""):
+def to_upper(csv_str: str, request_url: str = "") -> str:
     return csv_str.upper()
 
 
-def to_dummyxml(csv_str, request_url=""):
+def to_dummyxml(csv_str: str, request_url: str = "") -> str:
     return f"<xml>\n{csv_str}\n</xml>"
 
 
-def to_xml(csv_str, request_url=""):
+def to_xml(csv_str: str, request_url: str = "") -> str:
     """
     Convert a CSV document (given as a string) into an XML document string.
 
@@ -60,7 +62,7 @@ def to_xml(csv_str, request_url=""):
                 child.text = val
 
     # Pretty-print indentation
-    def _indent(elem, level=0):
+    def _indent(elem: ET.Element, level: int = 0) -> None:
         i = "\n" + level * "  "
         if len(elem):
             if not elem.text or not elem.text.strip():

@@ -57,7 +57,6 @@ select = ["ALL"]
 ignore = [
     "D",      # pydocstyle, project doesn't use docstrings
     "DOC",    # pydoclint, same
-    "ANN",    # flake8-annotations, pyright handles this
     "CPY",    # flake8-copyright, REUSE handles compliance
     "COM812", # conflicts with Ruff formatter
     "ISC001", # conflicts with Ruff formatter
@@ -68,20 +67,14 @@ ignore = [
     "S101",    # assert
     "ARG",     # unused fixture args (callback signatures)
     "SLF001",  # private member access
-    "INP001",  # implicit namespace package
     "S603",    # subprocess in fixtures
     "S607",    # partial executable path
-    "PLR2004", # magic values in assertions
+    "PLR2004", # magic values in test assertions
+    "C901",    # complex test fixtures
 ]
 "ramose/__main__.py" = [
     "T20",     # print in CLI
 ]
-
-[tool.ruff.lint.mccabe]
-max-complexity = 12
-
-[tool.ruff.lint.pylint]
-max-args = 7
 
 [dependency-groups]
 dev = [

@@ -2,9 +2,11 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 import copy
 import json
-from typing import overload
+from typing import TYPE_CHECKING, overload
 
 import pyshacl
 import requests
@@ -12,7 +14,8 @@ import yaml
 from jsonschema import validate
 from rdflib import Graph
 
-from ramose import APIManager
+if TYPE_CHECKING:
+    from ramose import APIManager
 
 SKGIF_OPENAPI_URL = "https://raw.githubusercontent.com/skg-if/api/main/openapi/ver/current/skg-if-openapi.yaml"
 
@@ -23,7 +26,7 @@ def _resolve_refs(node: dict, components: dict) -> dict: ...
 def _resolve_refs(node: list, components: dict) -> list: ...
 
 
-def _resolve_refs(node, components):
+def _resolve_refs(node: dict | list | object, components: dict) -> dict | list | object:
     if isinstance(node, dict):
         if "$ref" in node:
             ref_path = node["$ref"]
@@ -95,11 +98,11 @@ SKGIF_CONTEXT = [
 
 
 class TestSkgifJournalArticle:
-    def test_context(self, skgif_api_manager):
+    def test_context(self, skgif_api_manager: APIManager) -> None:
         result = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")
         assert result["@context"] == SKGIF_CONTEXT
 
-    def test_product_metadata(self, skgif_api_manager):
+    def test_product_metadata(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
         assert product["local_identifier"] == "https://w3id.org/oc/meta/br/0601"
         assert product["entity_type"] == "product"
@@ -115,13 +118,13 @@ class TestSkgifJournalArticle:
         assert product["funding"] == []
         assert product["relevant_organisations"] == []
 
-    def test_identifiers(self, skgif_api_manager):
+    def test_identifiers(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
         assert product["identifiers"] == [
             {"value": "10.1002/(sici)1096-9926(199910)60:4<177::aid-tera1>3.0.co;2-z", "scheme": "doi"},
         ]
 
-    def test_author_contributions(self, skgif_api_manager):
+    def test_author_contributions(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
         authors = [contribution for contribution in product["contributions"] if contribution["role"] == "author"]
         assert len(authors) == 2
@@ -138,7 +141,7 @@ class TestSkgifJournalArticle:
         assert authors[1]["by"]["family_name"] == "Andrews"
         assert authors[1]["by"]["given_name"] == "James E."
 
-    def test_publisher_contribution(self, skgif_api_manager):
+    def test_publisher_contribution(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
         publishers = [contribution for contribution in product["contributions"] if contribution["role"] == "publisher"]
         assert len(publishers) == 1
@@ -149,7 +152,7 @@ class TestSkgifJournalArticle:
         assert "family_name" not in publishers[0]["by"]
         assert "given_name" not in publishers[0]["by"]
 
-    def test_manifestation_type(self, skgif_api_manager):
+    def test_manifestation_type(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
         manifestation_type = product["manifestations"][0]["type"]
         assert manifestation_type == {
@@ -158,14 +161,14 @@ class TestSkgifJournalArticle:
             "labels": {"en": "journal article"},
         }
 
-    def test_biblio_volume_issue_pages(self, skgif_api_manager):
+    def test_biblio_volume_issue_pages(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
         biblio = product["manifestations"][0]["biblio"]
         assert biblio["volume"] == "60"
         assert biblio["issue"] == "4"
         assert biblio["pages"] == {"first": "177", "last": "178"}
 
-    def test_venue(self, skgif_api_manager):
+    def test_venue(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
         venue = product["manifestations"][0]["biblio"]["in"]
         assert venue["name"] == "Teratology"
@@ -178,17 +181,17 @@ class TestSkgifJournalArticle:
             ("doi", "10.1002/(issn)1096-9926"),
         }
 
-    def test_publication_date(self, skgif_api_manager):
+    def test_publication_date(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
         assert product["manifestations"][0]["dates"]["publication"] == ["1999-10-01T00:00:00"]
 
-    def test_citations(self, skgif_api_manager):
+    def test_citations(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
         assert product["related_products"] == {"cites": ["https://w3id.org/oc/meta/br/06035"]}
 
 
 class TestSkgifBook:
-    def test_product_metadata(self, skgif_api_manager):
+    def test_product_metadata(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")["@graph"][0]
         assert product["local_identifier"] == "https://w3id.org/oc/meta/br/0612058700"
         assert product["product_type"] == "literature"
@@ -197,7 +200,7 @@ class TestSkgifBook:
         assert product["funding"] == []
         assert product["relevant_organisations"] == []
 
-    def test_multiple_identifiers(self, skgif_api_manager):
+    def test_multiple_identifiers(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")["@graph"][0]
         identifier_pairs = {(identifier["scheme"], identifier["value"]) for identifier in product["identifiers"]}
         assert identifier_pairs == {
@@ -207,7 +210,7 @@ class TestSkgifBook:
             ("openalex", "W4249829199"),
         }
 
-    def test_editor_ordering(self, skgif_api_manager):
+    def test_editor_ordering(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")["@graph"][0]
         editors = [contribution for contribution in product["contributions"] if contribution["role"] == "editor"]
         assert len(editors) == 2
@@ -220,7 +223,7 @@ class TestSkgifBook:
         assert editors[1]["by"]["given_name"] == "George H."
         assert "identifiers" not in editors[1]["by"]
 
-    def test_no_venue_no_pages(self, skgif_api_manager):
+    def test_no_venue_no_pages(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")["@graph"][0]
         manifestation = product["manifestations"][0]
         assert manifestation["type"] == {
@@ -233,18 +236,18 @@ class TestSkgifBook:
 
 
 class TestSkgifSchemaConformance:
-    def test_journal_article_conforms(self, skgif_api_manager):
+    def test_journal_article_conforms(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")
         _validate_skgif_response(response)
 
-    def test_book_conforms(self, skgif_api_manager):
+    def test_book_conforms(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")
         _validate_skgif_response(response)
 
-    def test_journal_article_shacl(self, skgif_api_manager):
+    def test_journal_article_shacl(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")
         _validate_skgif_shacl(response)
 
-    def test_book_shacl(self, skgif_api_manager):
+    def test_book_shacl(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")
         _validate_skgif_shacl(response)

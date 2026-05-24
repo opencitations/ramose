@@ -49,10 +49,27 @@ class HashFormatHandler:
     #<field_name_n> <field_value_n>
     ```"""
 
-    def read(self, file_path):
+    @staticmethod
+    def _process_field_line(
+        cur_field_name: str,
+        cur_field_content: str,
+        first_field_name: str | None,
+        cur_object: dict[str, str],
+        result: list[dict[str, str]],
+    ) -> tuple[str, dict[str, str]]:
+        if first_field_name is None:
+            first_field_name = cur_field_name
+        if cur_field_name == first_field_name:
+            if cur_object:
+                result.append(cur_object)
+            cur_object = {}
+        cur_object[cur_field_name] = cur_field_content
+        return first_field_name, cur_object
+
+    def read(self, file_path: str) -> list[dict[str, str]]:
         """This method takes in input a path of a file containing a document specified in
         Hash Format, and returns its representation as list of dictionaries."""
-        result = []
+        result: list[dict[str, str]] = []
 
         with Path(file_path).open(newline=None) as f:
             first_field_name = None
@@ -63,31 +80,16 @@ class HashFormatHandler:
                 if cur_matching is not None:
                     cur_field_name = cur_matching.group(1)
                     cur_field_content = cur_matching.group(2)
-
-                    # If both the name and the content are defined, continue to process
                     if cur_field_name and cur_field_content:
-                        # Identify the separator key
-                        if first_field_name is None:
-                            first_field_name = cur_field_name
-
-                        # If the current field is equal to the separator key,
-                        # then create a new object
-                        if cur_field_name == first_field_name:
-                            # If there is an already defined object, add it to the
-                            # final result
-                            if cur_object:
-                                result.append(cur_object)
-                            cur_object = {}
-
-                        # Add the new key to the object
-                        cur_object[cur_field_name] = cur_field_content
+                        first_field_name, cur_object = HashFormatHandler._process_field_line(
+                            cur_field_name, cur_field_content, first_field_name, cur_object, result
+                        )
                 elif cur_object and cur_field_name is not None:
                     cur_object[cur_field_name] += line
 
             if cur_object:
                 result.append(cur_object)
 
-        # Clean the final \n
         for item in result:
             for key in item:
                 item[key] = item[key].rstrip()

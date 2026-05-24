@@ -7,6 +7,8 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 import time
 from csv import DictReader, reader, writer
 from dataclasses import dataclass
@@ -18,6 +20,7 @@ from json import dumps
 from math import ceil
 from operator import eq, gt, itemgetter, lt
 from re import findall, match, search, sub
+from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, quote, urlsplit
 
 from requests.exceptions import RequestException
@@ -28,19 +31,27 @@ except ImportError:
     SparqlAnything = None
 
 from ramose._constants import DEFAULT_HTTP_TIMEOUT, FIELD_TYPE_RE, _http_session
-from ramose.cache import ResultCache
 from ramose.datatype import DataType
 from ramose.paging import PaginationInfo, build_link_header, build_pagination_info
 
+if TYPE_CHECKING:
+    import types
+    from collections.abc import Callable
+
+    from ramose.cache import ResultCache
+
 
 class HttpError(Exception):
-    def __init__(self, status_code, message):
+    def __init__(self, status_code: int, message: str) -> None:
         super().__init__(message)
         self.status_code = status_code
 
 
 @dataclass
 class OperationConfig:
+    sparql_endpoint: str = ""
+    sparql_http_method: str = "get"
+    addon: types.ModuleType | None = None
     format_map: dict = dataclass_field(default_factory=dict)
     sources_map: dict = dataclass_field(default_factory=dict)
     engine: str = "sparql"
@@ -53,23 +64,20 @@ class OperationConfig:
 class Operation:
     def __init__(
         self,
-        op_complete_url,
-        op_key,
-        i,
-        tp,
-        sparql_http_method,
-        addon,
-        config=None,
-    ):
+        op_complete_url: str,
+        op_key: str,
+        op_item: dict[str, str],
+        config: OperationConfig | None = None,
+    ) -> None:
         if config is None:
             config = OperationConfig()
         self.url_parsed = urlsplit(op_complete_url)
         self.op_url = self.url_parsed.path
         self.op = op_key
-        self.i = i
-        self.tp = tp
-        self.sparql_http_method = sparql_http_method
-        self.addon = addon
+        self.i = op_item
+        self.tp = config.sparql_endpoint
+        self.sparql_http_method = config.sparql_http_method
+        self.addon = config.addon
         self.format = config.format_map
         self.sources_map = config.sources_map
         self.engine = config.engine
@@ -85,7 +93,7 @@ class Operation:
         self.dt = DataType()
 
     @staticmethod
-    def get_content_type(ct):
+    def get_content_type(ct: str) -> str:
         """It returns the mime type of a given textual representation of a format, being it either
         'csv' or 'json."""
         content_type = ct
@@ -97,11 +105,7 @@ class Operation:
 
         return content_type
 
-    def conv(self, s, query_string, c_type="text/csv"):
-        """This method takes a string representing a CSV document and converts it in the requested format according
-        to what content type is specified as input."""
-
-        content_type = Operation.get_content_type(c_type)
+    def _resolve_format(self, s: str, query_string: dict[str, list[str]]) -> tuple[str, str] | None:
         if self.pagination_info is not None:
             request_url = self.pagination_info.self_url
         elif self.url_parsed.query:
@@ -110,20 +114,32 @@ class Operation:
             request_url = self.op_url
 
         if "format" in query_string and "format" not in self.disabled_params:
-            req_formats = query_string["format"]
-
-            for req_format in req_formats:
-                content_type = Operation.get_content_type(req_format)
-
+            for req_format in query_string["format"]:
                 if req_format in self.format:
                     converter_func = getattr(self.addon, self.format[req_format])
-                    return converter_func(s, request_url=request_url), content_type
+                    return converter_func(s, request_url=request_url), Operation.get_content_type(req_format)
         elif "default_format" in self.i:
             default_fmt = self.i["default_format"].strip()
-            content_type = Operation.get_content_type(default_fmt)
             if default_fmt in self.format:
                 converter_func = getattr(self.addon, self.format[default_fmt])
-                return converter_func(s, request_url=request_url), content_type
+                return converter_func(s, request_url=request_url), Operation.get_content_type(default_fmt)
+        return None
+
+    def conv(self, s: str, query_string: dict[str, list[str]], c_type: str = "text/csv") -> tuple[str, str]:
+        """This method takes a string representing a CSV document and converts it in the requested format according
+        to what content type is specified as input."""
+
+        content_type = Operation.get_content_type(c_type)
+
+        resolved = self._resolve_format(s, query_string)
+        if resolved is not None:
+            return resolved
+
+        if "format" in query_string and "format" not in self.disabled_params:
+            for req_format in query_string["format"]:
+                content_type = Operation.get_content_type(req_format)
+        elif "default_format" in self.i:
+            content_type = Operation.get_content_type(self.i["default_format"].strip())
 
         if content_type not in ("text/csv", "application/json"):
             content_type = "text/csv"
@@ -133,24 +149,24 @@ class Operation:
                 r = [dict(i) for i in DictReader(f)]
 
                 if "json" not in self.disabled_params:
-                    r = Operation.structured(query_string, r)
+                    r = Operation.structured(query_string, r)  # type: ignore[arg-type]
 
                 return dumps(r, ensure_ascii=False, indent=4), content_type
         else:
             return s, content_type
 
     @staticmethod
-    def pv(i, r=None):
+    def pv(i: int | tuple[object, str], r: list[tuple[object, str]] | None = None) -> str:
         """This method returns the plain value of a particular item 'i' of the result returned by the SPARQL query.
 
         In case 'r' is specified (i.e. a row containing a set of results), then 'i' must be the index of the item
         within that row."""
         if r is None:
-            return i[1]
-        return Operation.pv(r[i])
+            return i[1]  # type: ignore[index]
+        return Operation.pv(r[i])  # type: ignore[index]
 
     @staticmethod
-    def tv(i, r=None):
+    def tv(i: int | tuple[object, str], r: list[tuple[object, str]] | None = None) -> object:
         """This method returns the typed value of a particular item 'i' of the result returned by the SPARQL query.
         The type associated to that value is actually specified by means of the particular configuration provided
         in the specification file of the API - field 'field_type'.
@@ -158,11 +174,11 @@ class Operation:
         In case 'r' is specified (i.e. a row containing a set of results), then 'i' must be the index of the item
         within that row."""
         if r is None:
-            return i[0]
-        return Operation.tv(r[i])
+            return i[0]  # type: ignore[index]
+        return Operation.tv(r[i])  # type: ignore[index]
 
     @staticmethod
-    def do_overlap(r1, r2):
+    def do_overlap(r1: tuple[int, int], r2: tuple[int, int]) -> bool:
         """This method returns a boolean that says if the two ranges (i.e. two pairs of integers) passed as inputs
         actually overlap one with the other."""
         r1_s, r1_e = r1
@@ -171,7 +187,9 @@ class Operation:
         return r1_s <= r2_s <= r1_e or r2_s <= r1_s <= r2_e
 
     @staticmethod
-    def get_item_in_dict(d_or_l, key_list, prev=None):
+    def get_item_in_dict(
+        d_or_l: dict[str, object] | list[dict[str, object]], key_list: list[str], prev: list[object] | None = None
+    ) -> list[object]:
         """This method takes as input a dictionary or a list of dictionaries and browses it until the value
         specified following the chain indicated in 'key_list' is not found. It returns a list of all the
         values that matched with such search."""
@@ -188,12 +206,14 @@ class Operation:
                     if key_list_len == 1:
                         res.append(d[key])
                     else:
-                        res = Operation.get_item_in_dict(d[key], key_list[1:], res)
+                        res = Operation.get_item_in_dict(d[key], key_list[1:], res)  # type: ignore[arg-type]
 
         return res
 
     @staticmethod
-    def add_item_in_dict(d_or_l, key_list, item, idx):
+    def add_item_in_dict(
+        d_or_l: dict[str, object] | list[dict[str, object]], key_list: list[str], item: object, idx: int
+    ) -> None:
         """This method takes as input a dictionary or a list of dictionaries, browses it until the value
         specified following the chain indicated in 'key_list' is not found, and then substitutes it with 'item'.
         In case the final object retrieved is a list, it selects the object in position 'idx' before the
@@ -213,10 +233,35 @@ class Operation:
                 if key_list_len == 1:
                     d_or_l[key] = item
                 else:
-                    Operation.add_item_in_dict(d_or_l[key], key_list[1:], item, idx)
+                    Operation.add_item_in_dict(d_or_l[key], key_list[1:], item, idx)  # type: ignore[arg-type]
 
     @staticmethod
-    def structured(params, json_table):
+    def _apply_array_transform(row: dict[str, object], keys: list[str], separator: str, v_list: list[object]) -> None:
+        for idx, v in enumerate(v_list):
+            if isinstance(v, str):
+                Operation.add_item_in_dict(row, keys, v.split(separator) if v != "" else [], idx)
+
+    @staticmethod
+    def _apply_dict_transform(
+        row: dict[str, object], keys: list[str], separator: str, entries: list[str], v_list: list[object]
+    ) -> None:
+        new_fields = entries[1:]
+        new_fields_max_split = len(new_fields) - 1
+        for idx, v in enumerate(v_list):
+            if isinstance(v, str):
+                new_values = v.split(separator, new_fields_max_split)
+                Operation.add_item_in_dict(
+                    row,
+                    keys,
+                    dict(zip(new_fields, new_values, strict=False)) if v != "" else {},
+                    idx,
+                )
+            elif isinstance(v, list):
+                new_list = [dict(zip(new_fields, i.split(separator, new_fields_max_split), strict=False)) for i in v]
+                Operation.add_item_in_dict(row, keys, new_list, idx)
+
+    @staticmethod
+    def structured(params: dict[str, list[str]], json_table: list[dict[str, object]]) -> list[dict[str, object]]:
         """This method checks if there are particular transformation rules specified in 'params' for a JSON output,
         and convert each row of the input table ('json_table') according to these rules.
         There are two specific rules that can be applied:
@@ -267,31 +312,16 @@ class Operation:
 
                     for row in json_table:
                         v_list = Operation.get_item_in_dict(row, keys)
-                        for idx, v in enumerate(v_list):
-                            if op_type == "array":
-                                if isinstance(v, str):
-                                    Operation.add_item_in_dict(row, keys, v.split(separator) if v != "" else [], idx)
-                            elif op_type == "dict":
-                                new_fields = entries[1:]
-                                new_fields_max_split = len(new_fields) - 1
-                                if isinstance(v, str):
-                                    new_values = v.split(separator, new_fields_max_split)
-                                    Operation.add_item_in_dict(
-                                        row,
-                                        keys,
-                                        dict(zip(new_fields, new_values, strict=False)) if v != "" else {},
-                                        idx,
-                                    )
-                                elif isinstance(v, list):
-                                    new_list = []
-                                    for i in v:
-                                        new_values = i.split(separator, new_fields_max_split)
-                                        new_list.append(dict(zip(new_fields, new_values, strict=False)))
-                                    Operation.add_item_in_dict(row, keys, new_list, idx)
+                        if op_type == "array":
+                            Operation._apply_array_transform(row, keys, separator, v_list)
+                        elif op_type == "dict":
+                            Operation._apply_dict_transform(row, keys, separator, entries, v_list)
 
         return json_table
 
-    def preprocess(self, par_dict, op_item, addon):
+    def preprocess(
+        self, par_dict: dict[str, object], op_item: dict[str, str], addon: types.ModuleType
+    ) -> dict[str, object]:
         """This method takes the a dictionary of parameters with the current typed values associated to them and
         the item of the API specification defining the behaviour of that operation, and preprocesses the parameters
         according to the functions specified in the '#preprocess' field (e.g. "#preprocess lower(doi)"), which is
@@ -323,7 +353,9 @@ class Operation:
 
         return result
 
-    def postprocess(self, res, op_item, addon):
+    def postprocess(
+        self, res: list[list[str] | list[tuple[object, str]]], op_item: dict[str, str], addon: types.ModuleType
+    ) -> list[list[str] | list[tuple[object, str]]]:
         """This method takes the result table returned by running the SPARQL query in an API operation (specified
         as input) and change some of such results according to the functions specified in the '#postprocess'
         field (e.g. "#postprocess remove_date("2018")"). These functions can take parameters as input, while the first
@@ -359,14 +391,18 @@ class Operation:
         return result
 
     @staticmethod
-    def _apply_require(header, result, fields):
+    def _apply_require(
+        header: list[str], result: list[list[tuple[object, str]]], fields: list[str]
+    ) -> list[list[tuple[object, str]]]:
         """Exclude rows with empty values in the specified fields."""
         for field in fields:
             field_idx = header.index(field)
             result = [row for row in result if Operation.pv(field_idx, row) not in (None, "")]
         return result
 
-    def _apply_filter(self, header, result, fields):
+    def _apply_filter(
+        self, header: list[str], result: list[list[tuple[object, str]]], fields: list[str]
+    ) -> list[list[tuple[object, str]]]:
         """Filter rows by comparison operators or regex patterns."""
         for field in fields:
             field_name, field_value = field.split(":", 1)
@@ -391,7 +427,9 @@ class Operation:
         return result
 
     @staticmethod
-    def _apply_sort(header, result, fields):
+    def _apply_sort(
+        header: list[str], result: list[list[tuple[object, str]]], fields: list[str]
+    ) -> list[list[tuple[object, str]]]:
         """Sort rows by the specified fields and directions."""
         for field in sorted(fields, reverse=True):
             order_names = findall(r"^(desc|asc)\(([^\(\)]+)\)$", field)
@@ -406,7 +444,9 @@ class Operation:
                 pass
         return result
 
-    def handling_params(self, params, table):
+    def handling_params(
+        self, params: dict[str, list[str]], table: list[list[str] | list[tuple[object, str]]]
+    ) -> list[list[str] | list[tuple[object, str]]]:
         """This method is used for filtering the results that are returned after the post-processing
         phase. In particular, it is possible to:
 
@@ -436,17 +476,19 @@ class Operation:
 
         if ("exclude" in params or "require" in params) and "require" not in overridden and "exclude" not in overridden:
             fields = params["exclude"] if "exclude" in params else params["require"]
-            result = self._apply_require(header, result, fields)
+            result = self._apply_require(header, result, fields)  # type: ignore[arg-type]
 
         if "filter" in params and "filter" not in overridden:
-            result = self._apply_filter(header, result, params["filter"])
+            result = self._apply_filter(header, result, params["filter"])  # type: ignore[arg-type]
 
         if "sort" in params and "sort" not in overridden:
-            result = self._apply_sort(header, result, params["sort"])
+            result = self._apply_sort(header, result, params["sort"])  # type: ignore[arg-type]
 
         return [header, *result]
 
-    def type_fields(self, res, op_item):
+    def type_fields(
+        self, res: list[list[str] | list[tuple[object, str]] | list[str | object]], op_item: dict[str, str]
+    ) -> list[list[str] | list[tuple[object, str]]]:
         """It creates a version of the results 'res' that adds, to each value of the fields, the same value interpreted
         with the type specified in the specification file (field 'field_type'). Note that 'str' is used as default in
         case no further specifications are provided."""
@@ -469,21 +511,23 @@ class Operation:
                 new_row.append((cast_func[heading](cur_value), cur_value))
             result.append(new_row)
 
-        return [header, *result]
+        return [header, *result]  # type: ignore[return-value]
 
-    def remove_types(self, res):
+    def remove_types(self, res: list[list[str] | list[tuple[object, str]]]) -> list[list[str] | tuple[str, ...]]:
         """This method takes the results 'res' that include also the typed value and returns a version of such
         results without the types that is ready to be stored on the file system."""
         result = [res[0]]
-        result.extend(tuple(Operation.pv(idx, row) for idx in range(len(row))) for row in res[1:])
-        return result
+        result.extend(tuple(Operation.pv(idx, row) for idx in range(len(row))) for row in res[1:])  # type: ignore[arg-type]
+        return result  # type: ignore[return-value]
 
     @staticmethod
-    def _is_directive(line):
+    def _is_directive(line: str) -> bool:
         return line.strip().startswith("@@")
 
     @staticmethod
-    def _parse_directive_args(tokens, param_names, defaults=None):
+    def _parse_directive_args(
+        tokens: list[str], param_names: list[str], defaults: dict[str, str] | None = None
+    ) -> dict[str, str]:
         defaults = defaults or {}
         all_names = set(param_names) | set(defaults)
         result = {}
@@ -520,7 +564,7 @@ class Operation:
 
         return result
 
-    def _handle_directive_with(self, parts):
+    def _handle_directive_with(self, parts: list[str]) -> tuple[str, None]:
         args = Operation._parse_directive_args(parts[1:], ["source"])
         name = args["source"]
         if name not in self.sources_map:
@@ -529,17 +573,17 @@ class Operation:
         return self.sources_map[name], None
 
     @staticmethod
-    def _handle_directive_endpoint(parts):
+    def _handle_directive_endpoint(parts: list[str]) -> tuple[str, None]:
         args = Operation._parse_directive_args(parts[1:], ["target"])
         return args["target"], None
 
     @staticmethod
-    def _handle_directive_join(parts):
+    def _handle_directive_join(parts: list[str]) -> tuple[None, tuple[str, str, str, str]]:
         args = Operation._parse_directive_args(parts[1:], ["left_var", "right_var"], defaults={"type": "inner"})
         return None, ("JOIN", args["left_var"], args["right_var"], args["type"].lower())
 
     @staticmethod
-    def _handle_directive_values(parts):
+    def _handle_directive_values(parts: list[str]) -> tuple[None, tuple[str, list[str]]]:
         tokens = parts[1:]
         if not tokens:
             msg = "@@values needs at least one variable"
@@ -547,7 +591,7 @@ class Operation:
         return None, ("VALUES_INJECT", tokens)
 
     @staticmethod
-    def _handle_directive_foreach(parts):
+    def _handle_directive_foreach(parts: list[str]) -> tuple[None, tuple[str, str, str, float]]:
         args = Operation._parse_directive_args(parts[1:], ["variable", "placeholder"], defaults={"wait": "0"})
         var_name = args["variable"]
         if not var_name.startswith("?"):
@@ -560,7 +604,21 @@ class Operation:
             raise ValueError(msg) from None
         return None, ("FOREACH", var_name, args["placeholder"], delay)
 
-    def _parse_steps(self, text, default_endpoint, params):
+    def _process_directive(
+        self, line: str, directive_handlers: dict[str, Callable[..., object]]
+    ) -> tuple[str | None, tuple[str, ...] | None]:
+        body = line.strip()[2:].strip()
+        parts = body.split()
+        cmd = parts[0].lower()
+
+        handler = directive_handlers.get(cmd)
+        if handler is None:
+            msg = f"Unknown directive @@{cmd}"
+            raise ValueError(msg)
+
+        return handler(parts)  # type: ignore[return-value]
+
+    def _parse_steps(self, text: str, default_endpoint: str, params: dict[str, object]) -> list[tuple[str, ...]]:
         """
         Returns a list of steps:
           - ("QUERY", endpoint_url, query_text)
@@ -571,8 +629,8 @@ class Operation:
         """
         for p, v in params.items():
             text = text.replace(f"[[{p}]]", str(v))
-        steps = []
-        cur_query = []
+        steps: list[tuple[str, ...]] = []
+        cur_query: list[str] = []
         current_endpoint = default_endpoint
 
         directive_handlers = {
@@ -584,7 +642,7 @@ class Operation:
             "foreach": self._handle_directive_foreach,
         }
 
-        def flush_query():
+        def flush_query() -> None:
             if cur_query:
                 q = "\n".join(cur_query).strip()
                 if not q:
@@ -603,16 +661,7 @@ class Operation:
 
             flush_query()
 
-            body = line.strip()[2:].strip()
-            parts = body.split()
-            cmd = parts[0].lower()
-
-            handler = directive_handlers.get(cmd)
-            if handler is None:
-                msg = f"Unknown directive @@{cmd}"
-                raise ValueError(msg)
-
-            new_endpoint, step = handler(parts)
+            new_endpoint, step = self._process_directive(line, directive_handlers)
             if new_endpoint is not None:
                 current_endpoint = new_endpoint
             if step is not None:
@@ -621,7 +670,7 @@ class Operation:
         flush_query()
         return steps
 
-    def _run_sparql_dicts(self, endpoint_url, query_text):
+    def _run_sparql_dicts(self, endpoint_url: str, query_text: str) -> list[dict[str, object]]:
         """Run a SELECT query against a SPARQL endpoint and return a list of dict rows.
 
         This always requests CSV and parses it via DictReader, to stay consistent
@@ -658,19 +707,19 @@ class Operation:
             raise RuntimeError(msg)
         text = r.content.decode("utf-8-sig", errors="replace")
         list_of_lines = text.splitlines()
-        return list(DictReader(list_of_lines))
+        return list(DictReader(list_of_lines))  # type: ignore[return-value]
 
     @staticmethod
-    def _normalize_sparql_json_resultset(result):
+    def _normalize_sparql_json_resultset(result: dict[str, object]) -> list[dict[str, object]]:
         """Convert a SPARQL JSON ResultSet dict to a list of flat dicts."""
-        vars_ = result["head"].get("vars") or []
+        vars_ = result["head"].get("vars") or []  # type: ignore[union-attr]
         return [
             {v: (b[v].get("value") if isinstance(b.get(v), dict) else b.get(v)) for v in vars_}
-            for b in result["results"].get("bindings", [])
+            for b in result["results"].get("bindings", [])  # type: ignore[union-attr]
         ]
 
     @staticmethod
-    def _normalize_columnar_dict(result):
+    def _normalize_columnar_dict(result: dict[str, object]) -> list[dict[str, object]]:
         """Convert a column-oriented dict {col: [values]} to a list of row dicts."""
         cols = list(result.keys())
         max_len = max((len(v) for v in result.values() if isinstance(v, (list, tuple))), default=0)
@@ -691,7 +740,9 @@ class Operation:
             rows.append(row)
         return rows
 
-    def _run_sparql_anything_dicts(self, query_text, values=None):
+    def _run_sparql_anything_dicts(
+        self, query_text: str, values: dict[str, str] | None = None
+    ) -> list[dict[str, object]]:
         """
         Execute a SPARQL Anything SELECT query via PySPARQL-Anything and return
         a list of dicts (one per row), in the same shape as _run_sparql_dicts.
@@ -709,7 +760,7 @@ class Operation:
 
         kwargs = {"query": query_text}
         if values:
-            kwargs["values"] = {str(k): str(v) for k, v in values.items()}
+            kwargs["values"] = {str(k): str(v) for k, v in values.items()}  # type: ignore[assignment]
 
         result = self._sa_engine.select(output_type=dict, **kwargs)
 
@@ -731,7 +782,7 @@ class Operation:
         # Column-oriented dict or single-row fallback
         return self._normalize_columnar_dict(result)
 
-    def _run_query_dicts(self, endpoint_url, query_text):
+    def _run_query_dicts(self, endpoint_url: str, query_text: str) -> list[dict[str, object]]:
         """
         Dispatch query execution to the appropriate backend, with support
         for per-query engine selection in multi-source mode.
@@ -753,7 +804,7 @@ class Operation:
             return self._run_sparql_anything_dicts(query_text)
         return self._run_sparql_dicts(endpoint_url, query_text)
 
-    def _inject_values_clause(self, query_text, vars_, acc_rows):
+    def _inject_values_clause(self, query_text: str, vars_: list[str], acc_rows: list[dict[str, object]] | None) -> str:
         # build distinct tuples for requested vars from the accumulator
         cols = [v.lstrip("?") for v in vars_]
         tuples, seen = [], set()
@@ -766,7 +817,7 @@ class Operation:
             return query_text  # nothing to inject
 
         # format literals vs IRIs
-        def fmt(x):
+        def fmt(x: object) -> str:
             s = str(x)
             if s.startswith(("http://", "https://")):
                 return f"<{s}>"
@@ -784,13 +835,13 @@ class Operation:
         return query_text[:j] + "\n" + head + body + tail + query_text[j:]
 
     @staticmethod
-    def _drop_columns(rows, vars_):
+    def _drop_columns(rows: list[dict[str, object]], vars_: list[str]) -> list[dict[str, object]]:
         if not rows:
             return rows
         vars_set = {v.lstrip("?") for v in vars_}
         return [{k: v for k, v in r.items() if k not in vars_set and ("?" + k) not in vars_set} for r in rows]
 
-    def _norm_join_key(self, v):
+    def _norm_join_key(self, v: object) -> str | None:
         if v is None:
             return None
         s = str(v).strip()
@@ -800,7 +851,31 @@ class Operation:
         # drop a single trailing slash for stability
         return s.removesuffix("/")
 
-    def _join(self, left_rows, right_rows, lkey, rkey, how="inner"):
+    @staticmethod
+    def _merge_row(
+        left_row: dict[str, object], right_row: dict[str, object], right_cols: list[str]
+    ) -> dict[str, object]:
+        merged = dict(left_row)
+        for col in right_cols:
+            right_val = right_row.get(col)
+            if right_val is None:
+                continue
+            if col not in merged or merged[col] in ("", None):
+                merged[col] = right_val
+            else:
+                alt = f"{col}_r"
+                if alt not in merged or merged[alt] in ("", None):
+                    merged[alt] = right_val
+        return merged
+
+    def _join(
+        self,
+        left_rows: list[dict[str, object]] | None,
+        right_rows: list[dict[str, object]] | None,
+        lkey: str,
+        rkey: str,
+        how: str = "inner",
+    ) -> list[dict[str, object]]:
         """
         Merge two row sets on lkey (from left_rows) and rkey (from right_rows).
         - lkey/rkey may be passed as '?var' or 'var' -> we normalize to bare names.
@@ -808,47 +883,34 @@ class Operation:
         - When 'left', all left rows are preserved even if no match on the right.
         - Right-hand columns are copied into the merged row; collisions are avoided.
         """
-        # 1) Normalize column names (strip leading '?')
         lcol = lkey.lstrip("?")
         rcol = rkey.lstrip("?")
 
         left_rows = left_rows or []
         right_rows = right_rows or []
 
-        # 2) Build an index for right_rows on normalized rcol values
-        rindex = {}
+        rindex: dict[str, list[dict[str, object]]] = {}
         for r in right_rows:
             rk = self._norm_join_key(r.get(rcol))
             if rk is None:
                 continue
             rindex.setdefault(rk, []).append(r)
 
-        # determine right columns to copy (excluding the join key)
         right_cols = [c for c in (right_rows[0].keys() if right_rows else []) if c != rcol]
 
-        out = []
+        out: list[dict[str, object]] = []
         for left_row in left_rows:
             lk = self._norm_join_key(left_row.get(lcol))
-            matches = rindex.get(lk, [])
+            matches = rindex.get(lk, [])  # type: ignore[arg-type]
             if matches:
-                for r in matches:
-                    merged = dict(left_row)
-                    for c in right_cols:
-                        rv = r.get(c)
-                        if rv is None:
-                            continue
-                        if c not in merged or merged[c] in ("", None):
-                            merged[c] = rv
-                        else:
-                            alt = f"{c}_r"
-                            if alt not in merged or merged[alt] in ("", None):
-                                merged[alt] = rv
-                    out.append(merged)
+                out.extend(self._merge_row(left_row, r, right_cols) for r in matches)
             elif how == "left":
                 out.append(dict(left_row))
         return out
 
-    def _apply_custom_postprocess_params(self, table, q_string):
+    def _apply_custom_postprocess_params(
+        self, table: list[list[str] | list[tuple[object, str]] | tuple[str, ...]], q_string: dict[str, list[str]]
+    ) -> list[list[str] | list[tuple[object, str]] | tuple[str, ...]]:
         for param_name, param_conf in self.custom_params.items():
             if param_conf["phase"] != "postprocess":
                 continue
@@ -858,12 +920,12 @@ class Operation:
         return table
 
     @property
-    def _cache_ttl(self):
+    def _cache_ttl(self) -> int:
         if "cache_duration" in self.i:
             return int(self.i["cache_duration"])
         return self._default_cache_ttl
 
-    def _build_cache_key(self, q_string):
+    def _build_cache_key(self, q_string: dict[str, list[str]]) -> str:
         presentation_params = {"page", "page_size", "format", "json"}
         data_params = sorted((name, values) for name, values in q_string.items() if name not in presentation_params)
         if data_params:
@@ -871,7 +933,7 @@ class Operation:
             return f"{self.tp}:{self.op_url}?{query_string}"
         return f"{self.tp}:{self.op_url}"
 
-    def _extract_pagination_params(self, q_string):
+    def _extract_pagination_params(self, q_string: dict[str, list[str]]) -> tuple[int, int] | None:
         if "page_size" not in q_string or "page_size" in self.disabled_params:
             return None
         page_size = int(q_string["page_size"][0])
@@ -886,7 +948,7 @@ class Operation:
                 raise ValueError(msg)
         return page, page_size
 
-    def _has_custom_converter(self, q_string):
+    def _has_custom_converter(self, q_string: dict[str, list[str]]) -> bool:
         if "format" in q_string and "format" not in self.disabled_params:
             for req_format in q_string["format"]:
                 if req_format in self.format:
@@ -895,7 +957,12 @@ class Operation:
             return True
         return False
 
-    def _paginate_and_format(self, table, q_string, content_type):
+    def _paginate_and_format(
+        self,
+        table: list[list[str] | list[tuple[object, str]] | tuple[str, ...]],
+        q_string: dict[str, list[str]],
+        content_type: str,
+    ) -> tuple[int, str, str]:
         if self._has_custom_converter(q_string):
             self.pagination_info = None
         else:
@@ -920,22 +987,24 @@ class Operation:
 
         return 200, body, ctype
 
-    def _finalize_result(self, csv_rows, content_type):
+    def _finalize_result(
+        self, csv_rows: list[list[str]] | list[list[str | object]], content_type: str
+    ) -> tuple[int, str, str]:
         """Run the shared pipeline: type fields, postprocess, filter, remove types, cache, paginate, format."""
         q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
-        res = self.type_fields(csv_rows, self.i)
+        res = self.type_fields(csv_rows, self.i)  # type: ignore[arg-type]
         if self.addon is not None:
             res = self.postprocess(res, self.i, self.addon)
         res = self.handling_params(q_string, res)
         res = self.remove_types(res)
         if self.custom_params:
-            res = self._apply_custom_postprocess_params(res, q_string)
+            res = self._apply_custom_postprocess_params(res, q_string)  # type: ignore[arg-type]
         if self._cache is not None and "cache_disable" not in self.i:
             self._cache.set(self._build_cache_key(q_string), res, expire=self._cache_ttl)
-        return self._paginate_and_format(res, q_string, content_type)
+        return self._paginate_and_format(res, q_string, content_type)  # type: ignore[arg-type]
 
     @staticmethod
-    def _header_from_field_type(op_item, acc):
+    def _header_from_field_type(op_item: dict[str, str], acc: list[dict[str, object]]) -> list[str]:
         # Respect #field_type order if provided, else derive from data
         if "field_type" in op_item:
             # FIELD_TYPE_RE is global in this file
@@ -944,12 +1013,12 @@ class Operation:
         return list(acc[0].keys()) if acc else []
 
     @staticmethod
-    def _to_csv_rows(header, acc):
-        rows = [header]
+    def _to_csv_rows(header: list[str], acc: list[dict[str, object]]) -> list[list[object]]:
+        rows: list[list[object]] = [header]  # type: ignore[list-item]
         rows.extend([d.get(h, "") for h in header] for d in acc)
         return rows
 
-    def _extract_params(self):
+    def _extract_params(self) -> dict[str, object]:
         """Extract URL parameters and apply type conversions based on the operation spec."""
         par_dict = {}
         url_match = match(self.op, self.op_url)
@@ -966,7 +1035,7 @@ class Operation:
             par_dict[par] = par_value
         return par_dict
 
-    def _apply_custom_preprocess_params(self, par_dict):
+    def _apply_custom_preprocess_params(self, par_dict: dict[str, object]) -> None:
         q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
         for param_name, param_conf in self.custom_params.items():
             if param_conf["phase"] != "preprocess":
@@ -980,7 +1049,7 @@ class Operation:
             if placeholder not in par_dict:
                 par_dict[placeholder] = ""
 
-    def _exec_sparql_anything_single(self, par_dict, content_type):
+    def _exec_sparql_anything_single(self, par_dict: dict[str, object], content_type: str) -> tuple[int, str, str]:
         """Execute a single SPARQL Anything query and return the finalized result."""
         query = self.i["sparql"]
         for param, val in par_dict.items():
@@ -990,13 +1059,14 @@ class Operation:
         csv_rows = self._to_csv_rows(header, rows or [])
         return self._finalize_result(csv_rows, content_type)
 
-    def _exec_standard_sparql(self, par_dict, content_type):
+    def _exec_standard_sparql(self, par_dict: dict[str, object], content_type: str) -> tuple[int, str, str]:
         """Execute standard SPARQL queries, handling parameter combinations via cartesian product."""
         # Wrap scalar values in lists for cartesian product
         par_dict = {k: v if isinstance(v, list) else [v] for k, v in par_dict.items()}
 
         parameters_comb = [
-            dict(zip(par_dict.keys(), combination, strict=False)) for combination in product(*par_dict.values())
+            dict(zip(par_dict.keys(), combination, strict=False))
+            for combination in product(*par_dict.values())  # type: ignore[arg-type]
         ]
 
         # Example: {"id":"5","area":["A1","A2"]}  ->  [{"id":"5","area":"A1"}, {"id":"5","area":"A2"}]
@@ -1038,8 +1108,15 @@ class Operation:
 
         return self._finalize_result(list(reader(list_of_res)), content_type)
 
-    def _exec_foreach_query(self, endpoint_url, qtxt, var_name, placeholder, delay, acc):
+    def _exec_foreach_query(
+        self,
+        endpoint_url: str,
+        qtxt: str,
+        foreach: tuple[str, str, float],
+        acc: list[dict[str, object]] | None,
+    ) -> list[dict[str, object]]:
         """Run one query per distinct value collected from the accumulator (@@foreach)."""
+        var_name, placeholder, delay = foreach
         column = var_name.lstrip("?")
 
         values = []
@@ -1061,30 +1138,29 @@ class Operation:
 
         return all_rows
 
-    def _exec_multi_source_query_step(self, endpoint_url, qtxt, state):
+    def _exec_multi_source_query_step(self, endpoint_url: str, qtxt: str, state: dict[str, object]) -> None:
         """Handle a QUERY step in the multi-source pipeline."""
         if state["pending_foreach"] is not None:
-            var_name, placeholder, delay = state["pending_foreach"]
-            rows = self._exec_foreach_query(endpoint_url, qtxt, var_name, placeholder, delay, state["acc"])
+            rows = self._exec_foreach_query(endpoint_url, qtxt, state["pending_foreach"], state["acc"])  # type: ignore[arg-type]
             state["pending_foreach"] = None
             state["pending_values_vars"] = None
         else:
             if state["pending_values_vars"]:
-                qtxt = self._inject_values_clause(qtxt, state["pending_values_vars"], state["acc"])
+                qtxt = self._inject_values_clause(qtxt, state["pending_values_vars"], state["acc"])  # type: ignore[arg-type]
                 state["pending_values_vars"] = None
             rows = self._run_query_dicts(endpoint_url, qtxt)
 
         if state["acc"] is None:
             state["acc"] = rows
         elif state["pending_join"]:
-            lvar, rvar, how = state["pending_join"]
-            state["acc"] = self._join(state["acc"], rows, lvar, rvar, how)
+            lvar, rvar, how = state["pending_join"]  # type: ignore[misc]
+            state["acc"] = self._join(state["acc"], rows, lvar, rvar, how)  # type: ignore[arg-type]
             state["pending_join"] = None
         else:
             msg = "Multiple QUERY steps without an explicit @@join directive"
             raise ValueError(msg)
 
-    def _exec_multi_source(self, par_dict, content_type):
+    def _exec_multi_source(self, par_dict: dict[str, object], content_type: str) -> tuple[int, str, str]:
         """Execute a multi-source query pipeline with @@ directives."""
         steps = self._parse_steps(self.i["sparql"], self.tp, par_dict)
 
@@ -1103,7 +1179,7 @@ class Operation:
             elif tag == "JOIN":
                 state["pending_join"] = (st[1], st[2], st[3])
             elif tag == "REMOVE":
-                state["acc"] = self._drop_columns(state["acc"] or [], st[1])
+                state["acc"] = self._drop_columns(state["acc"] or [], st[1])  # type: ignore[arg-type]
             elif tag == "VALUES_INJECT":
                 state["pending_values_vars"] = st[1]
             elif tag == "FOREACH":
@@ -1112,19 +1188,19 @@ class Operation:
                 msg = f"Unknown step tag {tag}"
                 raise RuntimeError(msg)
 
-        header = self._header_from_field_type(self.i, state["acc"] or [])
-        csv_rows = self._to_csv_rows(header, state["acc"] or [])
+        header = self._header_from_field_type(self.i, state["acc"] or [])  # type: ignore[arg-type]
+        csv_rows = self._to_csv_rows(header, state["acc"] or [])  # type: ignore[arg-type]
         return self._finalize_result(csv_rows, content_type)
 
     @staticmethod
-    def _format_error(sc, e, prefix=""):
+    def _format_error(sc: int, e: Exception, prefix: str = "") -> tuple[int, str, str]:
         """Format an error response tuple with traceback line info."""
         tb = e.__traceback__
         line = tb.tb_lineno if tb else "?"
         msg = f"HTTP status code {sc}: {prefix}{type(e).__name__}: {e} (line {line})"
         return sc, msg, "text/plain"
 
-    def exec(self, method="get", content_type="application/json"):
+    def exec(self, method: str = "get", content_type: str = "application/json") -> tuple[int, str, str, dict[str, str]]:
         """This method takes in input the HTTP method to use for the call
         and the content type to return, and execute the operation as indicated
         in the specification file, by running (in the following order):
@@ -1158,7 +1234,7 @@ class Operation:
                 headers["Link"] = link_header
         return status, body, ctype, headers
 
-    def _dispatch_exec(self, content_type):
+    def _dispatch_exec(self, content_type: str) -> tuple[int, str, str]:
         """Dispatch to the appropriate execution path based on SPARQL text content."""
         par_dict = self._extract_params()
         if self.addon is not None:
@@ -1170,7 +1246,7 @@ class Operation:
             q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
             cached_table = self._cache.get(self._build_cache_key(q_string))
             if cached_table is not None:
-                return self._paginate_and_format(cached_table, q_string, content_type)
+                return self._paginate_and_format(cached_table, q_string, content_type)  # type: ignore[arg-type]
 
         sparql_text = self.i["sparql"]
         resolved_text = sparql_text

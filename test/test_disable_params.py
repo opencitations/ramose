@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
 
@@ -16,29 +18,34 @@ DATA_DIR = Path(__file__).parent / "data"
 
 
 class TestParseDisableParams:
-    def test_single_param(self):
+    def test_single_param(self) -> None:
         assert parse_disable_params("filter") == {"filter"}
 
-    def test_multiple_params(self):
+    def test_multiple_params(self) -> None:
         assert parse_disable_params("require,filter,sort") == {"require", "filter", "sort"}
 
-    def test_wildcard(self):
+    def test_wildcard(self) -> None:
         assert parse_disable_params("*") == {"require", "filter", "sort", "format", "json", "page", "page_size"}
 
-    def test_wildcard_matches_builtin(self):
+    def test_wildcard_matches_builtin(self) -> None:
         assert parse_disable_params("*") == set(BUILTIN_PARAMS)
 
-    def test_whitespace_handling(self):
+    def test_whitespace_handling(self) -> None:
         assert parse_disable_params(" filter , sort ") == {"filter", "sort"}
 
-    def test_empty_string(self):
+    def test_empty_string(self) -> None:
         assert parse_disable_params("") == set()
 
-    def test_trailing_comma(self):
+    def test_trailing_comma(self) -> None:
         assert parse_disable_params("filter,sort,") == {"filter", "sort"}
 
 
-def _make_op(disabled_params=None, format_map=None, addon=None, op_item_extra=None):
+def _make_op(
+    disabled_params: set[str] | None = None,
+    format_map: dict[str, str] | None = None,
+    addon: object = None,
+    op_item_extra: dict[str, str] | None = None,
+) -> Operation:
     op_item = {
         "url": "/test/{id}",
         "sparql": "SELECT ?x WHERE { ?x ?y ?z }",
@@ -51,61 +58,63 @@ def _make_op(disabled_params=None, format_map=None, addon=None, op_item_extra=No
         "/api/v1/test/value",
         "/api/v1/test/(.+)",
         op_item,
-        "http://localhost:9999/sparql",
-        "get",
-        addon,
-        OperationConfig(format_map=format_map or {}, disabled_params=disabled_params or set()),
+        OperationConfig(
+            sparql_endpoint="http://localhost:9999/sparql",
+            addon=addon,  # type: ignore[arg-type]
+            format_map=format_map or {},
+            disabled_params=disabled_params or set(),
+        ),
     )
 
 
 class TestHandlingParamsDisabled:
     @staticmethod
-    def _typed_table(rows):
+    def _typed_table(rows: list[list[str]]) -> list[list[str] | list[tuple[str, str]]]:
         header = rows[0]
         return [header, *[[(v, v) for v in row] for row in rows[1:]]]
 
-    def test_require_disabled(self):
+    def test_require_disabled(self) -> None:
         op = _make_op(disabled_params={"require"})
         table = self._typed_table([["name", "age"], ["John", "30"], ["", "25"]])
-        result = op.handling_params({"require": ["name"]}, table)
+        result = op.handling_params({"require": ["name"]}, table)  # type: ignore[arg-type]
         assert len(result) == 3
 
-    def test_require_active(self):
+    def test_require_active(self) -> None:
         op = _make_op()
         table = self._typed_table([["name", "age"], ["John", "30"], ["", "25"]])
-        result = op.handling_params({"require": ["name"]}, table)
+        result = op.handling_params({"require": ["name"]}, table)  # type: ignore[arg-type]
         assert len(result) == 2
 
-    def test_filter_disabled(self):
+    def test_filter_disabled(self) -> None:
         op = _make_op(disabled_params={"filter"})
         table = self._typed_table([["name", "age"], ["John", "30"], ["Jane", "25"]])
-        result = op.handling_params({"filter": ["name:John"]}, table)
+        result = op.handling_params({"filter": ["name:John"]}, table)  # type: ignore[arg-type]
         assert len(result) == 3
 
-    def test_sort_disabled(self):
+    def test_sort_disabled(self) -> None:
         op = _make_op(disabled_params={"sort"})
         table = self._typed_table([["name", "age"], ["John", "30"], ["Alice", "20"]])
-        result = op.handling_params({"sort": ["asc(name)"]}, table)
+        result = op.handling_params({"sort": ["asc(name)"]}, table)  # type: ignore[arg-type]
         assert result[1][0] == ("John", "John")
 
-    def test_all_disabled(self):
+    def test_all_disabled(self) -> None:
         op = _make_op(disabled_params=set(BUILTIN_PARAMS))
         table = self._typed_table([["name", "age"], ["", "30"], ["John", "25"]])
-        result = op.handling_params({"require": ["name"], "filter": ["age:30"], "sort": ["asc(name)"]}, table)
+        result = op.handling_params({"require": ["name"], "filter": ["age:30"], "sort": ["asc(name)"]}, table)  # type: ignore[arg-type]
         assert len(result) == 3
         assert result[1][0] == ("", "")
         assert result[2][0] == ("John", "John")
 
 
 class TestConvFormatDisabled:
-    def test_format_param_ignored_when_disabled(self):
+    def test_format_param_ignored_when_disabled(self) -> None:
         op = _make_op(disabled_params={"format"})
         csv_str = "name,age\nJohn,30\n"
         result, ct = op.conv(csv_str, {"format": ["json"]}, "text/csv")
         assert ct == "text/csv"
         assert result == csv_str
 
-    def test_format_param_works_when_not_disabled(self):
+    def test_format_param_works_when_not_disabled(self) -> None:
         op = _make_op()
         csv_str = "name,age\nJohn,30\n"
         result, ct = op.conv(csv_str, {"format": ["json"]}, "text/csv")
@@ -113,10 +122,10 @@ class TestConvFormatDisabled:
         parsed = json.loads(result)
         assert parsed == [{"name": "John", "age": "30"}]
 
-    def test_default_format_still_works_when_format_disabled(self):
+    def test_default_format_still_works_when_format_disabled(self) -> None:
         class FakeAddon:
             @staticmethod
-            def to_custom(s, request_url=""):
+            def to_custom(s: str, request_url: str = "") -> str:
                 return '{"custom": true}'
 
         op = _make_op(
@@ -131,14 +140,14 @@ class TestConvFormatDisabled:
 
 
 class TestConvJsonDisabled:
-    def test_json_structuring_ignored_when_disabled(self):
+    def test_json_structuring_ignored_when_disabled(self) -> None:
         op = _make_op(disabled_params={"json"})
         csv_str = "name,age\nDoe; John,30\n"
         result, _ct = op.conv(csv_str, {"json": ['array("; ",name)']}, "application/json")
         parsed = json.loads(result)
         assert parsed == [{"name": "Doe; John", "age": "30"}]
 
-    def test_json_structuring_works_when_not_disabled(self):
+    def test_json_structuring_works_when_not_disabled(self) -> None:
         op = _make_op()
         csv_str = "name,age\nDoe; John,30\n"
         result, _ct = op.conv(csv_str, {"json": ['array("; ",name)']}, "application/json")
@@ -147,7 +156,7 @@ class TestConvJsonDisabled:
 
 
 class TestApiManagerDisableParams:
-    def test_api_level_disable_propagates(self):
+    def test_api_level_disable_propagates(self) -> None:
         mgr = APIManager(
             [str(DATA_DIR / "skgif_products.hf")],
             endpoint_override="http://localhost:9999/sparql",
@@ -155,7 +164,7 @@ class TestApiManagerDisableParams:
         for conf in mgr.all_conf.values():
             assert conf["disable_params"] == {"require", "filter", "sort", "format", "json"}
 
-    def test_operation_gets_disabled_params(self):
+    def test_operation_gets_disabled_params(self) -> None:
         mgr = APIManager(
             [str(DATA_DIR / "skgif_products.hf")],
             endpoint_override="http://localhost:9999/sparql",
@@ -164,7 +173,7 @@ class TestApiManagerDisableParams:
         assert isinstance(op, Operation)
         assert op.disabled_params == {"require", "filter", "sort", "format", "json"}
 
-    def test_no_disable_params_defaults_to_empty(self):
+    def test_no_disable_params_defaults_to_empty(self) -> None:
         mgr = APIManager(
             [str(DATA_DIR / "meta_v1.hf")],
             endpoint_override="http://localhost:9999/sparql",
@@ -174,7 +183,7 @@ class TestApiManagerDisableParams:
 
 
 class TestHtmlDocumentationDisableParams:
-    def test_all_params_hidden_when_disabled(self):
+    def test_all_params_hidden_when_disabled(self) -> None:
         mgr = APIManager(
             [str(DATA_DIR / "skgif_products.hf")],
             endpoint_override="http://localhost:9999/sparql",
@@ -187,7 +196,7 @@ class TestHtmlDocumentationDisableParams:
         for keyword in ["require", "sort", "format=", "json="]:
             assert f"<code>{keyword}" not in html
 
-    def test_params_visible_when_not_disabled(self):
+    def test_params_visible_when_not_disabled(self) -> None:
         mgr = APIManager(
             [str(DATA_DIR / "meta_v1.hf")],
             endpoint_override="http://localhost:9999/sparql",
@@ -202,7 +211,7 @@ class TestHtmlDocumentationDisableParams:
 
 class TestOpenApiDocumentationDisableParams:
     @pytest.fixture
-    def skgif_spec(self):
+    def skgif_spec(self) -> dict[str, object]:
         mgr = APIManager(
             [str(DATA_DIR / "skgif_products.hf")],
             endpoint_override="http://localhost:9999/sparql",
@@ -211,19 +220,19 @@ class TestOpenApiDocumentationDisableParams:
         _, yml = handler.get_documentation()
         return yaml.safe_load(yml)
 
-    def test_no_global_param_refs_on_products(self, skgif_spec):
-        products_get = skgif_spec["paths"]["/products"]["get"]
+    def test_no_global_param_refs_on_products(self, skgif_spec: dict[str, object]) -> None:
+        products_get = skgif_spec["paths"]["/products"]["get"]  # type: ignore[index]
         ref_names = {p["$ref"].rsplit("/", 1)[-1] for p in products_get["parameters"] if "$ref" in p}
         for builtin in BUILTIN_PARAMS:
             assert builtin not in ref_names
 
-    def test_custom_filter_still_present(self, skgif_spec):
-        products_get = skgif_spec["paths"]["/products"]["get"]
+    def test_custom_filter_still_present(self, skgif_spec: dict[str, object]) -> None:
+        products_get = skgif_spec["paths"]["/products"]["get"]  # type: ignore[index]
         inline_names = {p["name"] for p in products_get["parameters"] if "name" in p}
         assert "filter" in inline_names
 
-    def test_single_product_has_no_global_params(self, skgif_spec):
-        single_get = skgif_spec["paths"]["/products/{local_identifier}"]["get"]
+    def test_single_product_has_no_global_params(self, skgif_spec: dict[str, object]) -> None:
+        single_get = skgif_spec["paths"]["/products/{local_identifier}"]["get"]  # type: ignore[index]
         ref_names = {p["$ref"].rsplit("/", 1)[-1] for p in single_get["parameters"] if "$ref" in p}
         for builtin in BUILTIN_PARAMS:
             assert builtin not in ref_names

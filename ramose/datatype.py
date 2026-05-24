@@ -7,11 +7,16 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 from calendar import monthrange
 from datetime import datetime, timedelta, timezone
 from re import compile as re_compile
 from sys import maxsize
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # ISO 8601 duration format: PnYnMnDTnHnMnS
 # Python's stdlib has no parser for this format, so we handle it manually.
@@ -106,11 +111,11 @@ def _add_duration(base: datetime, duration: _ISODuration) -> datetime:
 
 
 class DataType:
-    def __init__(self):
+    def __init__(self) -> None:
         """This class implements all the possible data types that can be used within
         the configuration file of RAMOSE. In particular, it provides methods for converting
         a string into the related Python data type representation."""
-        self.func = {
+        self.func: dict[str, Callable[[str | None], str | int | float | datetime]] = {
             "str": DataType.str,
             "int": DataType.int,
             "float": DataType.float,
@@ -118,12 +123,12 @@ class DataType:
             "datetime": DataType.datetime,
         }
 
-    def get_func(self, name_str: str):
+    def get_func(self, name_str: str) -> Callable[[str | None], str | int | float | datetime]:
         """This method returns the method for handling a given data type expressed as a string name."""
         return self.func[name_str]
 
     @staticmethod
-    def duration(s):
+    def duration(s: str | None) -> datetime:
         """This method returns the data type for durations according to the XML Schema
         Recommendation (https://www.w3.org/TR/xmlschema11-2/#duration) from the input string.
         In case the input string is None or it is empty, an high duration value
@@ -134,26 +139,26 @@ class DataType:
         return _add_duration(reference_date, duration)
 
     @staticmethod
-    def datetime(s):
+    def datetime(s: str | None) -> datetime:
         """This method returns the data type for datetime according to the ISO 8601
         (https://en.wikipedia.org/wiki/ISO_8601) from the input string. In case the input string is None or
         it is empty, a low date value (i.e. 0001-01-01) is returned."""
         return datetime(1, 1, 1, tzinfo=timezone.utc) if s is None or s == "" else _parse_datetime(s)
 
     @staticmethod
-    def str(s):
+    def str(s: str | None) -> str:
         """This method returns the data type for strings. In case the input string is None, an empty string
         is returned."""
         return "" if s is None else str(s).lower()
 
     @staticmethod
-    def int(s):
+    def int(s: str | None) -> int:
         """This method returns the data type for integer numbers from the input string. In case the input string is
         None or it is empty, a low integer value is returned."""
         return -maxsize if s is None or s == "" else int(s)
 
     @staticmethod
-    def float(s):
+    def float(s: str | None) -> float:
         """This method returns the data type for float numbers from the input string. In case the input string is
         None or it is empty, a low float value is returned."""
         return float(-maxsize) if s is None or s == "" else float(s)

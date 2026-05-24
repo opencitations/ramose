@@ -7,7 +7,9 @@
 #
 # SPDX-License-Identifier: ISC
 
-from argparse import ArgumentParser
+from __future__ import annotations
+
+from argparse import ArgumentParser, Namespace
 from csv import writer
 from http import HTTPStatus
 from io import StringIO
@@ -15,7 +17,7 @@ from json import dumps
 from pathlib import Path
 from urllib.parse import unquote
 
-from flask import Flask, make_response, request
+from flask import Flask, Response, make_response, request
 
 from ramose.api_manager import APIManager
 from ramose.html_documentation import HTMLDocumentationHandler
@@ -23,7 +25,7 @@ from ramose.openapi_documentation import OpenAPIDocumentationHandler
 from ramose.operation import Operation
 
 
-def _parse_args():  # pragma: no cover
+def _parse_args() -> Namespace:  # pragma: no cover
     arg_parser = ArgumentParser(
         "ramose",
         description="The 'Restful API Manager Over SPARQL Endpoints' (a.k.a. "
@@ -125,7 +127,12 @@ def _parse_args():  # pragma: no cover
     return arg_parser.parse_args()
 
 
-def _handle_openapi_export(api_url, api_manager, openapi_handler, fallback_page):  # pragma: no cover
+def _handle_openapi_export(  # pragma: no cover
+    api_url: str,
+    api_manager: APIManager,
+    openapi_handler: OpenAPIDocumentationHandler,
+    fallback_page: str,
+) -> Response | tuple[str, int]:
     base = api_url.rsplit("/", 1)[0]
     if "/" + base in api_manager.all_conf:
         status, yaml_content = openapi_handler.get_documentation(base_url=base)
@@ -137,7 +144,7 @@ def _handle_openapi_export(api_url, api_manager, openapi_handler, fallback_page)
     return fallback_page, 404
 
 
-def _build_error_response(status_code, error_message, content_type):  # pragma: no cover
+def _build_error_response(status_code: int, error_message: str, content_type: str) -> Response:  # pragma: no cover
     if content_type == "text/csv":
         csv_buffer = StringIO()
         csv_writer = writer(csv_buffer)
@@ -150,7 +157,7 @@ def _build_error_response(status_code, error_message, content_type):  # pragma: 
     return response
 
 
-def _handle_api_call(api_url, api_manager, content_type):  # pragma: no cover
+def _handle_api_call(api_url: str, api_manager: APIManager, content_type: str) -> Response:  # pragma: no cover
     full_call = "/" + api_url
     operation = api_manager.get_op(full_call + "?" + unquote(request.query_string.decode("utf8")))
     if isinstance(operation, Operation):
@@ -172,7 +179,13 @@ def _handle_api_call(api_url, api_manager, content_type):  # pragma: no cover
     return response
 
 
-def _run_webserver(api_manager, html_handler, openapi_handler, css_path, args):  # pragma: no cover
+def _run_webserver(  # pragma: no cover
+    api_manager: APIManager,
+    html_handler: HTMLDocumentationHandler,
+    openapi_handler: OpenAPIDocumentationHandler,
+    css_path: str | None,
+    args: Namespace,
+) -> None:
     html_handler.logger_ramose()
 
     host_name = args.webserver.rsplit(":", 1)[0] if ":" in args.webserver else "127.0.0.1"
@@ -184,11 +197,11 @@ def _run_webserver(api_manager, html_handler, openapi_handler, css_path, args): 
         args.call = args.call[1:]
 
     @app.route("/")
-    def home():
+    def home() -> str:
         return html_handler.get_index(css_path)
 
     @app.route("/<path:api_url>")
-    def doc(api_url):
+    def doc(api_url: str) -> Response | tuple[str, int] | str:
         if api_url.endswith(("openapi.yaml", "openapi.yml")):
             return _handle_openapi_export(api_url, api_manager, openapi_handler, html_handler.get_index(css_path))
 
@@ -206,7 +219,13 @@ def _run_webserver(api_manager, html_handler, openapi_handler, css_path, args): 
     app.run(host=str(host_name), debug=args.debug, port=int(port))
 
 
-def _run_cli(api_manager, html_handler, openapi_handler, css_path, args):  # pragma: no cover
+def _run_cli(  # pragma: no cover
+    api_manager: APIManager,
+    html_handler: HTMLDocumentationHandler,
+    openapi_handler: OpenAPIDocumentationHandler,
+    css_path: str | None,
+    args: Namespace,
+) -> None:
     if args.openapi:
         status, body = openapi_handler.get_documentation(base_url=args.api_base)
         content_type = "application/yaml"
@@ -227,7 +246,7 @@ def _run_cli(api_manager, html_handler, openapi_handler, css_path, args):  # pra
             output_file.write(body)
 
 
-def main():  # pragma: no cover
+def main() -> None:  # pragma: no cover
     args = _parse_args()
     cache_dir = None if args.no_cache else args.cache_dir
     api_manager = APIManager(args.spec, cache_dir=cache_dir, cache_ttl=args.cache_ttl)

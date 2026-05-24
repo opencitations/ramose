@@ -7,9 +7,12 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 import logging
 from pathlib import Path
 from re import findall, split, sub
+from typing import TYPE_CHECKING
 
 from markdown import markdown
 
@@ -17,21 +20,24 @@ from ramose._constants import FIELD_TYPE_RE, PARAM_NAME
 from ramose.documentation import DocumentationHandler
 from ramose.hash_format import parse_custom_params, parse_disable_params
 
+if TYPE_CHECKING:
+    from ramose.api_manager import APIConfig
+
 
 class HTMLDocumentationHandler(DocumentationHandler):
     # HTML documentation: START
-    def __title(self, conf):
+    def __title(self, conf: APIConfig) -> str:
         """This method returns the title string defined in the API specification."""
         return conf["conf_json"][0]["title"]
 
-    def __htmlmetadescription(self, conf):
+    def __htmlmetadescription(self, conf: APIConfig) -> str:
         """This method returns the HTML meta-description tag defined in the API specification."""
         desc = conf["conf_json"][0].get("html_meta_description")
         if desc:
             return f'<meta name="description" content="{desc}"/>'
         return ""  # pragma: no cover
 
-    def __sidebar(self, conf):
+    def __sidebar(self, conf: APIConfig) -> str:
         """This method builds the sidebar of the API documentation"""
         i = conf["conf_json"][0]
         ops_html = "".join(
@@ -50,7 +56,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
         </ul>
         """
 
-    def __header(self, conf):
+    def __header(self, conf: APIConfig) -> str:
         """This method builds the header of the API documentation"""
         i = conf["conf_json"][0]
         api_url = i["base"] + i["url"]
@@ -72,7 +78,54 @@ class HTMLDocumentationHandler(DocumentationHandler):
 {self.__parameters(conf)}"""
         return markdown(result)
 
-    def __parameters(self, conf):
+    _BUILTIN_PARAM_DOCS: tuple[tuple[str, str], ...] = (
+        (
+            "require",
+            "`require=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are "
+            "removed from the result set - e.g. `require=given_name` removes all the rows that do not have any "
+            "string specified in the `given_name` field.",
+        ),
+        (
+            "filter",
+            "`filter=<field_name>:<operator><value>`: only the rows compliant with `<value>` are kept in the "
+            "result set. The parameter `<operation>` is not mandatory. If `<operation>` is not specified, "
+            "`<value>` is interpreted as a regular expression, otherwise it is compared by means of the specified "
+            'operation. Possible operators are "=", "<", and ">". For instance, `filter=title:semantics?` returns '
+            'all the rows that contain the string "semantic" or "semantics" in the field `title`, while '
+            "`filter=date:>2016-05` returns all the rows that have a `date` greater than May 2016.",
+        ),
+        (
+            "sort",
+            '`sort=<order>(<field_name>)`: sort in ascending (`<order>` set to "asc") or descending (`<order>` '
+            'set to "desc") order the rows in the result set according to the values in `<field_name>`. For '
+            "instance, `sort=desc(date)` sorts all the rows according to the value specified in the field `date` "
+            "in descending order.",
+        ),
+        (
+            "format",
+            "`format=<format_type>`: the final table is returned in the format specified in `<format_type>` that "
+            'can be either "csv" or "json" - e.g. `format=csv` returns the final table in CSV format. This '
+            'parameter has higher priority of the type specified through the "Accept" header of the request. Thus, '
+            "if the header of a request to the API specifies `Accept: text/csv` and the URL of such request "
+            "includes `format=json`, the final table is returned in JSON.",
+        ),
+        (
+            "json",
+            '`json=<operation_type>("<separator>",<field>,<new_field_1>,<new_field_2>,...)`: in case a JSON format '
+            "is requested in return, tranform each row of the final JSON table according to the rule specified. "
+            'If `<operation_type>` is set to "array", the string value associated to the field name `<field>` is '
+            "converted into an array by splitting the various textual parts by means of `<separator>`. For "
+            'instance, considering the JSON table `[ { "names": "Doe, John; Doe, Jane" }, ... ]`, the execution '
+            'of `array("; ",names)` returns `[ { "names": [ "Doe, John", "Doe, Jane" ], ... ]`. Instead, if '
+            '`<operation_type>` is set to "dict", the string value associated to the field name `<field>` is '
+            "converted into a dictionary by splitting the various textual parts by means of `<separator>` and by "
+            "associating the new fields `<new_field_1>`, `<new_field_2>`, etc., to these new parts. For instance, "
+            'considering the JSON table `[ { "name": "Doe, John" }, ... ]`, the execution of '
+            '`dict(", ",name,fname,gname)` returns `[ { "name": { "fname": "Doe", "gname": "John" }, ... ]`.',
+        ),
+    )
+
+    def __parameters(self, conf: APIConfig) -> str:
         overridden: set[str] = set()
         api_meta = conf["conf_json"][0]
         if "disable_params" in api_meta:
@@ -83,51 +136,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
             if "disable_params" in op:
                 overridden.update(parse_disable_params(op["disable_params"]))
 
-        builtin_params = []
-        if "require" not in overridden:
-            builtin_params.append(
-                "`require=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are "
-                "removed from the result set - e.g. `require=given_name` removes all the rows that do not have any "
-                "string specified in the `given_name` field.",
-            )
-        if "filter" not in overridden:
-            builtin_params.append(
-                "`filter=<field_name>:<operator><value>`: only the rows compliant with `<value>` are kept in the "
-                "result set. The parameter `<operation>` is not mandatory. If `<operation>` is not specified, "
-                "`<value>` is interpreted as a regular expression, otherwise it is compared by means of the specified "
-                'operation. Possible operators are "=", "<", and ">". For instance, `filter=title:semantics?` returns '
-                'all the rows that contain the string "semantic" or "semantics" in the field `title`, while '
-                "`filter=date:>2016-05` returns all the rows that have a `date` greater than May 2016.",
-            )
-        if "sort" not in overridden:
-            builtin_params.append(
-                '`sort=<order>(<field_name>)`: sort in ascending (`<order>` set to "asc") or descending (`<order>` '
-                'set to "desc") order the rows in the result set according to the values in `<field_name>`. For '
-                "instance, `sort=desc(date)` sorts all the rows according to the value specified in the field `date` "
-                "in descending order.",
-            )
-        if "format" not in overridden:
-            builtin_params.append(
-                "`format=<format_type>`: the final table is returned in the format specified in `<format_type>` that "
-                'can be either "csv" or "json" - e.g. `format=csv` returns the final table in CSV format. This '
-                'parameter has higher priority of the type specified through the "Accept" header of the request. Thus, '
-                "if the header of a request to the API specifies `Accept: text/csv` and the URL of such request "
-                "includes `format=json`, the final table is returned in JSON.",
-            )
-        if "json" not in overridden:
-            builtin_params.append(
-                '`json=<operation_type>("<separator>",<field>,<new_field_1>,<new_field_2>,...)`: in case a JSON format '
-                "is requested in return, tranform each row of the final JSON table according to the rule specified. "
-                'If `<operation_type>` is set to "array", the string value associated to the field name `<field>` is '
-                "converted into an array by splitting the various textual parts by means of `<separator>`. For "
-                'instance, considering the JSON table `[ { "names": "Doe, John; Doe, Jane" }, ... ]`, the execution '
-                'of `array("; ",names)` returns `[ { "names": [ "Doe, John", "Doe, Jane" ], ... ]`. Instead, if '
-                '`<operation_type>` is set to "dict", the string value associated to the field name `<field>` is '
-                "converted into a dictionary by splitting the various textual parts by means of `<separator>` and by "
-                "associating the new fields `<new_field_1>`, `<new_field_2>`, etc., to these new parts. For instance, "
-                'considering the JSON table `[ { "name": "Doe, John" }, ... ]`, the execution of '
-                '`dict(", ",name,fname,gname)` returns `[ { "name": { "fname": "Doe", "gname": "John" }, ... ]`.',
-            )
+        builtin_params = [text for param_name, text in self._BUILTIN_PARAM_DOCS if param_name not in overridden]
 
         if not builtin_params:
             return ""
@@ -158,7 +167,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
 Example: `<api_operation_url>?require=doi&filter=date:>2015&sort=desc(date)`."""
         return markdown(result)
 
-    def __operations(self, conf):
+    def __operations(self, conf: APIConfig) -> str:
         """This method returns the description of all the operations defined in the API."""
         result = """## Operations [back to top](#toc)
 The operations that this API implements are:
@@ -219,7 +228,7 @@ The operations that this API implements are:
 {exemplar_html}</div>"""
         return markdown(result) + ops
 
-    def __footer(self):
+    def __footer(self) -> str:
         """This method returns the footer of the API documentation."""
         result = (
             "This API and the related documentation has been created with"
@@ -235,7 +244,7 @@ The operations that this API implements are:
         )
         return markdown(result)
 
-    def __css(self):
+    def __css(self) -> str:
         return (
             """
         @import url('https://fonts.googleapis.com/css2?family=Karla:wght@300;400&display=swap');
@@ -638,11 +647,11 @@ The operations that this API implements are:
         """
         )
 
-    def __css_path(self, css_path=None):
+    def __css_path(self, css_path: str | None = None) -> str:
         """Add link to a css file if specified in argument -css"""
         return f'<link rel="stylesheet" type="text/css" href=\'{css_path}\'>' if css_path else ""
 
-    def logger_ramose(self):  # pragma: no cover
+    def logger_ramose(self) -> None:  # pragma: no cover
         """This method adds logging info to a local file"""
         # logging
         log_formatter = logging.Formatter("[%(asctime)s] [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
@@ -656,7 +665,7 @@ The operations that this API implements are:
         console_handler.setFormatter(log_formatter)
         root_logger.addHandler(console_handler)
 
-    def __parse_logger_ramose(self):
+    def __parse_logger_ramose(self) -> str:
         """This method reads logging info stored into a local file, so as to be browsed in the dashboard.
         Returns: the html including the list of URLs of current working APIs and basic logging info"""
         try:
@@ -712,7 +721,13 @@ The operations that this API implements are:
                 """
         return html
 
-    def get_documentation(self, css_path=None, base_url=None):
+    def get_documentation(
+        self,
+        css_path: str | None = None,
+        base_url: str | None = None,
+        *_args: object,
+        **_dargs: object,
+    ) -> tuple[int, str]:
         """This method generates the HTML documentation of an API described in configuration file."""
         if base_url is None:
             first_key = next(iter(self.conf_doc))
@@ -741,7 +756,7 @@ The operations that this API implements are:
 </html>""",
         )
 
-    def get_index(self, css_path=None):
+    def get_index(self, css_path: str | None = None, *_args: object, **_dargs: object) -> str:
         """This method generates the index of all the HTML documentations that can be
         created from the configuration file."""
 
@@ -762,13 +777,19 @@ The operations that this API implements are:
             </html>
         """
 
-    def store_documentation(self, file_path, css_path=None):
+    def store_documentation(
+        self,
+        file_path: str,
+        css_path: str | None = None,
+        *_args: object,
+        **_dargs: object,
+    ) -> None:
         """This method stores the HTML documentation of an API in a file."""
         _, html = self.get_documentation(css_path)
         with Path(file_path).open("w") as f:
             f.write(html)
 
-    def clean_log(self, log_line, api_url):
+    def clean_log(self, log_line: str, api_url: str) -> str:
         """This method parses logs lines into structured data."""
         if "- - " not in log_line:
             return ""

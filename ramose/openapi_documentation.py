@@ -7,11 +7,15 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 import json
 import re
 from collections import OrderedDict
+from dataclasses import dataclass
 from pathlib import Path
 from re import findall, split
+from typing import TYPE_CHECKING, overload
 from urllib.parse import quote
 
 import yaml
@@ -20,7 +24,18 @@ from ramose._constants import FIELD_TYPE_RE, PARAM_NAME
 from ramose.documentation import DocumentationHandler
 from ramose.hash_format import parse_custom_params, parse_disable_params
 
+if TYPE_CHECKING:
+    from ramose.api_manager import APIConfig
+
 _MIN_QUOTED_LENGTH = 2
+
+
+@dataclass
+class _OpenAPIBuildContext:
+    tag_name: str
+    common_param_refs: list[dict[str, str]]
+    formats_enum: list[str]
+    api_disabled: set[str]
 
 
 class OpenAPIDocumentationHandler(DocumentationHandler):
@@ -38,14 +53,14 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     def _normalize_base_url(self, base_url: str) -> str:
         return base_url.removeprefix("/")
 
-    def _get_conf(self, base_url: str | None = None):
+    def _get_conf(self, base_url: str | None = None) -> APIConfig:
         if base_url is None:
             first_key = next(iter(self.conf_doc))
             return self.conf_doc[first_key]
         normalized = self._normalize_base_url(base_url)
         return self.conf_doc["/" + normalized]
 
-    def _schema_for_ramose_type(self, t):
+    def _schema_for_ramose_type(self, t: str | None) -> dict[str, str]:
         t = (t or "str").strip().lower()
         if t == "int":
             return {"type": "integer"}
@@ -58,7 +73,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             return {"type": "string", "format": "duration"}
         return {"type": "string"}
 
-    def _parse_param_type_shape(self, s):
+    def _parse_param_type_shape(self, s: str) -> tuple[str, str]:
         # expected "type(regex)"
         try:
             t, shape = findall(r"^\s*([^\(]+)\((.+)\)\s*$", s)[0]
@@ -66,7 +81,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         except (IndexError, ValueError):
             return "str", ".+"
 
-    def _guess_contact(self, contacts_value):
+    def _guess_contact(self, contacts_value: object) -> dict[str, str] | None:
         """
         Table 1: '#contacts <contact_url>' but in practice it's often an email.
         Prefer OpenAPI contact.email when it looks like an email.
@@ -78,7 +93,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             return {"email": c}
         return {"name": c}
 
-    def _clean_text(self, v):
+    def _clean_text(self, v: object) -> str | None:
         """
         Normalize text coming from .hf parsing so Swagger/ YAML render nicely:
         - remove wrapping quotes if they were included as part of the value
@@ -94,7 +109,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         # Convert literal backslash-n sequences to actual newlines
         return s.replace("\\n", "\n")
 
-    def _param_hint_from_preprocess(self, preprocess_str, param_name):
+    def _param_hint_from_preprocess(self, preprocess_str: object, param_name: str) -> str:
         """
         Table 2: preprocess functions like 'lower(doi) --> split_dois(dois)'.
         Not formalizable in OpenAPI, but helpful as a hint.
@@ -107,7 +122,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             return f"Note: input is pre-processed by RAMOSE: {s}"
         return ""
 
-    def _try_parse_output_json(self, output_json_value):
+    def _try_parse_output_json(self, output_json_value: str | None) -> object:
         """
         Table 2: '#output_json <ex_response>' (JSON example).
         """
@@ -121,7 +136,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     # -------------------------
     # Formats / media-types
     # -------------------------
-    def _collect_format_tokens(self, conf):
+    def _collect_format_tokens(self, conf: APIConfig) -> list[str]:
         # always supported by RAMOSE docs
         formats = {"csv", "json"}
         for op in conf["conf_json"][1:]:
@@ -139,7 +154,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                             formats.add(fmt)
         return sorted(formats)
 
-    def _media_type_for_format(self, fmt):
+    def _media_type_for_format(self, fmt: str) -> str | None:
         fmt = (fmt or "").strip().lower()
         mapping = {
             "json": "application/json",
@@ -158,7 +173,35 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         }
         return mapping.get(fmt)
 
-    def _build_response_content(self, ok_schema, formats_enum, ok_example=None, err_schema_ref=None):
+    @overload
+    def _build_response_content(
+        self,
+        ok_schema: dict[str, object],
+        formats_enum: list[str],
+        ok_example: object = ...,
+        err_schema_ref: None = ...,
+    ) -> OrderedDict[str, dict[str, object]]: ...
+
+    @overload
+    def _build_response_content(
+        self,
+        ok_schema: dict[str, object],
+        formats_enum: list[str],
+        ok_example: object = ...,
+        *,
+        err_schema_ref: str,
+    ) -> tuple[OrderedDict[str, dict[str, object]], OrderedDict[str, dict[str, object]]]: ...
+
+    def _build_response_content(
+        self,
+        ok_schema: dict[str, object],
+        formats_enum: list[str],
+        ok_example: object = None,
+        err_schema_ref: str | None = None,
+    ) -> (
+        OrderedDict[str, dict[str, object]]
+        | tuple[OrderedDict[str, dict[str, object]], OrderedDict[str, dict[str, object]]]
+    ):
         """
         Build OpenAPI 'content' dict for responses based on supported formats.
         JSON gets structured schema. Others are represented as string payloads.
@@ -195,7 +238,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     # -------------------------
     # Examples from #call
     # -------------------------
-    def _extract_param_examples_from_call(self, path_template, call_value):
+    def _extract_param_examples_from_call(self, path_template: str, call_value: object) -> dict[str, str]:
         """
         Given a template like '/metadata/{dois}' and a call like
         '/metadata/10.1/abc__10.2/xyz', return {'dois': '10.1/abc__10.2/xyz'}.
@@ -236,7 +279,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     # -------------------------
     # Schema from field_type
     # -------------------------
-    def _build_row_schema_from_field_type(self, field_type_str):
+    def _build_row_schema_from_field_type(self, field_type_str: str) -> dict[str, object]:
         props = OrderedDict()
         for t, f in findall(FIELD_TYPE_RE, field_type_str or ""):
             props[f] = self._schema_for_ramose_type(t)
@@ -245,7 +288,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     # -------------------------
     # Main builder
     # -------------------------
-    def _build_info(self, api_meta):
+    def _build_info(self, api_meta: dict[str, str]) -> OrderedDict[str, object]:
         """Build the OpenAPI info object from API metadata."""
         info: OrderedDict[str, object] = OrderedDict()
         info["title"] = api_meta.get("title", "RAMOSE API")
@@ -261,7 +304,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         return info
 
     @staticmethod
-    def _build_common_parameters(formats_enum):
+    def _build_common_parameters(formats_enum: list[str]) -> dict[str, dict[str, object]]:
         """Build the shared query parameter definitions."""
         return {
             "require": {
@@ -319,7 +362,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             },
         }
 
-    def _build_path_params(self, op, raw_path):
+    def _build_path_params(self, op: dict[str, str], raw_path: str) -> list[dict[str, object]]:
         """Build path parameter objects for an operation, including examples from #call."""
         path_params = []
         for p in findall(PARAM_NAME, raw_path):
@@ -347,7 +390,12 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         return path_params
 
-    def _build_operation_object(self, op, tag_name, path_params, common_param_refs, formats_enum, api_disabled=None):
+    def _build_operation_object(
+        self,
+        op: dict[str, str],
+        path_params: list[dict[str, object]],
+        ctx: _OpenAPIBuildContext,
+    ) -> OrderedDict[str, object]:
         """Build an OpenAPI operation object for a single HTTP method."""
         summary = op["description"].split("\n")[0].strip() if op.get("description") else ""
         desc = self._clean_text(op.get("description")) or ""
@@ -357,13 +405,13 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         ok_example = self._try_parse_output_json(op.get("output_json"))
         ok_content, err_content = self._build_response_content(
             ok_schema=ok_schema,
-            formats_enum=formats_enum,
+            formats_enum=ctx.formats_enum,
             ok_example=ok_example,
             err_schema_ref="#/components/schemas/Error",
         )
 
         op_obj: OrderedDict[str, object] = OrderedDict()
-        op_obj["tags"] = [tag_name]
+        op_obj["tags"] = [ctx.tag_name]
         op_obj["summary"] = summary
         op_obj["description"] = desc
         custom_query_params = []
@@ -381,12 +429,12 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                     param_obj["description"] = conf["description"]
                 custom_query_params.append(param_obj)
 
-        disabled_names = set(api_disabled) if api_disabled else set()
+        disabled_names = set(ctx.api_disabled)
         if "disable_params" in op:
             disabled_names |= parse_disable_params(op["disable_params"])
 
         suppressed = custom_names | disabled_names
-        filtered_refs = [ref for ref in common_param_refs if ref["$ref"].rsplit("/", 1)[-1] not in suppressed]
+        filtered_refs = [ref for ref in ctx.common_param_refs if ref["$ref"].rsplit("/", 1)[-1] not in suppressed]
         op_obj["parameters"] = path_params + custom_query_params + filtered_refs
         op_obj["responses"] = OrderedDict(
             [
@@ -397,7 +445,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         return op_obj
 
-    def _build_openapi(self, base_url=None):
+    def _build_openapi(self, base_url: str | None = None) -> OrderedDict[str, object]:
         conf = self._get_conf(base_url)
         api_meta = conf["conf_json"][0]
         formats_enum = self._collect_format_tokens(conf)
@@ -428,6 +476,13 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         api_disabled = parse_disable_params(api_meta["disable_params"]) if "disable_params" in api_meta else set()
 
+        ctx = _OpenAPIBuildContext(
+            tag_name=tag_name,
+            common_param_refs=common_param_refs,
+            formats_enum=formats_enum,
+            api_disabled=api_disabled,
+        )
+
         for op in conf["conf_json"][1:]:
             raw_path = op.get("url", "")
             if raw_path not in spec["paths"]:
@@ -437,21 +492,14 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
             methods = [mm.lower() for mm in split(r"\s+", op.get("method", "get").strip()) if mm]
             for m in methods:
-                spec["paths"][raw_path][m] = self._build_operation_object(
-                    op,
-                    tag_name,
-                    path_params,
-                    common_param_refs,
-                    formats_enum,
-                    api_disabled,
-                )
+                spec["paths"][raw_path][m] = self._build_operation_object(op, path_params, ctx)
 
         return spec
 
     # -------------------------
     # PyYAML compatibility
     # -------------------------
-    def _to_builtin(self, obj):
+    def _to_builtin(self, obj: object) -> object:
         """Recursively convert OrderedDict (and other non-builtin containers)
         to plain Python builtins so that yaml.safe_dump can serialize it."""
         if isinstance(obj, OrderedDict):
@@ -462,7 +510,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             return [self._to_builtin(v) for v in obj]
         return obj
 
-    def _dump_yaml(self, spec):
+    def _dump_yaml(self, spec: object) -> str:
         """
         Dump OpenAPI spec to YAML with nice formatting:
         - multiline strings become block scalars (|)
@@ -472,7 +520,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         class _RamoseYamlDumper(yaml.SafeDumper):
             pass
 
-        def _str_presenter(dumper, data):
+        def _str_presenter(dumper: yaml.SafeDumper, data: str) -> yaml.ScalarNode:
             if "\n" in data:
                 return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
             return dumper.represent_scalar("tag:yaml.org,2002:str", data)
@@ -480,17 +528,19 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         _RamoseYamlDumper.add_representer(str, _str_presenter)
         return yaml.dump(spec, Dumper=_RamoseYamlDumper, sort_keys=False, allow_unicode=True)
 
-    def get_documentation(self, base_url=None):
+    def get_documentation(self, base_url: str | None = None, *_args: object, **_dargs: object) -> tuple[int, str]:
         spec = self._build_openapi(base_url=base_url)
         spec = self._to_builtin(spec)
         yml = self._dump_yaml(spec)
         return 200, yml
 
-    def store_documentation(self, file_path, base_url=None):
+    def store_documentation(
+        self, file_path: str, base_url: str | None = None, *_args: object, **_dargs: object
+    ) -> None:
         yml = self.get_documentation(base_url=base_url)[1]
         with Path(file_path).open("w", encoding="utf8") as f:
             f.write(yml)
 
-    def get_index(self, *_args, **_dargs):
+    def get_index(self, *_args: object, **_dargs: object) -> str:
         # Not used by the current UI. Keep a minimal placeholder.
         return "OpenAPI exporter available."

@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 from math import ceil
 from typing import NamedTuple
 from urllib.parse import urlencode
@@ -20,7 +22,13 @@ class PaginationInfo(NamedTuple):
     last_url: str
 
 
-def build_pagination_info(base_path, query_params, page, page_size, total_items) -> PaginationInfo:
+def build_pagination_info(
+    base_path: str,
+    query_params: dict[str, list[str]],
+    page: int,
+    page_size: int,
+    total_items: int,
+) -> PaginationInfo:
     total_pages = ceil(total_items / page_size) if page_size > 0 else 0
     self_url = _page_url(base_path, query_params, page, page_size, total_items)
     next_url = _page_url(base_path, query_params, page + 1, page_size, total_items) if page < total_pages else ""
@@ -41,7 +49,7 @@ def build_link_header(pagination_info: PaginationInfo) -> str:
     return ", ".join(links)
 
 
-def _page_url(base_path, query_params, page, page_size, total_items):
+def _page_url(base_path: str, query_params: dict[str, list[str]], page: int, page_size: int, total_items: int) -> str:
     params = {k: v for k, v in query_params.items() if k not in _PAGINATION_KEYS}
     params["page"] = [str(page)]
     params["page_size"] = [str(page_size)]

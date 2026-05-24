@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path
@@ -22,7 +24,7 @@ class TestCustomFormatConversion:
     """Test pluggable format converters via the conv() method.
     Uses test_scholarly.hf which declares: #format upper,to_upper;dummyxml,to_dummyxml;xml,to_xml"""
 
-    def _make_op_with_formats(self):
+    def _make_op_with_formats(self) -> Operation:
         am = APIManager(
             [str(Path(TESTS_DIR) / "test_scholarly.hf")],
             endpoint_override="http://mock/sparql",
@@ -31,7 +33,7 @@ class TestCustomFormatConversion:
         assert isinstance(op, Operation)
         return op
 
-    def test_xml_format_via_query_string(self):
+    def test_xml_format_via_query_string(self) -> None:
         op = self._make_op_with_formats()
         csv_str = "qid,doi\nQ24260641,10.1108/JD-12-2013-0166\n"
         result, ct = op.conv(csv_str, {"format": ["xml"]})
@@ -40,20 +42,20 @@ class TestCustomFormatConversion:
         assert "<records>" in result
         assert "<qid>Q24260641</qid>" in result
 
-    def test_upper_format_via_query_string(self):
+    def test_upper_format_via_query_string(self) -> None:
         op = self._make_op_with_formats()
         csv_str = "name,age\nvergine,30\n"
         result, _ = op.conv(csv_str, {"format": ["upper"]})
         assert result == "NAME,AGE\nVERGINE,30\n"
 
-    def test_dummyxml_format_via_query_string(self):
+    def test_dummyxml_format_via_query_string(self) -> None:
         op = self._make_op_with_formats()
         csv_str = "name,age\nvergine,30\n"
         result, _ = op.conv(csv_str, {"format": ["dummyxml"]})
         assert "<xml>" in result
         assert "vergine" in result
 
-    def test_unknown_format_falls_back_to_csv(self):
+    def test_unknown_format_falls_back_to_csv(self) -> None:
         op = self._make_op_with_formats()
         csv_str = "name,age\nvergine,30\n"
         result, ct = op.conv(csv_str, {"format": ["nonexistent"]})
@@ -62,7 +64,7 @@ class TestCustomFormatConversion:
 
 
 class TestDefaultFormat:
-    def test_default_format_used_when_no_query_param(self):
+    def test_default_format_used_when_no_query_param(self) -> None:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
@@ -74,23 +76,24 @@ class TestDefaultFormat:
 
         class FakeAddon:
             @staticmethod
-            def to_upper(csv_str, request_url=""):
+            def to_upper(csv_str: str, request_url: str = "") -> str:
                 return csv_str.upper()
 
         op = Operation(
             "/api/test/hello",
             r"/api/test/(.+)",
             op_item,
-            "http://unused/sparql",
-            "get",
-            FakeAddon,
-            OperationConfig(format_map={"upper": "to_upper"}),
+            OperationConfig(
+                sparql_endpoint="http://unused/sparql",
+                addon=FakeAddon,  # type: ignore[arg-type]
+                format_map={"upper": "to_upper"},
+            ),
         )
         csv_str = "name,age\narcangelo,30\n"
         result, _ = op.conv(csv_str, {})
         assert result == "NAME,AGE\nARCANGELO,30\n"
 
-    def test_explicit_format_overrides_default(self):
+    def test_explicit_format_overrides_default(self) -> None:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
@@ -102,28 +105,29 @@ class TestDefaultFormat:
 
         class FakeAddon:
             @staticmethod
-            def to_upper(csv_str, request_url=""):
+            def to_upper(csv_str: str, request_url: str = "") -> str:
                 return csv_str.upper()
 
             @staticmethod
-            def to_dummyxml(csv_str, request_url=""):
+            def to_dummyxml(csv_str: str, request_url: str = "") -> str:
                 return f"<xml>\n{csv_str}\n</xml>"
 
         op = Operation(
             "/api/test/hello",
             r"/api/test/(.+)",
             op_item,
-            "http://unused/sparql",
-            "get",
-            FakeAddon,
-            OperationConfig(format_map={"upper": "to_upper", "dummyxml": "to_dummyxml"}),
+            OperationConfig(
+                sparql_endpoint="http://unused/sparql",
+                addon=FakeAddon,  # type: ignore[arg-type]
+                format_map={"upper": "to_upper", "dummyxml": "to_dummyxml"},
+            ),
         )
         csv_str = "name,age\narcangelo,30\n"
         result, _ = op.conv(csv_str, {"format": ["dummyxml"]})
         assert "<xml>" in result
         assert "arcangelo" in result
 
-    def test_default_format_json(self):
+    def test_default_format_json(self) -> None:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
@@ -136,16 +140,14 @@ class TestDefaultFormat:
             "/api/test/hello",
             r"/api/test/(.+)",
             op_item,
-            "http://unused/sparql",
-            "get",
-            None,
+            OperationConfig(sparql_endpoint="http://unused/sparql"),
         )
         csv_str = "name\narcangelo\n"
         result, ct = op.conv(csv_str, {})
         assert ct == "application/json"
         assert json.loads(result) == [{"name": "arcangelo"}]
 
-    def test_no_default_format_falls_back_to_csv(self):
+    def test_no_default_format_falls_back_to_csv(self) -> None:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
@@ -157,9 +159,7 @@ class TestDefaultFormat:
             "/api/test/hello",
             r"/api/test/(.+)",
             op_item,
-            "http://unused/sparql",
-            "get",
-            None,
+            OperationConfig(sparql_endpoint="http://unused/sparql"),
         )
         csv_str = "name\narcangelo\n"
         result, ct = op.conv(csv_str, {})
@@ -168,7 +168,7 @@ class TestDefaultFormat:
 
 
 class TestCustomFormatThroughExec:
-    def test_xml_output_through_exec(self):
+    def test_xml_output_through_exec(self) -> None:
         am = APIManager(
             [str(Path(TESTS_DIR) / "test_scholarly.hf")],
             endpoint_override="http://mock/sparql",
@@ -197,7 +197,7 @@ class TestCustomFormatThroughExec:
 
 
 class TestAPIManagerConfigParsing:
-    def test_addon_loaded(self):
+    def test_addon_loaded(self) -> None:
         am = APIManager(
             [str(Path(TESTS_DIR) / "test_scholarly.hf")],
             endpoint_override="http://mock/sparql",
@@ -209,7 +209,7 @@ class TestAPIManagerConfigParsing:
         assert hasattr(addon, "to_upper")
         assert hasattr(addon, "to_dummyxml")
 
-    def test_format_map_built_correctly(self):
+    def test_format_map_built_correctly(self) -> None:
         am = APIManager(
             [str(Path(TESTS_DIR) / "test_scholarly.hf")],
             endpoint_override="http://mock/sparql",
@@ -220,7 +220,7 @@ class TestAPIManagerConfigParsing:
 
 
 class TestSparqlAnythingSingleQueryExec:
-    def test_sparql_anything_engine_exec(self):
+    def test_sparql_anything_engine_exec(self) -> None:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
@@ -232,10 +232,12 @@ class TestSparqlAnythingSingleQueryExec:
             "/api/test/hello",
             r"/api/test/(.+)",
             op_item,
-            "http://unused/sparql",
-            "get",
-            None,
-            OperationConfig(format_map={}, sources_map={}, engine="sparql-anything"),
+            OperationConfig(
+                sparql_endpoint="http://unused/sparql",
+                format_map={},
+                sources_map={},
+                engine="sparql-anything",
+            ),
         )
 
         with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"title": "Test Paper"}]):
@@ -249,7 +251,7 @@ class TestSparqlAnythingSingleQueryExec:
 
 
 class TestRunSparqlAnythingDictsNormalization:
-    def _make_op(self):
+    def _make_op(self) -> Operation:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
@@ -261,20 +263,17 @@ class TestRunSparqlAnythingDictsNormalization:
             "/api/test/v",
             r"/api/test/(.+)",
             op_item,
-            "http://ep/sparql",
-            "get",
-            None,
-            OperationConfig(engine="sparql-anything"),
+            OperationConfig(sparql_endpoint="http://ep/sparql", engine="sparql-anything"),
         )
 
-    def test_list_of_dicts(self):
+    def test_list_of_dicts(self) -> None:
         op = self._make_op()
         with patch("pysparql_anything.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = [{"x": "a"}, {"x": "b"}]
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "a"}, {"x": "b"}]
 
-    def test_sparql_json_resultset(self):
+    def test_sparql_json_resultset(self) -> None:
         op = self._make_op()
         sparql_result = {
             "head": {"vars": ["x", "y"]},
@@ -292,7 +291,7 @@ class TestRunSparqlAnythingDictsNormalization:
         assert rows[0] == {"x": "a", "y": "1"}
         assert rows[1] == {"x": "b", "y": "2"}
 
-    def test_columnar_dict(self):
+    def test_columnar_dict(self) -> None:
         op = self._make_op()
         with patch("pysparql_anything.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = {"x": ["a", "b"], "y": ["1", "2"]}
@@ -301,28 +300,28 @@ class TestRunSparqlAnythingDictsNormalization:
         assert rows[0] == {"x": "a", "y": "1"}
         assert rows[1] == {"x": "b", "y": "2"}
 
-    def test_single_dict_fallback(self):
+    def test_single_dict_fallback(self) -> None:
         op = self._make_op()
         with patch("pysparql_anything.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = {"x": "a"}
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "a"}]
 
-    def test_non_dict_result(self):
+    def test_non_dict_result(self) -> None:
         op = self._make_op()
         with patch("pysparql_anything.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = "raw_string"
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"result": "raw_string"}]
 
-    def test_list_of_non_dicts_coerced(self):
+    def test_list_of_non_dicts_coerced(self) -> None:
         op = self._make_op()
         with patch("pysparql_anything.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = [[("x", "a")], [("x", "b")]]
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "a"}, {"x": "b"}]
 
-    def test_sparql_json_non_dict_cell(self):
+    def test_sparql_json_non_dict_cell(self) -> None:
         op = self._make_op()
         sparql_result = {
             "head": {"vars": ["x"]},
@@ -337,7 +336,7 @@ class TestRunSparqlAnythingDictsNormalization:
             rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
         assert rows == [{"x": "plain_value"}]
 
-    def test_columnar_dict_with_scalar(self):
+    def test_columnar_dict_with_scalar(self) -> None:
         op = self._make_op()
         with patch("pysparql_anything.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = {"x": ["a", "b"], "label": "fixed"}
@@ -346,7 +345,7 @@ class TestRunSparqlAnythingDictsNormalization:
         assert rows[0] == {"x": "a", "label": "fixed"}
         assert rows[1] == {"x": "b", "label": "fixed"}
 
-    def test_values_param_passed(self):
+    def test_values_param_passed(self) -> None:
         op = self._make_op()
         with patch("pysparql_anything.SparqlAnything") as mock_sa:
             mock_sa.return_value.select.return_value = [{"x": "a"}]
@@ -356,7 +355,7 @@ class TestRunSparqlAnythingDictsNormalization:
 
 
 class TestRunQueryDictsDispatch:
-    def _make_op(self, engine="sparql"):
+    def _make_op(self, engine: str = "sparql") -> Operation:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
@@ -368,13 +367,10 @@ class TestRunQueryDictsDispatch:
             "/api/test/v",
             r"/api/test/(.+)",
             op_item,
-            "http://ep/sparql",
-            "get",
-            None,
-            OperationConfig(engine=engine),
+            OperationConfig(sparql_endpoint="http://ep/sparql", engine=engine),
         )
 
-    def test_op_level_sparql_anything_engine(self):
+    def test_op_level_sparql_anything_engine(self) -> None:
         op = self._make_op(engine="sparql-anything")
         with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"x": "1"}]) as mock_sa:
             rows = op._run_query_dicts("http://some-endpoint/sparql", "SELECT ?x WHERE { }")
@@ -383,10 +379,12 @@ class TestRunQueryDictsDispatch:
 
 
 class TestSparqlAnythingSingleQueryWithAddon:
-    def test_postprocess_called(self):
+    def test_postprocess_called(self) -> None:
         class FakeAddon:
             @staticmethod
-            def my_post(result):
+            def my_post(
+                result: list[list[str] | list[tuple[object, str]]],
+            ) -> tuple[list[list[str] | list[tuple[object, str]]], bool]:
                 return result, False
 
         op_item = {
@@ -401,10 +399,13 @@ class TestSparqlAnythingSingleQueryWithAddon:
             "/api/test/hello",
             r"/api/test/(.+)",
             op_item,
-            "http://unused/sparql",
-            "get",
-            FakeAddon,
-            OperationConfig(format_map={}, sources_map={}, engine="sparql-anything"),
+            OperationConfig(
+                sparql_endpoint="http://unused/sparql",
+                addon=FakeAddon,  # type: ignore[arg-type]
+                format_map={},
+                sources_map={},
+                engine="sparql-anything",
+            ),
         )
 
         with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"title": "Test"}]):
@@ -414,7 +415,7 @@ class TestSparqlAnythingSingleQueryWithAddon:
 
 
 class TestInjectValuesNoWhereBrace:
-    def _make_op(self):
+    def _make_op(self) -> Operation:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
@@ -422,12 +423,12 @@ class TestInjectValuesNoWhereBrace:
             "method": "get",
             "field_type": "str(x)",
         }
-        return Operation("/api/test/v", r"/api/test/(.+)", op_item, "http://ep/sparql", "get", None)
+        return Operation("/api/test/v", r"/api/test/(.+)", op_item, OperationConfig(sparql_endpoint="http://ep/sparql"))
 
-    def test_no_brace_puts_values_at_top(self):
+    def test_no_brace_puts_values_at_top(self) -> None:
         op = self._make_op()
         acc = [{"x": "val"}]
         query = "CONSTRUCT WHERE SOMETHING"
-        result = op._inject_values_clause(query, ["?x"], acc)
+        result = op._inject_values_clause(query, ["?x"], acc)  # type: ignore[arg-type]
         assert result.startswith("VALUES (?x)")
         assert "CONSTRUCT WHERE SOMETHING" in result

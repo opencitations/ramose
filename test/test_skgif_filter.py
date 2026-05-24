@@ -2,11 +2,13 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 import json
 
 import yaml
 
-from ramose import APIManager, HTMLDocumentationHandler, OpenAPIDocumentationHandler
+from ramose import APIManager, HTMLDocumentationHandler, OpenAPIDocumentationHandler, Operation
 from ramose.hash_format import BUILTIN_PARAMS
 
 
@@ -35,13 +37,13 @@ def _exec_raw(skgif_api_manager: APIManager, url: str) -> tuple[int, str]:
 
 
 class TestNoFilter:
-    def test_returns_all_products(self, skgif_api_manager):
+    def test_returns_all_products(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products")
         assert len(results) == 1098
 
 
 class TestTitleFilter:
-    def test_title_search_matches_content(self, skgif_api_manager):
+    def test_title_search_matches_content(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:adaptive")
         assert results == [
             {
@@ -71,13 +73,13 @@ class TestTitleFilter:
             },
         ]
 
-    def test_title_search_no_match(self, skgif_api_manager):
+    def test_title_search_no_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:xyznonexistent999")
         assert results == []
 
 
 class TestIdentifierFilter:
-    def test_filter_by_identifier_scheme(self, skgif_api_manager):
+    def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=identifiers.scheme:isbn")
         assert results == [
             {
@@ -136,7 +138,7 @@ class TestIdentifierFilter:
             },
         ]
 
-    def test_filter_by_identifier_value(self, skgif_api_manager):
+    def test_filter_by_identifier_value(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=identifiers.id:9781402096327")
         assert results == [
             {
@@ -149,7 +151,7 @@ class TestIdentifierFilter:
 
 
 class TestCombinedFilters:
-    def test_title_and_scheme_combined(self, skgif_api_manager):
+    def test_title_and_scheme_combined(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.search.title:adaptive,identifiers.scheme:isbn",
@@ -165,30 +167,30 @@ class TestCombinedFilters:
 
 
 class TestProductTypeFilter:
-    def test_literature_returns_all(self, skgif_api_manager):
+    def test_literature_returns_all(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:literature")
         assert len(results) == 1098
 
-    def test_research_data_returns_empty(self, skgif_api_manager):
+    def test_research_data_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:research data")
         assert results == []
 
-    def test_research_software_returns_empty(self, skgif_api_manager):
+    def test_research_software_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:research software")
         assert results == []
 
-    def test_other_returns_empty(self, skgif_api_manager):
+    def test_other_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:other")
         assert results == []
 
-    def test_invalid_type_returns_error(self, skgif_api_manager):
+    def test_invalid_type_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, result = _exec_raw(skgif_api_manager, "/skgif/v1/products?filter=product_type:nonexistent")
         assert status == 400
         assert "The product type 'nonexistent' is not valid" in result
 
 
 class TestContributorFamilyNameFilter:
-    def test_family_name_match(self, skgif_api_manager):
+    def test_family_name_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.family_name:Slotkin")
         assert results == [
             {
@@ -207,7 +209,7 @@ class TestContributorFamilyNameFilter:
 
 
 class TestContributorGivenNameFilter:
-    def test_given_name_match(self, skgif_api_manager):
+    def test_given_name_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.given_name:Theodore A.")
         assert results == [
             {
@@ -226,7 +228,7 @@ class TestContributorGivenNameFilter:
 
 
 class TestContributorNameFilter:
-    def test_org_name_match(self, skgif_api_manager):
+    def test_org_name_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.name:Zenodo")
         assert results == [
             {
@@ -258,7 +260,7 @@ class TestContributorNameFilter:
 
 
 class TestContributorLocalIdentifierFilter:
-    def test_local_identifier_match(self, skgif_api_manager):
+    def test_local_identifier_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=contributions.by.local_identifier:https://w3id.org/oc/meta/ra/0601",
@@ -280,13 +282,13 @@ class TestContributorLocalIdentifierFilter:
 
 
 class TestContributorIdentifierSchemeFilter:
-    def test_orcid_scheme_match(self, skgif_api_manager):
+    def test_orcid_scheme_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.identifiers.scheme:orcid")
         assert len(results) == 73
 
 
 class TestContributionsOrcidFilter:
-    def test_specific_orcid_match(self, skgif_api_manager):
+    def test_specific_orcid_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.contributions_orcid:0000-0003-4747-4708",
@@ -307,7 +309,7 @@ class TestContributionsOrcidFilter:
 
 
 class TestCombinedContributorFilters:
-    def test_family_and_given_name_same_agent(self, skgif_api_manager):
+    def test_family_and_given_name_same_agent(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=contributions.by.family_name:Slotkin,contributions.by.given_name:Theodore A.",
@@ -329,7 +331,7 @@ class TestCombinedContributorFilters:
 
 
 class TestUnsupportedFilter:
-    def test_unknown_filter_returns_error(self, skgif_api_manager):
+    def test_unknown_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, result = _exec_raw(
             skgif_api_manager,
             "/skgif/v1/products?filter=unsupported_field:value",
@@ -356,28 +358,28 @@ class TestUnsupportedFilter:
         )
         assert result.startswith(expected_prefix)
 
-    def test_unsupported_affiliation_filter_returns_empty(self, skgif_api_manager):
+    def test_unsupported_affiliation_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=contributions.declared_affiliations.name:MIT",
         )
         assert results == []
 
-    def test_unsupported_title_abstract_returns_empty(self, skgif_api_manager):
+    def test_unsupported_title_abstract_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.search.title_abstract:adaptive",
         )
         assert results == []
 
-    def test_unsupported_combined_with_supported_returns_empty(self, skgif_api_manager):
+    def test_unsupported_combined_with_supported_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.search.title:adaptive,cf.search.title_abstract:test",
         )
         assert results == []
 
-    def test_unsupported_funding_filter_returns_empty(self, skgif_api_manager):
+    def test_unsupported_funding_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=funding.local_identifier:some-grant",
@@ -386,29 +388,29 @@ class TestUnsupportedFilter:
 
 
 class TestCitesFilter:
-    def test_cites_returns_citing_products(self, skgif_api_manager):
+    def test_cites_returns_citing_products(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035")
         local_identifiers = [r["local_identifier"] for r in results]
         assert local_identifiers == ["https://w3id.org/oc/meta/br/0601"]
 
-    def test_cites_no_match(self, skgif_api_manager):
+    def test_cites_no_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/9999999")
         assert results == []
 
 
 class TestCitedByFilter:
-    def test_cited_by_returns_cited_products(self, skgif_api_manager):
+    def test_cited_by_returns_cited_products(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by:https://w3id.org/oc/meta/br/0601")
         local_identifiers = [r["local_identifier"] for r in results]
         assert local_identifiers == ["https://w3id.org/oc/meta/br/06035"]
 
-    def test_cited_by_no_match(self, skgif_api_manager):
+    def test_cited_by_no_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by:https://w3id.org/oc/meta/br/9999999")
         assert results == []
 
 
 class TestCitesDoiFilter:
-    def test_cites_doi_resolves_and_returns(self, skgif_api_manager):
+    def test_cites_doi_resolves_and_returns(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.cites_doi:10.1002/(sici)1097-0215(20000115)85:2<176::aid-ijc5>3.0.co;2-e",
@@ -416,13 +418,13 @@ class TestCitesDoiFilter:
         local_identifiers = [r["local_identifier"] for r in results]
         assert local_identifiers == ["https://w3id.org/oc/meta/br/0601"]
 
-    def test_cites_doi_no_match(self, skgif_api_manager):
+    def test_cites_doi_no_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cites_doi:10.9999/nonexistent")
         assert results == []
 
 
 class TestCitedByDoiFilter:
-    def test_cited_by_doi_resolves_and_returns(self, skgif_api_manager):
+    def test_cited_by_doi_resolves_and_returns(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.cited_by_doi:10.1002/(sici)1096-9926(199910)60:4<177::aid-tera1>3.0.co;2-z",
@@ -430,13 +432,13 @@ class TestCitedByDoiFilter:
         local_identifiers = [r["local_identifier"] for r in results]
         assert local_identifiers == ["https://w3id.org/oc/meta/br/06035"]
 
-    def test_cited_by_doi_no_match(self, skgif_api_manager):
+    def test_cited_by_doi_no_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by_doi:10.9999/nonexistent")
         assert results == []
 
 
 class TestMixedCitationAndRegularFilter:
-    def test_cites_with_title_filter(self, skgif_api_manager):
+    def test_cites_with_title_filter(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035,cf.search.title:Response",
@@ -444,7 +446,7 @@ class TestMixedCitationAndRegularFilter:
         local_identifiers = [r["local_identifier"] for r in results]
         assert local_identifiers == ["https://w3id.org/oc/meta/br/0601"]
 
-    def test_cites_with_nonmatching_title(self, skgif_api_manager):
+    def test_cites_with_nonmatching_title(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035,cf.search.title:xyznonexistent",
@@ -453,7 +455,7 @@ class TestMixedCitationAndRegularFilter:
 
 
 class TestBuiltinFilterOverride:
-    def test_skgif_filter_overrides_builtin(self, skgif_api_manager):
+    def test_skgif_filter_overrides_builtin(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:adaptive")
         assert results == [
             {
@@ -485,7 +487,7 @@ class TestBuiltinFilterOverride:
 
 
 class TestCustomParamsInDocumentation:
-    def test_filter_in_openapi(self, skgif_api_manager):
+    def test_filter_in_openapi(self, skgif_api_manager: APIManager) -> None:
         handler = OpenAPIDocumentationHandler(skgif_api_manager)
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
@@ -496,7 +498,7 @@ class TestCustomParamsInDocumentation:
         assert filter_param["required"] is False
         assert "cf.search.title" in filter_param["description"]
 
-    def test_builtin_params_absent_from_openapi(self, skgif_api_manager):
+    def test_builtin_params_absent_from_openapi(self, skgif_api_manager: APIManager) -> None:
         handler = OpenAPIDocumentationHandler(skgif_api_manager)
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
@@ -506,19 +508,19 @@ class TestCustomParamsInDocumentation:
                 for builtin in BUILTIN_PARAMS:
                     assert builtin not in ref_names
 
-    def test_builtin_params_absent_from_html(self, skgif_api_manager):
+    def test_builtin_params_absent_from_html(self, skgif_api_manager: APIManager) -> None:
         handler = HTMLDocumentationHandler(skgif_api_manager)
         _, html = handler.get_documentation()
         assert "require=" not in html
         assert "sort=" not in html
         assert 'id="parameters"' not in html
 
-    def test_result_fields_type_hidden_with_custom_default_format(self, skgif_api_manager):
+    def test_result_fields_type_hidden_with_custom_default_format(self, skgif_api_manager: APIManager) -> None:
         handler = HTMLDocumentationHandler(skgif_api_manager)
         _, html = handler.get_documentation()
         assert "Result fields type" not in html
 
-    def test_mock_endpoints_in_openapi(self, skgif_api_manager):
+    def test_mock_endpoints_in_openapi(self, skgif_api_manager: APIManager) -> None:
         handler = OpenAPIDocumentationHandler(skgif_api_manager)
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
@@ -526,7 +528,7 @@ class TestCustomParamsInDocumentation:
             assert f"/{entity}" in spec["paths"]
             assert f"/{entity}/{{local_identifier}}" in spec["paths"]
 
-    def test_mock_list_endpoints_have_filter_param(self, skgif_api_manager):
+    def test_mock_list_endpoints_have_filter_param(self, skgif_api_manager: APIManager) -> None:
         handler = OpenAPIDocumentationHandler(skgif_api_manager)
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
@@ -537,55 +539,55 @@ class TestCustomParamsInDocumentation:
 
 
 class TestGrantsEndpoints:
-    def test_list_returns_empty(self, skgif_api_manager):
+    def test_list_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/grants")
         assert results == []
 
-    def test_list_with_filter_returns_empty(self, skgif_api_manager):
+    def test_list_with_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/grants?filter=grant_number:12345")
         assert results == []
 
-    def test_list_invalid_filter_returns_error(self, skgif_api_manager):
+    def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/grants?filter=invalid_field:value")
         assert status == 400
 
-    def test_single_returns_404(self, skgif_api_manager):
+    def test_single_returns_404(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/grants/example-id")
         assert status == 404
 
 
 class TestTopicsEndpoints:
-    def test_list_returns_empty(self, skgif_api_manager):
+    def test_list_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/topics")
         assert results == []
 
-    def test_list_with_filter_returns_empty(self, skgif_api_manager):
+    def test_list_with_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/topics?filter=cf.search.labels:biology")
         assert results == []
 
-    def test_list_invalid_filter_returns_error(self, skgif_api_manager):
+    def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/topics?filter=invalid_field:value")
         assert status == 400
 
-    def test_single_returns_404(self, skgif_api_manager):
+    def test_single_returns_404(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/topics/example-id")
         assert status == 404
 
 
 class TestDatasourcesEndpoints:
-    def test_list_returns_empty(self, skgif_api_manager):
+    def test_list_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/datasources")
         assert results == []
 
-    def test_list_with_filter_returns_empty(self, skgif_api_manager):
+    def test_list_with_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/datasources?filter=research_product_type:literature")
         assert results == []
 
-    def test_list_invalid_filter_returns_error(self, skgif_api_manager):
+    def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/datasources?filter=invalid_field:value")
         assert status == 400
 
-    def test_single_returns_404(self, skgif_api_manager):
+    def test_single_returns_404(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/datasources/example-id")
         assert status == 404
 
@@ -599,15 +601,16 @@ SKGIF_CONTEXT = [
 TOTAL_PRODUCTS = 1098
 
 
-def _envelope(skgif_api_manager, url):
+def _envelope(skgif_api_manager: APIManager, url: str) -> dict:
     op = skgif_api_manager.get_op(url)
+    assert isinstance(op, Operation)
     status, result, _, _ = op.exec(method="get", content_type="application/json")
     assert status == 200
     return json.loads(result)
 
 
 class TestSkgifEnvelope:
-    def test_envelope_without_pagination(self, skgif_api_manager):
+    def test_envelope_without_pagination(self, skgif_api_manager: APIManager) -> None:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:adaptive")
         assert result["@context"] == SKGIF_CONTEXT
         assert result["meta"] == {
@@ -629,7 +632,7 @@ class TestSkgifEnvelope:
         }
         assert len(result["@graph"]) == 3
 
-    def test_envelope_first_page(self, skgif_api_manager):
+    def test_envelope_first_page(self, skgif_api_manager: APIManager) -> None:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?page_size=10")
         meta = result["meta"]
         assert meta["entity_type"] == "search_result_page"
@@ -654,7 +657,7 @@ class TestSkgifEnvelope:
         }
         assert len(result["@graph"]) == 10
 
-    def test_envelope_middle_page(self, skgif_api_manager):
+    def test_envelope_middle_page(self, skgif_api_manager: APIManager) -> None:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?page=2&page_size=10")
         meta = result["meta"]
         assert meta["local_identifier"] == "/skgif/v1/products?page=2&page_size=10"
@@ -662,7 +665,7 @@ class TestSkgifEnvelope:
         assert meta["prev_page"]["local_identifier"] == "/skgif/v1/products?page=1&page_size=10"
         assert len(result["@graph"]) == 10
 
-    def test_envelope_last_page(self, skgif_api_manager):
+    def test_envelope_last_page(self, skgif_api_manager: APIManager) -> None:
         last_page = -(-TOTAL_PRODUCTS // 10)
         result = _envelope(skgif_api_manager, f"/skgif/v1/products?page={last_page}&page_size=10")
         meta = result["meta"]
@@ -670,7 +673,7 @@ class TestSkgifEnvelope:
         assert meta["prev_page"]["local_identifier"] == f"/skgif/v1/products?page={last_page - 1}&page_size=10"
         assert meta["part_of"]["total_items"] == TOTAL_PRODUCTS
 
-    def test_envelope_with_filter_and_pagination(self, skgif_api_manager):
+    def test_envelope_with_filter_and_pagination(self, skgif_api_manager: APIManager) -> None:
         result = _envelope(
             skgif_api_manager,
             "/skgif/v1/products?filter=identifiers.scheme:isbn&page=1&page_size=5",
@@ -680,13 +683,14 @@ class TestSkgifEnvelope:
         assert meta["part_of"]["local_identifier"] == "/skgif/v1/products?filter=identifiers.scheme%3Aisbn"
         assert len(result["@graph"]) == 5
 
-    def test_envelope_page_beyond_total_returns_400(self, skgif_api_manager):
+    def test_envelope_page_beyond_total_returns_400(self, skgif_api_manager: APIManager) -> None:
         op = skgif_api_manager.get_op("/skgif/v1/products?page=9999&page_size=10")
+        assert isinstance(op, Operation)
         status, _, ctype, _ = op.exec(method="get", content_type="application/json")
         assert status == 400
         assert ctype == "text/plain"
 
-    def test_single_product_with_pagination_counts_entities_not_rows(self, skgif_api_manager):
+    def test_single_product_with_pagination_counts_entities_not_rows(self, skgif_api_manager: APIManager) -> None:
         base_url = "/skgif/v1/products/https://w3id.org/oc/meta/br/0612058700"
         without_pagination = _envelope(skgif_api_manager, base_url)
         with_pagination = _envelope(skgif_api_manager, f"{base_url}?page_size=10&page=1")
@@ -694,6 +698,6 @@ class TestSkgifEnvelope:
         assert "next_page" not in with_pagination["meta"]
         assert with_pagination["@graph"] == without_pagination["@graph"]
 
-    def test_envelope_context_structure(self, skgif_api_manager):
+    def test_envelope_context_structure(self, skgif_api_manager: APIManager) -> None:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?page_size=5")
         assert result["@context"] == SKGIF_CONTEXT

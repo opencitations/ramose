@@ -2,12 +2,17 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 import json
+from typing import TYPE_CHECKING
 
 import pytest
 
-from ramose import APIManager
 from ramose.skgif_addon import _build_agent, _build_grant, _build_org, _build_venue
+
+if TYPE_CHECKING:
+    from ramose import APIManager
 
 
 def _execute(manager: APIManager, local_identifier: str) -> dict:
@@ -23,7 +28,7 @@ def _execute(manager: APIManager, local_identifier: str) -> dict:
 
 
 class TestMissingLangColumns:
-    def test_title_without_title_lang_uses_structured_format(self, skgif_edge_api_manager):
+    def test_title_without_title_lang_uses_structured_format(self, skgif_edge_api_manager: APIManager) -> None:
         response = _execute(skgif_edge_api_manager, "https://w3id.org/oc/meta/br/0601")
         product = response["@graph"][0]
         assert "titles" in product, "Expected structured 'titles' field, got flat 'title' instead"
@@ -38,7 +43,7 @@ class TestMissingLangColumns:
 
 
 class TestMissingLocalIdentifier:
-    def test_agent_without_local_identifier_raises(self):
+    def test_agent_without_local_identifier_raises(self) -> None:
         row = {
             "contribution_by_family_name": "Doe",
             "contribution_by_given_name": "Jane",
@@ -51,7 +56,7 @@ class TestMissingLocalIdentifier:
         with pytest.raises(ValueError, match="Missing required local_identifier for person 'Doe, Jane'"):
             _build_agent(row)
 
-    def test_organisation_without_local_identifier_raises(self):
+    def test_organisation_without_local_identifier_raises(self) -> None:
         row = {
             "relevant_organisation_name": "CERN",
             "relevant_organisation_short_name": "",
@@ -62,12 +67,12 @@ class TestMissingLocalIdentifier:
         with pytest.raises(ValueError, match="Missing required local_identifier for organisation 'CERN'"):
             _build_org(row, "relevant_organisation")
 
-    def test_venue_without_local_identifier_raises(self):
+    def test_venue_without_local_identifier_raises(self) -> None:
         row = {"manifestation_biblio_in_acronym": ""}
         with pytest.raises(ValueError, match="Missing required local_identifier for venue 'Nature'"):
             _build_venue([row], "Nature", "")
 
-    def test_grant_without_local_identifier_raises(self):
+    def test_grant_without_local_identifier_raises(self) -> None:
         row = {"funding_local_identifier": ""}
         with pytest.raises(ValueError, match="Missing required local_identifier for grant"):
             _build_grant(row)

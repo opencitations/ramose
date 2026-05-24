@@ -2,42 +2,45 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 import pytest
 
 from ramose import APIManager, Operation
 
 
 @pytest.fixture
-def api_mgr():
+def api_mgr() -> APIManager:
     conf_file = "test/data/meta_v1.hf"
     return APIManager([conf_file], endpoint_override="http://localhost:9999/sparql")
 
 
 class TestNorApiUrl:
-    def test_with_typed_param(self):
+    def test_with_typed_param(self) -> None:
         item = {"url": "/metadata/{id}", "id": "str(.+)"}
         result = APIManager.nor_api_url(item, "/v1")
         assert result == "/v1/metadata/(.+)"
 
-    def test_without_param_type_falls_back(self):
+    def test_without_param_type_falls_back(self) -> None:
         item = {"url": "/metadata/{id}"}
         result = APIManager.nor_api_url(item, "/v1")
         assert result == "/v1/metadata/(.+)"
 
-    def test_no_base_url(self):
+    def test_no_base_url(self) -> None:
         item = {"url": "/metadata/{id}", "id": "str([0-9]+)"}
         result = APIManager.nor_api_url(item)
         assert result == "/metadata/([0-9]+)"
 
 
 class TestBestMatch:
-    def test_valid_url(self, api_mgr):
+    def test_valid_url(self, api_mgr: APIManager) -> None:
         conf, pat = api_mgr.best_match(api_mgr.base_url[0] + "/metadata/doi:10.1234")
         assert pat == (
             "/v1/metadata/"
             "((doi|issn|isbn|omid|openalex|pmid|pmcid):.+?"
             "(__(doi|issn|isbn|omid|openalex|pmid|pmcid):.+?)*$)"
         )
+        assert conf is not None
         assert set(conf) == {
             "conf",
             "tp",
@@ -51,24 +54,24 @@ class TestBestMatch:
             "disable_params",
         }
 
-    def test_invalid_url(self, api_mgr):
+    def test_invalid_url(self, api_mgr: APIManager) -> None:
         conf, pat = api_mgr.best_match("/nonexistent/path")
         assert conf is None
         assert pat is None
 
 
 class TestGetOp:
-    def test_valid_operation(self, api_mgr):
+    def test_valid_operation(self, api_mgr: APIManager) -> None:
         op = api_mgr.get_op(api_mgr.base_url[0] + "/metadata/doi:10.1234")
         assert isinstance(op, Operation)
 
-    def test_invalid_operation_returns_404(self, api_mgr):
+    def test_invalid_operation_returns_404(self, api_mgr: APIManager) -> None:
         result = api_mgr.get_op("/nonexistent/operation")
         assert result == (404, "HTTP status code 404: the operation requested does not exist", "text/plain")
 
 
 class TestGetOpInvalidParam:
-    def test_invalid_param_value_returns_400(self, api_mgr):
+    def test_invalid_param_value_returns_400(self, api_mgr: APIManager) -> None:
         result = api_mgr.get_op(api_mgr.base_url[0] + "/author/orcid:10.1162/qss_a_00292")
         assert result == (
             400,
@@ -77,7 +80,7 @@ class TestGetOpInvalidParam:
             "text/plain",
         )
 
-    def test_empty_param_returns_400(self, api_mgr):
+    def test_empty_param_returns_400(self, api_mgr: APIManager) -> None:
         result = api_mgr.get_op(api_mgr.base_url[0] + "/author/")
         assert result == (
             400,
@@ -86,13 +89,13 @@ class TestGetOpInvalidParam:
             "text/plain",
         )
 
-    def test_nonexistent_operation_still_404(self, api_mgr):
+    def test_nonexistent_operation_still_404(self, api_mgr: APIManager) -> None:
         result = api_mgr.get_op(api_mgr.base_url[0] + "/nonexistent/something")
         assert result == (404, "HTTP status code 404: the operation requested does not exist", "text/plain")
 
 
 class TestSourcesParsing:
-    def test_sources_map_populated(self):
+    def test_sources_map_populated(self) -> None:
         am = APIManager(
             ["test/fixtures/test_with_sources.hf"],
             endpoint_override="http://localhost:9999/sparql",
@@ -102,7 +105,7 @@ class TestSourcesParsing:
         assert sources["oc_meta"] == "https://sparql.opencitations.net/meta"
         assert sources["oc_index"] == "https://sparql.opencitations.net/index"
 
-    def test_empty_sources_pairs_skipped(self):
+    def test_empty_sources_pairs_skipped(self) -> None:
         am = APIManager(
             ["test/fixtures/test_with_sources.hf"],
             endpoint_override="http://localhost:9999/sparql",
@@ -113,7 +116,7 @@ class TestSourcesParsing:
 
 
 class TestPerOperationEngine:
-    def test_operation_level_engine_override(self):
+    def test_operation_level_engine_override(self) -> None:
         am = APIManager(
             ["test/fixtures/test_with_sources.hf"],
             endpoint_override="http://localhost:9999/sparql",
@@ -122,7 +125,7 @@ class TestPerOperationEngine:
         assert isinstance(op, Operation)
         assert op.engine == "sparql"
 
-    def test_api_level_engine(self):
+    def test_api_level_engine(self) -> None:
         am = APIManager(
             ["test/fixtures/mixed_scholarly_crossref.hf"],
             endpoint_override="http://localhost:9999/sparql",
@@ -132,7 +135,7 @@ class TestPerOperationEngine:
 
 
 class TestFormatParsingEmptyPart:
-    def test_trailing_semicolon_ignored(self):
+    def test_trailing_semicolon_ignored(self) -> None:
         am = APIManager(
             ["test/fixtures/test_openapi_edge.hf"],
             endpoint_override="http://localhost:9999/sparql",

@@ -2,13 +2,18 @@
 #
 # SPDX-License-Identifier: ISC
 
+from __future__ import annotations
+
 import json
 import re
+from typing import TYPE_CHECKING
 
 import pytest
-from conftest import execute_operation
 
-from ramose import APIManager
+from test.conftest import execute_operation
+
+if TYPE_CHECKING:
+    from ramose import APIManager
 
 
 def _sort_ids(value: str) -> str:
@@ -59,7 +64,7 @@ def assert_api_output(
     return normalized_output
 
 
-def test_metadata_retrieval(api_manager):
+def test_metadata_retrieval(api_manager: APIManager) -> None:
     assert_api_output(
         api_manager,
         "/v1/metadata/doi:10.1002/(sici)1096-9926(199910)60:4<177::aid-tera1>3.0.co;2-z",
@@ -84,7 +89,7 @@ def test_metadata_retrieval(api_manager):
     )
 
 
-def test_metadata_retrieval_editor_inbook(api_manager):
+def test_metadata_retrieval_editor_inbook(api_manager: APIManager) -> None:
     assert_api_output(
         api_manager,
         "/v1/metadata/omid:br/061702784433",
@@ -278,7 +283,7 @@ EXPECTED_EDITOR_WORKS = [
         "0000-0002-8420-0696",
     ],
 )
-def test_author_works_retrieval(api_manager, identifier):
+def test_author_works_retrieval(api_manager: APIManager, identifier: str) -> None:
     assert_api_output(api_manager, f"/v1/author/{identifier}", EXPECTED_AUTHOR_WORKS)
 
 
@@ -290,11 +295,11 @@ def test_author_works_retrieval(api_manager, identifier):
         "0000-0003-2098-4759",
     ],
 )
-def test_editor_works_retrieval(api_manager, identifier):
+def test_editor_works_retrieval(api_manager: APIManager, identifier: str) -> None:
     assert_api_output(api_manager, f"/v1/editor/{identifier}", EXPECTED_EDITOR_WORKS)
 
 
-def test_venue_without_external_id(api_manager):
+def test_venue_without_external_id(api_manager: APIManager) -> None:
     normalized_output = assert_api_output(
         api_manager,
         "/v1/metadata/omid:br/061903571196",
@@ -321,7 +326,7 @@ def test_venue_without_external_id(api_manager):
     assert normalized_output[0]["venue"] == "Global Journal For Research Analysis [omid:br/061903571793]"
 
 
-def test_metadata_retrieval_with_different_ids(api_manager):
+def test_metadata_retrieval_with_different_ids(api_manager: APIManager) -> None:
     output_omid = execute_operation(api_manager, "/v1/metadata/omid:br/06603870331")
     output_isbn = execute_operation(api_manager, "/v1/metadata/isbn:9789264960114")
     output_doi = execute_operation(api_manager, "/v1/metadata/doi:10.1787/b0e499cf-en")
@@ -383,7 +388,7 @@ def test_metadata_retrieval_with_different_ids(api_manager):
     )
 
 
-def test_author_order_in_metadata(api_manager):
+def test_author_order_in_metadata(api_manager: APIManager) -> None:
     normalized_output = assert_api_output(
         api_manager,
         "/v1/metadata/omid:br/0680773548",
