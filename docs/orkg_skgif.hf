@@ -144,13 +144,19 @@ SELECT ?local_identifier ?identifier_scheme ?identifier_value
        ?manifestation_biblio_in_identifier_scheme ?manifestation_biblio_in_identifier_value
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
-  ?local_identifier a orkgc:Paper .
+  ?local_identifier a ?_type_class .
+  FILTER(STRSTARTS(STR(?_type_class), STR(orkgc:)))
+  FILTER(?_type_class != orkgc:Resource)
+  BIND(
+    IF(?_type_class = orkgc:Paper, "literature",
+    IF(?_type_class IN (orkgc:Dataset, orkgc:BENCHMARK_DATASET), "research data",
+    "other"))
+  AS ?product_type)
   OPTIONAL {
     ?local_identifier rdfs:label ?title_raw .
     BIND(STR(?title_raw) AS ?title)
     BIND(IF(LANG(?title_raw) != "", LANG(?title_raw), "") AS ?title_lang)
   }
-  BIND("literature" AS ?product_type)
   OPTIONAL {
     ?local_identifier orkgp:P29 ?year .
     OPTIONAL { ?local_identifier orkgp:P28 ?month_raw . }
