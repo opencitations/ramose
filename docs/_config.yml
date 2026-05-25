@@ -10,7 +10,8 @@ exclude_patterns:
   - node_modules
 
 execute:
-  execute_notebooks: "off"
+  execute_notebooks: force
+  timeout: 120
 
 launch_buttons:
   colab_url: "https://colab.research.google.com"
