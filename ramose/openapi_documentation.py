@@ -39,17 +39,6 @@ class _OpenAPIBuildContext:
 
 
 class OpenAPIDocumentationHandler(DocumentationHandler):
-    """
-    Export RAMOSE .hf configuration(s) to an OpenAPI 3.0 YAML specification.
-
-    Notes:
-    - OpenAPI is a surface contract. RAMOSE implementation details (endpoint, addon, method,
-      preprocess, postprocess) are intentionally omitted as they are not meaningful to API consumers.
-    """
-
-    # -------------------------
-    # Small utilities
-    # -------------------------
     def _normalize_base_url(self, base_url: str) -> str:
         return base_url.removeprefix("/")
 
@@ -69,12 +58,10 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         if t == "datetime":
             return {"type": "string", "format": "date-time"}
         if t == "duration":
-            # OpenAPI doesn't standardize duration; still useful as hint.
             return {"type": "string", "format": "duration"}
         return {"type": "string"}
 
     def _parse_param_type_shape(self, s: str) -> tuple[str, str]:
-        # expected "type(regex)"
         try:
             t, shape = findall(r"^\s*([^\(]+)\((.+)\)\s*$", s)[0]
             return t.strip(), shape.strip()
@@ -82,10 +69,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             return "str", ".+"
 
     def _guess_contact(self, contacts_value: object) -> dict[str, str] | None:
-        """
-        Table 1: '#contacts <contact_url>' but in practice it's often an email.
-        Prefer OpenAPI contact.email when it looks like an email.
-        """
         if not contacts_value:
             return None
         c = str(contacts_value).strip()
@@ -94,38 +77,22 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         return {"name": c}
 
     def _clean_text(self, v: object) -> str | None:
-        """
-        Normalize text coming from .hf parsing so Swagger/ YAML render nicely:
-        - remove wrapping quotes if they were included as part of the value
-        - turn literal '\\n' into real newlines
-        - trim whitespace
-        """
         if v is None:
             return None
         s = str(v).strip()
-        # Strip wrapping quotes if parser stored them as part of the value
         if len(s) >= _MIN_QUOTED_LENGTH and ((s[0] == s[-1] == '"') or (s[0] == s[-1] == "'")):
             s = s[1:-1].strip()
-        # Convert literal backslash-n sequences to actual newlines
         return s.replace("\\n", "\n")
 
     def _param_hint_from_preprocess(self, preprocess_str: object, param_name: str) -> str:
-        """
-        Table 2: preprocess functions like 'lower(doi) --> split_dois(dois)'.
-        Not formalizable in OpenAPI, but helpful as a hint.
-        """
         if not preprocess_str:
             return ""
         s = str(preprocess_str)
-        # Any function call mentioning the param inside (...)?
         if re.search(r"\([^)]*\b" + re.escape(param_name) + r"\b[^)]*\)", s):
             return f"Note: input is pre-processed by RAMOSE: {s}"
         return ""
 
     def _try_parse_output_json(self, output_json_value: str | None) -> object:
-        """
-        Table 2: '#output_json <ex_response>' (JSON example).
-        """
         if not output_json_value:
             return None
         try:
@@ -133,11 +100,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         except (ValueError, TypeError):
             return None
 
-    # -------------------------
-    # Formats / media-types
-    # -------------------------
     def _collect_format_tokens(self, conf: APIConfig) -> list[str]:
-        # always supported by RAMOSE docs
         formats = {"csv", "json"}
         for op in conf["conf_json"][1:]:
             if "format" in op:
@@ -148,7 +111,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                         part = raw_part.strip()
                         if not part:
                             continue
-                        # expected "fmt,func"
                         fmt = part.split(",", 1)[0].strip()
                         if fmt:
                             formats.add(fmt)
@@ -202,11 +164,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         OrderedDict[str, dict[str, object]]
         | tuple[OrderedDict[str, dict[str, object]], OrderedDict[str, dict[str, object]]]
     ):
-        """
-        Build OpenAPI 'content' dict for responses based on supported formats.
-        JSON gets structured schema. Others are represented as string payloads.
-        If err_schema_ref is provided, also returns an error-content dict.
-        """
         content = OrderedDict()
 
         content["application/json"] = {"schema": ok_schema}
@@ -215,7 +172,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         content["text/csv"] = {"schema": {"type": "string"}}
 
-        # Other formats discovered in .hf (#format)
         for fmt in formats_enum or []:
             mt = self._media_type_for_format(fmt)
             if mt is None or mt in content:
@@ -235,18 +191,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         return content
 
-    # -------------------------
-    # Examples from #call
-    # -------------------------
     def _extract_param_examples_from_call(self, path_template: str, call_value: object) -> dict[str, str]:
-        """
-        Given a template like '/metadata/{dois}' and a call like
-        '/metadata/10.1/abc__10.2/xyz', return {'dois': '10.1/abc__10.2/xyz'}.
-
-        IMPORTANT: RAMOSE allows slashes inside the last param because it routes
-        everything via <path:api_url>. OpenAPI tooling typically expects these
-        slashes to be URL-encoded in examples.
-        """
         if not call_value:
             return {}
 
@@ -255,17 +200,15 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         parts = path_template.split("/")
         re_parts = []
 
-        # Allow '/' inside the LAST parameter segment (captures the rest of the path)
         last_index = len(parts) - 1
 
         for i, part in enumerate(parts):
             if part.startswith("{") and part.endswith("}"):
                 name = part[1:-1]
+                # Last param captures slashes too (RAMOSE routes via <path:api_url>)
                 if i == last_index:
-                    # last param: capture everything to end, including slashes
                     re_parts.append(rf"(?P<{name}>.+)")
                 else:
-                    # middle params: standard segment (no slash)
                     re_parts.append(rf"(?P<{name}>[^/]+)")
             else:
                 re_parts.append(re.escape(part))
@@ -276,20 +219,31 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             return {}
         return {k: v for k, v in m.groupdict().items() if v is not None}
 
-    # -------------------------
-    # Schema from field_type
-    # -------------------------
     def _build_row_schema_from_field_type(self, field_type_str: str) -> dict[str, object]:
         props = OrderedDict()
         for t, f in findall(FIELD_TYPE_RE, field_type_str or ""):
             props[f] = self._schema_for_ramose_type(t)
         return {"type": "object", "properties": props}
 
-    # -------------------------
-    # Main builder
-    # -------------------------
+    def _infer_schema_from_value(self, value: object) -> dict[str, object]:
+        primitive_type_map: dict[type, str] = {bool: "boolean", int: "integer", float: "number", str: "string"}
+        for py_type, json_type in primitive_type_map.items():
+            if isinstance(value, py_type):
+                return {"type": json_type}
+        if isinstance(value, list):
+            result: dict[str, object] = {"type": "array"}
+            if value:
+                schemas = [self._infer_schema_from_value(item) for item in value]
+                if all(schema == schemas[0] for schema in schemas):
+                    result["items"] = schemas[0]
+            return result
+        if isinstance(value, dict):
+            if value:
+                return {"type": "object", "properties": {k: self._infer_schema_from_value(v) for k, v in value.items()}}
+            return {"type": "object"}
+        return {}
+
     def _build_info(self, api_meta: dict[str, str]) -> OrderedDict[str, object]:
-        """Build the OpenAPI info object from API metadata."""
         info: OrderedDict[str, object] = OrderedDict()
         info["title"] = api_meta.get("title", "RAMOSE API")
         info["version"] = api_meta.get("version", "0.0.0")
@@ -305,7 +259,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
     @staticmethod
     def _build_common_parameters(formats_enum: list[str]) -> dict[str, dict[str, object]]:
-        """Build the shared query parameter definitions."""
         return {
             "require": {
                 "name": "require",
@@ -363,7 +316,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         }
 
     def _build_path_params(self, op: dict[str, str], raw_path: str) -> list[dict[str, object]]:
-        """Build path parameter objects for an operation, including examples from #call."""
         path_params = []
         for p in findall(PARAM_NAME, raw_path):
             t, shape = ("str", ".+")
@@ -396,13 +348,15 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         path_params: list[dict[str, object]],
         ctx: _OpenAPIBuildContext,
     ) -> OrderedDict[str, object]:
-        """Build an OpenAPI operation object for a single HTTP method."""
         summary = op["description"].split("\n")[0].strip() if op.get("description") else ""
         desc = self._clean_text(op.get("description")) or ""
 
         row_schema = self._build_row_schema_from_field_type(op.get("field_type", ""))
-        ok_schema = {"type": "array", "items": row_schema}
         ok_example = self._try_parse_output_json(op.get("output_json"))
+        if not row_schema["properties"] and ok_example is not None:
+            ok_schema: dict[str, object] = self._infer_schema_from_value(ok_example)
+        else:
+            ok_schema = {"type": "array", "items": row_schema}
         ok_content, err_content = self._build_response_content(
             ok_schema=ok_schema,
             formats_enum=ctx.formats_enum,
@@ -458,7 +412,12 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         root = api_meta.get("url", "")
         spec["servers"] = [{"url": f"{base}{root}"}]
 
-        spec["components"] = {
+        api_disabled = parse_disable_params(api_meta["disable_params"]) if "disable_params" in api_meta else set()
+
+        all_common_params = self._build_common_parameters(formats_enum)
+        active_common_params = {k: v for k, v in all_common_params.items() if k not in api_disabled}
+
+        components: dict[str, object] = {
             "schemas": {
                 "Error": {
                     "type": "object",
@@ -466,15 +425,15 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                     "required": ["error", "message"],
                 },
             },
-            "parameters": self._build_common_parameters(formats_enum),
         }
+        if active_common_params:
+            components["parameters"] = active_common_params
+        spec["components"] = components
 
-        common_param_refs = [{"$ref": f"#/components/parameters/{name}"} for name in spec["components"]["parameters"]]
+        common_param_refs = [{"$ref": f"#/components/parameters/{name}"} for name in active_common_params]
 
         spec["paths"] = OrderedDict()
         tag_name = api_meta.get("title", "RAMOSE API")
-
-        api_disabled = parse_disable_params(api_meta["disable_params"]) if "disable_params" in api_meta else set()
 
         ctx = _OpenAPIBuildContext(
             tag_name=tag_name,
@@ -496,12 +455,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         return spec
 
-    # -------------------------
-    # PyYAML compatibility
-    # -------------------------
     def _to_builtin(self, obj: object) -> object:
-        """Recursively convert OrderedDict (and other non-builtin containers)
-        to plain Python builtins so that yaml.safe_dump can serialize it."""
         if isinstance(obj, OrderedDict):
             obj = dict(obj)
         if isinstance(obj, dict):
@@ -511,12 +465,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         return obj
 
     def _dump_yaml(self, spec: object) -> str:
-        """
-        Dump OpenAPI spec to YAML with nice formatting:
-        - multiline strings become block scalars (|)
-        - keys keep insertion order (sort_keys=False)
-        """
-
         class _RamoseYamlDumper(yaml.SafeDumper):
             pass
 
@@ -542,5 +490,4 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             f.write(yml)
 
     def get_index(self, *_args: object, **_dargs: object) -> str:
-        # Not used by the current UI. Keep a minimal placeholder.
         return "OpenAPI exporter available."

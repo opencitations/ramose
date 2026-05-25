@@ -271,3 +271,133 @@ class TestOpenAPIEdgeCases:
         result = handler._extract_param_examples_from_call("/lookup/{source}/{id}", "/lookup/wikidata/Q42")
         assert result["source"] == "wikidata"
         assert result["id"] == "Q42"
+
+
+class TestOpenAPIDisableParams:
+    def test_disabled_params_absent_from_components(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        assert "parameters" not in spec["components"]
+
+    def test_error_schema_still_present(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        assert "Error" in spec["components"]["schemas"]
+
+    def test_operation_has_no_common_param_refs(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        params = spec["paths"]["/products/{local_id}"]["get"]["parameters"]
+        ref_names = {p["$ref"].rsplit("/", 1)[-1] for p in params if "$ref" in p}
+        assert ref_names == set()
+
+
+class TestOpenAPIInferSchemaFromOutputJson:
+    def test_inferred_schema_is_object(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/json"][
+            "schema"
+        ]
+        assert schema["type"] == "object"
+        assert "@context" in schema["properties"]
+        assert "meta" in schema["properties"]
+        assert "@graph" in schema["properties"]
+
+    def test_nested_properties_inferred(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/json"][
+            "schema"
+        ]
+        meta_props = schema["properties"]["meta"]["properties"]
+        assert meta_props["total_items"] == {"type": "integer"}
+
+    def test_graph_items_have_properties(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/json"][
+            "schema"
+        ]
+        graph_item = schema["properties"]["@graph"]["items"]
+        assert graph_item["properties"]["local_identifier"] == {"type": "string"}
+        assert graph_item["properties"]["score"] == {"type": "number"}
+        assert graph_item["properties"]["published"] == {"type": "boolean"}
+
+    def test_heterogeneous_array_has_no_items(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/json"][
+            "schema"
+        ]
+        context_schema = schema["properties"]["@context"]
+        assert context_schema["type"] == "array"
+        assert "items" not in context_schema
+
+    def test_field_type_takes_priority_over_inference(self) -> None:
+        handler = _build_handler("test_scholarly.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        schema = spec["paths"]["/metadata/{dois}"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]
+        assert schema["type"] == "array"
+        assert "properties" in schema["items"]
+        assert "doi" in schema["items"]["properties"]
+
+
+class TestInferSchemaFromValue:
+    def test_string(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        assert handler._infer_schema_from_value("hello") == {"type": "string"}
+
+    def test_integer(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        assert handler._infer_schema_from_value(42) == {"type": "integer"}
+
+    def test_float(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        assert handler._infer_schema_from_value(3.14) == {"type": "number"}
+
+    def test_boolean_true(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        true_val = True
+        assert handler._infer_schema_from_value(true_val) == {"type": "boolean"}
+
+    def test_boolean_false_not_integer(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        false_val = False
+        assert handler._infer_schema_from_value(false_val) == {"type": "boolean"}
+
+    def test_none(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        assert handler._infer_schema_from_value(None) == {}
+
+    def test_empty_list(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        assert handler._infer_schema_from_value([]) == {"type": "array"}
+
+    def test_homogeneous_list(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        assert handler._infer_schema_from_value(["a", "b"]) == {"type": "array", "items": {"type": "string"}}
+
+    def test_heterogeneous_list(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        assert handler._infer_schema_from_value(["a", 1]) == {"type": "array"}
+
+    def test_empty_dict(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        assert handler._infer_schema_from_value({}) == {"type": "object"}
+
+    def test_nested_dict(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        result = handler._infer_schema_from_value({"name": "test", "count": 5})
+        assert result == {
+            "type": "object",
+            "properties": {"name": {"type": "string"}, "count": {"type": "integer"}},
+        }
