@@ -75,6 +75,10 @@ ignore = [
 "ramose/__main__.py" = [
     "T20",     # print in CLI
 ]
+"docs/*.ipynb" = [
+    "T20",     # print in notebooks
+    "E501",    # long lines in display calls
+]
 
 [dependency-groups]
 dev = [

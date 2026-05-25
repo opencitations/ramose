@@ -18,7 +18,6 @@ _YEAR_MONTH_PART_COUNT = 2
 _PRODUCT_COLUMNS: dict[str, str] = dict.fromkeys(
     (
         "local_identifier",
-
         "identifier_scheme",
         "identifier_value",
         "title",

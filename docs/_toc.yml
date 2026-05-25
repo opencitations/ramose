@@ -19,3 +19,4 @@ parts:
     - file: 06-multi-source
     - file: 07-openapi
     - file: 08-skgif
+    - file: 09-demo-skgif

@@ -38,6 +38,11 @@ SPDX-FileCopyrightText = "2026 Sergei Slinkin"
 SPDX-License-Identifier = "ISC"
 
 [[annotations]]
+path = "docs/09-demo-skgif.ipynb"
+SPDX-FileCopyrightText = "2026 Arcangelo Massari <arcangelo.massari@unibo.it>"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
 path = [
     "docs/.gitignore",
     "docs/favicon.svg",
