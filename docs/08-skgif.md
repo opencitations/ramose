@@ -63,6 +63,8 @@ ramose -s my_source.hf -w 127.0.0.1:8080
 
 The API serves JSON-LD at `http://127.0.0.1:8080/skgif/v1/products/{local_identifier}`.
 
+For a runnable example querying the ORKG triplestore, see the [live demo notebook](09-demo-skgif.ipynb).
+
 ## Product CSV columns
 
 The `products/{local_identifier}` operation uses the columns listed below. Every SPARQL source must produce rows conforming to this schema. Multiple rows per product are expected (one per combination of identifier, contributor, citation, topic); the converter deduplicates and aggregates them.
