@@ -63,7 +63,7 @@ ramose -s my_source.hf -w 127.0.0.1:8080
 
 The API serves JSON-LD at `http://127.0.0.1:8080/skgif/v1/products/{local_identifier}`.
 
-For a runnable example querying the ORKG triplestore, see the [live demo notebook](09-demo-skgif.ipynb).
+For a runnable example querying ORKG and Wikidata, see the [live demo notebook](09-demo-skgif.ipynb).
 
 ## Product CSV columns
 

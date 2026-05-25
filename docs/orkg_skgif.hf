@@ -6,7 +6,7 @@
 #html_meta_description SKG-IF API for ORKG: access bibliographic metadata via the Scholarly Knowledge Graph Interoperability Framework.
 #version 0.1.0
 #contacts <a href="mailto:info@orkg.org" target="_blank">info@orkg.org</a>
-#license <a href="https://opensource.org/licenses/ISC" target="_blank">ISC</a>
+#license This document is licensed with a <a href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank">Creative Commons Attribution 4.0 International License</a>, while the REST API itself has been created using <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE, the Restful API Manager Over SPARQL Endpoints</a>, which is licensed with an <a href="https://opensource.org/licenses/ISC" target="_blank">ISC license</a>.
 #endpoint https://orkg.org/triplestore
 #method post
 #addon ramose.skgif_addon

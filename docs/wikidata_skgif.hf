@@ -2,13 +2,13 @@
 #type api
 #base https://w3id.org/skg-if/sandbox/wikidata
 #title SKG-IF API for Wikidata
-#description SKG-IF compliant API exposing Wikidata scholarly article data as JSON-LD, following the <a href="https://skg-if.github.io/interoperability-framework/" target="_blank">Scholarly Knowledge Graph Interoperability Framework specification</a>. Uses the Wikidata Scholarly endpoint with federated label resolution.
-#html_meta_description SKG-IF API for Wikidata: access scholarly article metadata, authors, and citations via the Scholarly Knowledge Graph Interoperability Framework.
+#description SKG-IF compliant API exposing Wikidata research software data as JSON-LD, following the <a href="https://skg-if.github.io/interoperability-framework/" target="_blank">Scholarly Knowledge Graph Interoperability Framework specification</a>.
+#html_meta_description SKG-IF API for Wikidata: access research software metadata, developers, and identifiers via the Scholarly Knowledge Graph Interoperability Framework.
 #version 0.1.0
-#contacts <a href="mailto:contact@opencitations.net" target="_blank">contact@opencitations.net</a>
-#license <a href="https://opensource.org/licenses/ISC" target="_blank">ISC</a>
-#endpoint https://query-scholarly.wikidata.org/sparql
-#method post
+#contacts <a href="mailto:wikidata@lists.wikimedia.org" target="_blank">wikidata@lists.wikimedia.org</a>
+#license This document is licensed with a <a href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank">Creative Commons Attribution 4.0 International License</a>, while the REST API itself has been created using <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE, the Restful API Manager Over SPARQL Endpoints</a>, which is licensed with an <a href="https://opensource.org/licenses/ISC" target="_blank">ISC license</a>.
+#endpoint https://query.wikidata.org/sparql
+#method get
 #addon ramose.skgif_addon
 #disable_params require,filter,sort,format,json
 
@@ -16,60 +16,42 @@
 #type operation
 #local_identifier str(http://www\.wikidata\.org/entity/Q\d+)
 #method get
-#description Returns a single research product from Wikidata identified by its entity URI. The response includes bibliographic metadata (title, DOI, publication date, venue), contributor information, and citation data. Entity labels are resolved via federated queries to the main Wikidata endpoint.
-#call /products/http://www.wikidata.org/entity/Q30413373
+#description Returns a single research software product from Wikidata identified by its entity URI.
+#call /products/http://www.wikidata.org/entity/Q139571902
 #format skgif,to_skgif
 #default_format skgif
-#sparql PREFIX wd: <http://www.wikidata.org/entity/>
-PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+#sparql PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 PREFIX p: <http://www.wikidata.org/prop/>
+PREFIX ps: <http://www.wikidata.org/prop/statement/>
 PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?local_identifier ?title ?title_lang ?product_type
-       ?manifestation_dates_type ?manifestation_dates_value
-       ?manifestation_biblio_volume ?manifestation_biblio_issue
-       ?manifestation_biblio_pages_first ?manifestation_biblio_pages_last
-       ?manifestation_biblio_in_name ?manifestation_biblio_in_local_identifier
-       ?manifestation_licence ?manifestation_access_rights_status
+       ?manifestation_version ?manifestation_dates_type ?manifestation_dates_value
+       ?manifestation_licence
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
-  ?local_identifier wdt:P1476 ?title_raw .
+  ?local_identifier rdfs:label ?title_raw . FILTER(LANG(?title_raw) = "en")
   BIND(STR(?title_raw) AS ?title)
   BIND(LANG(?title_raw) AS ?title_lang)
-  BIND("literature" AS ?product_type)
+  BIND("research software" AS ?product_type)
   OPTIONAL {
-    ?local_identifier wdt:P577 ?pub_date_raw .
-    BIND(REPLACE(STR(?pub_date_raw), "T00:00:00Z$", "") AS ?manifestation_dates_value)
+    {
+      SELECT ?version_string ?release_date WHERE {
+        <[[local_identifier]]> p:P348 ?version_stmt .
+        ?version_stmt ps:P348 ?version_string ;
+            pq:P577 ?release_date .
+      }
+      ORDER BY DESC(?release_date)
+      LIMIT 1
+    }
+    BIND(?version_string AS ?manifestation_version)
+    BIND(REPLACE(STR(?release_date), "T00:00:00Z$", "") AS ?manifestation_dates_value)
     BIND("publication" AS ?manifestation_dates_type)
-  }
-  OPTIONAL {
-    ?local_identifier p:P1433 ?venue_stmt .
-    ?venue_stmt <http://www.wikidata.org/prop/statement/P1433> ?venue .
-    BIND(STR(?venue) AS ?manifestation_biblio_in_local_identifier)
-    OPTIONAL { ?venue_stmt pq:P478 ?manifestation_biblio_volume }
-    OPTIONAL { ?venue_stmt pq:P433 ?manifestation_biblio_issue }
-    OPTIONAL {
-      ?venue_stmt pq:P304 ?pages_raw .
-      BIND(STRBEFORE(?pages_raw, "–") AS ?first_page_en)
-      BIND(STRAFTER(?pages_raw, "–") AS ?last_page_en)
-      BIND(STRBEFORE(?pages_raw, "-") AS ?first_page_hy)
-      BIND(STRAFTER(?pages_raw, "-") AS ?last_page_hy)
-      BIND(IF(?first_page_en != "", ?first_page_en, ?first_page_hy) AS ?manifestation_biblio_pages_first)
-      BIND(IF(?last_page_en != "", ?last_page_en, ?last_page_hy) AS ?manifestation_biblio_pages_last)
-    }
-    SERVICE <https://query.wikidata.org/sparql> {
-      ?venue rdfs:label ?manifestation_biblio_in_name . FILTER(LANG(?manifestation_biblio_in_name) = "en")
-    }
   }
   OPTIONAL {
     ?local_identifier wdt:P275 ?licence_entity .
     BIND(STR(?licence_entity) AS ?manifestation_licence)
-  }
-  OPTIONAL {
-    ?local_identifier wdt:P6954 ?oa_status .
-    BIND(IF(?oa_status = wd:Q73555534, "open",
-         IF(?oa_status = wd:Q107542578, "closed", "")) AS ?manifestation_access_rights_status)
   }
 }
 
@@ -80,17 +62,12 @@ SELECT ?local_identifier ?identifier_scheme ?identifier_value
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
   { ?local_identifier wdt:P356 ?v . BIND("doi" AS ?identifier_scheme) BIND(?v AS ?identifier_value) }
-  UNION { ?local_identifier wdt:P698 ?v . BIND("pmid" AS ?identifier_scheme) BIND(?v AS ?identifier_value) }
-  UNION { ?local_identifier wdt:P932 ?v . BIND("pmcid" AS ?identifier_scheme) BIND(?v AS ?identifier_value) }
-  UNION { ?local_identifier wdt:P5875 ?v . BIND("openalex" AS ?identifier_scheme) BIND(?v AS ?identifier_value) }
+  UNION { ?local_identifier wdt:P4901 ?v . BIND("zenodo" AS ?identifier_scheme) BIND(?v AS ?identifier_value) }
+  UNION { ?local_identifier wdt:P6138 ?v . BIND("swh" AS ?identifier_scheme) BIND(?v AS ?identifier_value) }
 }
 
 @@join ?local_identifier ?local_identifier type=left
-PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-PREFIX p: <http://www.wikidata.org/prop/>
-PREFIX ps: <http://www.wikidata.org/prop/statement/>
-PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?local_identifier ?contribution_by_name
@@ -99,40 +76,15 @@ SELECT ?local_identifier ?contribution_by_name
        ?contribution_role ?_contribution_key
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
-  {
-    ?local_identifier p:P2093 ?stmt .
-    ?stmt ps:P2093 ?contribution_by_name .
-    OPTIONAL { ?stmt pq:P1545 ?author_order }
-    BIND(CONCAT(STR(?local_identifier), "/author/str/", ENCODE_FOR_URI(?contribution_by_name)) AS ?_contribution_key)
-    BIND(CONCAT("wikidata-str-author/", ENCODE_FOR_URI(?contribution_by_name)) AS ?contribution_by_local_identifier)
-    BIND("" AS ?contribution_by_identifier_scheme)
-    BIND("" AS ?contribution_by_identifier_value)
-  } UNION {
-    ?local_identifier p:P50 ?stmt .
-    ?stmt ps:P50 ?author .
-    OPTIONAL { ?stmt pq:P1545 ?author_order }
-    OPTIONAL {
-      ?author wdt:P496 ?contribution_by_identifier_value .
-      BIND("orcid" AS ?contribution_by_identifier_scheme)
-    }
-    BIND(STR(?author) AS ?contribution_by_local_identifier)
-    BIND(CONCAT(STR(?local_identifier), "/author/", STRAFTER(STR(?author), "http://www.wikidata.org/entity/")) AS ?_contribution_key)
-    SERVICE <https://query.wikidata.org/sparql> {
-      ?author rdfs:label ?contribution_by_name . FILTER(LANG(?contribution_by_name) = "en")
-    }
+  ?local_identifier wdt:P178 ?developer .
+  ?developer rdfs:label ?contribution_by_name . FILTER(LANG(?contribution_by_name) = "en")
+  OPTIONAL {
+    ?developer wdt:P496 ?contribution_by_identifier_value .
+    BIND("orcid" AS ?contribution_by_identifier_scheme)
   }
+  BIND(STR(?developer) AS ?contribution_by_local_identifier)
+  BIND(CONCAT(STR(?local_identifier), "/developer/", STRAFTER(STR(?developer), "http://www.wikidata.org/entity/")) AS ?_contribution_key)
   BIND("author" AS ?contribution_role)
-}
-ORDER BY xsd:integer(?author_order)
-
-@@join ?local_identifier ?local_identifier type=left
-PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-
-SELECT ?local_identifier ?related_products_cites
-WHERE {
-  BIND(<[[local_identifier]]> AS ?local_identifier)
-  ?local_identifier wdt:P2860 ?cited .
-  BIND(STR(?cited) AS ?related_products_cites)
 }
 
 @@join ?local_identifier ?local_identifier type=left
@@ -145,7 +97,5 @@ WHERE {
   ?local_identifier wdt:P921 ?topic .
   BIND(STR(?topic) AS ?topic_term)
   BIND("en" AS ?topic_label_lang)
-  SERVICE <https://query.wikidata.org/sparql> {
-    ?topic rdfs:label ?topic_label . FILTER(LANG(?topic_label) = "en")
-  }
+  ?topic rdfs:label ?topic_label . FILTER(LANG(?topic_label) = "en")
 }
