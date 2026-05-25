@@ -17,7 +17,7 @@
 #local_identifier str(http://orkg\.org/orkg/resource/R\d+)
 #method get
 #description Returns a single research product from ORKG identified by its resource URI.
-#call /products/http://orkg.org/orkg/resource/R25543
+#call /products/http://orkg.org/orkg/resource/R1637585
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
@@ -27,36 +27,36 @@
         }
     ],
     "meta": {
-        "local_identifier": "/skgif-orkg/v1/products/http://orkg.org/orkg/resource/R25543?page=1&page_size=1",
+        "local_identifier": "/skgif-orkg/v1/products/http://orkg.org/orkg/resource/R1637585?page=1&page_size=1",
         "entity_type": "search_result_page",
         "part_of": {
-            "local_identifier": "/skgif-orkg/v1/products/http://orkg.org/orkg/resource/R25543",
+            "local_identifier": "/skgif-orkg/v1/products/http://orkg.org/orkg/resource/R1637585",
             "entity_type": "search_result",
             "total_items": 1,
             "first_page": {
-                "local_identifier": "/skgif-orkg/v1/products/http://orkg.org/orkg/resource/R25543?page=1&page_size=1",
+                "local_identifier": "/skgif-orkg/v1/products/http://orkg.org/orkg/resource/R1637585?page=1&page_size=1",
                 "entity_type": "search_result_page"
             },
             "last_page": {
-                "local_identifier": "/skgif-orkg/v1/products/http://orkg.org/orkg/resource/R25543?page=1&page_size=1",
+                "local_identifier": "/skgif-orkg/v1/products/http://orkg.org/orkg/resource/R1637585?page=1&page_size=1",
                 "entity_type": "search_result_page"
             }
         }
     },
     "@graph": [
         {
-            "local_identifier": "http://orkg.org/orkg/resource/R25543",
+            "local_identifier": "http://orkg.org/orkg/resource/R1637585",
             "entity_type": "product",
             "product_type": "literature",
             "titles": {
                 "none": [
-                    "Generating Ambient Behaviors in Computer Role-Playing Games"
+                    "HERITRACE: A User-Friendly Semantic Data Editor with Change Tracking and Provenance Management for Cultural Heritage Institutions"
                 ]
             },
             "abstracts": {},
             "identifiers": [
                 {
-                    "value": "10.1109/mis.2006.92",
+                    "value": "10.6092/ISSN.2532-8816/21218",
                     "scheme": "doi"
                 }
             ],
@@ -64,43 +64,52 @@
                 {
                     "role": "author",
                     "by": {
-                        "name": "Maria Cutumisu",
+                        "name": "Arcangelo Massari",
                         "entity_type": "agent",
-                        "local_identifier": "http://orkg.org/orkg/resource/R1594996"
+                        "local_identifier": "http://orkg.org/orkg/resource/R1637559",
+                        "identifiers": [
+                            {
+                                "value": "0000-0002-8420-0696",
+                                "scheme": "orcid"
+                            }
+                        ]
                     },
                     "rank": 1
                 },
                 {
                     "role": "author",
                     "by": {
-                        "name": "Duane Szafron",
+                        "name": "Silvio Peroni",
                         "entity_type": "agent",
-                        "local_identifier": "http://orkg.org/orkg/resource/R1594997"
+                        "local_identifier": "http://orkg.org/orkg/resource/R9566",
+                        "identifiers": [
+                            {
+                                "value": "0000-0003-0530-4305",
+                                "scheme": "orcid"
+                            }
+                        ]
                     },
                     "rank": 2
-                },
-                {
-                    "role": "author",
-                    "by": {
-                        "name": "Jonathan Schaeffer",
-                        "entity_type": "agent",
-                        "local_identifier": "http://orkg.org/orkg/resource/R1594998"
-                    },
-                    "rank": 3
                 }
             ],
             "manifestations": [
                 {
                     "dates": {
                         "publication": [
-                            "2006-01-01T00:00:00"
+                            "2025-07-01T00:00:00"
                         ]
                     },
                     "biblio": {
                         "in": {
-                            "name": "IEEE Intelligent Systems",
+                            "name": "Umanistica Digitale",
                             "entity_type": "venue",
-                            "local_identifier": "http://orkg.org/orkg/resource/R574696"
+                            "local_identifier": "http://orkg.org/orkg/resource/R585576",
+                            "identifiers": [
+                                {
+                                    "value": "2532-8816",
+                                    "scheme": "issn"
+                                }
+                            ]
                         }
                     }
                 }
@@ -109,10 +118,10 @@
             "topics": [
                 {
                     "term": {
-                        "local_identifier": "http://orkg.org/orkg/resource/R11",
+                        "local_identifier": "http://orkg.org/orkg/resource/R141823",
                         "entity_type": "topic",
                         "labels": {
-                            "none": "Science"
+                            "none": "Semantic Web"
                         }
                     }
                 }
@@ -132,6 +141,7 @@ SELECT ?local_identifier ?identifier_scheme ?identifier_value
        ?title ?title_lang ?product_type
        ?manifestation_dates_type ?manifestation_dates_value
        ?manifestation_biblio_in_name ?manifestation_biblio_in_local_identifier
+       ?manifestation_biblio_in_identifier_scheme ?manifestation_biblio_in_identifier_value
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
   ?local_identifier a orkgc:Paper .
@@ -142,7 +152,9 @@ WHERE {
   }
   BIND("literature" AS ?product_type)
   OPTIONAL {
-    ?local_identifier orkgp:P29 ?manifestation_dates_value .
+    ?local_identifier orkgp:P29 ?year .
+    OPTIONAL { ?local_identifier orkgp:P28 ?month_raw . }
+    BIND(IF(BOUND(?month_raw), IF(xsd:integer(?month_raw) < 10, CONCAT(STR(?year), "-0", STR(?month_raw)), CONCAT(STR(?year), "-", STR(?month_raw))), STR(?year)) AS ?manifestation_dates_value)
     BIND("publication" AS ?manifestation_dates_type)
   }
   OPTIONAL {
@@ -154,6 +166,11 @@ WHERE {
     ?local_identifier orkgp:HAS_VENUE ?venue_resource .
     ?venue_resource rdfs:label ?manifestation_biblio_in_name .
     BIND(STR(?venue_resource) AS ?manifestation_biblio_in_local_identifier)
+    OPTIONAL {
+      ?venue_resource orkgp:P74029 ?venue_issn .
+      BIND("issn" AS ?manifestation_biblio_in_identifier_scheme)
+      BIND(STR(?venue_issn) AS ?manifestation_biblio_in_identifier_value)
+    }
   }
 }
 
@@ -163,6 +180,7 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?local_identifier ?contribution_by_name
        ?contribution_by_local_identifier ?contribution_role ?_contribution_key
+       ?contribution_by_identifier_scheme ?contribution_by_identifier_value
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
   ?local_identifier orkgp:hasAuthors ?authors .
@@ -172,6 +190,11 @@ WHERE {
   ?author rdfs:label ?contribution_by_name .
   BIND(STR(?author) AS ?contribution_by_local_identifier)
   BIND(CONCAT(STR(?local_identifier), "/author/", STRAFTER(STR(?seq_pred), "http://www.w3.org/1999/02/22-rdf-syntax-ns#_")) AS ?_contribution_key)
+  OPTIONAL {
+    ?author orkgp:HAS_ORCID ?orcid .
+    BIND("orcid" AS ?contribution_by_identifier_scheme)
+    BIND(?orcid AS ?contribution_by_identifier_value)
+  }
 }
 ORDER BY xsd:integer(STRAFTER(STR(?seq_pred), "http://www.w3.org/1999/02/22-rdf-syntax-ns#_"))
 
