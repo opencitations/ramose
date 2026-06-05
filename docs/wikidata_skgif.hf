@@ -79,8 +79,8 @@ SELECT ?local_identifier ?identifier_scheme ?identifier_value
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
   { ?local_identifier wdt:P356 ?v . BIND("doi" AS ?identifier_scheme) BIND(?v AS ?identifier_value) }
-  UNION { ?local_identifier wdt:P4901 ?v . BIND("zenodo" AS ?identifier_scheme) BIND(?v AS ?identifier_value) }
-  UNION { ?local_identifier wdt:P6138 ?v . BIND("swh" AS ?identifier_scheme) BIND(?v AS ?identifier_value) }
+  UNION { ?local_identifier wdt:P4901 ?v . BIND("url" AS ?identifier_scheme) BIND(CONCAT("https://zenodo.org/record/", ?v) AS ?identifier_value) }
+  UNION { ?local_identifier wdt:P6138 ?v . BIND("url" AS ?identifier_scheme) BIND(CONCAT("https://archive.softwareheritage.org/", ?v) AS ?identifier_value) }
 }
 
 @@join ?local_identifier ?local_identifier type=left
