@@ -1,3 +1,17 @@
+# [2.2.0](https://github.com/opencitations/ramose/compare/v2.1.0...v2.2.0) (2026-06-05)
+
+
+### Bug Fixes
+
+* **openapi:** filter disabled params from components and infer schema from output_json ([3f3261e](https://github.com/opencitations/ramose/commit/3f3261e82b80eba73f945e8c869ac19a6e2c8533))
+* **skgif:** emit url scheme for Zenodo and SWH identifiers in Wikidata API ([b68ab38](https://github.com/opencitations/ramose/commit/b68ab386eeee4cdea376714f01c4511c606be174))
+
+
+### Features
+
+* **skgif:** omit empty optional fields from JSON-LD output ([aefcb52](https://github.com/opencitations/ramose/commit/aefcb5271ae9bfbe966fa79777ffe5b409c38f3f))
+* **skgif:** switch ORKG example to HERITRACE and extract richer metadata ([fd889bb](https://github.com/opencitations/ramose/commit/fd889bbdef8815ba4646aef7ef7635fb96dd8c75))
+
 # [2.1.0](https://github.com/opencitations/ramose/compare/v2.0.0...v2.1.0) (2026-05-25)
 
 
