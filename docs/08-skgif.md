@@ -69,9 +69,9 @@ For a runnable example querying ORKG and Wikidata, see the [live demo notebook](
 
 The `products/{local_identifier}` operation uses the columns listed below. Every SPARQL source must produce rows conforming to this schema. Multiple rows per product are expected (one per combination of identifier, contributor, citation, topic); the converter deduplicates and aggregates them.
 
-Column names mirror JSON-LD output paths with dots replaced by underscores (SPARQL variable constraint). For contributions, `contribution_by_*` columns map to fields nested under `contribution.by` (the agent object), while `contribution_*` columns without `by` map to contribution-level fields like `role`. Columns prefixed with `_` are internal to the converter and do not appear in the output.
+Column names mirror JSON-LD output paths with dots replaced by underscores (SPARQL variable constraint). Columns prefixed with `_` are internal to the converter and do not appear in the output.
 
-All optional fields are always present in the output. Dict-typed fields default to `{}`, array-typed fields to `[]`.
+Optional fields with no data are omitted from the output.
 
 Only `local_identifier` and `product_type` are required at the product level.
 

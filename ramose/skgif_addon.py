@@ -931,13 +931,9 @@ def _collect_passthrough_fields(first_row: dict, active_formatted: set[str]) -> 
 
 
 def _add_formatted_text(entity: dict, first_row: dict, field: str, lang_field: str, output_key: str) -> None:
-    if field not in first_row:
-        return
-    if first_row[field]:
+    if first_row.get(field):
         lang = first_row.get(lang_field) or "none"
         entity[output_key] = {lang: [first_row[field]]}
-    else:
-        entity[output_key] = {}
 
 
 _SECTION_BUILDERS: tuple[tuple[str, str, Callable], ...] = (
@@ -963,33 +959,18 @@ def _build_entity(rows: list[dict]) -> dict:
     _add_formatted_text(entity, first_row, "abstract", "abstract_lang", "abstracts")
 
     for anchor, key, builder in _SECTION_BUILDERS:
-        if anchor in columns:
-            entity[key] = builder(rows)
-    if "manifestation_type_class" in columns:
-        manifestation = _build_manifestation(rows)
-        entity["manifestations"] = [manifestation] if manifestation else []
-    if columns & set(_RELATED_PRODUCT_COLUMNS):
-        entity["related_products"] = _collect_related_products(rows)
-    if "relevant_organisation_name" in columns:
-        entity["relevant_organisations"] = _collect_organisation(rows, "relevant_organisation")
-
-    if columns - _CORE_COLUMNS:
-        _set_section_defaults(entity)
+        if anchor in columns and (section := builder(rows)):
+            entity[key] = section
+    if "manifestation_type_class" in columns and (manifestation := _build_manifestation(rows)):
+        entity["manifestations"] = [manifestation]
+    if columns & set(_RELATED_PRODUCT_COLUMNS) and (related := _collect_related_products(rows)):
+        entity["related_products"] = related
+    if "relevant_organisation_name" in columns and (
+        organisations := _collect_organisation(rows, "relevant_organisation")
+    ):
+        entity["relevant_organisations"] = organisations
 
     return entity
-
-
-def _set_section_defaults(entity: dict) -> None:
-    for key, default in (
-        ("identifiers", []),
-        ("contributions", []),
-        ("manifestations", []),
-        ("related_products", {}),
-        ("topics", []),
-        ("funding", []),
-        ("relevant_organisations", []),
-    ):
-        entity.setdefault(key, default)
 
 
 def _build_entities(rows: list[dict]) -> list[dict]:

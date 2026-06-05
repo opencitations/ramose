@@ -114,9 +114,9 @@ class TestSkgifJournalArticle:
                 "([1998] Teratology 58:62-68)",
             ],
         }
-        assert product["abstracts"] == {}
-        assert product["funding"] == []
-        assert product["relevant_organisations"] == []
+        assert "abstracts" not in product
+        assert "funding" not in product
+        assert "relevant_organisations" not in product
 
     def test_identifiers(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
@@ -196,9 +196,9 @@ class TestSkgifBook:
         assert product["local_identifier"] == "https://w3id.org/oc/meta/br/0612058700"
         assert product["product_type"] == "literature"
         assert product["titles"] == {"none": ["Adaptive Environmental Management"]}
-        assert product["abstracts"] == {}
-        assert product["funding"] == []
-        assert product["relevant_organisations"] == []
+        assert "abstracts" not in product
+        assert "funding" not in product
+        assert "relevant_organisations" not in product
 
     def test_multiple_identifiers(self, skgif_api_manager: APIManager) -> None:
         product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")["@graph"][0]

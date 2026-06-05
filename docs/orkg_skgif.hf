@@ -53,7 +53,6 @@
                     "HERITRACE: A User-Friendly Semantic Data Editor with Change Tracking and Provenance Management for Cultural Heritage Institutions"
                 ]
             },
-            "abstracts": {},
             "identifiers": [
                 {
                     "value": "10.6092/ISSN.2532-8816/21218",
@@ -114,7 +113,6 @@
                     }
                 }
             ],
-            "related_products": {},
             "topics": [
                 {
                     "term": {
@@ -125,9 +123,7 @@
                         }
                     }
                 }
-            ],
-            "funding": [],
-            "relevant_organisations": []
+            ]
         }
     ]
 }
