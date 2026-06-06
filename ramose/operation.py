@@ -26,7 +26,7 @@ from urllib.parse import parse_qs, quote, urlsplit
 from requests.exceptions import RequestException
 
 try:
-    from pysparql_anything import SparqlAnything  # pyright: ignore[reportAttributeAccessIssue]
+    from pysparql_anything import SparqlAnything  # pyright: ignore[reportMissingImports, reportAttributeAccessIssue]
 except ImportError:
     SparqlAnything = None
 
