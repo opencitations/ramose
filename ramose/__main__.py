@@ -71,7 +71,7 @@ def _parse_args() -> Namespace:  # pragma: no cover
         dest="openapi",
         default=False,
         action="store_true",
-        help="Export the API specification to OpenAPI 3.0 YAML.",
+        help="Export the API specification to OpenAPI 3.1 YAML.",
     )
     arg_parser.add_argument(
         "--api-base",

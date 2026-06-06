@@ -6,7 +6,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 import yaml
+from openapi_spec_validator import validate
 
 from ramose import APIManager, OpenAPIDocumentationHandler
 
@@ -17,6 +19,23 @@ def _build_handler(*hf_files: str) -> OpenAPIDocumentationHandler:
     paths = [str(TESTS_DIR / f) for f in hf_files]
     am = APIManager(paths, endpoint_override="http://localhost:9999/sparql")
     return OpenAPIDocumentationHandler(am)
+
+
+class TestOpenAPISpecIsValid:
+    @pytest.mark.parametrize(
+        "hf_file",
+        [
+            "mixed_scholarly_crossref.hf",
+            "test_scholarly.hf",
+            "test_openapi_edge.hf",
+            "test_openapi_skgif_like.hf",
+        ],
+    )
+    def test_generated_spec_validates_as_openapi_31(self, hf_file: str) -> None:
+        handler = _build_handler(hf_file)
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        validate(spec)
 
 
 class TestOpenAPIFromMixedScholarlyCrossref:
@@ -72,7 +91,7 @@ class TestOpenAPIStoreDocumentation:
         handler.store_documentation(str(out))
         assert out.exists()
         spec = yaml.safe_load(out.read_text())
-        assert spec["openapi"] == "3.0.3"
+        assert spec["openapi"] == "3.1.0"
 
 
 class TestOpenAPIGetIndex:

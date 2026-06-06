@@ -405,7 +405,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         formats_enum = self._collect_format_tokens(conf)
 
         spec = OrderedDict()
-        spec["openapi"] = "3.0.3"
+        spec["openapi"] = "3.1.0"
         spec["info"] = self._build_info(api_meta)
 
         base = api_meta.get("base", "")
