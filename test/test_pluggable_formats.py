@@ -147,6 +147,36 @@ class TestDefaultFormat:
         assert ct == "application/json"
         assert json.loads(result) == [{"name": "arcangelo"}]
 
+    def test_declared_media_type_used_for_custom_format(self) -> None:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?name WHERE { }",
+            "method": "get",
+            "field_type": "str(name)",
+            "default_format": "skgif",
+        }
+
+        class FakeAddon:
+            @staticmethod
+            def to_skgif(csv_str: str, request_url: str = "") -> str:
+                return '{"@context": []}'
+
+        op = Operation(
+            "/api/test/hello",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(
+                sparql_endpoint="http://unused/sparql",
+                addon=FakeAddon,  # type: ignore[arg-type]
+                format_map={"skgif": "to_skgif"},
+                format_media_types={"skgif": "application/ld+json"},
+            ),
+        )
+        result, ct = op.conv("name\narcangelo\n", {})
+        assert ct == "application/ld+json"
+        assert result == '{"@context": []}'
+
     def test_no_default_format_falls_back_to_csv(self) -> None:
         op_item = {
             "url": "/test/{id}",

@@ -18,7 +18,7 @@ from sys import maxsize, path
 from typing import TYPE_CHECKING, TypedDict
 from urllib.parse import urlsplit
 
-from ramose._constants import PARAM_NAME
+from ramose._constants import FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME
 from ramose.cache import ResultCache
 from ramose.hash_format import HashFormatHandler, parse_custom_params, parse_disable_params
 from ramose.operation import Operation, OperationConfig
@@ -194,10 +194,11 @@ class APIManager:
         return None, None
 
     @staticmethod
-    def _parse_format_map(op_conf: dict[str, str]) -> dict[str, str]:
+    def _parse_format_map(op_conf: dict[str, str]) -> tuple[dict[str, str], dict[str, str]]:
         op_format_map: dict[str, str] = {}
+        op_media_types: dict[str, str] = {}
         if "format" not in op_conf:
-            return op_format_map
+            return op_format_map, op_media_types
         fm_val = op_conf["format"]
         fm_list = fm_val if isinstance(fm_val, list) else [fm_val]
         for fm in fm_list:
@@ -205,9 +206,11 @@ class APIManager:
                 part = raw_part.strip()
                 if not part:
                     continue
-                fields = part.split(",")
-                op_format_map[fields[0].strip()] = fields[1].strip()
-        return op_format_map
+                fields = [field.strip() for field in part.split(",")]
+                op_format_map[fields[0]] = fields[1]
+                if len(fields) >= FORMAT_PARTS_WITH_MEDIA_TYPE and fields[2]:
+                    op_media_types[fields[0]] = fields[2]
+        return op_format_map, op_media_types
 
     def get_op(self, op_complete_url: str) -> Operation | tuple[int, str, str]:
         """This method returns a new object of type Operation which represent the operation specified by
@@ -230,11 +233,13 @@ class APIManager:
             op_disabled = parse_disable_params(op_conf["disable_params"]) if "disable_params" in op_conf else set()
             effective_disabled = api_disabled | op_disabled
 
+            op_format_map, op_format_media_types = APIManager._parse_format_map(op_conf)
             config = OperationConfig(
                 sparql_endpoint=conf["tp"],
                 sparql_http_method=conf["sparql_http_method"],
                 addon=conf["addon"],
-                format_map=APIManager._parse_format_map(op_conf),
+                format_map=op_format_map,
+                format_media_types=op_format_media_types,
                 sources_map=conf.get("sources_map", {}),
                 engine=op_engine,
                 custom_params=custom_params_map,

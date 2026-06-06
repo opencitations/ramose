@@ -127,7 +127,7 @@
         }
     ]
 }
-#format skgif,to_skgif
+#format skgif,to_skgif,application/ld+json
 #default_format skgif
 #sparql PREFIX orkgc: <http://orkg.org/orkg/class/>
 PREFIX orkgp: <http://orkg.org/orkg/predicate/>

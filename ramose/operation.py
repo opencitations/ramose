@@ -53,6 +53,7 @@ class OperationConfig:
     sparql_http_method: str = "get"
     addon: types.ModuleType | None = None
     format_map: dict = dataclass_field(default_factory=dict)
+    format_media_types: dict = dataclass_field(default_factory=dict)
     sources_map: dict = dataclass_field(default_factory=dict)
     engine: str = "sparql"
     custom_params: dict = dataclass_field(default_factory=dict)
@@ -79,6 +80,7 @@ class Operation:
         self.sparql_http_method = config.sparql_http_method
         self.addon = config.addon
         self.format = config.format_map
+        self.format_media_types = config.format_media_types
         self.sources_map = config.sources_map
         self.engine = config.engine
         self.custom_params = config.custom_params
@@ -117,13 +119,18 @@ class Operation:
             for req_format in query_string["format"]:
                 if req_format in self.format:
                     converter_func = getattr(self.addon, self.format[req_format])
-                    return converter_func(s, request_url=request_url), Operation.get_content_type(req_format)
+                    return converter_func(s, request_url=request_url), self._media_type_for_format(req_format)
         elif "default_format" in self.i:
             default_fmt = self.i["default_format"].strip()
             if default_fmt in self.format:
                 converter_func = getattr(self.addon, self.format[default_fmt])
-                return converter_func(s, request_url=request_url), Operation.get_content_type(default_fmt)
+                return converter_func(s, request_url=request_url), self._media_type_for_format(default_fmt)
         return None
+
+    def _media_type_for_format(self, fmt: str) -> str:
+        if fmt in self.format_media_types:
+            return self.format_media_types[fmt]
+        return Operation.get_content_type(fmt)
 
     def conv(self, s: str, query_string: dict[str, list[str]], c_type: str = "text/csv") -> tuple[str, str]:
         """This method takes a string representing a CSV document and converts it in the requested format according

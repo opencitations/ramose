@@ -24,7 +24,7 @@ from urllib.parse import quote
 import yaml
 from markdown import markdown
 
-from ramose._constants import FIELD_TYPE_RE, PARAM_NAME
+from ramose._constants import FIELD_TYPE_RE, FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME
 from ramose.documentation import DocumentationHandler
 from ramose.hash_format import parse_custom_params, parse_disable_params
 
@@ -32,7 +32,6 @@ if TYPE_CHECKING:
     from ramose.api_manager import APIConfig
 
 _MIN_QUOTED_LENGTH = 2
-_FORMAT_PARTS_WITH_MEDIA_TYPE = 3
 
 # swagger-ui renders inline Markdown `code` with 5px vertical padding, so code spans on consecutive
 # lines overlap (https://github.com/swagger-api/swagger-ui/issues/7569)
@@ -199,7 +198,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         for declaration in declarations:
             for part in str(declaration).split(";"):
                 fields = [field.strip() for field in part.split(",")]
-                if len(fields) >= _FORMAT_PARTS_WITH_MEDIA_TYPE and fields[0] and fields[2]:
+                if len(fields) >= FORMAT_PARTS_WITH_MEDIA_TYPE and fields[0] and fields[2]:
                     declared_media_types[fields[0]] = fields[2]
         return declared_media_types
 

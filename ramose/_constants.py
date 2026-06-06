@@ -12,5 +12,6 @@ from requests import Session as _RequestsSession
 FIELD_TYPE_RE = r"([^\(\s]+)\(([^\)]+)\)"
 PARAM_NAME = r"{([^{}\(\)]+)}"
 DEFAULT_HTTP_TIMEOUT = 60
+FORMAT_PARTS_WITH_MEDIA_TYPE = 3
 
 _http_session = _RequestsSession()
