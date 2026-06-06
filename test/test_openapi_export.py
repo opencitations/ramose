@@ -382,22 +382,23 @@ class TestFormatMediaTypeDeclaration:
 
 
 class TestSwaggerUI:
-    def test_returns_self_contained_html(self) -> None:
+    def test_returns_html_page_with_swagger_init(self) -> None:
         handler = _build_handler("test_openapi_skgif_like.hf")
         status, html = handler.get_swagger_ui()
         assert status == 200
         assert html.startswith("<!DOCTYPE html>")
         assert "SwaggerUIBundle({spec:" in html
 
+    def test_loads_swagger_assets_from_cdn(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, html = handler.get_swagger_ui()
+        assert "https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js" in html
+        assert "https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" in html
+
     def test_inlines_spec_with_declared_media_type(self) -> None:
         handler = _build_handler("test_openapi_skgif_like.hf")
         _, html = handler.get_swagger_ui()
         assert "application/ld+json" in html
-
-    def test_inlined_bundle_does_not_break_script_tags(self) -> None:
-        handler = _build_handler("test_openapi_skgif_like.hf")
-        _, html = handler.get_swagger_ui()
-        assert html.count("</script>") == 2
 
 
 class TestOpenAPIInferSchemaFromOutputJson:

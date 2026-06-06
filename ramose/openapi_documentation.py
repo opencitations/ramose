@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 import csv
-import importlib.resources
 import json
 import re
 from collections import OrderedDict
@@ -41,6 +40,8 @@ SWAGGER_MARKDOWN_CSS_FIX = (
     "\n.swagger-ui .renderedMarkdown code,\n.swagger-ui .markdown code{padding:0 7px!important}\n"
     ".swagger-ui .renderedMarkdown li,\n.swagger-ui .markdown li{margin:6px 0!important}\n"
 )
+SWAGGER_UI_CSS_URL = "https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"
+SWAGGER_UI_BUNDLE_URL = "https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"
 
 
 @dataclass
@@ -624,24 +625,17 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             + spec_json
             + ", dom_id: '#swagger-ui', presets: [SwaggerUIBundle.presets.apis]});"
         )
-
-        dist = importlib.resources.files("flask_swagger_ui").joinpath("dist")
-        styles = dist.joinpath("swagger-ui.css").read_text(encoding="utf-8")
-        layout_styles = dist.joinpath("index.css").read_text(encoding="utf-8")
-        script = dist.joinpath("swagger-ui-bundle.js").read_text(encoding="utf-8").replace("</script", "<\\/script")
-
-        page = (
-            "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>"
-            + styles
-            + layout_styles
+        return 200, (
+            "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><link rel='stylesheet' href='"
+            + SWAGGER_UI_CSS_URL
+            + "'><style>"
             + SWAGGER_MARKDOWN_CSS_FIX
-            + "</style></head><body><div id='swagger-ui'></div><script>"
-            + script
-            + "</script><script>"
+            + "</style></head><body><div id='swagger-ui'></div><script src='"
+            + SWAGGER_UI_BUNDLE_URL
+            + "'></script><script>"
             + init_script
             + "</script></body></html>"
         )
-        return 200, page
 
     def store_documentation(
         self, file_path: str, base_url: str | None = None, *_args: object, **_dargs: object
