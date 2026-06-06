@@ -159,10 +159,24 @@ def _build_error_response(status_code: int, error_message: str, content_type: st
     return response
 
 
-def _handle_api_call(api_url: str, api_manager: APIManager, content_type: str) -> Response:  # pragma: no cover
-    full_call = "/" + api_url
-    operation = api_manager.get_op(full_call + "?" + unquote(request.query_string.decode("utf8")))
+def _handle_api_call(api_url: str, api_manager: APIManager) -> Response:  # pragma: no cover
+    query = unquote(request.query_string.decode("utf8"))
+    full_call = "/" + api_url + ("?" + query if query else "")
+    operation = api_manager.get_op(full_call)
+    content_type = "application/json"
     if isinstance(operation, Operation):
+        fmt = request.args.get("format")
+        if fmt is not None:
+            if "csv" in fmt:
+                content_type = "text/csv"
+        else:
+            candidates = operation.media_type_to_format()
+            best = request.accept_mimetypes.best_match(list(candidates))
+            if best is not None:
+                content_type = "text/csv" if best == "text/csv" else "application/json"
+                negotiated = api_manager.get_op(full_call + ("&" if query else "?") + "format=" + candidates[best])
+                if isinstance(negotiated, Operation):
+                    operation = negotiated
         status_code, body, response_content_type, headers = operation.exec(content_type=content_type)
     else:
         status_code, body, response_content_type = operation
@@ -181,18 +195,12 @@ def _handle_api_call(api_url: str, api_manager: APIManager, content_type: str) -
     return response
 
 
-def _run_webserver(  # pragma: no cover
+def _build_app(  # pragma: no cover
     api_manager: APIManager,
     html_handler: HTMLDocumentationHandler,
     openapi_handler: OpenAPIDocumentationHandler,
     css_path: str | None,
-    args: Namespace,
-) -> None:
-    html_handler.logger_ramose()
-
-    host_name = args.webserver.rsplit(":", 1)[0] if ":" in args.webserver else "127.0.0.1"
-    port = args.webserver.rsplit(":", 1)[1] if ":" in args.webserver else "8080"
-
+) -> Flask:
     app = Flask(__name__)
 
     swagger_url = "/docs"
@@ -206,9 +214,6 @@ def _run_webserver(  # pragma: no cover
         response = make_response(base_css + SWAGGER_MARKDOWN_CSS_FIX)
         response.headers.set("Content-Type", "text/css")
         return response
-
-    if args.call:
-        args.call = args.call[1:]
 
     @app.route("/")
     def home() -> str:
@@ -226,10 +231,24 @@ def _run_webserver(  # pragma: no cover
             status, page = html_handler.get_documentation(css_path, api_url)
             return page, status
 
-        fmt = request.args.get("format")
-        content_type = "text/csv" if fmt is not None and "csv" in fmt else "application/json"
-        return _handle_api_call(api_url, api_manager, content_type)
+        return _handle_api_call(api_url, api_manager)
 
+    return app
+
+
+def _run_webserver(  # pragma: no cover
+    api_manager: APIManager,
+    html_handler: HTMLDocumentationHandler,
+    openapi_handler: OpenAPIDocumentationHandler,
+    css_path: str | None,
+    args: Namespace,
+) -> None:
+    html_handler.logger_ramose()
+
+    host_name = args.webserver.rsplit(":", 1)[0] if ":" in args.webserver else "127.0.0.1"
+    port = args.webserver.rsplit(":", 1)[1] if ":" in args.webserver else "8080"
+
+    app = _build_app(api_manager, html_handler, openapi_handler, css_path)
     app.run(host=str(host_name), debug=args.debug, port=int(port))
 
 

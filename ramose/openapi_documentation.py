@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, overload
 import yaml
 from markdown import markdown
 
-from ramose._constants import FIELD_TYPE_RE, FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME
+from ramose._constants import FIELD_TYPE_RE, FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME, media_type_for_format
 from ramose.documentation import DocumentationHandler
 from ramose.hash_format import parse_custom_params, parse_disable_params
 
@@ -174,25 +174,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                             formats.add(fmt)
         return sorted(formats)
 
-    def _media_type_for_format(self, fmt: str) -> str | None:
-        fmt = (fmt or "").strip().lower()
-        mapping = {
-            "json": "application/json",
-            "csv": "text/csv",
-            "xml": "application/xml",
-            "rdfxml": "application/rdf+xml",
-            "rdf+xml": "application/rdf+xml",
-            "ttl": "text/turtle",
-            "turtle": "text/turtle",
-            "nt": "application/n-triples",
-            "ntriples": "application/n-triples",
-            "n-triples": "application/n-triples",
-            "nq": "application/n-quads",
-            "n-quads": "application/n-quads",
-            "trig": "application/trig",
-        }
-        return mapping.get(fmt)
-
     def _format_media_type_map(self, op: dict[str, str]) -> dict[str, str]:
         if "format" not in op:
             return {}
@@ -207,7 +188,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         return declared_media_types
 
     def _single_response_media_type(self, op: dict[str, str]) -> str:
-        default_format = op["default_format"].strip() if "default_format" in op else "csv"
+        default_format = op["default_format"].strip() if "default_format" in op else "json"
         if default_format == "json":
             return "application/json"
         if default_format == "csv":
@@ -215,7 +196,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         declared_media_types = self._format_media_type_map(op)
         if default_format in declared_media_types:
             return declared_media_types[default_format]
-        return self._media_type_for_format(default_format) or "application/json"
+        return media_type_for_format(default_format) or "application/json"
 
     def _csv_example(self, example: object) -> str | None:
         if not isinstance(example, list):
@@ -234,11 +215,24 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         writer.writerows(dict_rows)
         return buffer.getvalue()
 
+    def _content_entry(self, media_type: str, ok_schema: dict[str, object], ok_example: object) -> dict[str, object]:
+        is_json = media_type == "application/json" or media_type.endswith("+json")
+        entry: dict[str, object] = {"schema": ok_schema if is_json else {"type": "string"}}
+        if is_json:
+            example = ok_example
+        elif media_type == "text/csv":
+            example = self._csv_example(ok_example)
+        else:
+            example = None
+        if example is not None:
+            entry["examples"] = {"example": {"value": example}}
+        return entry
+
     @overload
     def _build_response_content(
         self,
         ok_schema: dict[str, object],
-        formats_enum: list[str],
+        declared_media_types: dict[str, str],
         ok_example: object = ...,
         err_schema_ref: None = ...,
     ) -> OrderedDict[str, dict[str, object]]: ...
@@ -247,7 +241,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     def _build_response_content(
         self,
         ok_schema: dict[str, object],
-        formats_enum: list[str],
+        declared_media_types: dict[str, str],
         ok_example: object = ...,
         *,
         err_schema_ref: str,
@@ -256,39 +250,22 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
     def _build_response_content(
         self,
         ok_schema: dict[str, object],
-        formats_enum: list[str],
+        declared_media_types: dict[str, str],
         ok_example: object = None,
         err_schema_ref: str | None = None,
     ) -> (
         OrderedDict[str, dict[str, object]]
         | tuple[OrderedDict[str, dict[str, object]], OrderedDict[str, dict[str, object]]]
     ):
-        content: OrderedDict[str, dict[str, object]] = OrderedDict()
-
-        content["application/json"] = {"schema": ok_schema}
-        if ok_example is not None:
-            content["application/json"]["examples"] = {"example": {"value": ok_example}}
-
-        content["text/csv"] = {"schema": {"type": "string"}}
-        csv_example = self._csv_example(ok_example)
-        if csv_example is not None:
-            content["text/csv"]["examples"] = {"example": {"value": csv_example}}
-
-        for fmt in formats_enum or []:
-            mt = self._media_type_for_format(fmt)
-            if mt is None or mt in content:
-                continue
-            content[mt] = {"schema": {"type": "string"}}
+        media_types = dict.fromkeys(["application/json", "text/csv", *declared_media_types.values()])
+        content: OrderedDict[str, dict[str, object]] = OrderedDict(
+            (media_type, self._content_entry(media_type, ok_schema, ok_example)) for media_type in media_types
+        )
 
         if err_schema_ref:
             err_content: OrderedDict[str, dict[str, object]] = OrderedDict()
             err_content["application/json"] = {"schema": {"$ref": err_schema_ref}}
             err_content["text/csv"] = {"schema": {"type": "string"}}
-            for fmt in formats_enum or []:
-                mt = self._media_type_for_format(fmt)
-                if mt is None or mt in err_content:
-                    continue
-                err_content[mt] = {"schema": {"type": "string"}}
             return content, err_content
 
         return content
@@ -300,17 +277,9 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         ok_example: object,
     ) -> tuple[OrderedDict[str, dict[str, object]], OrderedDict[str, dict[str, object]]]:
         media_type = self._single_response_media_type(op)
-        is_json = media_type == "application/json" or media_type.endswith("+json")
-        ok_entry: dict[str, object] = {"schema": ok_schema if is_json else {"type": "string"}}
-        if is_json:
-            example = ok_example
-        elif media_type == "text/csv":
-            example = self._csv_example(ok_example)
-        else:
-            example = None
-        if example is not None:
-            ok_entry["examples"] = {"example": {"value": example}}
-        ok_content: OrderedDict[str, dict[str, object]] = OrderedDict([(media_type, ok_entry)])
+        ok_content: OrderedDict[str, dict[str, object]] = OrderedDict(
+            [(media_type, self._content_entry(media_type, ok_schema, ok_example))],
+        )
         err_content: OrderedDict[str, dict[str, object]] = OrderedDict(
             [("application/json", {"schema": {"$ref": "#/components/schemas/Error"}})],
         )
@@ -501,7 +470,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         else:
             ok_content, err_content = self._build_response_content(
                 ok_schema=ok_schema,
-                formats_enum=ctx.formats_enum,
+                declared_media_types=self._format_media_type_map(op),
                 ok_example=ok_example,
                 err_schema_ref="#/components/schemas/Error",
             )
@@ -606,7 +575,8 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
     def _dump_yaml(self, spec: object) -> str:
         class _RamoseYamlDumper(yaml.SafeDumper):
-            pass
+            def ignore_aliases(self, data: object) -> bool:  # noqa: ARG002
+                return True
 
         def _str_presenter(dumper: yaml.SafeDumper, data: str) -> yaml.ScalarNode:
             if "\n" in data:

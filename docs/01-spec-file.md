@@ -99,7 +99,7 @@ SELECT DISTINCT ?id ?title ?author ?pub_date ... WHERE {
 | `#postprocess` | no | Postprocessing chain: `func1() --> func2("arg")`. See [addon modules](05-addons.md). |
 | `#sparql` | yes | SPARQL query. Parameters injected via `[[param_name]]` placeholders. |
 | `#format` | no | Custom output format converters: `name,function;...`. See [addon modules](format-converters). |
-| `#default_format` | no | Default output format when no `?format=` query parameter is provided. Must match a name registered in `#format` or a built-in format (`csv`, `json`). Without this field, the default is CSV. When set to a custom format, the "Result fields type" section is hidden from the HTML documentation since the output structure does not match the tabular columns declared in `#field_type`. |
+| `#default_format` | no | Default output format when neither a `?format=` query parameter nor an `Accept` header selects one. Must match a name registered in `#format` or a built-in format (`csv`, `json`). Without this field, the default is JSON. When set to a custom format, the "Result fields type" section is hidden from the HTML documentation since the output structure does not match the tabular columns declared in `#field_type`. |
 | `#custom_params` | no | Custom query parameters with addon handlers: `name,handler,phase,description;...`. See [addon modules](custom-parameters). |
 | `#engine` | no | Override the API-level engine for this operation only. |
 | `#disable_params` | no | Comma-separated list of built-in query parameters to suppress for this operation. Use `*` to disable all. Merged with any API-level `#disable_params`. |

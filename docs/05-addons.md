@@ -185,17 +185,19 @@ If a custom parameter has the same name as a built-in query parameter (`filter`,
 (format-converters)=
 ## Format converters
 
-The `#format` field in an operation registers custom output formats. Each entry maps a format name to a function in the addon module, with an optional content type as a third comma-separated field.
+The `#format` field in an operation registers custom output formats. Each entry maps a format name to a function in the addon module, with an optional media type as a third comma-separated field.
 
 ```
 #format xml,to_xml;turtle,to_turtle
 ```
 
-The third field sets the content type reported for that format in the OpenAPI document:
+The third field declares the media type for that format. It is reported in the OpenAPI document and used for [content negotiation](content-negotiation): a custom format is selectable via the `Accept` header, and listed in the OpenAPI response content, only when it declares a media type.
 
 ```
 #format skgif,to_skgif,application/ld+json
 ```
+
+Without the third field a custom format is still reachable through `?format=` and `-f`, but it has no media type, so it is not Accept-negotiable and does not appear in the OpenAPI response content.
 
 The function receives the result as a CSV string and a `request_url` keyword argument:
 
@@ -212,27 +214,15 @@ These formats become available via `?format=` in the query string and `-f` on th
 
 ### Default format
 
-By default, operations return CSV when no `?format=` parameter is provided. The `#default_format` field overrides this for a specific operation:
+By default, operations return JSON when neither a `?format=` parameter nor an `Accept` header selects a format. The `#default_format` field overrides this for a specific operation:
 
 ```
 #format skgif,to_skgif
 #default_format skgif
 ```
 
-With this configuration, requests without `?format=` use the `to_skgif` converter. Clients can still request other formats explicitly (e.g., `?format=csv` or `?format=json`).
+With this configuration, requests that do not select a format use the `to_skgif` converter. Clients can still request other formats explicitly (e.g., `?format=csv` or `?format=json`).
 
 The value must be a format name registered in `#format` or one of the built-in formats (`csv`, `json`).
-
-When a format does not declare a content type as the third `#format` field, the content type is inferred from the format name:
-
-| Format name | Content type |
-|-------------|-------------|
-| `xml`, `rdfxml`, `rdf+xml` | `application/rdf+xml` |
-| `ttl`, `turtle` | `text/turtle` |
-| `nt`, `ntriples`, `n-triples` | `application/n-triples` |
-| `nq`, `n-quads` | `application/n-quads` |
-| `trig` | `application/trig` |
-
-Unrecognized names default to `text/plain`.
 
 When `#default_format` is set to a custom format, the "Result fields type" section is not shown in the HTML documentation. The output structure of a custom converter typically does not match the tabular columns declared in `#field_type`, so displaying them would be misleading. The `#field_type` field is still required: it controls column selection, ordering, and type casting internally.

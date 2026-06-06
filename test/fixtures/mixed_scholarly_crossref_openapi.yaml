@@ -136,9 +136,6 @@ paths:
             text/csv:
               schema:
                 type: string
-            application/xml:
-              schema:
-                type: string
         default:
           description: Error
           content:
@@ -146,8 +143,5 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
             text/csv:
-              schema:
-                type: string
-            application/xml:
               schema:
                 type: string

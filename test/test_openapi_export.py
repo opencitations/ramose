@@ -12,6 +12,7 @@ import yaml
 from openapi_spec_validator import validate
 
 from ramose import APIManager, OpenAPIDocumentationHandler
+from ramose._constants import media_type_for_format
 
 TESTS_DIR = Path(__file__).resolve().parent / "fixtures"
 
@@ -232,34 +233,48 @@ class TestTryParseOutputJson:
 
 
 class TestMediaTypeForFormat:
-    def test_known_formats(self) -> None:
-        handler = _build_handler("test_scholarly.hf")
-        assert handler._media_type_for_format("xml") == "application/xml"
-        assert handler._media_type_for_format("ttl") == "text/turtle"
-        assert handler._media_type_for_format("nt") == "application/n-triples"
+    def test_native_formats(self) -> None:
+        assert media_type_for_format("json") == "application/json"
+        assert media_type_for_format("csv") == "text/csv"
 
-    def test_unknown_format(self) -> None:
-        handler = _build_handler("test_scholarly.hf")
-        assert handler._media_type_for_format("nonexistent") is None
+    def test_custom_format_has_no_native_media_type(self) -> None:
+        assert media_type_for_format("xml") is None
+        assert media_type_for_format("ttl") is None
+        assert media_type_for_format("nonexistent") is None
 
 
 class TestBuildResponseContent:
     def test_without_error_schema(self) -> None:
         handler = _build_handler("test_scholarly.hf")
-        result = handler._build_response_content({"type": "array"}, ["csv", "json"], None, None)
+        result = handler._build_response_content({"type": "array"}, {})
         assert isinstance(result, dict)
         assert set(result.keys()) == {"application/json", "text/csv"}
 
-    def test_extra_format_added(self) -> None:
+    def test_with_error_schema(self) -> None:
         handler = _build_handler("test_scholarly.hf")
         ok_and_err = handler._build_response_content(
             {"type": "array"},
-            ["csv", "json", "xml"],
-            None,
+            {},
             err_schema_ref="#/components/schemas/Error",
         )
         assert isinstance(ok_and_err, tuple)
-        assert set(ok_and_err[1].keys()) == {"application/json", "text/csv", "application/xml"}
+        assert set(ok_and_err[0].keys()) == {"application/json", "text/csv"}
+        assert set(ok_and_err[1].keys()) == {"application/json", "text/csv"}
+
+    def test_declared_json_format_reuses_inferred_schema(self) -> None:
+        handler = _build_handler("test_scholarly.hf")
+        ok_schema = {"type": "array", "items": {"type": "object"}}
+        ok_and_err = handler._build_response_content(
+            ok_schema,
+            {"skgif": "application/ld+json"},
+            err_schema_ref="#/components/schemas/Error",
+        )
+        assert isinstance(ok_and_err, tuple)
+        ok_content, err_content = ok_and_err
+        assert set(ok_content.keys()) == {"application/json", "text/csv", "application/ld+json"}
+        assert ok_content["application/ld+json"]["schema"] == ok_schema
+        assert ok_content["text/csv"]["schema"] == {"type": "string"}
+        assert set(err_content.keys()) == {"application/json", "text/csv"}
 
 
 class TestExtractParamExamples:
@@ -272,14 +287,23 @@ class TestExtractParamExamples:
         assert handler._extract_param_examples_from_call("/test/{id}", "/other/path") == {}
 
 
+class TestDeclaredMediaTypeMultiFormat:
+    def test_declared_media_type_in_response_content(self) -> None:
+        handler = _build_handler("declared_media_type.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        content = spec["paths"]["/item/{name}"]["get"]["responses"]["200"]["content"]
+        assert set(content.keys()) == {"application/json", "text/csv", "application/vnd.custom+xml"}
+
+
 class TestOpenAPIFromMixedHf:
-    def test_xml_format_in_response_content(self) -> None:
+    def test_undeclared_xml_format_excluded_from_response_content(self) -> None:
         handler = _build_handler("mixed_scholarly_crossref.hf")
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
         path = spec["paths"]["/metadata/{dois}"]["get"]
         ok_content = path["responses"]["200"]["content"]
-        assert set(ok_content.keys()) == {"application/json", "text/csv", "application/xml"}
+        assert set(ok_content.keys()) == {"application/json", "text/csv"}
 
     def test_double_underscore_param_description(self) -> None:
         handler = _build_handler("test_scholarly.hf")
@@ -377,9 +401,9 @@ class TestFormatMediaTypeDeclaration:
         op = {"default_format": "skgif", "format": "skgif,to_skgif,application/ld+json"}
         assert handler._single_response_media_type(op) == "application/ld+json"
 
-    def test_single_response_media_type_defaults_to_csv(self) -> None:
+    def test_single_response_media_type_defaults_to_json(self) -> None:
         handler = _build_handler("test_openapi_skgif_like.hf")
-        assert handler._single_response_media_type({}) == "text/csv"
+        assert handler._single_response_media_type({}) == "application/json"
 
 
 class TestSwaggerUI:

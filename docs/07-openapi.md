@@ -40,6 +40,6 @@ The generated document includes:
 - Parameter schemas inferred from `#<param>` type declarations
 - Example values extracted from `#call`
 - Response schemas with field types from `#field_type`
-- Available output formats from `#format` declarations and built-in `csv`/`json`
+- Response content types: built-in `application/json` and `text/csv`, plus any custom format that declares a media type (the third field of `#format`). Custom formats without a media type still appear among the `?format` query parameter values but not in the response content
 
 RAMOSE-specific implementation details (endpoint, addon, method, preprocess, postprocess) are intentionally omitted from the output as they are not meaningful to API consumers.

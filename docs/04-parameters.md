@@ -69,6 +69,24 @@ Override the response format. Takes priority over the `Accept` header.
 
 Custom formats registered via [`#format`](format-converters) are also available (e.g., `?format=xml`).
 
+(content-negotiation)=
+## Content negotiation
+
+When no `?format=` parameter is present, RAMOSE selects the response format from the request's `Accept` header, matching it against what the operation can produce: built-in `application/json` and `text/csv`, plus any custom format that declares a media type (the third field of [`#format`](format-converters)).
+
+Precedence is `?format=` > `Accept` > operation default:
+
+- `?format=` always wins, so existing clients keep their behavior.
+- Otherwise the best matching media type from `Accept` is used.
+- If `Accept` is absent, `*/*`, or matches nothing the operation produces, the operation default applies (`#default_format`, or JSON when unset).
+
+```sh
+curl -H "Accept: text/csv" "http://localhost:8080/v1/metadata/doi:10.1162/qss_a_00292"
+curl -H "Accept: application/json" "http://localhost:8080/v1/metadata/doi:10.1162/qss_a_00292"
+```
+
+A custom format is Accept-negotiable only when it declares a media type; without one it stays reachable through `?format=`.
+
 ## json
 
 Transform fields in JSON responses. Only applies when the output format is JSON.

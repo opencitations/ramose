@@ -30,7 +30,7 @@ try:
 except ImportError:
     SparqlAnything = None
 
-from ramose._constants import DEFAULT_HTTP_TIMEOUT, FIELD_TYPE_RE, _http_session
+from ramose._constants import DEFAULT_HTTP_TIMEOUT, FIELD_TYPE_RE, _http_session, media_type_for_format
 from ramose.datatype import DataType
 from ramose.paging import PaginationInfo, build_link_header, build_pagination_info
 
@@ -131,6 +131,20 @@ class Operation:
         if fmt in self.format_media_types:
             return self.format_media_types[fmt]
         return Operation.get_content_type(fmt)
+
+    def media_type_to_format(self) -> dict[str, str]:
+        if "format" in self.disabled_params:
+            return {}
+        default_token = self.i["default_format"].strip() if "default_format" in self.i else "json"
+        media_type_to_token: dict[str, str] = {}
+        for token in [default_token, "json", "csv", *self.format]:
+            if token in self.format_media_types:
+                media_type = self.format_media_types[token]
+            else:
+                media_type = media_type_for_format(token)
+            if media_type is not None:
+                media_type_to_token.setdefault(media_type, token)
+        return media_type_to_token
 
     def conv(self, s: str, query_string: dict[str, list[str]], c_type: str = "text/csv") -> tuple[str, str]:
         """This method takes a string representing a CSV document and converts it in the requested format according

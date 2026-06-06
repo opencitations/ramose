@@ -1,0 +1,16 @@
+#url /decl
+#type api
+#base http://localhost:5000
+#endpoint http://localhost:9999/sparql
+#title Declared Media Type API
+#version 1.0.0
+#addon testaddon
+
+#url /item/{name}
+#type operation
+#name str(.+)
+#method get
+#description Item by name
+#field_type str(name)
+#format custom,to_xml,application/vnd.custom+xml
+#sparql SELECT ?name WHERE { BIND("test" AS ?name) }

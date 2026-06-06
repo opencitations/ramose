@@ -14,4 +14,14 @@ PARAM_NAME = r"{([^{}\(\)]+)}"
 DEFAULT_HTTP_TIMEOUT = 60
 FORMAT_PARTS_WITH_MEDIA_TYPE = 3
 
+FORMAT_MEDIA_TYPES = {
+    "json": "application/json",
+    "csv": "text/csv",
+}
+
+
+def media_type_for_format(fmt: str) -> str | None:
+    return FORMAT_MEDIA_TYPES.get((fmt or "").strip().lower())
+
+
 _http_session = _RequestsSession()
