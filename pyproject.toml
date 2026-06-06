@@ -1,6 +1,6 @@
 [project]
 name = "ramose"
-version = "2.3.0"
+version = "2.3.1"
 description = "Restful API Manager Over SPARQL Endpoints (RAMOSE) is an application that allows agile development and publication of documented RESTful APIs for querying SPARQL endpoints, according to a particular specification document."
 authors = [
     { name = "Silvio Peroni", email = "silvio.peroni@unibo.it" },

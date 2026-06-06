@@ -1,3 +1,12 @@
+## [2.3.1](https://github.com/opencitations/ramose/compare/v2.3.0...v2.3.1) (2026-06-06)
+
+
+### Bug Fixes
+
+* **openapi:** render Swagger UI in the demo via CDN ([7754786](https://github.com/opencitations/ramose/commit/77547863bb04f347193dca0a6970f6de61d830c2))
+* **openapi:** use decoded path parameter examples [release] ([fa89c7e](https://github.com/opencitations/ramose/commit/fa89c7e256cbb6ad9bd6cbad587161436b775641))
+* **operation:** resolve declared media type for custom output formats ([425b0fe](https://github.com/opencitations/ramose/commit/425b0fe7b2710d4cf5ea1b51fa915b8fdac26cce))
+
 # [2.3.0](https://github.com/opencitations/ramose/compare/v2.2.0...v2.3.0) (2026-06-06)
 
 
