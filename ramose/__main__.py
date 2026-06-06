@@ -23,15 +23,8 @@ from flask_swagger_ui import get_swaggerui_blueprint
 
 from ramose.api_manager import APIManager
 from ramose.html_documentation import HTMLDocumentationHandler
-from ramose.openapi_documentation import OpenAPIDocumentationHandler
+from ramose.openapi_documentation import SWAGGER_MARKDOWN_CSS_FIX, OpenAPIDocumentationHandler
 from ramose.operation import Operation
-
-# swagger-ui renders inline Markdown `code` with 5px vertical padding, so code spans on consecutive
-# lines overlap (https://github.com/swagger-api/swagger-ui/issues/7569)
-_SWAGGER_MARKDOWN_CSS_FIX = (
-    "\n.swagger-ui .renderedMarkdown code,\n.swagger-ui .markdown code{padding:0 7px!important}\n"
-    ".swagger-ui .renderedMarkdown li,\n.swagger-ui .markdown li{margin:6px 0!important}\n"
-)
 
 
 def _parse_args() -> Namespace:  # pragma: no cover
@@ -210,7 +203,7 @@ def _run_webserver(  # pragma: no cover
     @app.route(f"{swagger_url}/index.css")
     def swagger_index_css() -> Response:
         base_css = importlib.resources.files("flask_swagger_ui").joinpath("dist/index.css").read_text(encoding="utf-8")
-        response = make_response(base_css + _SWAGGER_MARKDOWN_CSS_FIX)
+        response = make_response(base_css + SWAGGER_MARKDOWN_CSS_FIX)
         response.headers.set("Content-Type", "text/css")
         return response
 

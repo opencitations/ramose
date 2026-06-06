@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import csv
+import importlib.resources
 import json
 import re
 from collections import OrderedDict
@@ -33,6 +34,13 @@ if TYPE_CHECKING:
 
 _MIN_QUOTED_LENGTH = 2
 _FORMAT_PARTS_WITH_MEDIA_TYPE = 3
+
+# swagger-ui renders inline Markdown `code` with 5px vertical padding, so code spans on consecutive
+# lines overlap (https://github.com/swagger-api/swagger-ui/issues/7569)
+SWAGGER_MARKDOWN_CSS_FIX = (
+    "\n.swagger-ui .renderedMarkdown code,\n.swagger-ui .markdown code{padding:0 7px!important}\n"
+    ".swagger-ui .renderedMarkdown li,\n.swagger-ui .markdown li{margin:6px 0!important}\n"
+)
 
 
 @dataclass
@@ -607,6 +615,33 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         spec = self._to_builtin(spec)
         yml = self._dump_yaml(spec)
         return 200, yml
+
+    def get_swagger_ui(self, base_url: str | None = None, *_args: object, **_dargs: object) -> tuple[int, str]:
+        spec = self._to_builtin(self._build_openapi(base_url=base_url))
+        spec_json = json.dumps(spec).replace("</", "<\\/")
+        init_script = (
+            "SwaggerUIBundle({spec: "
+            + spec_json
+            + ", dom_id: '#swagger-ui', presets: [SwaggerUIBundle.presets.apis]});"
+        )
+
+        dist = importlib.resources.files("flask_swagger_ui").joinpath("dist")
+        styles = dist.joinpath("swagger-ui.css").read_text(encoding="utf-8")
+        layout_styles = dist.joinpath("index.css").read_text(encoding="utf-8")
+        script = dist.joinpath("swagger-ui-bundle.js").read_text(encoding="utf-8").replace("</script", "<\\/script")
+
+        page = (
+            "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><style>"
+            + styles
+            + layout_styles
+            + SWAGGER_MARKDOWN_CSS_FIX
+            + "</style></head><body><div id='swagger-ui'></div><script>"
+            + script
+            + "</script><script>"
+            + init_script
+            + "</script></body></html>"
+        )
+        return 200, page
 
     def store_documentation(
         self, file_path: str, base_url: str | None = None, *_args: object, **_dargs: object
