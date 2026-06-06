@@ -1,3 +1,10 @@
+## [2.3.3](https://github.com/opencitations/ramose/compare/v2.3.2...v2.3.3) (2026-06-06)
+
+
+### Bug Fixes
+
+* **openapi:** inline bundled Swagger UI assets instead of loading from CDN ([8e9a0b0](https://github.com/opencitations/ramose/commit/8e9a0b0ae588fead8be46109a6563da745d9fdd3))
+
 ## [2.3.2](https://github.com/opencitations/ramose/compare/v2.3.1...v2.3.2) (2026-06-06)
 
 
