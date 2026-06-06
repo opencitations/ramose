@@ -19,7 +19,6 @@ from io import StringIO
 from pathlib import Path
 from re import findall, split
 from typing import TYPE_CHECKING, overload
-from urllib.parse import quote
 
 import yaml
 from markdown import markdown
@@ -466,7 +465,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         for param in path_params:
             nm = param.get("name")
             if nm in call_examples:
-                param["example"] = quote(call_examples[nm], safe="-._~__")
+                param["example"] = call_examples[nm]
                 if "__" in call_examples[nm] and "description" not in param:
                     param["description"] = "Multiple values can be provided separated by '__'."
 

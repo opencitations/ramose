@@ -103,7 +103,7 @@ paths:
           type: string
           pattern: \"?10\..+[^_\"]((__|\" \")10\..+[^_])*\"?
         description: 'Note: input is pre-processed by RAMOSE: lower(dois) --> split_dois(dois)'
-        example: 10.1108%2Fjd-12-2013-0166__10.1038%2Fnature12373
+        example: 10.1108/jd-12-2013-0166__10.1038/nature12373
       - $ref: '#/components/parameters/require'
       - $ref: '#/components/parameters/filter'
       - $ref: '#/components/parameters/sort'
