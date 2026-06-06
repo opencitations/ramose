@@ -400,6 +400,11 @@ class TestSwaggerUI:
         _, html = handler.get_swagger_ui()
         assert "application/ld+json" in html
 
+    def test_sets_base_href_to_server_url(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, html = handler.get_swagger_ui()
+        assert "<base href='http://localhost:5000/skgif-test/v1'>" in html
+
 
 class TestOpenAPIInferSchemaFromOutputJson:
     def test_inferred_schema_is_object(self) -> None:

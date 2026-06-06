@@ -532,6 +532,9 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         return op_obj
 
+    def _server_url(self, api_meta: dict[str, str]) -> str:
+        return f"{api_meta.get('base', '')}{api_meta.get('url', '')}"
+
     def _build_openapi(self, base_url: str | None = None) -> OrderedDict[str, object]:
         conf = self._get_conf(base_url)
         api_meta = conf["conf_json"][0]
@@ -541,9 +544,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         spec["openapi"] = "3.1.0"
         spec["info"] = self._build_info(api_meta)
 
-        base = api_meta.get("base", "")
-        root = api_meta.get("url", "")
-        spec["servers"] = [{"url": f"{base}{root}"}]
+        spec["servers"] = [{"url": self._server_url(api_meta)}]
 
         api_disabled = parse_disable_params(api_meta["disable_params"]) if "disable_params" in api_meta else set()
 
@@ -556,6 +557,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                     "type": "object",
                     "properties": {"error": {"type": "integer"}, "message": {"type": "string"}},
                     "required": ["error", "message"],
+                    "example": {"error": 404, "message": "HTTP status code 404: resource not found"},
                 },
             },
         }
@@ -623,8 +625,12 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             + spec_json
             + ", dom_id: '#swagger-ui', presets: [SwaggerUIBundle.presets.apis]});"
         )
+        server_url = self._server_url(self._get_conf(base_url)["conf_json"][0])
+        base_tag = f"<base href='{server_url}'>" if server_url.startswith(("http://", "https://")) else ""
         return 200, (
-            "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><link rel='stylesheet' href='"
+            "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'>"
+            + base_tag
+            + "<link rel='stylesheet' href='"
             + SWAGGER_UI_CSS_URL
             + "'><style>"
             + SWAGGER_MARKDOWN_CSS_FIX
