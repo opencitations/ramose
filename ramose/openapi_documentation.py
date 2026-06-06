@@ -10,10 +10,12 @@
 from __future__ import annotations
 
 import csv
+import importlib.resources
 import json
 import re
 from collections import OrderedDict
 from dataclasses import dataclass
+from functools import cache
 from html.parser import HTMLParser
 from io import StringIO
 from pathlib import Path
@@ -38,8 +40,11 @@ SWAGGER_MARKDOWN_CSS_FIX = (
     "\n.swagger-ui .renderedMarkdown code,\n.swagger-ui .markdown code{padding:0 7px!important}\n"
     ".swagger-ui .renderedMarkdown li,\n.swagger-ui .markdown li{margin:6px 0!important}\n"
 )
-SWAGGER_UI_CSS_URL = "https://unpkg.com/swagger-ui-dist@5/swagger-ui.css"
-SWAGGER_UI_BUNDLE_URL = "https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"
+
+
+@cache
+def _read_swagger_asset(filename: str) -> str:
+    return importlib.resources.files("flask_swagger_ui").joinpath(f"dist/{filename}").read_text(encoding="utf-8")
 
 
 @dataclass
@@ -630,13 +635,12 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         return 200, (
             "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'>"
             + base_tag
-            + "<link rel='stylesheet' href='"
-            + SWAGGER_UI_CSS_URL
-            + "'><style>"
+            + "<style>"
+            + _read_swagger_asset("swagger-ui.css")
             + SWAGGER_MARKDOWN_CSS_FIX
-            + "</style></head><body><div id='swagger-ui'></div><script src='"
-            + SWAGGER_UI_BUNDLE_URL
-            + "'></script><script>"
+            + "</style></head><body><div id='swagger-ui'></div><script>"
+            + _read_swagger_asset("swagger-ui-bundle.js")
+            + "</script><script>"
             + init_script
             + "</script></body></html>"
         )

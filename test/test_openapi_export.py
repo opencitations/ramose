@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import importlib.resources
 from pathlib import Path
 
 import pytest
@@ -389,11 +390,13 @@ class TestSwaggerUI:
         assert html.startswith("<!DOCTYPE html>")
         assert "SwaggerUIBundle({spec:" in html
 
-    def test_loads_swagger_assets_from_cdn(self) -> None:
+    def test_inlines_swagger_assets_without_cdn(self) -> None:
         handler = _build_handler("test_openapi_skgif_like.hf")
         _, html = handler.get_swagger_ui()
-        assert "https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js" in html
-        assert "https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" in html
+        dist = importlib.resources.files("flask_swagger_ui").joinpath("dist")
+        assert dist.joinpath("swagger-ui.css").read_text(encoding="utf-8") in html
+        assert dist.joinpath("swagger-ui-bundle.js").read_text(encoding="utf-8") in html
+        assert "unpkg.com" not in html
 
     def test_inlines_spec_with_declared_media_type(self) -> None:
         handler = _build_handler("test_openapi_skgif_like.hf")
