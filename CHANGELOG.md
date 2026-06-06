@@ -1,3 +1,10 @@
+## [2.3.2](https://github.com/opencitations/ramose/compare/v2.3.1...v2.3.2) (2026-06-06)
+
+
+### Bug Fixes
+
+* **openapi:** inject base href into served Swagger UI [release] ([8fe3eeb](https://github.com/opencitations/ramose/commit/8fe3eeb36600414e77a87a81be2ed27d3fdfe3b5))
+
 ## [2.3.1](https://github.com/opencitations/ramose/compare/v2.3.0...v2.3.1) (2026-06-06)
 
 
