@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import importlib.resources
 from argparse import ArgumentParser, Namespace
 from csv import writer
 from http import HTTPStatus
@@ -18,11 +19,19 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from flask import Flask, Response, make_response, request
+from flask_swagger_ui import get_swaggerui_blueprint
 
 from ramose.api_manager import APIManager
 from ramose.html_documentation import HTMLDocumentationHandler
 from ramose.openapi_documentation import OpenAPIDocumentationHandler
 from ramose.operation import Operation
+
+# swagger-ui renders inline Markdown `code` with 5px vertical padding, so code spans on consecutive
+# lines overlap (https://github.com/swagger-api/swagger-ui/issues/7569)
+_SWAGGER_MARKDOWN_CSS_FIX = (
+    "\n.swagger-ui .renderedMarkdown code,\n.swagger-ui .markdown code{padding:0 7px!important}\n"
+    ".swagger-ui .renderedMarkdown li,\n.swagger-ui .markdown li{margin:6px 0!important}\n"
+)
 
 
 def _parse_args() -> Namespace:  # pragma: no cover
@@ -192,6 +201,18 @@ def _run_webserver(  # pragma: no cover
     port = args.webserver.rsplit(":", 1)[1] if ":" in args.webserver else "8080"
 
     app = Flask(__name__)
+
+    swagger_url = "/docs"
+    spec_urls = [{"name": base.lstrip("/"), "url": f"{base}/openapi.yaml"} for base in api_manager.all_conf]
+    swagger_bp = get_swaggerui_blueprint(swagger_url, "", config={"urls": spec_urls})
+    app.register_blueprint(swagger_bp, url_prefix=swagger_url)
+
+    @app.route(f"{swagger_url}/index.css")
+    def swagger_index_css() -> Response:
+        base_css = importlib.resources.files("flask_swagger_ui").joinpath("dist/index.css").read_text(encoding="utf-8")
+        response = make_response(base_css + _SWAGGER_MARKDOWN_CSS_FIX)
+        response.headers.set("Content-Type", "text/css")
+        return response
 
     if args.call:
         args.call = args.call[1:]

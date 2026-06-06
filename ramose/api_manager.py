@@ -205,8 +205,8 @@ class APIManager:
                 part = raw_part.strip()
                 if not part:
                     continue
-                fmt, func = part.split(",", 1)
-                op_format_map[fmt.strip()] = func.strip()
+                fields = part.split(",")
+                op_format_map[fields[0].strip()] = fields[1].strip()
         return op_format_map
 
     def get_op(self, op_complete_url: str) -> Operation | tuple[int, str, str]:

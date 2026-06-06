@@ -9,16 +9,20 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import re
 from collections import OrderedDict
 from dataclasses import dataclass
+from html.parser import HTMLParser
+from io import StringIO
 from pathlib import Path
 from re import findall, split
 from typing import TYPE_CHECKING, overload
 from urllib.parse import quote
 
 import yaml
+from markdown import markdown
 
 from ramose._constants import FIELD_TYPE_RE, PARAM_NAME
 from ramose.documentation import DocumentationHandler
@@ -28,6 +32,7 @@ if TYPE_CHECKING:
     from ramose.api_manager import APIConfig
 
 _MIN_QUOTED_LENGTH = 2
+_FORMAT_PARTS_WITH_MEDIA_TYPE = 3
 
 
 @dataclass
@@ -36,6 +41,35 @@ class _OpenAPIBuildContext:
     common_param_refs: list[dict[str, str]]
     formats_enum: list[str]
     api_disabled: set[str]
+
+
+class _MarkupParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self._text_fragments: list[str] = []
+        self.links: list[tuple[str, str]] = []
+        self._current_link_href: str | None = None
+        self._current_link_label_fragments: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "a":
+            self._current_link_href = dict(attrs).get("href")
+            self._current_link_label_fragments = []
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "a" and self._current_link_href is not None:
+            label = "".join(self._current_link_label_fragments).strip()
+            self.links.append((self._current_link_href, label))
+            self._current_link_href = None
+
+    def handle_data(self, data: str) -> None:
+        self._text_fragments.append(data)
+        if self._current_link_href is not None:
+            self._current_link_label_fragments.append(data)
+
+    @property
+    def text(self) -> str:
+        return "".join(self._text_fragments).strip()
 
 
 class OpenAPIDocumentationHandler(DocumentationHandler):
@@ -68,13 +102,25 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         except (IndexError, ValueError):
             return "str", ".+"
 
+    def _parse_markup(self, text: str) -> _MarkupParser:
+        parser = _MarkupParser()
+        parser.feed(markdown(text))
+        return parser
+
     def _guess_contact(self, contacts_value: object) -> dict[str, str] | None:
         if not contacts_value:
             return None
-        c = str(contacts_value).strip()
-        if "@" in c and " " not in c and "/" not in c:
-            return {"email": c}
-        return {"name": c}
+        parsed = self._parse_markup(str(contacts_value).strip())
+        for href, label in parsed.links:
+            if href.startswith("mailto:"):
+                return {"email": href.removeprefix("mailto:")}
+            if href.startswith(("http://", "https://")):
+                return {"name": label or parsed.text, "url": href}
+        plain_text = parsed.text
+        looks_like_bare_email = "@" in plain_text and " " not in plain_text and "/" not in plain_text
+        if looks_like_bare_email:
+            return {"email": plain_text}
+        return {"name": plain_text}
 
     def _clean_text(self, v: object) -> str | None:
         if v is None:
@@ -135,6 +181,47 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         }
         return mapping.get(fmt)
 
+    def _format_media_type_map(self, op: dict[str, str]) -> dict[str, str]:
+        if "format" not in op:
+            return {}
+        raw_value = op["format"]
+        declarations = raw_value if isinstance(raw_value, list) else [raw_value]
+        declared_media_types: dict[str, str] = {}
+        for declaration in declarations:
+            for part in str(declaration).split(";"):
+                fields = [field.strip() for field in part.split(",")]
+                if len(fields) >= _FORMAT_PARTS_WITH_MEDIA_TYPE and fields[0] and fields[2]:
+                    declared_media_types[fields[0]] = fields[2]
+        return declared_media_types
+
+    def _single_response_media_type(self, op: dict[str, str]) -> str:
+        default_format = op["default_format"].strip() if "default_format" in op else "csv"
+        if default_format == "json":
+            return "application/json"
+        if default_format == "csv":
+            return "text/csv"
+        declared_media_types = self._format_media_type_map(op)
+        if default_format in declared_media_types:
+            return declared_media_types[default_format]
+        return self._media_type_for_format(default_format) or "application/json"
+
+    def _csv_example(self, example: object) -> str | None:
+        if not isinstance(example, list):
+            return None
+        dict_rows = [row for row in example if isinstance(row, dict)]
+        if not dict_rows:
+            return None
+        scalar_cell_types = (str, int, float, bool, type(None))
+        all_cells_are_scalar = all(isinstance(value, scalar_cell_types) for row in dict_rows for value in row.values())
+        if not all_cells_are_scalar:
+            return None
+        fieldnames = list(dict.fromkeys(key for row in dict_rows for key in row))
+        buffer = StringIO()
+        writer = csv.DictWriter(buffer, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(dict_rows)
+        return buffer.getvalue()
+
     @overload
     def _build_response_content(
         self,
@@ -164,13 +251,16 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         OrderedDict[str, dict[str, object]]
         | tuple[OrderedDict[str, dict[str, object]], OrderedDict[str, dict[str, object]]]
     ):
-        content = OrderedDict()
+        content: OrderedDict[str, dict[str, object]] = OrderedDict()
 
         content["application/json"] = {"schema": ok_schema}
         if ok_example is not None:
             content["application/json"]["examples"] = {"example": {"value": ok_example}}
 
         content["text/csv"] = {"schema": {"type": "string"}}
+        csv_example = self._csv_example(ok_example)
+        if csv_example is not None:
+            content["text/csv"]["examples"] = {"example": {"value": csv_example}}
 
         for fmt in formats_enum or []:
             mt = self._media_type_for_format(fmt)
@@ -179,7 +269,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             content[mt] = {"schema": {"type": "string"}}
 
         if err_schema_ref:
-            err_content = OrderedDict()
+            err_content: OrderedDict[str, dict[str, object]] = OrderedDict()
             err_content["application/json"] = {"schema": {"$ref": err_schema_ref}}
             err_content["text/csv"] = {"schema": {"type": "string"}}
             for fmt in formats_enum or []:
@@ -190,6 +280,29 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             return content, err_content
 
         return content
+
+    def _build_single_format_response(
+        self,
+        op: dict[str, str],
+        ok_schema: dict[str, object],
+        ok_example: object,
+    ) -> tuple[OrderedDict[str, dict[str, object]], OrderedDict[str, dict[str, object]]]:
+        media_type = self._single_response_media_type(op)
+        is_json = media_type == "application/json" or media_type.endswith("+json")
+        ok_entry: dict[str, object] = {"schema": ok_schema if is_json else {"type": "string"}}
+        if is_json:
+            example = ok_example
+        elif media_type == "text/csv":
+            example = self._csv_example(ok_example)
+        else:
+            example = None
+        if example is not None:
+            ok_entry["examples"] = {"example": {"value": example}}
+        ok_content: OrderedDict[str, dict[str, object]] = OrderedDict([(media_type, ok_entry)])
+        err_content: OrderedDict[str, dict[str, object]] = OrderedDict(
+            [("application/json", {"schema": {"$ref": "#/components/schemas/Error"}})],
+        )
+        return ok_content, err_content
 
     def _extract_param_examples_from_call(self, path_template: str, call_value: object) -> dict[str, str]:
         if not call_value:
@@ -245,14 +358,23 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
     def _build_info(self, api_meta: dict[str, str]) -> OrderedDict[str, object]:
         info: OrderedDict[str, object] = OrderedDict()
-        info["title"] = api_meta.get("title", "RAMOSE API")
-        info["version"] = api_meta.get("version", "0.0.0")
+        info["title"] = self._parse_markup(api_meta.get("title", "RAMOSE API")).text
+        version_text = self._parse_markup(api_meta.get("version", "0.0.0")).text
+        info["version"] = re.sub(r"^version\s+", "", version_text, flags=re.IGNORECASE)
         if "description" in api_meta:
             info["description"] = api_meta["description"]
         if "license" in api_meta:
-            info["license"] = {"name": api_meta["license"]}
+            parsed_license = self._parse_markup(api_meta["license"])
+            license_url = next(
+                (href for href, _ in parsed_license.links if href.startswith(("http://", "https://"))),
+                None,
+            )
+            license_obj: dict[str, str] = {"name": parsed_license.text}
+            if license_url is not None:
+                license_obj["url"] = license_url
+            info["license"] = license_obj
         if "contacts" in api_meta:
-            contact_obj = self._guess_contact(api_meta.get("contacts"))
+            contact_obj = self._guess_contact(api_meta["contacts"])
             if contact_obj:
                 info["contact"] = contact_obj
         return info
@@ -348,7 +470,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         path_params: list[dict[str, object]],
         ctx: _OpenAPIBuildContext,
     ) -> OrderedDict[str, object]:
-        summary = op["description"].split("\n")[0].strip() if op.get("description") else ""
+        summary = self._parse_markup(op["description"].split("\n")[0]).text if op.get("description") else ""
         desc = self._clean_text(op.get("description")) or ""
 
         row_schema = self._build_row_schema_from_field_type(op.get("field_type", ""))
@@ -357,12 +479,20 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             ok_schema: dict[str, object] = self._infer_schema_from_value(ok_example)
         else:
             ok_schema = {"type": "array", "items": row_schema}
-        ok_content, err_content = self._build_response_content(
-            ok_schema=ok_schema,
-            formats_enum=ctx.formats_enum,
-            ok_example=ok_example,
-            err_schema_ref="#/components/schemas/Error",
-        )
+
+        disabled_names = set(ctx.api_disabled)
+        if "disable_params" in op:
+            disabled_names |= parse_disable_params(op["disable_params"])
+
+        if "format" in disabled_names:
+            ok_content, err_content = self._build_single_format_response(op, ok_schema, ok_example)
+        else:
+            ok_content, err_content = self._build_response_content(
+                ok_schema=ok_schema,
+                formats_enum=ctx.formats_enum,
+                ok_example=ok_example,
+                err_schema_ref="#/components/schemas/Error",
+            )
 
         op_obj: OrderedDict[str, object] = OrderedDict()
         op_obj["tags"] = [ctx.tag_name]
@@ -382,10 +512,6 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                 if conf["description"]:
                     param_obj["description"] = conf["description"]
                 custom_query_params.append(param_obj)
-
-        disabled_names = set(ctx.api_disabled)
-        if "disable_params" in op:
-            disabled_names |= parse_disable_params(op["disable_params"])
 
         suppressed = custom_names | disabled_names
         filtered_refs = [ref for ref in ctx.common_param_refs if ref["$ref"].rsplit("/", 1)[-1] not in suppressed]

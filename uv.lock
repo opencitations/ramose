@@ -607,6 +607,18 @@ wheels = [
 ]
 
 [[package]]
+name = "flask-swagger-ui"
+version = "5.32.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flask" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c8/db/06cd2b77fff6c115c37dc8ec4db04ee6e5119799a27c7e19410f0f303c0e/flask_swagger_ui-5.32.6.tar.gz", hash = "sha256:38730cb566e5f1d70deb8bb1035ef1565b35dc50cdfd2a9e507779a751d46930", size = 613730, upload-time = "2026-05-18T10:31:09.328Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/9f/a0510e3c648f2e6b58bbf5dc7db23668ec0ad5db90e1d84afb466a1f778f/flask_swagger_ui-5.32.6-py3-none-any.whl", hash = "sha256:83ec82f2b1da3628d89bc2eaa4836fdba7194353ff09d3d5c7d1e6892f345336", size = 618735, upload-time = "2026-05-18T10:31:07.034Z" },
+]
+
+[[package]]
 name = "genbadge"
 version = "1.1.3"
 source = { registry = "https://pypi.org/simple" }
@@ -2436,6 +2448,7 @@ version = "2.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "flask" },
+    { name = "flask-swagger-ui" },
     { name = "markdown" },
     { name = "pyyaml" },
     { name = "requests" },
@@ -2465,6 +2478,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "flask", specifier = ">=3.1.3" },
+    { name = "flask-swagger-ui", specifier = ">=5.32.6" },
     { name = "markdown", specifier = ">=3.10.2" },
     { name = "pysparql-anything", marker = "extra == 'sparql-anything'", specifier = ">=1.0.0.0" },
     { name = "pyyaml", specifier = ">=6.0.3" },

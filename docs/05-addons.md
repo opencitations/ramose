@@ -185,10 +185,16 @@ If a custom parameter has the same name as a built-in query parameter (`filter`,
 (format-converters)=
 ## Format converters
 
-The `#format` field in an operation registers custom output formats. Each entry maps a format name to a function in the addon module.
+The `#format` field in an operation registers custom output formats. Each entry maps a format name to a function in the addon module, with an optional content type as a third comma-separated field.
 
 ```
 #format xml,to_xml;turtle,to_turtle
+```
+
+The third field sets the content type reported for that format in the OpenAPI document:
+
+```
+#format skgif,to_skgif,application/ld+json
 ```
 
 The function receives the result as a CSV string and a `request_url` keyword argument:
@@ -217,7 +223,7 @@ With this configuration, requests without `?format=` use the `to_skgif` converte
 
 The value must be a format name registered in `#format` or one of the built-in formats (`csv`, `json`).
 
-Content types are inferred from the format name:
+When a format does not declare a content type as the third `#format` field, the content type is inferred from the format name:
 
 | Format name | Content type |
 |-------------|-------------|

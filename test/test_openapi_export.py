@@ -163,6 +163,26 @@ class TestGuessContact:
         result = handler._guess_contact("John Doe")
         assert result == {"name": "John Doe"}
 
+    def test_mailto_markdown_link_yields_bare_email(self) -> None:
+        handler = _build_handler("test_scholarly.hf")
+        result = handler._guess_contact("[contact@opencitations.net](mailto:contact@opencitations.net)")
+        assert result == {"email": "contact@opencitations.net"}
+
+    def test_http_markdown_link_yields_name_and_url(self) -> None:
+        handler = _build_handler("test_scholarly.hf")
+        result = handler._guess_contact("[OpenCitations](https://opencitations.net)")
+        assert result == {"name": "OpenCitations", "url": "https://opencitations.net"}
+
+    def test_html_mailto_anchor_yields_bare_email(self) -> None:
+        handler = _build_handler("test_scholarly.hf")
+        anchor = '<a href="mailto:contact@opencitations.net" target="_blank">contact@opencitations.net</a>'
+        assert handler._guess_contact(anchor) == {"email": "contact@opencitations.net"}
+
+    def test_html_anchor_yields_name_and_url(self) -> None:
+        handler = _build_handler("test_scholarly.hf")
+        anchor = '<a href="https://opencitations.net" target="_blank">OpenCitations</a>'
+        assert handler._guess_contact(anchor) == {"name": "OpenCitations", "url": "https://opencitations.net"}
+
 
 class TestCleanText:
     def test_strips_wrapping_quotes(self) -> None:
@@ -314,12 +334,59 @@ class TestOpenAPIDisableParams:
         assert ref_names == set()
 
 
+class TestSingleFormatResponseWhenFormatDisabled:
+    def test_only_declared_media_type_advertised(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        content = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]
+        assert set(content.keys()) == {"application/ld+json"}
+
+    def test_error_response_is_single_application_json(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        error_content = spec["paths"]["/products/{local_id}"]["get"]["responses"]["default"]["content"]
+        assert set(error_content.keys()) == {"application/json"}
+        assert error_content["application/json"]["schema"] == {"$ref": "#/components/schemas/Error"}
+
+    def test_jsonld_example_attached(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        content = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]
+        example_value = content["application/ld+json"]["examples"]["example"]["value"]
+        assert example_value["meta"] == {"total_items": 1}
+        assert example_value["@graph"][0]["local_identifier"] == "R42"
+
+
+class TestFormatMediaTypeDeclaration:
+    def test_declared_mime_parsed(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        assert handler._format_media_type_map({"format": "skgif,to_skgif,application/ld+json"}) == {
+            "skgif": "application/ld+json",
+        }
+
+    def test_format_without_mime_is_ignored(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        assert handler._format_media_type_map({"format": "xml,to_xml"}) == {}
+
+    def test_single_response_media_type_uses_declared_mime(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        op = {"default_format": "skgif", "format": "skgif,to_skgif,application/ld+json"}
+        assert handler._single_response_media_type(op) == "application/ld+json"
+
+    def test_single_response_media_type_defaults_to_csv(self) -> None:
+        handler = _build_handler("test_openapi_skgif_like.hf")
+        assert handler._single_response_media_type({}) == "text/csv"
+
+
 class TestOpenAPIInferSchemaFromOutputJson:
     def test_inferred_schema_is_object(self) -> None:
         handler = _build_handler("test_openapi_skgif_like.hf")
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
-        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/json"][
+        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/ld+json"][
             "schema"
         ]
         assert schema["type"] == "object"
@@ -331,7 +398,7 @@ class TestOpenAPIInferSchemaFromOutputJson:
         handler = _build_handler("test_openapi_skgif_like.hf")
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
-        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/json"][
+        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/ld+json"][
             "schema"
         ]
         meta_props = schema["properties"]["meta"]["properties"]
@@ -341,7 +408,7 @@ class TestOpenAPIInferSchemaFromOutputJson:
         handler = _build_handler("test_openapi_skgif_like.hf")
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
-        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/json"][
+        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/ld+json"][
             "schema"
         ]
         graph_item = schema["properties"]["@graph"]["items"]
@@ -353,7 +420,7 @@ class TestOpenAPIInferSchemaFromOutputJson:
         handler = _build_handler("test_openapi_skgif_like.hf")
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
-        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/json"][
+        schema = spec["paths"]["/products/{local_id}"]["get"]["responses"]["200"]["content"]["application/ld+json"][
             "schema"
         ]
         context_schema = schema["properties"]["@context"]
@@ -420,3 +487,70 @@ class TestInferSchemaFromValue:
             "type": "object",
             "properties": {"name": {"type": "string"}, "count": {"type": "integer"}},
         }
+
+
+class TestBuildInfoMetadataNormalization:
+    LICENSE = (
+        "This document is licensed with a "
+        "[Creative Commons Attribution 4.0 International License]"
+        "(https://creativecommons.org/licenses/by/4.0/legalcode), while the REST API itself "
+        "has been created using [RAMOSE](https://github.com/opencitations/ramose)."
+    )
+
+    def test_version_strips_leading_word(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        info = handler._build_info({"version": "Version 1.1.1 (2022-12-22)"})
+        assert info["version"] == "1.1.1 (2022-12-22)"
+
+    def test_title_markup_is_stripped(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        info = handler._build_info({"title": '<a href="https://x.org">My *cool* API</a>'})
+        assert info["title"] == "My cool API"
+
+    def test_license_is_plain_text_with_url(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        info = handler._build_info({"license": self.LICENSE})
+        license_obj = info["license"]
+        assert isinstance(license_obj, dict)
+        assert "[" not in license_obj["name"]
+        assert "*" not in license_obj["name"]
+        assert license_obj["name"].startswith("This document is licensed with a Creative Commons")
+        assert license_obj["url"] == "https://creativecommons.org/licenses/by/4.0/legalcode"
+
+    def test_contact_email_is_normalized(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        info = handler._build_info({"contacts": "[x@opencitations.net](mailto:x@opencitations.net)"})
+        assert info["contact"] == {"email": "x@opencitations.net"}
+
+    def test_html_license_is_plain_text_with_url(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        anchor = '<a href="https://opensource.org/licenses/ISC" target="_blank">ISC</a>'
+        info = handler._build_info({"license": anchor})
+        assert info["license"] == {"name": "ISC", "url": "https://opensource.org/licenses/ISC"}
+
+    def test_html_contact_email_is_normalized(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        anchor = '<a href="mailto:dev@opencitations.net" target="_blank">dev@opencitations.net</a>'
+        info = handler._build_info({"contacts": anchor})
+        assert info["contact"] == {"email": "dev@opencitations.net"}
+
+
+class TestCsvExample:
+    def test_tabular_rows_become_csv(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        result = handler._csv_example([{"id": "x", "title": "A"}, {"id": "y", "title": "B"}])
+        assert result == "id,title\r\nx,A\r\ny,B\r\n"
+
+    def test_missing_keys_are_filled(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        result = handler._csv_example([{"a": "1"}, {"b": "2"}])
+        assert result == "a,b\r\n1,\r\n,2\r\n"
+
+    def test_nested_rows_return_none(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        assert handler._csv_example([{"id": "x", "authors": ["A", "B"]}]) is None
+
+    def test_empty_or_non_list_return_none(self) -> None:
+        handler = _build_handler("test_openapi_edge.hf")
+        assert handler._csv_example([]) is None
+        assert handler._csv_example({"id": "x"}) is None
