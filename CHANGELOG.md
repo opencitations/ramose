@@ -1,3 +1,11 @@
+# [2.3.0](https://github.com/opencitations/ramose/compare/v2.2.0...v2.3.0) (2026-06-06)
+
+
+### Features
+
+* **openapi:** serve Swagger UI and fix exported response media types ([6114a16](https://github.com/opencitations/ramose/commit/6114a16fc1d739d086c039ca82f86855a29c750e)), closes [#format](https://github.com/opencitations/ramose/issues/format)
+* **openapi:** upgrade OpenAPI from 3.0 to 3.1 ([018a926](https://github.com/opencitations/ramose/commit/018a92633f7b048a04e852fd3f5bd6edbf70eeb5))
+
 # [2.2.0](https://github.com/opencitations/ramose/compare/v2.1.0...v2.2.0) (2026-06-05)
 
 
