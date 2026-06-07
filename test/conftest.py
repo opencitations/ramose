@@ -67,7 +67,7 @@ def qlever_endpoint() -> Generator[str, None, None]:
             "--init",
             QLEVER_IMAGE,
             "-c",
-            f"qlever-server -i {INDEX_NAME} -j 4 -p {QLEVER_PORT} -m 1G -c 500M -e 500M -k 50 -s 30s",
+            f"qlever-server -i {INDEX_NAME} -j 4 -p {QLEVER_PORT} -m 1G -c 500M -e 500M -k 50 -s 30s -n",
         ],
         check=True,
         capture_output=True,

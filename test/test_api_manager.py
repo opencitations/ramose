@@ -34,16 +34,19 @@ class TestNorApiUrl:
 
 class TestBestMatch:
     def test_valid_url(self, api_mgr: APIManager) -> None:
-        conf, pat = api_mgr.best_match(api_mgr.base_url[0] + "/metadata/doi:10.1234")
+        conf, pat, op_item = api_mgr.best_match(api_mgr.base_url[0] + "/metadata/doi:10.1234")
         assert pat == (
             "/v1/metadata/"
             "((doi|issn|isbn|omid|openalex|pmid|pmcid):.+?"
             "(__(doi|issn|isbn|omid|openalex|pmid|pmcid):.+?)*$)"
         )
+        assert op_item is not None
+        assert "get" in op_item["method"].split()
         assert conf is not None
         assert set(conf) == {
             "conf",
             "tp",
+            "update_endpoint",
             "conf_json",
             "base_url",
             "website",
@@ -52,12 +55,14 @@ class TestBestMatch:
             "sources_map",
             "engine",
             "disable_params",
+            "auth_required",
         }
 
     def test_invalid_url(self, api_mgr: APIManager) -> None:
-        conf, pat = api_mgr.best_match("/nonexistent/path")
+        conf, pat, op_item = api_mgr.best_match("/nonexistent/path")
         assert conf is None
         assert pat is None
+        assert op_item is None
 
 
 class TestGetOp:

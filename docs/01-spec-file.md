@@ -36,8 +36,10 @@ The file contains sections separated by blank lines. The first section defines t
 | `#version` | yes | Version string. |
 | `#license` | yes | License text. Markdown links supported. |
 | `#contacts` | yes | Contact info in `[text](url)` format. |
-| `#endpoint` | yes | Default SPARQL endpoint URL. |
+| `#endpoint` | yes | Default SPARQL query endpoint URL. |
+| `#update_endpoint` | no | SPARQL Update endpoint URL for write operations. Defaults to `#endpoint` when omitted. |
 | `#method` | no | HTTP method for SPARQL requests: `get` or `post`. Default: `post`. |
+| `#auth` | no | Set to `required` to make every operation in this API require a bearer token. Operation-level `#auth` overrides this default. |
 | `#addon` | no | Python module name for custom functions. Path relative to the spec file. |
 | `#engine` | no | Execution backend: `sparql` (default) or `sparql-anything`. See [multi-source queries](06-multi-source.md). |
 | `#sources` | no | Named endpoints for multi-source queries: `name1=url1; name2=url2`. |
@@ -90,7 +92,7 @@ SELECT DISTINCT ?id ?title ?author ?pub_date ... WHERE {
 | `#url` | yes | Operation path with parameters in braces: `/path/{param}`. |
 | `#type` | yes | Must be `operation`. |
 | `#<param>` | no | Validator for a URL parameter. The field name matches the `{param}` in `#url`. Value is `type(regex)`, e.g. `#ids str(...)` validates `{ids}`. Defaults to `str(.+)` if omitted. |
-| `#method` | yes | HTTP method(s). Space-separated for multiple (e.g., `get post`). |
+| `#method` | yes | HTTP method(s). Space-separated for multiple (e.g., `get post`). `post`, `put`, `delete` are write operations (see [Write operations](#write-operations)). The same `#url` can have several operations with different methods. |
 | `#description` | yes | Markdown-formatted description. |
 | `#call` | yes | Example call URL with real parameter values. Shown in documentation. |
 | `#field_type` | yes | Space-separated `type(field_name)` pairs defining output columns and their types. |
@@ -105,6 +107,7 @@ SELECT DISTINCT ?id ?title ?author ?pub_date ... WHERE {
 | `#disable_params` | no | Comma-separated list of built-in query parameters to suppress for this operation. Use `*` to disable all. Merged with any API-level `#disable_params`. |
 | `#cache_duration` | no | Cache TTL in seconds for this operation. Overrides the global `--cache-ttl` value. |
 | `#cache_disable` | no | Set to any value (e.g., `true`) to disable caching for this operation. |
+| `#auth` | no | Set to `required` to require a bearer token for this operation. Overrides the API-level `#auth`. |
 
 ## Supported types
 
@@ -117,7 +120,77 @@ Used in `#field_type` declarations and `#<param>` definitions:
 | `float` | Float | Minimum float |
 | `datetime` | ISO 8601 date | `0001-01-01` |
 | `duration` | XML Schema duration | `P2000Y` |
+| `iri` | String kept verbatim; in write operations the value is validated as an IRI | Empty string |
+| `literal` | String kept verbatim; in write operations the value is escaped as a SPARQL string literal | Empty string |
+
+`iri` and `literal` behave like `str` for read operations but skip the lowercasing, and they drive safe value binding for write operations (see below).
 
 ## Parameter substitution
 
 In `#sparql` blocks, `[[param_name]]` placeholders are replaced with the URL parameter value before query execution. The parameter name matches the `{param}` in the operation URL.
+
+(write-operations)=
+## Write operations
+
+An operation whose `#method` is `post`, `put`, or `delete` runs a SPARQL 1.1 Update (`INSERT`/`DELETE`/`UPDATE`) instead of a read query. The update is sent to `#update_endpoint` (or `#endpoint` if that is not set) and the response is a small JSON confirmation rather than a result set.
+
+Here is an example:
+
+```
+#url /resources
+#type operation
+#method post
+#auth required
+#resource iri(.+)
+#title literal(.+)
+#identifier iri(.+)
+#scheme iri(.+)
+#value literal(.+)
+#description Create a bibliographic resource with a title and an identifier
+#field_type str(x)
+#sparql INSERT DATA {
+            <[[resource]]> a <http://purl.org/spar/fabio/Expression> ;
+                <http://purl.org/dc/terms/title> "[[title]]" ;
+                <http://purl.org/spar/datacite/hasIdentifier> <[[identifier]]> .
+            <[[identifier]]> a <http://purl.org/spar/datacite/Identifier> ;
+                <http://purl.org/spar/datacite/usesIdentifierScheme> <[[scheme]]> ;
+                <http://www.essepuntato.it/2010/06/literalreification/hasLiteralValue> "[[value]]" .
+        }
+```
+
+```
+POST /resources
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "resource": "https://w3id.org/oc/meta/br/062104388184",
+  "title": "OpenCitations Meta",
+  "identifier": "https://w3id.org/oc/meta/id/062106312420",
+  "scheme": "http://purl.org/spar/datacite/doi",
+  "value": "10.1162/qss_a_00292"
+}
+```
+
+The same request can carry the parameters in the URL query string instead of a body. With `curl`, `--url-query` encodes each value for you:
+
+```bash
+curl -X POST http://127.0.0.1:8080/bibliography/v1/resources \
+  -H "Authorization: Bearer <token>" \
+  --url-query 'resource=https://w3id.org/oc/meta/br/062104388184' \
+  --url-query 'title=OpenCitations Meta' \
+  --url-query 'identifier=https://w3id.org/oc/meta/id/062106312420' \
+  --url-query 'scheme=http://purl.org/spar/datacite/doi' \
+  --url-query 'value=10.1162/qss_a_00292'
+```
+
+Or with everything inline in the URL (spaces must be percent-encoded as `%20`; `:` and `/` may stay as they are):
+
+```bash
+curl -X POST "http://127.0.0.1:8080/bibliography/v1/resources?resource=https://w3id.org/oc/meta/br/062104388184&title=OpenCitations%20Meta&identifier=https://w3id.org/oc/meta/id/062106312420&scheme=http://purl.org/spar/datacite/doi&value=10.1162/qss_a_00292" \
+  -H "Authorization: Bearer <token>"
+```
+
+If any `[[placeholder]]` is left unfilled after substitution, the request is rejected with HTTP 400 and nothing is sent to the endpoint.
+
+Protect write operations with `#auth required`; see [authentication](02-cli.md#authentication).

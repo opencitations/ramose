@@ -20,7 +20,7 @@ from urllib.parse import urlsplit
 
 from ramose._constants import FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME
 from ramose.cache import ResultCache
-from ramose.hash_format import HashFormatHandler, parse_custom_params, parse_disable_params
+from ramose.hash_format import HashFormatHandler, parse_auth, parse_custom_params, parse_disable_params
 from ramose.operation import Operation, OperationConfig
 
 if TYPE_CHECKING:
@@ -28,14 +28,16 @@ if TYPE_CHECKING:
 
 
 class APIConfig(TypedDict):
-    conf: OrderedDict[str, dict[str, str]]
+    conf: OrderedDict[str, list[dict[str, str]]]
     conf_json: list[dict[str, str]]
     base_url: str
     tp: str
+    update_endpoint: str
     website: str
     engine: str
     sources_map: dict[str, str]
     disable_params: set[str]
+    auth_required: bool
     addon: types.ModuleType | None
     sparql_http_method: str
 
@@ -62,13 +64,17 @@ class APIManager:
 
     @staticmethod
     def _process_api_metadata(
-        item: dict[str, str],
+        conf_json: list[dict[str, str]],
         conf_file: str,
         endpoint_override: str | None,
-    ) -> tuple[str, str, str, types.ModuleType | None, str, dict[str, str], str, set[str]]:
+    ) -> APIConfig:
+        item = conf_json[0]
         base_url = item["url"]
         website = item["base"]
         tp = endpoint_override or item["endpoint"]
+        update_endpoint = endpoint_override or ""
+        if not endpoint_override and "update_endpoint" in item:
+            update_endpoint = item["update_endpoint"]
         engine = item["engine"].strip().lower() if "engine" in item else "sparql"
         sources_map: dict[str, str] = {}
         if "sources" in item:
@@ -79,9 +85,28 @@ class APIManager:
                 name, url = pair.split("=", 1)
                 sources_map[name.strip()] = url.strip()
         disable_params_api = parse_disable_params(item["disable_params"]) if "disable_params" in item else set()
+        auth_required = parse_auth(item["auth"]) if "auth" in item else False
         addon = APIManager._load_addon(item["addon"], conf_file) if "addon" in item else None
         sparql_http_method = item["method"].strip().lower() if "method" in item else "get"
-        return base_url, tp, website, addon, sparql_http_method, sources_map, engine, disable_params_api
+
+        conf: OrderedDict[str, list[dict[str, str]]] = OrderedDict()
+        for op_item in conf_json[1:]:
+            conf.setdefault(APIManager.nor_api_url(op_item, base_url), []).append(op_item)
+
+        return {
+            "conf": conf,
+            "conf_json": conf_json,
+            "base_url": base_url,
+            "tp": tp or "",
+            "update_endpoint": update_endpoint,
+            "website": website,
+            "engine": engine,
+            "sources_map": sources_map,
+            "disable_params": disable_params_api,
+            "auth_required": auth_required,
+            "addon": addon,
+            "sparql_http_method": sparql_http_method,
+        }
 
     def __init__(
         self,
@@ -121,29 +146,12 @@ class APIManager:
         self.all_conf: OrderedDict[str, APIConfig] = OrderedDict()
         self.base_url: list[str] = []
         for conf_file in conf_files:
-            conf: OrderedDict[str, dict[str, str]] = OrderedDict()
             conf_json = HashFormatHandler().read(conf_file)
             if not conf_json:
                 continue
-            base_url, tp, website, addon, sparql_http_method, sources_map, engine, disable_params_api = (
-                APIManager._process_api_metadata(conf_json[0], conf_file, endpoint_override)
-            )
-            self.base_url.append(base_url)
-            for item in conf_json[1:]:
-                conf[APIManager.nor_api_url(item, base_url)] = item
-
-            self.all_conf[base_url] = {
-                "conf": conf,
-                "tp": tp or "",
-                "conf_json": conf_json,
-                "base_url": base_url,
-                "website": website,
-                "addon": addon,
-                "sparql_http_method": sparql_http_method,
-                "sources_map": sources_map,
-                "engine": engine,
-                "disable_params": disable_params_api,
-            }
+            api_conf = APIManager._process_api_metadata(conf_json, conf_file, endpoint_override)
+            self.base_url.append(api_conf["base_url"])
+            self.all_conf[api_conf["base_url"]] = api_conf
 
         self._operation_prefixes = APIManager._build_operation_prefixes(self.all_conf)
 
@@ -153,11 +161,12 @@ class APIManager:
     ) -> list[tuple[str, str, dict[str, str]]]:
         prefixes: list[tuple[str, str, dict[str, str]]] = []
         for base, api_data in all_conf.items():
-            for item in api_data["conf"].values():
-                template = item["url"]
-                brace_pos = template.find("{")
-                if brace_pos != -1:
-                    prefixes.append((base + template[:brace_pos], base, item))
+            for items in api_data["conf"].values():
+                for item in items:
+                    template = item["url"]
+                    brace_pos = template.find("{")
+                    if brace_pos != -1:
+                        prefixes.append((base + template[:brace_pos], base, item))
         prefixes.sort(key=lambda entry: len(entry[0]), reverse=True)
         return prefixes
 
@@ -181,17 +190,23 @@ class APIManager:
 
         return f"{b}{result}"
 
-    def best_match(self, u: str) -> tuple[APIConfig | None, str | None]:
-        """This method takes an URL of an API call in input and find the API operation URL and the related
-        configuration that best match with the API call, if any."""
+    def best_match(self, u: str, method: str = "get") -> tuple[APIConfig | None, str | None, dict[str, str] | None]:
+        """This method takes an URL of an API call and the HTTP method in input and finds the API operation URL,
+        the related configuration and the operation matching the requested method that best match with the API
+        call, if any. When the path matches but no operation declares the requested method, the first operation
+        for that path is returned so that the 405 check can reject it."""
         cur_u = sub(r"\?.*$", "", u)
+        requested = method.lower()
         for base_url in self.all_conf:
             if u.startswith(base_url):
                 conf = self.all_conf[base_url]
-                for pat in conf["conf"]:
+                for pat, items in conf["conf"].items():
                     if match(f"^{pat}$", cur_u):
-                        return conf, pat
-        return None, None
+                        for op_item in items:
+                            if requested in op_item["method"].split():
+                                return conf, pat, op_item
+                        return conf, pat, items[0]
+        return None, None, None
 
     @staticmethod
     def _parse_format_map(op_conf: dict[str, str]) -> tuple[dict[str, str], dict[str, str]]:
@@ -212,18 +227,17 @@ class APIManager:
                     op_media_types[fields[0]] = fields[2]
         return op_format_map, op_media_types
 
-    def get_op(self, op_complete_url: str) -> Operation | tuple[int, str, str]:
+    def get_op(self, op_complete_url: str, method: str = "get") -> Operation | tuple[int, str, str]:
         """This method returns a new object of type Operation which represent the operation specified by
-        the input URL (parameter 'op_complete_url)'. In case no operation can be found according by checking
-        the configuration files available in the APIManager, a tuple with an HTTP error code and a message
-        is returned instead."""
+        the input URL (parameter 'op_complete_url)' and the HTTP method. In case no operation can be found
+        according by checking the configuration files available in the APIManager, a tuple with an HTTP error
+        code and a message is returned instead."""
         url_parsed = urlsplit(op_complete_url)
         op_url = url_parsed.path
 
-        conf, op = self.best_match(op_url)
-        if conf is not None and op is not None:
-            op_conf = conf["conf"][op]
-            op_engine = conf.get("engine", "sparql")
+        conf, op, op_conf = self.best_match(op_url, method)
+        if conf is not None and op is not None and op_conf is not None:
+            op_engine = conf["engine"]
             if "engine" in op_conf:
                 op_engine = op_conf["engine"].strip().lower()
 
@@ -233,17 +247,21 @@ class APIManager:
             op_disabled = parse_disable_params(op_conf["disable_params"]) if "disable_params" in op_conf else set()
             effective_disabled = api_disabled | op_disabled
 
+            requires_auth = parse_auth(op_conf["auth"]) if "auth" in op_conf else conf["auth_required"]
+
             op_format_map, op_format_media_types = APIManager._parse_format_map(op_conf)
             config = OperationConfig(
                 sparql_endpoint=conf["tp"],
+                update_endpoint=conf["update_endpoint"],
                 sparql_http_method=conf["sparql_http_method"],
                 addon=conf["addon"],
                 format_map=op_format_map,
                 format_media_types=op_format_media_types,
-                sources_map=conf.get("sources_map", {}),
+                sources_map=conf["sources_map"],
                 engine=op_engine,
                 custom_params=custom_params_map,
                 disabled_params=effective_disabled,
+                requires_auth=requires_auth,
                 cache=self._cache,
                 default_cache_ttl=self._cache_ttl,
             )

@@ -1,0 +1,57 @@
+#url /bibliography/v1
+#type api
+#base http://127.0.0.1:7019
+#endpoint http://127.0.0.1:7019
+#title Bibliographic Resource API
+#version 1.0.0
+
+#url /resources
+#type operation
+#method post
+#auth required
+#resource iri(.+)
+#title literal(.+)
+#identifier iri(.+)
+#scheme iri(.+)
+#value literal(.+)
+#description Create a bibliographic resource with a title and a resource-typed identifier (OpenCitations Meta / DataCite model).
+#field_type str(x)
+#sparql INSERT DATA {
+            <[[resource]]> a <http://purl.org/spar/fabio/Expression> , <http://purl.org/spar/fabio/JournalArticle> ;
+                <http://purl.org/dc/terms/title> "[[title]]" ;
+                <http://purl.org/spar/datacite/hasIdentifier> <[[identifier]]> .
+            <[[identifier]]> a <http://purl.org/spar/datacite/Identifier> ;
+                <http://purl.org/spar/datacite/usesIdentifierScheme> <[[scheme]]> ;
+                <http://www.essepuntato.it/2010/06/literalreification/hasLiteralValue> "[[value]]" .
+        }
+
+#url /resources/{resource}
+#type operation
+#method get
+#resource iri(.+)
+#description Read a bibliographic resource together with its title and identifier.
+#call /resources/https://w3id.org/oc/meta/br/062104388184
+#field_type str(title) str(scheme) str(value)
+#sparql SELECT ?title ?scheme ?value WHERE {
+            <[[resource]]> <http://purl.org/dc/terms/title> ?title ;
+                <http://purl.org/spar/datacite/hasIdentifier> ?id .
+            ?id <http://purl.org/spar/datacite/usesIdentifierScheme> ?scheme ;
+                <http://www.essepuntato.it/2010/06/literalreification/hasLiteralValue> ?value .
+        }
+
+#url /resources/{resource}
+#type operation
+#method delete
+#auth required
+#resource iri(.+)
+#description Delete a bibliographic resource together with its identifier.
+#field_type str(x)
+#sparql DELETE {
+            <[[resource]]> ?p ?o .
+            ?id ?ip ?io .
+        }
+        WHERE {
+            <[[resource]]> ?p ?o ;
+                <http://purl.org/spar/datacite/hasIdentifier> ?id .
+            ?id ?ip ?io .
+        }

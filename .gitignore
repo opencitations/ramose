@@ -10,6 +10,7 @@ ramose.log*
 __pycache__/
 docs/_build/
 .cache/
+.auth/
 oc_skgo_mappings.csv
 SKG-O Mappings.xlsx
 slide_csv_to_skgif.png

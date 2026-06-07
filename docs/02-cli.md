@@ -28,6 +28,11 @@ python -m ramose -s <spec.hf> [options]
 | `--cache-dir` | Directory for result caching. Default: `.cache`. |
 | `--no-cache` | Disable result caching entirely. |
 | `--cache-ttl` | Cache TTL in seconds. Default: `86400` (1 day). |
+| `--auth-db` | Directory for the bearer token store. Default: `.auth`. |
+| `--token-create` | Create a bearer token with the given label, print it once, and exit. |
+| `--token-ttl` | Token lifetime in seconds for `--token-create`. Default: no expiry. |
+| `--token-list` | List stored tokens (labels, timestamps, revoked flag) and exit. |
+| `--token-revoke` | Revoke the given token and exit. |
 
 ## Local mode
 
@@ -118,3 +123,36 @@ python -m ramose -s meta_v1.hf -w 127.0.0.1:8080 --no-cache
 ```
 
 Per-operation cache control is available via `#cache_duration` and `#cache_disable` in the [spec file](01-spec-file.md).
+
+## Authentication
+
+Operations marked `#auth required` in the [spec file](01-spec-file.md) need a bearer token. Tokens are kept in a local SQLite store (default `.auth/`, configurable with `--auth-db`); RAMOSE stores only their SHA-256 hash, never the token itself. Write operations (`POST`/`PUT`/`DELETE`) should always be protected this way.
+
+Create a token (printed once):
+
+```sh
+python -m ramose --token-create my-client
+```
+
+Optionally give it a lifetime in seconds:
+
+```sh
+python -m ramose --token-create my-client --token-ttl 3600
+```
+
+List or revoke tokens:
+
+```sh
+python -m ramose --token-list
+python -m ramose --token-revoke <token>
+```
+
+Call a protected operation by sending the token in the `Authorization` header:
+
+```sh
+curl -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"id": "https://example.org/author/1", "name": "Ada Lovelace"}' \
+  "http://localhost:8080/v1/authors"
+```
+
+Requests with a missing, invalid, or revoked token receive HTTP 401. Operations without `#auth` stay open.

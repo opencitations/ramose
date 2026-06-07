@@ -25,6 +25,10 @@ components:
       example:
         error: 404
         message: 'HTTP status code 404: resource not found'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
   parameters:
     require:
       name: require

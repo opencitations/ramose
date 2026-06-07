@@ -12,6 +12,7 @@ from unittest.mock import MagicMock, patch
 
 from ramose import APIManager, Operation, OperationConfig
 from ramose.__main__ import _build_app
+from ramose.auth import TokenStore
 from ramose.html_documentation import HTMLDocumentationHandler
 from ramose.openapi_documentation import OpenAPIDocumentationHandler
 
@@ -65,7 +66,7 @@ class TestMediaTypeToFormat:
 
 
 class TestContentNegotiationWeb:
-    def _client(self) -> FlaskClient:
+    def _client(self, tmp_path: Path) -> FlaskClient:
         api_manager = APIManager(
             [str(Path(TESTS_DIR) / "test_scholarly.hf")],
             endpoint_override="http://mock/sparql",
@@ -75,48 +76,49 @@ class TestContentNegotiationWeb:
             HTMLDocumentationHandler(api_manager),
             OpenAPIDocumentationHandler(api_manager),
             None,
+            TokenStore(str(tmp_path)),
         )
         return app.test_client()
 
-    def _get(self, path: str, headers: dict[str, str]) -> tuple[int, str, str]:
+    def _get(self, tmp_path: Path, path: str, headers: dict[str, str]) -> tuple[int, str, str]:
         sparql_response = SimpleNamespace(status_code=200, text=SCHOLARLY_CSV, reason="OK", encoding=None)
         with patch("ramose.operation._http_session") as mock_session:
             mock_session.post.return_value = sparql_response
-            response = self._client().get(path, headers=headers)
+            response = self._client(tmp_path).get(path, headers=headers)
         return response.status_code, response.headers["Content-Type"], response.get_data(as_text=True)
 
-    def test_accept_csv(self) -> None:
-        status, content_type, body = self._get(OP_URL, {"Accept": "text/csv"})
+    def test_accept_csv(self, tmp_path: Path) -> None:
+        status, content_type, body = self._get(tmp_path, OP_URL, {"Accept": "text/csv"})
         assert status == 200
         assert content_type == "text/csv"
         assert body == SCHOLARLY_CSV.replace("\n", "\r\n")
 
-    def test_accept_json(self) -> None:
-        status, content_type, body = self._get(OP_URL, {"Accept": "application/json"})
+    def test_accept_json(self, tmp_path: Path) -> None:
+        status, content_type, body = self._get(tmp_path, OP_URL, {"Accept": "application/json"})
         assert status == 200
         assert content_type == "application/json"
         assert body.lstrip().startswith("[")
 
-    def test_custom_format_without_media_type_not_negotiated(self) -> None:
-        status, content_type, body = self._get(OP_URL, {"Accept": "application/xml"})
+    def test_custom_format_without_media_type_not_negotiated(self, tmp_path: Path) -> None:
+        status, content_type, body = self._get(tmp_path, OP_URL, {"Accept": "application/xml"})
         assert status == 200
         assert content_type == "application/json"
         assert body.lstrip().startswith("[")
 
-    def test_query_format_wins_over_accept(self) -> None:
-        status, content_type, body = self._get(f"{OP_URL}?format=json", {"Accept": "text/csv"})
+    def test_query_format_wins_over_accept(self, tmp_path: Path) -> None:
+        status, content_type, body = self._get(tmp_path, f"{OP_URL}?format=json", {"Accept": "text/csv"})
         assert status == 200
         assert content_type == "application/json"
         assert body.lstrip().startswith("[")
 
-    def test_accept_wildcard_uses_default(self) -> None:
-        status, content_type, body = self._get(OP_URL, {"Accept": "*/*"})
+    def test_accept_wildcard_uses_default(self, tmp_path: Path) -> None:
+        status, content_type, body = self._get(tmp_path, OP_URL, {"Accept": "*/*"})
         assert status == 200
         assert content_type == "application/json"
         assert body.lstrip().startswith("[")
 
-    def test_unsupported_accept_uses_default(self) -> None:
-        status, content_type, body = self._get(OP_URL, {"Accept": "text/html"})
+    def test_unsupported_accept_uses_default(self, tmp_path: Path) -> None:
+        status, content_type, body = self._get(tmp_path, OP_URL, {"Accept": "text/html"})
         assert status == 200
         assert content_type == "application/json"
         assert body.lstrip().startswith("[")

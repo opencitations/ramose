@@ -20,6 +20,10 @@ def parse_disable_params(raw: str) -> set[str]:
     return {name.strip() for name in stripped.split(",") if name.strip()}
 
 
+def parse_auth(raw: str) -> bool:
+    return raw.strip() == "required"
+
+
 def parse_custom_params(raw: str) -> dict[str, dict[str, str]]:
     result = {}
     for raw_part in raw.split(";"):

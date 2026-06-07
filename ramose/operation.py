@@ -36,9 +36,13 @@ from ramose.paging import PaginationInfo, build_link_header, build_pagination_in
 
 if TYPE_CHECKING:
     import types
-    from collections.abc import Callable
+    from collections.abc import Callable, Mapping
 
     from ramose.cache import ResultCache
+
+
+_WRITE_METHODS = frozenset({"post", "put", "delete"})
+_IRI_FORBIDDEN = r'[<>"{}|^`\\\x00-\x20]'
 
 
 class HttpError(Exception):
@@ -50,6 +54,7 @@ class HttpError(Exception):
 @dataclass
 class OperationConfig:
     sparql_endpoint: str = ""
+    update_endpoint: str = ""
     sparql_http_method: str = "get"
     addon: types.ModuleType | None = None
     format_map: dict = dataclass_field(default_factory=dict)
@@ -58,6 +63,7 @@ class OperationConfig:
     engine: str = "sparql"
     custom_params: dict = dataclass_field(default_factory=dict)
     disabled_params: set = dataclass_field(default_factory=set)
+    requires_auth: bool = False
     cache: ResultCache | None = None
     default_cache_ttl: int = 86400
 
@@ -77,6 +83,7 @@ class Operation:
         self.op = op_key
         self.i = op_item
         self.tp = config.sparql_endpoint
+        self.update_endpoint = config.update_endpoint
         self.sparql_http_method = config.sparql_http_method
         self.addon = config.addon
         self.format = config.format_map
@@ -85,6 +92,7 @@ class Operation:
         self.engine = config.engine
         self.custom_params = config.custom_params
         self.disabled_params = config.disabled_params
+        self.requires_auth = config.requires_auth
         self._sa_engine = None
         self._cache = config.cache
         self._default_cache_ttl = config.default_cache_ttl
@@ -1039,9 +1047,10 @@ class Operation:
         rows.extend([d.get(h, "") for h in header] for d in acc)
         return rows
 
-    def _extract_params(self) -> dict[str, object]:
-        """Extract URL parameters and apply type conversions based on the operation spec."""
-        par_dict = {}
+    def _extract_params(self, body_params: Mapping[str, object] | None = None) -> dict[str, object]:
+        """Extract URL parameters (and request body parameters, for write operations) and apply type
+        conversions based on the operation spec."""
+        par_dict: dict[str, object] = {}
         url_match = match(self.op, self.op_url)
         if url_match is None:
             msg = f"URL {self.op_url} does not match pattern {self.op}"
@@ -1050,10 +1059,15 @@ class Operation:
         for idx, par in enumerate(findall("{([^{}]+)}", self.i["url"])):
             try:
                 par_type = self.i[par].split("(")[0]
-                par_value = par_man[idx] if par_type == "str" else self.dt.get_func(par_type)(par_man[idx])
+                if par_type in ("str", "iri", "literal"):
+                    par_value = par_man[idx]
+                else:
+                    par_value = self.dt.get_func(par_type)(par_man[idx])
             except KeyError:
                 par_value = par_man[idx]
             par_dict[par] = par_value
+        if body_params:
+            par_dict.update(body_params)
         return par_dict
 
     def _apply_custom_preprocess_params(self, par_dict: dict[str, object]) -> None:
@@ -1221,7 +1235,12 @@ class Operation:
         msg = f"HTTP status code {sc}: {prefix}{type(e).__name__}: {e} (line {line})"
         return sc, msg, "text/plain"
 
-    def exec(self, method: str = "get", content_type: str = "application/json") -> tuple[int, str, str, dict[str, str]]:
+    def exec(
+        self,
+        method: str = "get",
+        content_type: str = "application/json",
+        body_params: Mapping[str, object] | None = None,
+    ) -> tuple[int, str, str, dict[str, str]]:
         """This method takes in input the HTTP method to use for the call
         and the content type to return, and execute the operation as indicated
         in the specification file, by running (in the following order):
@@ -1238,7 +1257,10 @@ class Operation:
             return 405, f"HTTP status code 405: '{str_method}' method not allowed", "text/plain", {}
 
         try:
-            status, body, ctype = self._dispatch_exec(content_type)
+            if self._is_write(str_method):
+                status, body, ctype = self._exec_update(self._prepare_params(body_params), content_type)
+            else:
+                status, body, ctype = self._dispatch_exec(content_type, body_params)
         except HttpError as err:
             return err.status_code, str(err), "text/plain", {}
         except TimeoutError as e:
@@ -1255,13 +1277,21 @@ class Operation:
                 headers["Link"] = link_header
         return status, body, ctype, headers
 
-    def _dispatch_exec(self, content_type: str) -> tuple[int, str, str]:
-        """Dispatch to the appropriate execution path based on SPARQL text content."""
-        par_dict = self._extract_params()
+    def _prepare_params(self, body_params: Mapping[str, object] | None = None) -> dict[str, object]:
+        par_dict = self._extract_params(body_params)
         if self.addon is not None:
             self.preprocess(par_dict, self.i, self.addon)
         if self.custom_params:
             self._apply_custom_preprocess_params(par_dict)
+        return par_dict
+
+    def _dispatch_exec(
+        self,
+        content_type: str,
+        body_params: Mapping[str, object] | None = None,
+    ) -> tuple[int, str, str]:
+        """Dispatch to the appropriate read execution path based on the SPARQL text content."""
+        par_dict = self._prepare_params(body_params)
 
         if self._cache is not None and "cache_disable" not in self.i:
             q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
@@ -1285,3 +1315,64 @@ class Operation:
             return 400, f"HTTP status code 400: {ve}", "text/plain"
         except RuntimeError as re_err:
             return 502, f"HTTP status code 502: {re_err}", "text/plain"
+
+    @staticmethod
+    def _is_write(method: str) -> bool:
+        return method.lower() in _WRITE_METHODS
+
+    @staticmethod
+    def _escape_literal(value: str) -> str:
+        value = value.replace("\\", "\\\\").replace('"', '\\"')
+        return value.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+
+    @staticmethod
+    def _escape_iri(value: str) -> str:
+        if search(_IRI_FORBIDDEN, value):
+            msg = f"invalid IRI value: {value!r}"
+            raise ValueError(msg)
+        return value
+
+    def _bind_sparql_value(self, param: str, value: object) -> str:
+        kind = self.i[param].split("(")[0] if param in self.i else "literal"
+        text = "" if value is None else str(value)
+        if kind == "iri":
+            return Operation._escape_iri(text)
+        if kind in ("int", "float"):
+            return str(self.dt.get_func(kind)(text))
+        return Operation._escape_literal(text)
+
+    def _format_write_success(self, content_type: str) -> tuple[int, str, str]:
+        if content_type == "text/csv":
+            return HTTPStatus.OK, "status,message\r\n200,operation completed\r\n", "text/csv"
+        return HTTPStatus.OK, dumps({"status": 200, "message": "operation completed"}), "application/json"
+
+    def _exec_update(self, par_dict: dict[str, object], content_type: str) -> tuple[int, str, str]:
+        """Send a SPARQL 1.1 Update to the update endpoint and return a confirmation with no result set."""
+        update_text = self.i["sparql"]
+        for param, val in par_dict.items():
+            update_text = update_text.replace(f"[[{param}]]", self._bind_sparql_value(param, val))
+
+        unresolved = findall(r"\[\[(\w+)\]\]", update_text)
+        if unresolved:
+            missing = ", ".join(dict.fromkeys(unresolved))
+            message = f"HTTP status code 400: missing required parameter(s): {missing}"
+            return HTTPStatus.BAD_REQUEST, message, "text/plain"
+
+        endpoint = self.update_endpoint or self.tp
+        try:
+            response = _http_session.post(
+                endpoint,
+                data={"update": update_text},
+                headers={"Accept": "application/json"},
+                timeout=DEFAULT_HTTP_TIMEOUT,
+            )
+        except RequestException as exc:
+            msg = f"SPARQL update request failed: {exc}"
+            raise RuntimeError(msg) from exc
+
+        if response.status_code not in (HTTPStatus.OK, HTTPStatus.CREATED, HTTPStatus.NO_CONTENT):
+            return response.status_code, f"HTTP status code {response.status_code}: {response.reason}", "text/plain"
+
+        if self._cache is not None:
+            self._cache.clear()
+        return self._format_write_success(content_type)

@@ -33,3 +33,7 @@ class ResultCache:
             (key, json.dumps(value), time.time() + expire),
         )
         self._conn.commit()
+
+    def clear(self) -> None:
+        self._conn.execute("DELETE FROM cache")
+        self._conn.commit()

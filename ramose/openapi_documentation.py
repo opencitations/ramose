@@ -27,7 +27,7 @@ from markdown import markdown
 
 from ramose._constants import FIELD_TYPE_RE, FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME, media_type_for_format
 from ramose.documentation import DocumentationHandler
-from ramose.hash_format import parse_custom_params, parse_disable_params
+from ramose.hash_format import parse_auth, parse_custom_params, parse_disable_params
 
 if TYPE_CHECKING:
     from ramose.api_manager import APIConfig
@@ -53,6 +53,7 @@ class _OpenAPIBuildContext:
     common_param_refs: list[dict[str, str]]
     formats_enum: list[str]
     api_disabled: set[str]
+    api_auth: bool
 
 
 class _MarkupParser(HTMLParser):
@@ -445,11 +446,24 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         return path_params
 
+    @staticmethod
+    def _build_request_body(op: dict[str, str]) -> dict[str, object] | None:
+        path_names = set(findall(PARAM_NAME, op.get("url", "")))
+        body_names = [name for name in findall(r"\[\[(\w+)\]\]", op.get("sparql", "")) if name not in path_names]
+        if not body_names:
+            return None
+        properties = {name: {"type": "string"} for name in dict.fromkeys(body_names)}
+        return {
+            "required": True,
+            "content": {"application/json": {"schema": {"type": "object", "properties": properties}}},
+        }
+
     def _build_operation_object(
         self,
         op: dict[str, str],
         path_params: list[dict[str, object]],
         ctx: _OpenAPIBuildContext,
+        method: str = "get",
     ) -> OrderedDict[str, object]:
         summary = self._parse_markup(op["description"].split("\n")[0]).text if op.get("description") else ""
         desc = self._clean_text(op.get("description")) or ""
@@ -497,12 +511,21 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         suppressed = custom_names | disabled_names
         filtered_refs = [ref for ref in ctx.common_param_refs if ref["$ref"].rsplit("/", 1)[-1] not in suppressed]
         op_obj["parameters"] = path_params + custom_query_params + filtered_refs
-        op_obj["responses"] = OrderedDict(
-            [
-                ("200", {"description": "Successful response", "content": ok_content}),
-                ("default", {"description": "Error", "content": err_content}),
-            ],
+
+        if method in ("post", "put", "delete"):
+            request_body = OpenAPIDocumentationHandler._build_request_body(op)
+            if request_body is not None:
+                op_obj["requestBody"] = request_body
+
+        responses: OrderedDict[str, object] = OrderedDict(
+            [("200", {"description": "Successful response", "content": ok_content})],
         )
+        requires_auth = parse_auth(op["auth"]) if "auth" in op else ctx.api_auth
+        if requires_auth:
+            op_obj["security"] = [{"bearerAuth": []}]
+            responses["401"] = {"description": "Unauthorized", "content": err_content}
+        responses["default"] = {"description": "Error", "content": err_content}
+        op_obj["responses"] = responses
 
         return op_obj
 
@@ -521,6 +544,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         spec["servers"] = [{"url": self._server_url(api_meta)}]
 
         api_disabled = parse_disable_params(api_meta["disable_params"]) if "disable_params" in api_meta else set()
+        api_auth = parse_auth(api_meta["auth"]) if "auth" in api_meta else False
 
         all_common_params = self._build_common_parameters(formats_enum)
         active_common_params = {k: v for k, v in all_common_params.items() if k not in api_disabled}
@@ -533,6 +557,9 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
                     "required": ["error", "message"],
                     "example": {"error": 404, "message": "HTTP status code 404: resource not found"},
                 },
+            },
+            "securitySchemes": {
+                "bearerAuth": {"type": "http", "scheme": "bearer"},
             },
         }
         if active_common_params:
@@ -549,6 +576,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             common_param_refs=common_param_refs,
             formats_enum=formats_enum,
             api_disabled=api_disabled,
+            api_auth=api_auth,
         )
 
         for op in conf["conf_json"][1:]:
@@ -560,7 +588,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
             methods = [mm.lower() for mm in split(r"\s+", op.get("method", "get").strip()) if mm]
             for m in methods:
-                spec["paths"][raw_path][m] = self._build_operation_object(op, path_params, ctx)
+                spec["paths"][raw_path][m] = self._build_operation_object(op, path_params, ctx, m)
 
         return spec
 

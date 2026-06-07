@@ -22,6 +22,7 @@ from flask import Flask, Response, make_response, request
 from flask_swagger_ui import get_swaggerui_blueprint
 
 from ramose.api_manager import APIManager
+from ramose.auth import TokenStore
 from ramose.html_documentation import HTMLDocumentationHandler
 from ramose.openapi_documentation import SWAGGER_MARKDOWN_CSS_FIX, OpenAPIDocumentationHandler
 from ramose.operation import Operation
@@ -40,7 +41,6 @@ def _parse_args() -> Namespace:  # pragma: no cover
         "-s",
         "--spec",
         dest="spec",
-        required=True,
         nargs="+",
         help="The file(s) in hash format containing the specification of the API(s).",
     )
@@ -125,6 +125,38 @@ def _parse_args() -> Namespace:  # pragma: no cover
         default=86400,
         help="Cache TTL in seconds (default: 86400 = 1 day).",
     )
+    arg_parser.add_argument(
+        "--auth-db",
+        dest="auth_db",
+        default=".auth",
+        help="Directory for the bearer token store (default: .auth).",
+    )
+    arg_parser.add_argument(
+        "--token-create",
+        dest="token_create",
+        metavar="LABEL",
+        help="Create a bearer token with the given label, print it once, and exit.",
+    )
+    arg_parser.add_argument(
+        "--token-ttl",
+        dest="token_ttl",
+        type=int,
+        default=None,
+        help="TTL in seconds for the token created with --token-create (default: no expiry).",
+    )
+    arg_parser.add_argument(
+        "--token-list",
+        dest="token_list",
+        default=False,
+        action="store_true",
+        help="List the stored bearer tokens and exit.",
+    )
+    arg_parser.add_argument(
+        "--token-revoke",
+        dest="token_revoke",
+        metavar="TOKEN",
+        help="Revoke the given bearer token and exit.",
+    )
 
     return arg_parser.parse_args()
 
@@ -159,12 +191,36 @@ def _build_error_response(status_code: int, error_message: str, content_type: st
     return response
 
 
-def _handle_api_call(api_url: str, api_manager: APIManager) -> Response:  # pragma: no cover
+def _is_authorized(token_store: TokenStore) -> bool:  # pragma: no cover
+    header = request.headers.get("Authorization")
+    if not header or not header.startswith("Bearer "):
+        return False
+    return token_store.validate(header[len("Bearer ") :])
+
+
+def _read_body_params(method: str) -> dict[str, str] | None:  # pragma: no cover
+    if method not in ("post", "put", "delete"):
+        return None
+    params = request.args.to_dict()
+    if request.is_json:
+        payload = request.get_json(silent=True)
+        if isinstance(payload, dict):
+            params.update(payload)
+    else:
+        params.update(request.form.to_dict())
+    return params
+
+
+def _handle_api_call(api_url: str, api_manager: APIManager, token_store: TokenStore) -> Response:  # pragma: no cover
+    method = request.method.lower()
     query = unquote(request.query_string.decode("utf8"))
     full_call = "/" + api_url + ("?" + query if query else "")
-    operation = api_manager.get_op(full_call)
+    operation = api_manager.get_op(full_call, method)
     content_type = "application/json"
     if isinstance(operation, Operation):
+        if operation.requires_auth and not _is_authorized(token_store):
+            return _build_error_response(401, "HTTP status code 401: missing or invalid bearer token", content_type)
+        body_params = _read_body_params(method)
         fmt = request.args.get("format")
         if fmt is not None:
             if "csv" in fmt:
@@ -174,10 +230,17 @@ def _handle_api_call(api_url: str, api_manager: APIManager) -> Response:  # prag
             best = request.accept_mimetypes.best_match(list(candidates))
             if best is not None:
                 content_type = "text/csv" if best == "text/csv" else "application/json"
-                negotiated = api_manager.get_op(full_call + ("&" if query else "?") + "format=" + candidates[best])
+                negotiated = api_manager.get_op(
+                    full_call + ("&" if query else "?") + "format=" + candidates[best],
+                    method,
+                )
                 if isinstance(negotiated, Operation):
                     operation = negotiated
-        status_code, body, response_content_type, headers = operation.exec(content_type=content_type)
+        status_code, body, response_content_type, headers = operation.exec(
+            method=method,
+            content_type=content_type,
+            body_params=body_params,
+        )
     else:
         status_code, body, response_content_type = operation
         headers = {}
@@ -200,6 +263,7 @@ def _build_app(  # pragma: no cover
     html_handler: HTMLDocumentationHandler,
     openapi_handler: OpenAPIDocumentationHandler,
     css_path: str | None,
+    token_store: TokenStore,
 ) -> Flask:
     app = Flask(__name__)
 
@@ -219,7 +283,7 @@ def _build_app(  # pragma: no cover
     def home() -> str:
         return html_handler.get_index(css_path)
 
-    @app.route("/<path:api_url>")
+    @app.route("/<path:api_url>", methods=["GET", "POST", "PUT", "DELETE"])
     def doc(api_url: str) -> Response | tuple[str, int] | str:
         if api_url.endswith(("openapi.yaml", "openapi.yml")):
             return _handle_openapi_export(api_url, api_manager, openapi_handler, html_handler.get_index(css_path))
@@ -231,7 +295,7 @@ def _build_app(  # pragma: no cover
             status, page = html_handler.get_documentation(css_path, api_url)
             return page, status
 
-        return _handle_api_call(api_url, api_manager)
+        return _handle_api_call(api_url, api_manager, token_store)
 
     return app
 
@@ -248,7 +312,8 @@ def _run_webserver(  # pragma: no cover
     host_name = args.webserver.rsplit(":", 1)[0] if ":" in args.webserver else "127.0.0.1"
     port = args.webserver.rsplit(":", 1)[1] if ":" in args.webserver else "8080"
 
-    app = _build_app(api_manager, html_handler, openapi_handler, css_path)
+    token_store = TokenStore(args.auth_db)
+    app = _build_app(api_manager, html_handler, openapi_handler, css_path, token_store)
     app.run(host=str(host_name), debug=args.debug, port=int(port))
 
 
@@ -266,7 +331,7 @@ def _run_cli(  # pragma: no cover
         status, body = html_handler.get_documentation(css_path)
         content_type = "text/html"
     else:
-        operation = api_manager.get_op(args.call)
+        operation = api_manager.get_op(args.call, args.method)
         if isinstance(operation, Operation):
             status, body, content_type, _ = operation.exec(args.method, args.format)
         else:
@@ -279,8 +344,29 @@ def _run_cli(  # pragma: no cover
             output_file.write(body)
 
 
+def _handle_token_management(args: Namespace) -> None:  # pragma: no cover
+    token_store = TokenStore(args.auth_db)
+    if args.token_create:
+        token = token_store.create(args.token_create, args.token_ttl)
+        print(f"Token created for '{args.token_create}':\n{token}")
+    elif args.token_revoke:
+        print("Token revoked." if token_store.revoke(args.token_revoke) else "Token not found.")
+    elif args.token_list:
+        for label, created_at, expires_at, revoked in token_store.list_tokens():
+            print(f"{label}\tcreated={created_at}\texpires={expires_at}\trevoked={bool(revoked)}")
+
+
 def main() -> None:  # pragma: no cover
     args = _parse_args()
+
+    if args.token_create or args.token_list or args.token_revoke:
+        _handle_token_management(args)
+        return
+
+    if not args.spec:
+        message = "the following arguments are required: -s/--spec"
+        raise SystemExit(message)
+
     cache_dir = None if args.no_cache else args.cache_dir
     api_manager = APIManager(args.spec, cache_dir=cache_dir, cache_ttl=args.cache_ttl)
     html_handler = HTMLDocumentationHandler(api_manager)
