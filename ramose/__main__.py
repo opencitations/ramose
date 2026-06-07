@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import importlib.resources
+import os
 from argparse import ArgumentParser, Namespace
 from csv import writer
 from http import HTTPStatus
@@ -21,6 +22,7 @@ from urllib.parse import unquote
 from flask import Flask, Response, make_response, request
 from flask_swagger_ui import get_swaggerui_blueprint
 
+from ramose._constants import _backend_auth
 from ramose.api_manager import APIManager
 from ramose.auth import TokenStore
 from ramose.html_documentation import HTMLDocumentationHandler
@@ -157,8 +159,39 @@ def _parse_args() -> Namespace:  # pragma: no cover
         metavar="TOKEN",
         help="Revoke the given bearer token and exit.",
     )
+    arg_parser.add_argument(
+        "--backend-auth",
+        dest="backend_auth",
+        action="append",
+        metavar="ENDPOINT=HEADER",
+        help="Per-endpoint credential sent to a SPARQL backend, as 'endpoint_url=header', e.g. "
+        "'https://host/sparql=Bearer <token>' or 'https://host/sparql=Basic <base64>'. The header is the "
+        "full Authorization value, whatever scheme the backend expects. Repeatable for several backends. "
+        "Merged with the RAMOSE_BACKEND_AUTH environment variable (newline-separated entries), which is "
+        "preferred for secrets since CLI arguments are visible in the process list. The credential is sent "
+        "only to its endpoint, never to any other.",
+    )
 
     return arg_parser.parse_args()
+
+
+def parse_backend_auth(cli_entries: list[str] | None, env_value: str | None) -> dict[str, str]:
+    entries: list[str] = []
+    if env_value:
+        entries.extend(env_value.splitlines())
+    if cli_entries:
+        entries.extend(cli_entries)
+    mapping: dict[str, str] = {}
+    for entry in entries:
+        stripped = entry.strip()
+        if not stripped:
+            continue
+        endpoint, separator, header = stripped.partition("=")
+        if not separator or not endpoint.strip() or not header.strip():
+            message = f"invalid backend auth entry (expected 'endpoint=header'): {entry!r}"
+            raise ValueError(message)
+        mapping[endpoint.strip()] = header.strip()
+    return mapping
 
 
 def _handle_openapi_export(  # pragma: no cover
@@ -366,6 +399,8 @@ def main() -> None:  # pragma: no cover
     if not args.spec:
         message = "the following arguments are required: -s/--spec"
         raise SystemExit(message)
+
+    _backend_auth.update(parse_backend_auth(args.backend_auth, os.environ.get("RAMOSE_BACKEND_AUTH")))
 
     cache_dir = None if args.no_cache else args.cache_dir
     api_manager = APIManager(args.spec, cache_dir=cache_dir, cache_ttl=args.cache_ttl)

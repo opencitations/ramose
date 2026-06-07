@@ -10,10 +10,11 @@ from types import ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
+import pytest
 import yaml
 
 from ramose import APIManager
-from ramose.__main__ import _build_app
+from ramose.__main__ import _build_app, parse_backend_auth
 from ramose.auth import TokenStore
 from ramose.html_documentation import HTMLDocumentationHandler
 from ramose.openapi_documentation import OpenAPIDocumentationHandler
@@ -81,6 +82,28 @@ class TestTokenStore:
         token = store.create("demo")
         db_bytes = (tmp_path / "auth.db").read_bytes()
         assert token.encode("utf-8") not in db_bytes
+
+
+class TestParseBackendAuth:
+    def test_single_cli_entry(self) -> None:
+        assert parse_backend_auth(["https://host/sparql=Bearer xyz"], None) == {"https://host/sparql": "Bearer xyz"}
+
+    def test_env_and_cli_merge_with_cli_override(self) -> None:
+        env = "https://host/sparql=Bearer env\nhttps://other/sparql=Basic abc"
+        result = parse_backend_auth(["https://host/sparql=Bearer cli"], env)
+        assert result == {"https://host/sparql": "Bearer cli", "https://other/sparql": "Basic abc"}
+
+    def test_header_with_equals_is_preserved(self) -> None:
+        assert parse_backend_auth(["https://host/sparql=Basic dXNlcjpwYXNz=="], None) == {
+            "https://host/sparql": "Basic dXNlcjpwYXNz==",
+        }
+
+    def test_no_input_gives_empty_map(self) -> None:
+        assert parse_backend_auth(None, None) == {}
+
+    def test_entry_without_separator_raises(self) -> None:
+        with pytest.raises(ValueError, match="expected 'endpoint=header'"):
+            parse_backend_auth(["no-separator-here"], None)
 
 
 class TestOpenAPISecurity:

@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from ramose import APIManager, Operation
+from ramose._constants import _backend_auth
 
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 DOI_SCHEME = "http://purl.org/spar/datacite/doi"
@@ -78,6 +79,23 @@ class TestWriteIntegration:
         assert status == HTTPStatus.OK
 
         assert _read_resource(write_api_manager, NEW_RESOURCE_IRI) == []
+
+    def test_write_needs_backend_credential(self, qlever_secured_endpoint: tuple[str, str]) -> None:
+        endpoint, access_token = qlever_secured_endpoint
+        api_manager = APIManager([str(FIXTURES_DIR / "write_api.hf")], endpoint_override=endpoint)
+        body = _resource_body("A Secured Article", "10.0000/secured")
+
+        # QLever rejects an update with no access token; RAMOSE propagates its 500.
+        status, _ = _exec(api_manager, "/bibliography/v1/resources", "post", body)
+        assert status == HTTPStatus.INTERNAL_SERVER_ERROR
+
+        _backend_auth[endpoint] = f"Bearer {access_token}"
+        try:
+            status, response_body = _exec(api_manager, "/bibliography/v1/resources", "post", body)
+            assert status == HTTPStatus.OK
+            assert loads(response_body) == {"status": 200, "message": "operation completed"}
+        finally:
+            _backend_auth.pop(endpoint, None)
 
     def test_literal_with_quote_roundtrips(self, write_api_manager: APIManager) -> None:
         title = 'A title with a "quoted" word'

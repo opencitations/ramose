@@ -33,6 +33,7 @@ python -m ramose -s <spec.hf> [options]
 | `--token-ttl` | Token lifetime in seconds for `--token-create`. Default: no expiry. |
 | `--token-list` | List stored tokens (labels, timestamps, revoked flag) and exit. |
 | `--token-revoke` | Revoke the given token and exit. |
+| `--backend-auth` | Per-endpoint backend credential as `endpoint_url=header` (e.g. `https://host/sparql=Bearer <token>`). Repeatable. Merged with `RAMOSE_BACKEND_AUTH`. |
 
 ## Local mode
 
@@ -151,8 +152,31 @@ Call a protected operation by sending the token in the `Authorization` header:
 
 ```sh
 curl -X POST -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
-  -d '{"id": "https://example.org/author/1", "name": "Ada Lovelace"}' \
-  "http://localhost:8080/v1/authors"
+  -d '{"resource": "https://w3id.org/oc/meta/br/062104388184", "title": "OpenCitations Meta", "identifier": "https://w3id.org/oc/meta/id/062106312420", "scheme": "http://purl.org/spar/datacite/doi", "value": "10.1162/qss_a_00292"}' \
+  "http://localhost:8080/bibliography/v1/resources"
 ```
 
 Requests with a missing, invalid, or revoked token receive HTTP 401. Operations without `#auth` stay open.
+
+## Backend authentication
+
+The bearer token above protects the client→RAMOSE boundary. It is unrelated to any credential the SPARQL backend itself requires on the RAMOSE→backend boundary. 
+
+QLever, for example, can require an access token for SPARQL Updates. Apache Jena Fuseki and Ontotext GraphDB expose several schemes: HTTP Basic and bearer tokens, plus GraphDB's own GDB token.
+
+Configure RAMOSE with its own backend credentials, **keyed by endpoint URL**. The credential applies to both reads and writes.
+
+Each entry is `endpoint_url=header`, where the header is the full `Authorization` value RAMOSE sends. RAMOSE does not interpret the scheme, so the value matches whatever the backend expects (`Bearer <token>`, `Basic <base64(user:pass)>`, `GDB <token>`, and so on):
+
+```sh
+export RAMOSE_BACKEND_AUTH='https://localhost:7019/sparql=Bearer <qlever-access-token>'
+python -m ramose -s write_api.hf -w 127.0.0.1:8080
+```
+
+Set several backends with newline-separated entries in the environment variable, or with a repeatable `--backend-auth` flag:
+
+```sh
+python -m ramose -s apis.hf -w 127.0.0.1:8080 \
+  --backend-auth 'https://qlever.example/sparql=Bearer <token>' \
+  --backend-auth 'https://fuseki.example/ds/update=Basic <base64>'
+```

@@ -30,7 +30,13 @@ try:
 except ImportError:
     SparqlAnything = None
 
-from ramose._constants import DEFAULT_HTTP_TIMEOUT, FIELD_TYPE_RE, _http_session, media_type_for_format
+from ramose._constants import (
+    DEFAULT_HTTP_TIMEOUT,
+    FIELD_TYPE_RE,
+    _http_session,
+    backend_auth_header,
+    media_type_for_format,
+)
 from ramose.datatype import DataType
 from ramose.paging import PaginationInfo, build_link_header, build_pagination_info
 
@@ -712,6 +718,7 @@ class Operation:
                     headers={
                         "Accept": "text/csv",
                         "User-Agent": "RAMOSE/2.0.0",
+                        **backend_auth_header(endpoint_url),
                     },
                     timeout=DEFAULT_HTTP_TIMEOUT,
                 )
@@ -723,6 +730,7 @@ class Operation:
                         "Accept": "text/csv",
                         "Content-Type": "application/sparql-query",
                         "User-Agent": "RAMOSE/2.0.0",
+                        **backend_auth_header(endpoint_url),
                     },
                     timeout=DEFAULT_HTTP_TIMEOUT,
                 )
@@ -1116,14 +1124,18 @@ class Operation:
             if self.sparql_http_method == "get":
                 r = _http_session.get(
                     self.tp + "?query=" + quote(query),
-                    headers={"Accept": "text/csv"},
+                    headers={"Accept": "text/csv", **backend_auth_header(self.tp)},
                     timeout=DEFAULT_HTTP_TIMEOUT,
                 )
             else:
                 r = _http_session.post(
                     self.tp,
                     data=query,
-                    headers={"Accept": "text/csv", "Content-Type": "application/sparql-query"},
+                    headers={
+                        "Accept": "text/csv",
+                        "Content-Type": "application/sparql-query",
+                        **backend_auth_header(self.tp),
+                    },
                     timeout=DEFAULT_HTTP_TIMEOUT,
                 )
             r.encoding = "utf-8"
@@ -1363,7 +1375,7 @@ class Operation:
             response = _http_session.post(
                 endpoint,
                 data={"update": update_text},
-                headers={"Accept": "application/json"},
+                headers={"Accept": "application/json", **backend_auth_header(endpoint)},
                 timeout=DEFAULT_HTTP_TIMEOUT,
             )
         except RequestException as exc:

@@ -25,3 +25,11 @@ def media_type_for_format(fmt: str) -> str | None:
 
 
 _http_session = _RequestsSession()
+
+_backend_auth: dict[str, str] = {}
+
+
+def backend_auth_header(endpoint_url: str) -> dict[str, str]:
+    """Return the Authorization header configured for a specific SPARQL endpoint, or an empty dict."""
+    value = _backend_auth.get(endpoint_url)
+    return {"Authorization": value} if value else {}
