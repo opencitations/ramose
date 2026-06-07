@@ -1,3 +1,12 @@
+# [2.4.0](https://github.com/opencitations/ramose/compare/v2.3.3...v2.4.0) (2026-06-07)
+
+
+### Features
+
+* add SPARQL write operations with bearer-token authentication ([7479bde](https://github.com/opencitations/ramose/commit/7479bdef828db0b57b6cbafe73f841f086c6a120)), closes [#update_endpoint](https://github.com/opencitations/ramose/issues/update_endpoint) [#endpoint](https://github.com/opencitations/ramose/issues/endpoint) [#url](https://github.com/opencitations/ramose/issues/url) [#auth](https://github.com/opencitations/ramose/issues/auth)
+* authenticate RAMOSE to SPARQL backends per endpoint ([5f95e03](https://github.com/opencitations/ramose/commit/5f95e03bf53af024d00f6aa23c57564a0dd60f72))
+* negotiate response format via the Accept header ([2e0f0c0](https://github.com/opencitations/ramose/commit/2e0f0c005757c119a4ffa92fc3ed100eb4e95ae7))
+
 ## [2.3.3](https://github.com/opencitations/ramose/compare/v2.3.2...v2.3.3) (2026-06-06)
 
 
