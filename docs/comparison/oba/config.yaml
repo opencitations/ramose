@@ -1,0 +1,75 @@
+name: oba
+output_dir: outputs
+
+openapi:
+  openapi: 3.0.1
+  info:
+    description: OBA demo over OpenCitations Meta
+    title: OpenCitations OBA demo
+    version: v1.0.0
+  servers:
+    - url: http://localhost:8087/v1.0.0
+
+ontologies:
+  - ontology.ttl
+
+endpoint:
+  url: https://sparql.opencitations.net/meta
+  prefix: https://w3id.org/oc/meta/br/
+  graph_base: https://w3id.org/oc/meta/br/
+
+classes:
+  - http://purl.org/spar/fabio/JournalArticle
+
+enable_get_paths: true
+enable_post_paths: false
+enable_delete_paths: false
+enable_put_paths: false
+
+follow_references: false
+
+custom_queries_directory: custom
+
+custom_paths:
+  /articles:
+    get:
+      summary: Get a journal article by DOI
+      description: Get a journal article by its DOI
+      tags:
+        - JournalArticle
+      parameters:
+        - in: query
+          name: label
+          required: true
+          description: DOI of the article
+          schema:
+            type: string
+        - in: query
+          name: custom_query_name
+          required: false
+          schema:
+            type: string
+            default: articles
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          required: false
+          schema:
+            type: integer
+            default: 100
+            maximum: 200
+            minimum: 1
+      responses:
+        '200':
+          description: Journal articles matching the DOI
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JournalArticle'

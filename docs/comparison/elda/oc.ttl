@@ -1,0 +1,99 @@
+@prefix api:      <http://purl.org/linked-data/api/vocab#> .
+@prefix elda:     <http://www.epimorphics.com/vocabularies/lda#> .
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms:  <http://purl.org/dc/terms/> .
+@prefix foaf:     <http://xmlns.com/foaf/0.1/> .
+@prefix fabio:    <http://purl.org/spar/fabio/> .
+@prefix frbr:     <http://purl.org/vocab/frbr/core#> .
+@prefix pro:      <http://purl.org/spar/pro/> .
+@prefix datacite: <http://purl.org/spar/datacite/> .
+@prefix literal:  <http://www.essepuntato.it/2010/06/literalreification/> .
+@prefix oc:       <http://example.org/oc/> .
+
+
+oc:api a api:API
+  ; rdfs:label "OpenCitations Meta (LDA)"@en
+  ; api:sparqlEndpoint <https://sparql.opencitations.net/meta>
+  ; api:defaultViewer oc:articleView
+  ; api:variable [api:name "_resourceRoot"; api:value "/"]
+  ; api:variable [api:name "_velocityPath"; api:value "velocity/"]
+  ; elda:enableCounting true
+  ; elda:cacheExpiryTime "10m"
+  ; api:endpoint oc:articles, oc:authors
+
+  ; api:formatter
+      [a api:JsonFormatter
+      ; api:name "json-ld"
+      ; elda:checkJSONLDRoundTrip false
+      ; elda:className "com.epimorphics.lda.renderers.JSONLDRendererFactory"
+      ; api:mimeType "application/ld+json"
+      ]
+  ; api:formatter
+      [a elda:VelocityFormatter
+      ; api:name "html"
+      ; elda:className "com.epimorphics.lda.renderers.VelocityRendererFactory"
+      ; api:mimeType "text/html"
+      ]
+  ; api:formatter
+      [a elda:FeedFormatter
+      ; api:name "atom"
+      ; elda:className "com.epimorphics.lda.renderers.FeedRendererFactory"
+      ; api:mimeType "application/atom+xml"
+      ; elda:feedTitle "OpenCitations Meta feed"
+      ]
+  ; api:formatter
+      [a api:XsltFormatter
+      ; api:name "skg"
+      ; api:mimeType "application/json"
+      ; api:stylesheet "xslt/skg.xsl"
+      ]
+  .
+
+oc:articles a api:ListEndpoint
+  ; rdfs:label "article by DOI"
+  ; api:uriTemplate "/articles?doi={doi}"
+  ; api:variable [api:name "doi"; api:type xsd:string]
+  ; api:selector
+      [ api:where """
+          ?id literal:hasLiteralValue ?doi .
+          ?item datacite:hasIdentifier ?id ;
+                a fabio:JournalArticle .
+        """ ]
+  ; api:viewer oc:articleView
+  .
+
+oc:authors a api:ListEndpoint
+  ; rdfs:label "authors of an article"
+  ; api:uriTemplate "/authors?article={article}"
+  ; api:variable [api:name "article"; api:type rdfs:Resource]
+  ; api:selector
+      [ api:where """
+          ?article pro:isDocumentContextFor ?ar .
+          ?ar pro:isHeldBy ?item ;
+              pro:withRole pro:author .
+        """ ]
+  ; api:viewer oc:authorView
+  .
+
+oc:articleView a api:Viewer
+  ; api:name "article"
+  ; api:properties
+      "title,contributorship.agent.familyName,contributorship.agent.givenName,partOf.partOf.partOf.title,partOf.partOf.partOf.identifier.value"
+  .
+
+oc:authorView a api:Viewer
+  ; api:name "author"
+  ; api:properties "familyName,givenName"
+  .
+
+dcterms:title          api:label "title" .
+pro:isDocumentContextFor api:label "contributorship" .
+pro:isHeldBy           api:label "agent" .
+foaf:familyName        api:label "familyName" .
+foaf:givenName         api:label "givenName" .
+frbr:partOf            api:label "partOf" .
+datacite:hasIdentifier api:label "identifier" .
+literal:hasLiteralValue api:label "value" .
+fabio:hasSequenceIdentifier api:label "seqId" .

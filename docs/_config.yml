@@ -13,6 +13,8 @@ exclude_patterns:
 execute:
   execute_notebooks: force
   timeout: 120
+  exclude_patterns:
+    - comparison/*.ipynb
 
 launch_buttons:
   colab_url: "https://colab.research.google.com"

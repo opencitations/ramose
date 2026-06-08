@@ -1,0 +1,15 @@
+#+ summary: Incoming citation count for an OpenCitations br (OMID), from OpenCitations Index
+#+ endpoint: https://sparql.opencitations.net/index
+#+ method: GET
+#+ tags:
+#+   - index
+
+PREFIX cito: <http://purl.org/spar/cito/>
+
+SELECT ?br (COUNT(?citing) AS ?oc_citation_count) WHERE {
+  BIND(?_br_iri AS ?br)
+  ?cit a cito:Citation ;
+       cito:hasCitedEntity  ?br ;
+       cito:hasCitingEntity ?citing .
+}
+GROUP BY ?br

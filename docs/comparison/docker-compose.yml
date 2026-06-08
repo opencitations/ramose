@@ -1,0 +1,76 @@
+services:
+  ramose:
+    build: ./ramose
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./ramose/state:/app/state
+
+  grlc:
+    build: ./grlc
+    ports:
+      - "8082:8082"
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+
+  basil:
+    build: ./basil
+    ports:
+      - "8080:8080"
+
+  r4r:
+    build: ./r4r
+    ports:
+      - "8083:7777"
+    environment:
+      SPARQL_ENDPOINT: https://sparql.opencitations.net/meta
+      RESOURCE_NAMESPACE: https://w3id.org/oc/meta/br/
+      GRAPH_IRI: ""
+
+  r4r-auth:
+    build: ./r4r
+    ports:
+      - "8084:7777"
+    environment:
+      SPARQL_ENDPOINT: https://sparql.opencitations.net/meta
+      RESOURCE_NAMESPACE: https://w3id.org/oc/meta/br/
+      GRAPH_IRI: ""
+      API_USERS: "demo:demo"
+
+  crafts:
+    build: ./crafts
+    ports:
+      - "8085:8888"
+
+  rdfproxy:
+    build: ./rdfproxy
+    ports:
+      - "8086:8086"
+
+  oba:
+    build: ./oba
+    ports:
+      - "8087:8080"
+
+  elda:
+    build: ./elda
+    ports:
+      - "8088:8080"
+
+  walder:
+    build: ./walder
+    ports:
+      - "8089:8089"
+
+  basil-init:
+    image: python:3.13-alpine@sha256:420cd0bf0f3998275875e02ecd5808168cf0843cbb4d3c536432f729247b2acc
+    user: root
+    depends_on:
+      - basil
+    entrypoint: ["python", "/init/register.py"]
+    environment:
+      BASIL_BASE: http://basil:8080
+    volumes:
+      - ./basil/init:/init:ro
+      - ./basil/state:/state
+    restart: "no"

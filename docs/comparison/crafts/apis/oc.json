@@ -1,0 +1,48 @@
+{
+  "apiId": "oc",
+  "endpoints": [
+    {
+      "id": "meta",
+      "sparqlURI": "https://sparql.opencitations.net/meta",
+      "httpMethod": "GET"
+    },
+    {
+      "id": "index",
+      "sparqlURI": "https://sparql.opencitations.net/index",
+      "httpMethod": "GET"
+    }
+  ],
+  "model": [
+    {
+      "id": "article",
+      "types": [],
+      "dprops": [
+        {
+          "label": "title",
+          "endpoint": "meta",
+          "iri": "http://purl.org/dc/terms/title"
+        }
+      ],
+      "oprops": [
+        {
+          "label": "citations",
+          "endpoint": "index",
+          "iri": "http://purl.org/spar/cito/hasCitedEntity",
+          "inv": true
+        }
+      ]
+    }
+  ],
+  "queryTemplates": [
+    {
+      "id": "articleByDoi",
+      "endpoint": "meta",
+      "description": "Resolve a DOI to the OpenCitations OMID of the bibliographic resource and its title",
+      "template": "SELECT ?br ?title WHERE { ?id <http://purl.org/spar/datacite/usesIdentifierScheme> <http://purl.org/spar/datacite/doi> ; <http://www.essepuntato.it/2010/06/literalreification/hasLiteralValue> \"{{{doi}}}\" . ?br <http://purl.org/spar/datacite/hasIdentifier> ?id ; <http://purl.org/dc/terms/title> ?title . }",
+      "variables": ["br", "title"],
+      "parameters": [
+        { "label": "doi", "type": "string" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+CONSTRUCT {
+  ?br dcterms:title ?title ;
+      datacite:hasIdentifier ?id .
+} WHERE {
+  ?id datacite:usesIdentifierScheme datacite:doi ;
+      literal:hasLiteralValue ?_doi .
+  ?br datacite:hasIdentifier ?id ;
+      dcterms:title ?title .
+}

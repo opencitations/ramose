@@ -1,0 +1,19 @@
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+CONSTRUCT {
+    ?br ?predicate ?prop .
+    ?prop a ?type
+}
+WHERE {
+    {
+        SELECT DISTINCT ?br {
+            ?br datacite:hasIdentifier ?id .
+            ?id datacite:usesIdentifierScheme datacite:doi ;
+                literal:hasLiteralValue ?_label .
+        }
+        LIMIT 100
+        OFFSET 0
+    }
+    ?br ?predicate ?prop
+    OPTIONAL { ?prop a ?type }
+}

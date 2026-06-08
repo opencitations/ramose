@@ -1,0 +1,8 @@
+[
+#foreach( $r in $results )
+  {
+    "omid": "$r.br",
+    "title": "$r.title"
+  }#if( $velocityCount < $results.size() ),#end
+#end
+]

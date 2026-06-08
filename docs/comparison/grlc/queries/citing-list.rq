@@ -1,0 +1,18 @@
+#+ summary: Incoming citations of an OpenCitations br (OMID), one row per citing resource, from OpenCitations Index
+#+ endpoint: https://sparql.opencitations.net/index
+#+ method: GET
+#+ pagination: 2
+#+ transform: {
+#+   "citing": "?citing",
+#+   "$anchor": "citing"
+#+ }
+#+ tags:
+#+   - index
+
+PREFIX cito: <http://purl.org/spar/cito/>
+
+SELECT ?citing WHERE {
+  ?cit a cito:Citation ;
+       cito:hasCitedEntity ?_br_iri ;
+       cito:hasCitingEntity ?citing .
+}

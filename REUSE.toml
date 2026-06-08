@@ -1,6 +1,6 @@
 version = 1
 
-# CC0-1.0 — no creative expression
+# CC0-1.0
 
 [[annotations]]
 path = [
@@ -12,17 +12,22 @@ path = [
     "test/data/skgif_products.hf",
     "test/data/settings.json",
     "test/data/ramose-test.**",
+    "docs/.gitignore",
+    "docs/favicon.svg",
 ]
 SPDX-FileCopyrightText = "NONE"
 SPDX-License-Identifier = "CC0-1.0"
 
-# ISC — project files that cannot have inline comments
+# ISC
 
 [[annotations]]
 path = [
     "test/data/meta_v1_doc.html",
     "test/data/meta_v1_doc_css.html",
     "test/data/meta_v1_index.html",
+    "docs/orkg_skgif.hf",
+    "docs/wikidata_skgif.hf",
+    "docs/comparison/**",
 ]
 SPDX-FileCopyrightText = "2026 Arcangelo Massari <arcangelo.massari@unibo.it>"
 SPDX-License-Identifier = "ISC"
@@ -35,23 +40,15 @@ path = [
 SPDX-FileCopyrightText = "2026 Sergei Slinkin"
 SPDX-License-Identifier = "ISC"
 
+# CC-BY-4.0
+# Must follow the ISC "docs/comparison/**" entry: last match wins, so these
+# override the notebooks and prose back to CC-BY-4.0.
+
 [[annotations]]
-path = "docs/09-demo-skgif.ipynb"
+path = [
+    "docs/09-demo-skgif.ipynb",
+    "docs/comparison/intro.md",
+    "docs/comparison/*.ipynb",
+]
 SPDX-FileCopyrightText = "2026 Arcangelo Massari <arcangelo.massari@unibo.it>"
 SPDX-License-Identifier = "CC-BY-4.0"
-
-[[annotations]]
-path = [
-    "docs/orkg_skgif.hf",
-    "docs/wikidata_skgif.hf",
-]
-SPDX-FileCopyrightText = "2026 Arcangelo Massari <arcangelo.massari@unibo.it>"
-SPDX-License-Identifier = "ISC"
-
-[[annotations]]
-path = [
-    "docs/.gitignore",
-    "docs/favicon.svg",
-]
-SPDX-FileCopyrightText = "NONE"
-SPDX-License-Identifier = "CC0-1.0"

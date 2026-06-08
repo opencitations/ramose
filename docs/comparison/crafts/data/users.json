@@ -1,0 +1,15 @@
+{
+  "root": {
+    "login": "root",
+    "password": "changeme",
+    "email": "root@example.com",
+    "created": "2024-01-01T00:00:00.000Z",
+    "apis": {
+      "oc": {
+        "created": "2024-01-01T00:00:00.000Z",
+        "readToken": "oc-read-token",
+        "writeToken": "oc-write-token"
+      }
+    }
+  }
+}

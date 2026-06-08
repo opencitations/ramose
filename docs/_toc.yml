@@ -20,3 +20,16 @@ parts:
     - file: 07-openapi
     - file: 08-skgif
     - file: 09-demo-skgif
+  - caption: Comparison
+    numbered: false
+    chapters:
+    - file: comparison/intro
+    - file: comparison/ramose
+    - file: comparison/grlc
+    - file: comparison/basil
+    - file: comparison/r4r
+    - file: comparison/crafts
+    - file: comparison/rdfproxy
+    - file: comparison/oba
+    - file: comparison/elda
+    - file: comparison/walder

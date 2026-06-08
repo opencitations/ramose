@@ -1,0 +1,74 @@
+openapi: 3.0.2
+info:
+  title: OpenCitations via Walder
+  version: 0.1.0
+x-walder-resources:
+  root: ./
+  views: views
+x-walder-datasources:
+  - https://sparql.opencitations.net/meta
+paths:
+  /articles:
+    get:
+      summary: Title of a bibliographic resource, looked up by DOI
+      parameters:
+        - name: doi
+          in: query
+          required: true
+          description: the DOI to look up
+          schema:
+            type: string
+      x-walder-query:
+        sparql-query: >
+          PREFIX datacite: <http://purl.org/spar/datacite/>
+          PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+          PREFIX dcterms: <http://purl.org/dc/terms/>
+          CONSTRUCT {
+            ?br dcterms:title ?title .
+          }
+          WHERE {
+            ?id datacite:usesIdentifierScheme datacite:doi ;
+                literal:hasLiteralValue ?doi .
+            ?br datacite:hasIdentifier ?id ;
+                dcterms:title ?title .
+          }
+      responses:
+        200:
+          description: the article
+          x-walder-input-text/html: article.html
+  /article-citations:
+    get:
+      summary: Title (from Meta) joined with the entities that cite it (from Index), by DOI
+      parameters:
+        - name: doi
+          in: query
+          required: true
+          description: the DOI to look up
+          schema:
+            type: string
+      x-walder-query:
+        sparql-query: >
+          PREFIX datacite: <http://purl.org/spar/datacite/>
+          PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+          PREFIX dcterms: <http://purl.org/dc/terms/>
+          PREFIX cito: <http://purl.org/spar/cito/>
+          CONSTRUCT {
+            ?br dcterms:title ?title ;
+                cito:isCitedBy ?citing .
+          }
+          WHERE {
+            ?id datacite:usesIdentifierScheme datacite:doi ;
+                literal:hasLiteralValue ?doi .
+            ?br datacite:hasIdentifier ?id ;
+                dcterms:title ?title .
+            ?cit cito:hasCitedEntity ?br ;
+                 cito:hasCitingEntity ?citing .
+          }
+        datasources:
+          additional: true
+          sources:
+            - https://sparql.opencitations.net/index
+      responses:
+        200:
+          description: the article and the resources that cite it
+          x-walder-input-text/html: article.html

@@ -1,0 +1,9 @@
+PREFIX pro: <http://purl.org/spar/pro/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?agent ?name
+WHERE {
+  ?id pro:isDocumentContextFor ?role .
+  ?role pro:isHeldBy ?agent .
+  ?agent foaf:name ?name .
+}

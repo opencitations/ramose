@@ -49,10 +49,12 @@ exclude_lines = [
 
 [tool.pyright]
 extraPaths = ["test/data"]
+exclude = ["**/node_modules", "**/__pycache__", "**/.*", "docs/comparison"]
 
 [tool.ruff]
 target-version = "py310"
 line-length = 120
+extend-exclude = ["docs/comparison"]
 
 [tool.ruff.lint]
 select = ["ALL"]

@@ -1,0 +1,24 @@
+# Minimal FaBiO subset used to drive the OBA demo over OpenCitations Meta
+@prefix : <http://purl.org/spar/fabio/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix fabio: <http://purl.org/spar/fabio/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prism: <http://prismstandard.org/namespaces/basic/2.0/> .
+
+<http://purl.org/spar/fabio> a owl:Ontology ;
+    rdfs:label "Minimal FaBiO subset for the OBA OpenCitations demo" .
+
+fabio:JournalArticle a owl:Class ;
+    rdfs:label "Journal article" .
+
+dcterms:title a owl:DatatypeProperty ;
+    rdfs:label "title" ;
+    rdfs:domain fabio:JournalArticle ;
+    rdfs:range xsd:string .
+
+prism:publicationDate a owl:DatatypeProperty ;
+    rdfs:label "publicationDate" ;
+    rdfs:domain fabio:JournalArticle ;
+    rdfs:range xsd:string .

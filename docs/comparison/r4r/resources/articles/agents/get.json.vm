@@ -1,0 +1,8 @@
+[
+#foreach( $r in $results )
+  {
+    "agent": "$r.agent",
+    "name": "$r.name"
+  }#if( $velocityCount < $results.size() ),#end
+#end
+]

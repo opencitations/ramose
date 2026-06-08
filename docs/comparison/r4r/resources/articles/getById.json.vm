@@ -1,0 +1,5 @@
+{
+  "omid": "$omid",
+  "title": "$title"#if( $pubdate ),
+  "publicationDate": "$pubdate"#end
+}
