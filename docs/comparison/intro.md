@@ -11,14 +11,14 @@ One bibliographic resource, looked up by DOI, with data that lives in two indepe
 | DOI | `10.1007/s11192-022-04367-w` |
 | OMID | `https://w3id.org/oc/meta/br/061202127149` |
 | Title (from OpenCitations Meta) | Identifying And Correcting Invalid Citations Due To DOI Errors In Crossref Data |
-| Incoming citations (from OpenCitations Index) | 6 |
+| References (from OpenCitations Index) | 30 |
 
 Endpoints:
 
 - Meta: `https://sparql.opencitations.net/meta`
 - Index: `https://sparql.opencitations.net/index`
 
-The task: **join the title (Meta) with the citation count (Index) on the shared OMID**, two datasets with no link between them. All nine tools take the same input, the DOI. How far each one gets is the point of the comparison. Each page exercises the same six dimensions: the join, output, pagination, versioning, API description, and authentication.
+All tools are tested across six dimensions: join, output, pagination, versioning, API description, and authentication.
 
 ## The comparison map
 
@@ -57,7 +57,7 @@ docker compose -f docs/comparison/docker-compose.yml up -d --build
 With the stack up, execute the notebooks from their directory:
 
 ```sh
-uv run jupyter nbconvert --to notebook --execute --inplace docs/comparison/*.ipynb
+uv run jupyter execute --inplace docs/comparison/*.ipynb
 ```
 
 Stop the stack with `docker compose -f docs/comparison/docker-compose.yml down`.

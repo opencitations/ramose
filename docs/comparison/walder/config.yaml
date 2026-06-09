@@ -36,9 +36,9 @@ paths:
         200:
           description: the article
           x-walder-input-text/html: article.html
-  /article-citations:
+  /article-references:
     get:
-      summary: Title (from Meta) joined with the entities that cite it (from Index), by DOI
+      summary: Title (from Meta) joined with the entities it cites (from Index), by DOI
       parameters:
         - name: doi
           in: query
@@ -54,15 +54,15 @@ paths:
           PREFIX cito: <http://purl.org/spar/cito/>
           CONSTRUCT {
             ?br dcterms:title ?title ;
-                cito:isCitedBy ?citing .
+                cito:cites ?cited .
           }
           WHERE {
             ?id datacite:usesIdentifierScheme datacite:doi ;
                 literal:hasLiteralValue ?doi .
             ?br datacite:hasIdentifier ?id ;
                 dcterms:title ?title .
-            ?cit cito:hasCitedEntity ?br ;
-                 cito:hasCitingEntity ?citing .
+            ?cit cito:hasCitingEntity ?br ;
+                 cito:hasCitedEntity ?cited .
           }
         datasources:
           additional: true
@@ -70,5 +70,5 @@ paths:
             - https://sparql.opencitations.net/index
       responses:
         200:
-          description: the article and the resources that cite it
+          description: the article and the resources it cites
           x-walder-input-text/html: article.html

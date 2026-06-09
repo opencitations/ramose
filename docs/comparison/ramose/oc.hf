@@ -3,25 +3,52 @@
 #base http://localhost:8081
 #method get
 #title OpenCitations Meta + Index (RAMOSE federation demo)
-#description Minimal RAMOSE API over two independent OpenCitations endpoints. The `/citations` operation takes a DOI, retrieves the title from OpenCitations Meta, and joins the incoming citation count from OpenCitations Index on the shared OMID. Nothing in Meta links to Index: the join happens in RAMOSE on the `?br` key. The `/incoming-citations` operation reuses the same join to list the citing resources one per row, paginated with RFC 8288 `Link` headers.
+#description Minimal RAMOSE API over OpenCitations endpoints.
 #version 1.0.0
 #contacts arcangelo.massari@unibo.it
 #license ISC
 #endpoint https://sparql.opencitations.net/meta
 
+#url /articles/{doi}
+#type operation
+#doi str(.+)
+#method get
+#description Given a DOI, return its title from OpenCitations Meta.
+#call /articles/10.1007/s11192-022-04367-w
+#field_type str(doi) str(title)
+#output_json [
+    {
+        "doi": "10.1007/s11192-022-04367-w",
+        "title": "Identifying And Correcting Invalid Citations Due To DOI Errors In Crossref Data"
+    }
+]
+#sparql PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?doi ?title WHERE {
+  VALUES ?doi_value { "[[doi]]" "[[doi]]"^^xsd:string }
+  ?id datacite:usesIdentifierScheme datacite:doi ;
+      literal:hasLiteralValue ?doi_value .
+  ?br datacite:hasIdentifier ?id ;
+      dcterms:title ?title .
+  BIND("[[doi]]" AS ?doi)
+}
+
 #url /citations/{doi}
 #type operation
 #doi str(.+)
 #method get
-#description Given a DOI, return its title (OpenCitations Meta) and incoming citation count (OpenCitations Index), joined on the OMID.
+#description Given a DOI, return its title (OpenCitations Meta) and reference count (OpenCitations Index), joined on the OMID.
 #call /citations/10.1007/s11192-022-04367-w
-#field_type str(doi) str(title) str(br) int(oc_citation_count)
+#field_type str(doi) str(title) str(br) int(oc_reference_count)
 #output_json [
     {
         "doi": "10.1007/s11192-022-04367-w",
         "title": "Identifying And Correcting Invalid Citations Due To DOI Errors In Crossref Data",
         "br": "https://w3id.org/oc/meta/br/061202127149",
-        "oc_citation_count": "6"
+        "oc_reference_count": "30"
     }
 ]
 #sparql PREFIX datacite: <http://purl.org/spar/datacite/>
@@ -43,26 +70,26 @@ SELECT ?doi ?title ?br WHERE {
 @@foreach ?br item wait=0
 PREFIX cito: <http://purl.org/spar/cito/>
 
-SELECT ?br (COUNT(?citing) AS ?oc_citation_count) WHERE {
+SELECT ?br (COUNT(?cited) AS ?oc_reference_count) WHERE {
   BIND(<[[item]]> AS ?br)
   ?cit a cito:Citation ;
-       cito:hasCitedEntity  ?br ;
-       cito:hasCitingEntity ?citing .
+       cito:hasCitingEntity ?br ;
+       cito:hasCitedEntity  ?cited .
 }
 GROUP BY ?br
 
-#url /incoming-citations/{doi}
+#url /references/{doi}
 #type operation
 #doi str(.+)
 #method get
-#description Given a DOI, resolve its OMID in OpenCitations Meta and list the incoming citations from OpenCitations Index, one citing resource per row.
-#call /incoming-citations/10.1007/s11192-022-04367-w
-#field_type str(doi) str(br) str(citing)
+#description Given a DOI, resolve its OMID in OpenCitations Meta and list its references from OpenCitations Index, one cited resource per row.
+#call /references/10.1007/s11192-022-04367-w
+#field_type str(doi) str(br) str(cited)
 #output_json [
     {
         "doi": "10.1007/s11192-022-04367-w",
         "br": "https://w3id.org/oc/meta/br/061202127149",
-        "citing": "https://w3id.org/oc/meta/br/0609403935"
+        "cited": "https://w3id.org/oc/meta/br/060504627"
     }
 ]
 #sparql PREFIX datacite: <http://purl.org/spar/datacite/>
@@ -82,11 +109,11 @@ SELECT ?doi ?br WHERE {
 @@foreach ?br item wait=0
 PREFIX cito: <http://purl.org/spar/cito/>
 
-SELECT ?br ?citing WHERE {
+SELECT ?br ?cited WHERE {
   BIND(<[[item]]> AS ?br)
   ?cit a cito:Citation ;
-       cito:hasCitedEntity  ?br ;
-       cito:hasCitingEntity ?citing .
+       cito:hasCitingEntity ?br ;
+       cito:hasCitedEntity  ?cited .
 }
 
 #url /protected/{doi}

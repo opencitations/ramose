@@ -1,0 +1,15 @@
+#+ summary: Reference count for an OpenCitations br (OMID), from OpenCitations Index
+#+ endpoint: https://sparql.opencitations.net/index
+#+ method: GET
+#+ tags:
+#+   - index
+
+PREFIX cito: <http://purl.org/spar/cito/>
+
+SELECT ?br (COUNT(?cited) AS ?oc_reference_count) WHERE {
+  BIND(?_br_iri AS ?br)
+  ?cit a cito:Citation ;
+       cito:hasCitingEntity ?br ;
+       cito:hasCitedEntity  ?cited .
+}
+GROUP BY ?br

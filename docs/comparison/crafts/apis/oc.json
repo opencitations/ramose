@@ -25,9 +25,9 @@
       ],
       "oprops": [
         {
-          "label": "citations",
+          "label": "references",
           "endpoint": "index",
-          "iri": "http://purl.org/spar/cito/hasCitedEntity",
+          "iri": "http://purl.org/spar/cito/hasCitingEntity",
           "inv": true
         }
       ]
