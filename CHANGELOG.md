@@ -1,3 +1,10 @@
+## [2.4.1](https://github.com/opencitations/ramose/compare/v2.4.0...v2.4.1) (2026-06-10)
+
+
+### Bug Fixes
+
+* parse negative durations and resolve relative addon paths [release] ([53db14f](https://github.com/opencitations/ramose/commit/53db14fb7e71567e105af5c85ee0e42414e2c70c))
+
 # [2.4.0](https://github.com/opencitations/ramose/compare/v2.3.3...v2.4.0) (2026-06-07)
 
 
