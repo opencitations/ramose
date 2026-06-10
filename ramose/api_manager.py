@@ -56,11 +56,11 @@ class APIManager:
 
     @staticmethod
     def _load_addon(addon_name: str, conf_file: str) -> types.ModuleType:
-        if "." in addon_name:
-            return import_module(addon_name)
         addon_path = (Path(conf_file).parent / addon_name).resolve()
-        path.append(str(addon_path.parent))
-        return import_module(addon_path.name)
+        if addon_path.parent.joinpath(f"{addon_path.name}.py").is_file():
+            path.append(str(addon_path.parent))
+            return import_module(addon_path.name)
+        return import_module(addon_name)
 
     @staticmethod
     def _process_api_metadata(

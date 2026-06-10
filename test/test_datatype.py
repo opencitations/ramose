@@ -35,6 +35,14 @@ class TestDuration:
         result = DataType.duration("P1Y")
         assert result == datetime(1984, 1, 15, tzinfo=timezone.utc)
 
+    def test_negative_duration(self) -> None:
+        result = DataType.duration("-P1Y")
+        assert result == datetime(1982, 1, 15, tzinfo=timezone.utc)
+
+    def test_negative_duration_days(self) -> None:
+        result = DataType.duration("-P0Y0M1D")
+        assert result == datetime(1983, 1, 14, tzinfo=timezone.utc)
+
     def test_none_returns_high_duration(self) -> None:
         result = DataType.duration(None)
         assert result == datetime(3983, 1, 15, tzinfo=timezone.utc)

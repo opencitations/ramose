@@ -4,15 +4,37 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
 from ramose import APIManager, Operation
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.fixture
 def api_mgr() -> APIManager:
     conf_file = "test/data/meta_v1.hf"
     return APIManager([conf_file], endpoint_override="http://localhost:9999/sparql")
+
+
+class TestLoadAddon:
+    def test_relative_path_with_parent_directory(self, tmp_path: Path) -> None:
+        addon_dir = tmp_path / "src"
+        addon_dir.mkdir()
+        (addon_dir / "relative_path_addon.py").write_text("VALUE = 42\n")
+        conf_dir = tmp_path / "conf"
+        conf_dir.mkdir()
+        conf_file = conf_dir / "spec.hf"
+        conf_file.write_text("")
+        module = APIManager._load_addon("../src/relative_path_addon", str(conf_file))
+        assert module.VALUE == 42
+
+    def test_dotted_name_resolved_as_package_import(self) -> None:
+        module = APIManager._load_addon("ramose.skgif_addon", "test/data/meta_v1.hf")
+        assert module.__name__ == "ramose.skgif_addon"
 
 
 class TestNorApiUrl:

@@ -21,13 +21,15 @@ if TYPE_CHECKING:
 # ISO 8601 duration format: PnYnMnDTnHnMnS
 # Python's stdlib has no parser for this format, so we handle it manually.
 # Each component is optional. The T separator marks the transition from date to time components.
-# Examples: "P1Y", "P2M3D", "PT4H5M6S", "P1Y2M3DT4H5M6.5S"
+# A leading "-" denotes a negative duration, as allowed by XSD duration
+# (https://www.w3.org/TR/xmlschema11-2/#duration).
+# Examples: "P1Y", "P2M3D", "PT4H5M6S", "P1Y2M3DT4H5M6.5S", "-P1D"
 _YEAR_ONLY_LENGTH = 4
 _YEAR_MONTH_MIN_LENGTH = 6
 _YEAR_MONTH_MAX_LENGTH = 7
 
 _DURATION_PATTERN = re_compile(
-    r"P"
+    r"(?P<sign>-)?P"
     r"(?:(?P<years>\d+)Y)?"
     r"(?:(?P<months>\d+)M)?"
     r"(?:(?P<days>\d+)D)?"
@@ -79,11 +81,13 @@ def _parse_duration(duration_str: str) -> _ISODuration:
     if not duration_match:
         msg = f"Invalid ISO 8601 duration: {duration_str}"
         raise ValueError(msg)
-    parts = {key: value or "0" for key, value in duration_match.groupdict().items()}
+    sign = -1 if duration_match.group("sign") else 1
+    parts = {key: value or "0" for key, value in duration_match.groupdict().items() if key != "sign"}
     return _ISODuration(
-        years=int(parts["years"]),
-        months=int(parts["months"]),
-        remainder=timedelta(
+        years=sign * int(parts["years"]),
+        months=sign * int(parts["months"]),
+        remainder=sign
+        * timedelta(
             days=int(parts["days"]),
             hours=int(parts["hours"]),
             minutes=int(parts["minutes"]),
