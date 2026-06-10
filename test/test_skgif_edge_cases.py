@@ -62,10 +62,19 @@ class TestNormalizeLocalIdentifierUrl:
             "https://w3id.org/oc/meta/br/0601",
         )
 
-    def test_call_with_merged_slash_returns_same_product(self, skgif_edge_api_manager: APIManager) -> None:
+    def test_call_with_merged_slash_returns_same_response(self, skgif_edge_api_manager: APIManager) -> None:
         canonical = _execute(skgif_edge_api_manager, "https://w3id.org/oc/meta/br/0601")
         merged = _execute(skgif_edge_api_manager, "https:/w3id.org/oc/meta/br/0601")
-        assert merged["@graph"] == canonical["@graph"]
+        assert merged == canonical
+
+    def test_pagination_urls_restore_the_scheme_separator(self, skgif_edge_api_manager: APIManager) -> None:
+        response = _execute(skgif_edge_api_manager, "https:/w3id.org/oc/meta/br/0601")
+        canonical_path = "/skgif-edge/v1/products/https://w3id.org/oc/meta/br/0601"
+        meta = response["meta"]
+        assert meta["local_identifier"] == f"{canonical_path}?page=1&page_size=1"
+        assert meta["part_of"]["local_identifier"] == canonical_path
+        assert meta["part_of"]["first_page"]["local_identifier"] == f"{canonical_path}?page=1&page_size=1"
+        assert meta["part_of"]["last_page"]["local_identifier"] == f"{canonical_path}?page=1&page_size=1"
 
 
 class TestMissingLocalIdentifier:
