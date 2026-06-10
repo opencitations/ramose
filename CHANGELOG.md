@@ -1,3 +1,10 @@
+## [2.4.2](https://github.com/opencitations/ramose/compare/v2.4.1...v2.4.2) (2026-06-10)
+
+
+### Bug Fixes
+
+* **skgif:** normalize local identifier URLs with merged scheme slashes [release] ([8994919](https://github.com/opencitations/ramose/commit/8994919de5d4d4734c6533ab66fb1bb76b02ecf7))
+
 ## [2.4.1](https://github.com/opencitations/ramose/compare/v2.4.0...v2.4.1) (2026-06-10)
 
 
