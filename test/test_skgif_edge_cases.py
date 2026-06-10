@@ -9,7 +9,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ramose.skgif_addon import _build_agent, _build_grant, _build_org, _build_venue
+from ramose.skgif_addon import (
+    _build_agent,
+    _build_grant,
+    _build_org,
+    _build_venue,
+    normalize_local_identifier_url,
+)
 
 if TYPE_CHECKING:
     from ramose import APIManager
@@ -40,6 +46,26 @@ class TestMissingLangColumns:
             ],
         }
         assert "title" not in product, "'title' should not appear as a flat scalar field"
+
+
+class TestNormalizeLocalIdentifierUrl:
+    def test_merged_scheme_slash_is_restored(self) -> None:
+        assert normalize_local_identifier_url("https:/w3id.org/oc/meta/br/0601") == (
+            "https://w3id.org/oc/meta/br/0601",
+        )
+
+    def test_http_scheme_is_restored(self) -> None:
+        assert normalize_local_identifier_url("http:/example.org/entity/1") == ("http://example.org/entity/1",)
+
+    def test_canonical_url_is_unchanged(self) -> None:
+        assert normalize_local_identifier_url("https://w3id.org/oc/meta/br/0601") == (
+            "https://w3id.org/oc/meta/br/0601",
+        )
+
+    def test_call_with_merged_slash_returns_same_product(self, skgif_edge_api_manager: APIManager) -> None:
+        canonical = _execute(skgif_edge_api_manager, "https://w3id.org/oc/meta/br/0601")
+        merged = _execute(skgif_edge_api_manager, "https:/w3id.org/oc/meta/br/0601")
+        assert merged["@graph"] == canonical["@graph"]
 
 
 class TestMissingLocalIdentifier:

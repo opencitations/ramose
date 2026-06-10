@@ -10,8 +10,9 @@
 
 #url /products/{local_identifier}
 #type operation
-#local_identifier str(https://w3id\.org/oc/meta/br/.+)
+#local_identifier str(https:/{1,2}w3id\.org/oc/meta/br/.+)
 #method get
+#preprocess normalize_local_identifier_url(local_identifier)
 #description Product without title_lang/abstract_lang in field_type.
 #call /products/https://w3id.org/oc/meta/br/0601
 #format skgif,to_skgif

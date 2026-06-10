@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from io import StringIO
 from math import ceil
+from re import sub
 from urllib.parse import parse_qs, urlencode, urlsplit
 
 from ramose import HttpError
@@ -860,6 +861,12 @@ def handle_skgif_product_filter(values: list[str]) -> dict[str, str]:
         return {"filter_preamble": "", "filter": "FILTER(false)"}
 
     return _build_supported_product_filter(pairs)
+
+
+def normalize_local_identifier_url(local_identifier: str) -> tuple[str]:
+    # Reverse proxies (e.g. Traefik) merge duplicate slashes in request paths,
+    # turning "https://example.org/..." into "https:/example.org/...": restore the scheme separator.
+    return (sub(r"^(https?):/+", r"\1://", local_identifier),)
 
 
 def _build_search_result_page(url: str) -> dict:
