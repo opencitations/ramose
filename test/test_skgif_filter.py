@@ -119,13 +119,13 @@ class TestIdentifierFilter:
                 "product_type": "literature",
             },
             {
-                "local_identifier": "https://w3id.org/oc/meta/br/06401297735",
+                "local_identifier": "https://w3id.org/oc/meta/br/0611064985",
                 "titles": {"none": ["The Semantic Web"]},
                 "entity_type": "product",
                 "product_type": "literature",
             },
             {
-                "local_identifier": "https://w3id.org/oc/meta/br/0611064985",
+                "local_identifier": "https://w3id.org/oc/meta/br/06401297735",
                 "titles": {"none": ["The Semantic Web"]},
                 "entity_type": "product",
                 "product_type": "literature",
