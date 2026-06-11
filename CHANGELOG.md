@@ -1,3 +1,17 @@
+# [2.5.0](https://github.com/opencitations/ramose/compare/v2.4.2...v2.5.0) (2026-06-11)
+
+
+### Bug Fixes
+
+* **docs:** render custom parameter descriptions as markdown ([008a9ac](https://github.com/opencitations/ramose/commit/008a9ac8702fad7c50ff0ecad4d07584dd4def73))
+* **docs:** wrap long unbroken tokens in HTML ([c507999](https://github.com/opencitations/ramose/commit/c50799935ef058cb6e912e9ae4e946b595685777))
+* **skgif:** normalize merged scheme slash in pagination meta URLs ([d655617](https://github.com/opencitations/ramose/commit/d655617e728d67473d44000a5a39d319ddb943b1))
+
+
+### Features
+
+* **skgif:** add per-triplestore text-search backend addon modules ([6304336](https://github.com/opencitations/ramose/commit/63043369c7dc73a1e8129af2760fcd96327b130c))
+
 ## [2.4.2](https://github.com/opencitations/ramose/compare/v2.4.1...v2.4.2) (2026-06-10)
 
 
