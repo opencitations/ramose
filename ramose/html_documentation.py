@@ -314,6 +314,8 @@ The operations that this API implements are:
             background-image: none !important;
             color: #595959;
             display: block;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .sidebar_menu a:hover {
@@ -357,6 +359,8 @@ The operations that this API implements are:
             display: inline-block;
             overflow: visible;
             text-overflow: ellipsis;
+            overflow-wrap: break-word;
+            word-break: break-word;
             max-width: 35%;
             min-height: 200px;
             padding:4%;
@@ -417,6 +421,8 @@ The operations that this API implements are:
             display:inline-table;
             height: 100%;
             vertical-align: top;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .method {
@@ -465,6 +471,8 @@ The operations that this API implements are:
             border-radius: 3px;
             font-family : monospace;
             font-size: 1em !important;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         /**:not(div) > p {
