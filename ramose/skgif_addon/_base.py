@@ -696,6 +696,29 @@ ALL_VALID_PRODUCT_FILTERS = SUPPORTED_PRODUCT_FILTERS | UNSUPPORTED_PRODUCT_FILT
 VALID_PRODUCT_TYPES = {"literature", "research data", "research software", "other"}
 
 
+@dataclass(frozen=True)
+class TextSearchTarget:
+    variable: str
+    predicate: str | None = None
+
+
+TextSearchFilterBuilder = Callable[[TextSearchTarget, str], list[str]]
+
+TEXT_SEARCH_TARGETS = {
+    "cf.search.title": TextSearchTarget(variable="?title", predicate="http://purl.org/dc/terms/title"),
+}
+
+
+def sparql_string(value: str) -> str:
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+    escaped = escaped.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+    return f'"{escaped}"'
+
+
+def _default_text_search_filter(target: TextSearchTarget, value: str) -> list[str]:
+    return [f"FILTER(CONTAINS(LCASE({target.variable}), LCASE({sparql_string(value)})))"]
+
+
 def _filter_product_type(value: str) -> list[str]:
     if value not in VALID_PRODUCT_TYPES:
         msg = f"The product type '{value}' is not valid, valid types are {', '.join(sorted(VALID_PRODUCT_TYPES))}"
@@ -809,7 +832,10 @@ _CITATION_FILTER_BUILDERS: dict[str, Callable[[str], str]] = {
 }
 
 
-def _build_supported_product_filter(pairs: list[str]) -> dict[str, str]:
+def _build_supported_product_filter(
+    pairs: list[str],
+    text_search_filter: TextSearchFilterBuilder,
+) -> dict[str, str]:
     clauses: list[str] = []
     agent_clauses: list[str] = []
     preamble_parts: list[str] = []
@@ -819,8 +845,8 @@ def _build_supported_product_filter(pairs: list[str]) -> dict[str, str]:
 
         if key in _CITATION_FILTER_BUILDERS:
             preamble_parts.append(_CITATION_FILTER_BUILDERS[key](value))
-        elif key == "cf.search.title":
-            clauses.append(f'FILTER(CONTAINS(LCASE(?title), LCASE("{value}")))')
+        elif key in TEXT_SEARCH_TARGETS:
+            clauses.extend(text_search_filter(TEXT_SEARCH_TARGETS[key], value))
         elif key == "identifiers.id":
             clauses.append(f'?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .')
         elif key == "identifiers.scheme":
@@ -844,7 +870,7 @@ def _build_supported_product_filter(pairs: list[str]) -> dict[str, str]:
     }
 
 
-def handle_skgif_product_filter(values: list[str]) -> dict[str, str]:
+def _handle_skgif_product_filter(values: list[str], text_search_filter: TextSearchFilterBuilder) -> dict[str, str]:
     raw = values[0]
     pairs = [pair.strip() for pair in raw.split(",") if pair.strip()]
 
@@ -860,7 +886,17 @@ def handle_skgif_product_filter(values: list[str]) -> dict[str, str]:
     if has_unsupported:
         return {"filter_preamble": "", "filter": "FILTER(false)"}
 
-    return _build_supported_product_filter(pairs)
+    return _build_supported_product_filter(pairs, text_search_filter)
+
+
+def make_product_filter_handler(text_search_filter: TextSearchFilterBuilder) -> Callable[[list[str]], dict[str, str]]:
+    def handler(values: list[str]) -> dict[str, str]:
+        return _handle_skgif_product_filter(values, text_search_filter)
+
+    return handler
+
+
+handle_skgif_product_filter = make_product_filter_handler(_default_text_search_filter)
 
 
 def normalize_local_identifier_url(local_identifier: str) -> tuple[str]:

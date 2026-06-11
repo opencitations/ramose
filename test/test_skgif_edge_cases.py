@@ -9,13 +9,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ramose.skgif_addon import (
-    _build_agent,
-    _build_grant,
-    _build_org,
-    _build_venue,
-    normalize_local_identifier_url,
-)
+from ramose.skgif_addon import _base, normalize_local_identifier_url
 
 if TYPE_CHECKING:
     from ramose import APIManager
@@ -89,7 +83,7 @@ class TestMissingLocalIdentifier:
             "contribution_role": "author",
         }
         with pytest.raises(ValueError, match="Missing required local_identifier for person 'Doe, Jane'"):
-            _build_agent(row)
+            _base._build_agent(row)
 
     def test_organisation_without_local_identifier_raises(self) -> None:
         row = {
@@ -100,14 +94,33 @@ class TestMissingLocalIdentifier:
             "relevant_organisation_local_identifier": "",
         }
         with pytest.raises(ValueError, match="Missing required local_identifier for organisation 'CERN'"):
-            _build_org(row, "relevant_organisation")
+            _base._build_org(row, "relevant_organisation")
 
     def test_venue_without_local_identifier_raises(self) -> None:
         row = {"manifestation_biblio_in_acronym": ""}
         with pytest.raises(ValueError, match="Missing required local_identifier for venue 'Nature'"):
-            _build_venue([row], "Nature", "")
+            _base._build_venue([row], "Nature", "")
 
     def test_grant_without_local_identifier_raises(self) -> None:
         row = {"funding_local_identifier": ""}
         with pytest.raises(ValueError, match="Missing required local_identifier for grant"):
-            _build_grant(row)
+            _base._build_grant(row)
+
+
+def test_build_agent_returns_person() -> None:
+    row = {
+        "contribution_by_family_name": "Doe",
+        "contribution_by_given_name": "Jane",
+        "contribution_by_name": "",
+        "contribution_by_identifier_scheme": "",
+        "contribution_by_identifier_value": "",
+        "contribution_by_local_identifier": "person/1",
+        "contribution_role": "author",
+    }
+    assert _base._build_agent(row) == {
+        "name": "Doe, Jane",
+        "entity_type": "person",
+        "family_name": "Doe",
+        "given_name": "Jane",
+        "local_identifier": "person/1",
+    }

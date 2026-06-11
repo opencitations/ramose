@@ -27,6 +27,19 @@ Start with the API section. Set `#addon` to `ramose.skgif_addon` and disable the
 #disable_params require,filter,sort,format,json
 ```
 
+`ramose.skgif_addon` is the portable backend. It uses SPARQL `FILTER(CONTAINS(...))` for text filters, and works on endpoints without a text index.
+
+For large datasets, select the addon module matching the triplestore so SKG-IF text filters use that store's text
+index:
+
+| Triplestore | Addon | Text search used for `cf.search.title` |
+|---|---|---|
+| Blazegraph | `ramose.skgif_addon.blazegraph` | `bds:search` |
+| Fuseki/Jena | `ramose.skgif_addon.fuseki` | `text:query` |
+| GraphDB | `ramose.skgif_addon.graphdb` | `onto:fts` |
+| QLever | `ramose.skgif_addon.qlever` | `ql:contains-word` |
+| Virtuoso | `ramose.skgif_addon.virtuoso` | `bif:contains` |
+
 ### 2. Add an operation
 
 Each operation maps a URL pattern to a SPARQL query. The query must return the columns listed in the reference tables below. Multiple rows per product are expected (one per combination of identifier, contributor, topic, etc.); the converter deduplicates and aggregates them.
