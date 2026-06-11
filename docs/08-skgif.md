@@ -15,7 +15,7 @@ RAMOSE can expose any SPARQL triplestore as a [SKG-IF](https://skg-if.github.io/
 Start with the API section. Set `#addon` to `ramose.skgif_addon` and disable the built-in query parameters that SKG-IF does not use.
 
 ```
-#url /skgif/v1
+#url /skg-if/v1
 #type api
 #base https://w3id.org/skg-if/sandbox/my-source
 #title SKG-IF API for My Source
@@ -74,7 +74,7 @@ Start the built-in dev server:
 ramose -s my_source.hf -w 127.0.0.1:8080
 ```
 
-The API serves JSON-LD at `http://127.0.0.1:8080/skgif/v1/products/{local_identifier}`.
+The API serves JSON-LD at `http://127.0.0.1:8080/skg-if/v1/products/{local_identifier}`.
 
 For a runnable example querying ORKG and Wikidata, see the [live demo notebook](09-demo-skgif.ipynb).
 

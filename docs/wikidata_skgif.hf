@@ -1,4 +1,4 @@
-#url /skgif-wikidata/v1
+#url /skg-if-wikidata/v1
 #type api
 #base https://w3id.org/skg-if/sandbox/wikidata
 #title SKG-IF API for Wikidata

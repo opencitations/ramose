@@ -188,7 +188,9 @@ The operations that this API implements are:
 
             if "custom_params" in op:
                 for param_name, param_conf in parse_custom_params(op["custom_params"]).items():
-                    params.append(f"<em>{param_name}</em> (query, optional): {param_conf['description']}")
+                    params.append(
+                        f"<em>{param_name}</em> (query, optional): {markdown(param_conf['description'])}",
+                    )
 
             op_url = op["url"]
             methods = ", ".join(split(r"\s+", op["method"].strip()))
