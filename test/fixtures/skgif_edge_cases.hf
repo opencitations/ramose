@@ -5,7 +5,7 @@
 #description Minimal SKG-IF spec for testing edge cases in the converter.
 #version 0.1.0
 #endpoint http://localhost:7019
-#addon ramose.skgif_addon
+#addon ramose.skg_if
 #disable_params require,filter,sort,format,json
 
 #url /products/{local_identifier}
@@ -15,8 +15,8 @@
 #preprocess normalize_local_identifier_url(local_identifier)
 #description Product without title_lang/abstract_lang in field_type.
 #call /products/https://w3id.org/oc/meta/br/0601
-#format skgif,to_skgif
-#default_format skgif
+#format skg_if,to_skg_if
+#default_format skg_if
 #sparql PREFIX fabio: <http://purl.org/spar/fabio/>
 PREFIX dcterm: <http://purl.org/dc/terms/>
 PREFIX datacite: <http://purl.org/spar/datacite/>

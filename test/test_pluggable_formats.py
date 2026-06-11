@@ -154,12 +154,12 @@ class TestDefaultFormat:
             "sparql": "SELECT ?name WHERE { }",
             "method": "get",
             "field_type": "str(name)",
-            "default_format": "skgif",
+            "default_format": "skg_if",
         }
 
         class FakeAddon:
             @staticmethod
-            def to_skgif(csv_str: str, request_url: str = "") -> str:
+            def to_skg_if(csv_str: str, request_url: str = "") -> str:
                 return '{"@context": []}'
 
         op = Operation(
@@ -169,8 +169,8 @@ class TestDefaultFormat:
             OperationConfig(
                 sparql_endpoint="http://unused/sparql",
                 addon=FakeAddon,  # type: ignore[arg-type]
-                format_map={"skgif": "to_skgif"},
-                format_media_types={"skgif": "application/ld+json"},
+                format_map={"skg_if": "to_skg_if"},
+                format_media_types={"skg_if": "application/ld+json"},
             ),
         )
         result, ct = op.conv("name\narcangelo\n", {})

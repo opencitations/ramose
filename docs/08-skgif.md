@@ -12,7 +12,7 @@ RAMOSE can expose any SPARQL triplestore as a [SKG-IF](https://skg-if.github.io/
 
 ### 1. Create the spec file
 
-Start with the API section. Set `#addon` to `ramose.skgif_addon` and disable the built-in query parameters that SKG-IF does not use.
+Start with the API section. Set `#addon` to `ramose.skg_if` and disable the built-in query parameters that SKG-IF does not use.
 
 ```
 #url /skg-if/v1
@@ -23,22 +23,22 @@ Start with the API section. Set `#addon` to `ramose.skgif_addon` and disable the
 #version 1.0.0
 #endpoint https://my-triplestore.example.org/sparql
 #method get
-#addon ramose.skgif_addon
+#addon ramose.skg_if
 #disable_params require,filter,sort,format,json
 ```
 
-`ramose.skgif_addon` is the portable backend. It uses SPARQL `FILTER(CONTAINS(...))` for text filters, and works on endpoints without a text index.
+`ramose.skg_if` is the portable backend. It uses SPARQL `FILTER(CONTAINS(...))` for text filters, and works on endpoints without a text index.
 
 For large datasets, select the addon module matching the triplestore so SKG-IF text filters use that store's text
 index:
 
 | Triplestore | Addon | Text search used for `cf.search.title` |
 |---|---|---|
-| Blazegraph | `ramose.skgif_addon.blazegraph` | `bds:search` |
-| Fuseki/Jena | `ramose.skgif_addon.fuseki` | `text:query` |
-| GraphDB | `ramose.skgif_addon.graphdb` | `onto:fts` |
-| QLever | `ramose.skgif_addon.qlever` | `ql:contains-word` |
-| Virtuoso | `ramose.skgif_addon.virtuoso` | `bif:contains` |
+| Blazegraph | `ramose.skg_if.blazegraph` | `bds:search` |
+| Fuseki/Jena | `ramose.skg_if.fuseki` | `text:query` |
+| GraphDB | `ramose.skg_if.graphdb` | `onto:fts` |
+| QLever | `ramose.skg_if.qlever` | `ql:contains-word` |
+| Virtuoso | `ramose.skg_if.virtuoso` | `bif:contains` |
 
 ### 2. Add an operation
 
@@ -50,8 +50,8 @@ Each operation maps a URL pattern to a SPARQL query. The query must return the c
 #method get
 #description Returns a single research product.
 #call /products/https://example.org/product/1
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #sparql PREFIX dcterm: <http://purl.org/dc/terms/>
 
 SELECT ?local_identifier ?product_type ?title ?title_lang
@@ -62,7 +62,7 @@ WHERE {
 }
 ```
 
-`#format skgif,to_skgif,application/ld+json` registers the converter and declares its media type (so it is content-negotiable and listed in the OpenAPI spec); `#default_format skgif` makes JSON-LD the default output instead of the built-in JSON.
+`#format skg_if,to_skg_if,application/ld+json` registers the converter and declares its media type (so it is content-negotiable and listed in the OpenAPI spec); `#default_format skg_if` makes JSON-LD the default output instead of the built-in JSON.
 
 For a complete example, see the [OpenCitations spec](https://github.com/opencitations/ramose/blob/master/test/data/skgif_products.hf).
 

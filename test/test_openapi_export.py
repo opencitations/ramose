@@ -266,7 +266,7 @@ class TestBuildResponseContent:
         ok_schema = {"type": "array", "items": {"type": "object"}}
         ok_and_err = handler._build_response_content(
             ok_schema,
-            {"skgif": "application/ld+json"},
+            {"skg_if": "application/ld+json"},
             err_schema_ref="#/components/schemas/Error",
         )
         assert isinstance(ok_and_err, tuple)
@@ -388,8 +388,8 @@ class TestSingleFormatResponseWhenFormatDisabled:
 class TestFormatMediaTypeDeclaration:
     def test_declared_mime_parsed(self) -> None:
         handler = _build_handler("test_openapi_skgif_like.hf")
-        assert handler._format_media_type_map({"format": "skgif,to_skgif,application/ld+json"}) == {
-            "skgif": "application/ld+json",
+        assert handler._format_media_type_map({"format": "skg_if,to_skg_if,application/ld+json"}) == {
+            "skg_if": "application/ld+json",
         }
 
     def test_format_without_mime_is_ignored(self) -> None:
@@ -398,7 +398,7 @@ class TestFormatMediaTypeDeclaration:
 
     def test_single_response_media_type_uses_declared_mime(self) -> None:
         handler = _build_handler("test_openapi_skgif_like.hf")
-        op = {"default_format": "skgif", "format": "skgif,to_skgif,application/ld+json"}
+        op = {"default_format": "skg_if", "format": "skg_if,to_skg_if,application/ld+json"}
         assert handler._single_response_media_type(op) == "application/ld+json"
 
     def test_single_response_media_type_defaults_to_json(self) -> None:

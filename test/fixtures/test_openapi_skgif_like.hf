@@ -11,8 +11,8 @@
 #local_id str(R\d+)
 #method get
 #description Returns a single product.
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #call /products/R42
 #output_json {"@context": ["https://example.org/ctx.json", {"@base": "https://example.org/"}], "meta": {"total_items": 1}, "@graph": [{"local_identifier": "R42", "title": "Test", "score": 0.95, "published": true}]}
 #sparql SELECT ?local_id WHERE { BIND("test" AS ?local_id) }

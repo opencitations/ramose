@@ -10,14 +10,14 @@
 #endpoint https://sparql.opencitations.net/meta
 #method post
 #sources meta=https://sparql.opencitations.net/meta;index=https://sparql.opencitations.net/index
-#addon ramose.skgif_addon
+#addon ramose.skg_if
 #disable_params require,filter,sort,format,json
 
 #url /products
 #type operation
 #method get
 #description Returns a list of research products matching the given filters.
-#custom_params filter,handle_skgif_product_filter,preprocess,Search filter.
+#custom_params filter,handle_skg_if_product_filter,preprocess,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 
 **Filters with data:**
@@ -52,8 +52,8 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 - `funding.identifiers.id`
 - `funding.identifiers.scheme`
 - `funding.local_identifier`
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #call /products?filter=cf.search.title:adaptive
 #output_json [{"local_identifier": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management", "entity_type": "product", "product_type": "literature"}]
 #sparql [[filter_preamble]]
@@ -309,8 +309,8 @@ ORDER BY STR(?title) STR(?local_identifier)
         }
     ]
 }
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #sparql PREFIX fabio: <http://purl.org/spar/fabio/>
 PREFIX dcterm: <http://purl.org/dc/terms/>
 PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
@@ -432,7 +432,7 @@ WHERE {
 #type operation
 #method get
 #description Returns a list of grants matching the given filters. Note: OpenCitations does not currently hold grant data; this endpoint always returns an empty result.
-#custom_params filter,handle_skgif_grant_filter,preprocess,Search filter.
+#custom_params filter,handle_skg_if_grant_filter,preprocess,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 
 **Accepted but always empty (OpenCitations does not hold grant data):**
@@ -479,8 +479,8 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 - `website`
 
 #call /grants?filter=grant_number:12345
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
@@ -515,8 +515,8 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #method get
 #description Returns a single grant. Note: OpenCitations does not currently hold grant data; this endpoint always returns 404.
 #call /grants/example-grant-id
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #output_json HTTP status code 404: entity not found
 #sparql SELECT ?dummy WHERE { FILTER(false) }
 
@@ -524,7 +524,7 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #type operation
 #method get
 #description Returns a list of topics matching the given filters. Note: OpenCitations does not currently hold topic data; this endpoint always returns an empty result.
-#custom_params filter,handle_skgif_topic_filter,preprocess,Search filter.
+#custom_params filter,handle_skg_if_topic_filter,preprocess,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 
 **Accepted but always empty (OpenCitations does not hold topic data):**
@@ -535,8 +535,8 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 - `identifiers.value`
 
 #call /topics?filter=cf.search.labels:biology
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
@@ -571,8 +571,8 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #method get
 #description Returns a single topic. Note: OpenCitations does not currently hold topic data; this endpoint always returns 404.
 #call /topics/example-topic-id
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #output_json HTTP status code 404: entity not found
 #sparql SELECT ?dummy WHERE { FILTER(false) }
 
@@ -580,7 +580,7 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #type operation
 #method get
 #description Returns a list of data sources matching the given filters. Note: OpenCitations does not currently hold data source records; this endpoint always returns an empty result.
-#custom_params filter,handle_skgif_datasource_filter,preprocess,Search filter.
+#custom_params filter,handle_skg_if_datasource_filter,preprocess,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 
 **Accepted but always empty (OpenCitations does not hold data source records):**
@@ -593,8 +593,8 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 - `research_product_type`
 
 #call /datasources?filter=research_product_type:literature
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
@@ -629,7 +629,7 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #method get
 #description Returns a single data source. Note: OpenCitations does not currently hold data source records; this endpoint always returns 404.
 #call /datasources/example-datasource-id
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #output_json HTTP status code 404: entity not found
 #sparql SELECT ?dummy WHERE { FILTER(false) }

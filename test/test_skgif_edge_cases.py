@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ramose.skgif_addon import _base, normalize_local_identifier_url
+from ramose.skg_if import _base, normalize_local_identifier_url
 
 if TYPE_CHECKING:
     from ramose import APIManager

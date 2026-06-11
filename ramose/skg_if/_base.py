@@ -870,7 +870,7 @@ def _build_supported_product_filter(
     }
 
 
-def _handle_skgif_product_filter(values: list[str], text_search_filter: TextSearchFilterBuilder) -> dict[str, str]:
+def _handle_skg_if_product_filter(values: list[str], text_search_filter: TextSearchFilterBuilder) -> dict[str, str]:
     raw = values[0]
     pairs = [pair.strip() for pair in raw.split(",") if pair.strip()]
 
@@ -891,12 +891,12 @@ def _handle_skgif_product_filter(values: list[str], text_search_filter: TextSear
 
 def make_product_filter_handler(text_search_filter: TextSearchFilterBuilder) -> Callable[[list[str]], dict[str, str]]:
     def handler(values: list[str]) -> dict[str, str]:
-        return _handle_skgif_product_filter(values, text_search_filter)
+        return _handle_skg_if_product_filter(values, text_search_filter)
 
     return handler
 
 
-handle_skgif_product_filter = make_product_filter_handler(_default_text_search_filter)
+handle_skg_if_product_filter = make_product_filter_handler(_default_text_search_filter)
 
 
 def normalize_local_identifier_url(local_identifier: str) -> tuple[str]:
@@ -1093,7 +1093,7 @@ def _fill_missing_columns(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     return [missing | row for row in rows]
 
 
-def to_skgif(csv_str: str, request_url: str = "") -> str:
+def to_skg_if(csv_str: str, request_url: str = "") -> str:
     rows = _fill_missing_columns(list(csv.DictReader(StringIO(csv_str))))
     if not rows and _is_single_entity_request(request_url):
         msg = "HTTP status code 404: entity not found"
@@ -1207,6 +1207,6 @@ def _make_mock_filter_handler(valid_filters: frozenset[str]) -> Callable[[list[s
     return handler
 
 
-handle_skgif_grant_filter = _make_mock_filter_handler(VALID_GRANT_FILTERS)
-handle_skgif_topic_filter = _make_mock_filter_handler(VALID_TOPIC_FILTERS)
-handle_skgif_datasource_filter = _make_mock_filter_handler(VALID_DATASOURCE_FILTERS)
+handle_skg_if_grant_filter = _make_mock_filter_handler(VALID_GRANT_FILTERS)
+handle_skg_if_topic_filter = _make_mock_filter_handler(VALID_TOPIC_FILTERS)
+handle_skg_if_datasource_filter = _make_mock_filter_handler(VALID_DATASOURCE_FILTERS)

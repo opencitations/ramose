@@ -9,7 +9,7 @@
 #license This document is licensed with a <a href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank">Creative Commons Attribution 4.0 International License</a>, while the REST API itself has been created using <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE, the Restful API Manager Over SPARQL Endpoints</a>, which is licensed with an <a href="https://opensource.org/licenses/ISC" target="_blank">ISC license</a>.
 #endpoint https://query.wikidata.org/sparql
 #method get
-#addon ramose.skgif_addon
+#addon ramose.skg_if
 #disable_params require,filter,sort,format,json
 
 #url /products/{local_identifier}
@@ -18,8 +18,8 @@
 #method get
 #description Returns a single research product from Wikidata identified by its entity URI.
 #call /products/http://www.wikidata.org/entity/Q139571902
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #sparql PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 PREFIX p: <http://www.wikidata.org/prop/>

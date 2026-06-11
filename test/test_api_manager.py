@@ -33,8 +33,8 @@ class TestLoadAddon:
         assert module.VALUE == 42
 
     def test_dotted_name_resolved_as_package_import(self) -> None:
-        module = APIManager._load_addon("ramose.skgif_addon", "test/data/meta_v1.hf")
-        assert module.__name__ == "ramose.skgif_addon"
+        module = APIManager._load_addon("ramose.skg_if", "test/data/meta_v1.hf")
+        assert module.__name__ == "ramose.skg_if"
 
 
 class TestNorApiUrl:

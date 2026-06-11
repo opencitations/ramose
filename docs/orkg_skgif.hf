@@ -9,7 +9,7 @@
 #license This document is licensed with a <a href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank">Creative Commons Attribution 4.0 International License</a>, while the REST API itself has been created using <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE, the Restful API Manager Over SPARQL Endpoints</a>, which is licensed with an <a href="https://opensource.org/licenses/ISC" target="_blank">ISC license</a>.
 #endpoint https://orkg.org/triplestore
 #method post
-#addon ramose.skgif_addon
+#addon ramose.skg_if
 #disable_params require,filter,sort,format,json
 
 #url /products/{local_identifier}
@@ -127,8 +127,8 @@
         }
     ]
 }
-#format skgif,to_skgif,application/ld+json
-#default_format skgif
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
 #sparql PREFIX orkgc: <http://orkg.org/orkg/class/>
 PREFIX orkgp: <http://orkg.org/orkg/predicate/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>

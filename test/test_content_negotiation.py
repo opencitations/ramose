@@ -50,11 +50,11 @@ class TestMediaTypeToFormat:
 
     def test_declared_media_type_leads_when_default(self) -> None:
         op = self._op(
-            {"default_format": "skgif"},
-            OperationConfig(format_map={"skgif": "to_skgif"}, format_media_types={"skgif": "application/ld+json"}),
+            {"default_format": "skg_if"},
+            OperationConfig(format_map={"skg_if": "to_skg_if"}, format_media_types={"skg_if": "application/ld+json"}),
         )
         assert op.media_type_to_format() == {
-            "application/ld+json": "skgif",
+            "application/ld+json": "skg_if",
             "application/json": "json",
             "text/csv": "csv",
         }

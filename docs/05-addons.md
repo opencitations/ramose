@@ -12,7 +12,7 @@ Addons are Python modules referenced by the `#addon` field in the API section. T
 #addon metaapi
 ```
 
-This loads `metaapi.py` from the same directory as the spec file. Relative paths such as `../shared/metaapi` are also supported. If no matching `.py` file exists relative to the spec file, the name is resolved as a standard Python package import (e.g. `ramose.skgif_addon`).
+This loads `metaapi.py` from the same directory as the spec file. Relative paths such as `../shared/metaapi` are also supported. If no matching `.py` file exists relative to the spec file, the name is resolved as a standard Python package import (e.g. `ramose.skg_if`).
 
 ## Preprocessing
 
@@ -194,7 +194,7 @@ The `#format` field in an operation registers custom output formats. Each entry 
 The third field declares the media type for that format. It is reported in the OpenAPI document and used for [content negotiation](content-negotiation): a custom format is selectable via the `Accept` header, and listed in the OpenAPI response content, only when it declares a media type.
 
 ```
-#format skgif,to_skgif,application/ld+json
+#format skg_if,to_skg_if,application/ld+json
 ```
 
 Without the third field a custom format is still reachable through `?format=` and `-f`, but it has no media type, so it is not Accept-negotiable and does not appear in the OpenAPI response content.
@@ -217,11 +217,11 @@ These formats become available via `?format=` in the query string and `-f` on th
 By default, operations return JSON when neither a `?format=` parameter nor an `Accept` header selects a format. The `#default_format` field overrides this for a specific operation:
 
 ```
-#format skgif,to_skgif
-#default_format skgif
+#format skg_if,to_skg_if
+#default_format skg_if
 ```
 
-With this configuration, requests that do not select a format use the `to_skgif` converter. Clients can still request other formats explicitly (e.g., `?format=csv` or `?format=json`).
+With this configuration, requests that do not select a format use the `to_skg_if` converter. Clients can still request other formats explicitly (e.g., `?format=csv` or `?format=json`).
 
 The value must be a format name registered in `#format` or one of the built-in formats (`csv`, `json`).
 
