@@ -1,3 +1,10 @@
+## [2.5.1](https://github.com/opencitations/ramose/compare/v2.5.0...v2.5.1) (2026-06-11)
+
+
+### Bug Fixes
+
+* **skg-if:** re-export normalize_local_identifier_url from triplestore backends [release] ([679459a](https://github.com/opencitations/ramose/commit/679459a5a83bb13526cb04382b1af7e9736dd739))
+
 # [2.5.0](https://github.com/opencitations/ramose/compare/v2.4.2...v2.5.0) (2026-06-11)
 
 
