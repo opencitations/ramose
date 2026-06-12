@@ -920,7 +920,7 @@ def _build_search_result_page(url: str) -> dict:
 
 def _page_url(base_path: str, params: dict[str, list[str]], page: int) -> str:
     page_params = {**params, "page": [str(page)]}
-    return f"{base_path}?{urlencode(page_params, doseq=True)}"
+    return f"{base_path}?{urlencode(page_params, doseq=True, safe=':,')}"
 
 
 def _build_meta(request_url: str, graph_size: int) -> dict:
@@ -942,14 +942,14 @@ def _build_meta(request_url: str, graph_size: int) -> dict:
     total_pages = ceil(total_items / page_size) if page_size > 0 else 0
     non_pagination_params = {k: v for k, v in params.items() if k not in ("page", "page_size", "total_items")}
     clean_params = {**non_pagination_params, "page": [str(page)], "page_size": [str(page_size)]}
-    self_url = f"{path}?{urlencode(clean_params, doseq=True)}"
+    self_url = f"{path}?{urlencode(clean_params, doseq=True, safe=':,')}"
     meta = _build_search_result_page(self_url)
     if page < total_pages:
         meta["next_page"] = _build_search_result_page(_page_url(path, clean_params, page + 1))
     if page > 1:
         meta["prev_page"] = _build_search_result_page(_page_url(path, clean_params, page - 1))
     base_params = {k: v for k, v in clean_params.items() if k not in ("page", "page_size")}
-    base_url = f"{path}?{urlencode(base_params, doseq=True)}" if base_params else path
+    base_url = f"{path}?{urlencode(base_params, doseq=True, safe=':,')}" if base_params else path
     meta["part_of"] = {
         "local_identifier": base_url,
         "entity_type": "search_result",

@@ -409,18 +409,18 @@ class TestSkgifEnvelope:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:OpenCitations")
         assert result["@context"] == SKGIF_CONTEXT
         assert result["meta"] == {
-            "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations&page=1&page_size=7",
+            "local_identifier": "/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=7",
             "entity_type": "search_result_page",
             "part_of": {
-                "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations",
+                "local_identifier": "/skgif/v1/products?filter=cf.search.title:OpenCitations",
                 "entity_type": "search_result",
                 "total_items": 7,
                 "first_page": {
-                    "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations&page=1&page_size=7",
+                    "local_identifier": "/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=7",
                     "entity_type": "search_result_page",
                 },
                 "last_page": {
-                    "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations&page=1&page_size=7",
+                    "local_identifier": "/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=7",
                     "entity_type": "search_result_page",
                 },
             },
@@ -474,8 +474,8 @@ class TestSkgifEnvelope:
             "/skgif/v1/products?filter=identifiers.scheme:isbn&page=1&page_size=5",
         )
         meta = result["meta"]
-        assert meta["local_identifier"] == "/skgif/v1/products?filter=identifiers.scheme%3Aisbn&page=1&page_size=5"
-        assert meta["part_of"]["local_identifier"] == "/skgif/v1/products?filter=identifiers.scheme%3Aisbn"
+        assert meta["local_identifier"] == "/skgif/v1/products?filter=identifiers.scheme:isbn&page=1&page_size=5"
+        assert meta["part_of"]["local_identifier"] == "/skgif/v1/products?filter=identifiers.scheme:isbn"
         assert len(result["@graph"]) == 5
 
     def test_envelope_page_beyond_total_returns_400(self, skgif_api_manager: APIManager) -> None:

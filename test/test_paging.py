@@ -11,11 +11,11 @@ class TestBuildPaginationInfo:
         assert info.page == 1
         assert info.page_size == 10
         assert info.total_items == 25
-        assert info.self_url == "/api/v1/test?filter=year%3A2024&page=1&page_size=10&total_items=25"
-        assert info.next_url == "/api/v1/test?filter=year%3A2024&page=2&page_size=10&total_items=25"
+        assert info.self_url == "/api/v1/test?filter=year:2024&page=1&page_size=10&total_items=25"
+        assert info.next_url == "/api/v1/test?filter=year:2024&page=2&page_size=10&total_items=25"
         assert info.prev_url == ""
-        assert info.first_url == "/api/v1/test?filter=year%3A2024&page=1&page_size=10&total_items=25"
-        assert info.last_url == "/api/v1/test?filter=year%3A2024&page=3&page_size=10&total_items=25"
+        assert info.first_url == "/api/v1/test?filter=year:2024&page=1&page_size=10&total_items=25"
+        assert info.last_url == "/api/v1/test?filter=year:2024&page=3&page_size=10&total_items=25"
 
     def test_middle_page(self) -> None:
         info = build_pagination_info("/api/v1/test", {}, 2, 10, 30)

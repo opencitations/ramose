@@ -54,4 +54,4 @@ def _page_url(base_path: str, query_params: dict[str, list[str]], page: int, pag
     params["page"] = [str(page)]
     params["page_size"] = [str(page_size)]
     params["total_items"] = [str(total_items)]
-    return f"{base_path}?{urlencode(params, doseq=True)}"
+    return f"{base_path}?{urlencode(params, doseq=True, safe=':,')}"
