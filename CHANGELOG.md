@@ -1,3 +1,11 @@
+## [2.5.2](https://github.com/opencitations/ramose/compare/v2.5.1...v2.5.2) (2026-06-12)
+
+
+### Bug Fixes
+
+* **pagination:** preserve filter separators in page links ([77af445](https://github.com/opencitations/ramose/commit/77af445daf1581c9b01884ed3a0895ee4b365a0a))
+* **skg-if:** escape product filter values and always type strings ([0316888](https://github.com/opencitations/ramose/commit/03168888af060a86d5ad797cbee71ee277cf43b0))
+
 ## [2.5.1](https://github.com/opencitations/ramose/compare/v2.5.0...v2.5.1) (2026-06-11)
 
 
