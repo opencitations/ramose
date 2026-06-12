@@ -9,12 +9,14 @@ from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from io import StringIO
 from math import ceil
-from re import sub
+from re import fullmatch, search, sub
 from urllib.parse import parse_qs, urlencode, urlsplit
 
 from ramose import HttpError
 
 _YEAR_MONTH_PART_COUNT = 2
+_IRI_FORBIDDEN = r'[<>"{}|^`\\\x00-\x20]'
+_XSD_STRING_IRI = "http://www.w3.org/2001/XMLSchema#string"
 
 _PRODUCT_COLUMNS: dict[str, str] = dict.fromkeys(
     (
@@ -715,6 +717,24 @@ def sparql_string(value: str) -> str:
     return f'"{escaped}"'
 
 
+def _typed_sparql_string(value: str) -> str:
+    return f"{sparql_string(value)}^^<{_XSD_STRING_IRI}>"
+
+
+def _sparql_iri(value: str) -> str:
+    if search(_IRI_FORBIDDEN, value):
+        msg = f"invalid IRI value: {value!r}"
+        raise ValueError(msg)
+    return f"<{value}>"
+
+
+def _sparql_prefixed_name(prefix: str, local_name: str) -> str:
+    if not fullmatch(r"[A-Za-z_][A-Za-z0-9_-]*", local_name):
+        msg = f"invalid prefixed name local part: {local_name!r}"
+        raise ValueError(msg)
+    return f"{prefix}:{local_name}"
+
+
 def _default_text_search_filter(target: TextSearchTarget, value: str) -> list[str]:
     return [f"FILTER(CONTAINS(LCASE({target.variable}), LCASE({sparql_string(value)})))"]
 
@@ -731,18 +751,10 @@ def _filter_product_type(value: str) -> list[str]:
     return ["FILTER(false)"]
 
 
-_AGENT_FILTER_TEMPLATES: dict[str, str] = {
-    "contributions.by.identifiers.id": '?_filter_agent datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .',
-    "contributions.by.identifiers.scheme": (
-        "?_filter_agent datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{value} ] ."
-    ),
-    "contributions.by.family_name": '?_filter_agent foaf:familyName "{value}" .',
-    "contributions.by.given_name": '?_filter_agent foaf:givenName "{value}" .',
-    "contributions.by.name": '?_filter_agent foaf:name "{value}" .',
-    "cf.contributions_orcid": (
-        '?_filter_agent datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ;'
-        " datacite:usesIdentifierScheme datacite:orcid ] ."
-    ),
+_AGENT_LITERAL_FILTER_PREDICATES: dict[str, str] = {
+    "contributions.by.family_name": "foaf:familyName",
+    "contributions.by.given_name": "foaf:givenName",
+    "contributions.by.name": "foaf:name",
 }
 
 
@@ -760,7 +772,7 @@ def _build_cites_preamble(target_uri: str) -> str:
         f"{_CITATION_CITO_PREFIX}\n"
         f"SELECT ?local_identifier WHERE {{\n"
         f"  ?_ci cito:hasCitingEntity ?_citing ;\n"
-        f"       cito:hasCitedEntity <{target_uri}> .\n"
+        f"       cito:hasCitedEntity {_sparql_iri(target_uri)} .\n"
         f"  BIND(STR(?_citing) AS ?local_identifier)\n"
         f"}}\n"
         f"@@join ?local_identifier ?local_identifier type=inner"
@@ -772,7 +784,7 @@ def _build_cited_by_preamble(target_uri: str) -> str:
         f"@@with source=index\n"
         f"{_CITATION_CITO_PREFIX}\n"
         f"SELECT ?local_identifier WHERE {{\n"
-        f"  ?_ci cito:hasCitingEntity <{target_uri}> ;\n"
+        f"  ?_ci cito:hasCitingEntity {_sparql_iri(target_uri)} ;\n"
         f"       cito:hasCitedEntity ?_cited .\n"
         f"  BIND(STR(?_cited) AS ?local_identifier)\n"
         f"}}\n"
@@ -786,7 +798,7 @@ def _build_cites_doi_preamble(doi: str) -> str:
         f"SELECT ?_target WHERE {{\n"
         f"  ?_target datacite:hasIdentifier ?_id_node .\n"
         f"  ?_id_node datacite:usesIdentifierScheme datacite:doi ;\n"
-        f'            literal:hasLiteralValue "{doi}" .\n'
+        f"            literal:hasLiteralValue {_typed_sparql_string(doi)} .\n"
         f"}}\n"
         f"@@values ?_target\n"
         f"@@join ?_target ?_target type=inner\n"
@@ -808,7 +820,7 @@ def _build_cited_by_doi_preamble(doi: str) -> str:
         f"SELECT ?_target WHERE {{\n"
         f"  ?_target datacite:hasIdentifier ?_id_node .\n"
         f"  ?_id_node datacite:usesIdentifierScheme datacite:doi ;\n"
-        f'            literal:hasLiteralValue "{doi}" .\n'
+        f"            literal:hasLiteralValue {_typed_sparql_string(doi)} .\n"
         f"}}\n"
         f"@@values ?_target\n"
         f"@@join ?_target ?_target type=inner\n"
@@ -832,6 +844,60 @@ _CITATION_FILTER_BUILDERS: dict[str, Callable[[str], str]] = {
 }
 
 
+def _identifier_value_filter(subject: str, value: str, scheme: str | None = None) -> str:
+    scheme_filter = ""
+    if scheme is not None:
+        scheme_filter = f" ; datacite:usesIdentifierScheme {_sparql_prefixed_name('datacite', scheme)}"
+    return (
+        f"{subject} datacite:hasIdentifier [ literal:hasLiteralValue {_typed_sparql_string(value)}{scheme_filter} ] ."
+    )
+
+
+def _identifier_scheme_filter(subject: str, scheme: str) -> str:
+    return (
+        f"{subject} datacite:hasIdentifier"
+        f" [ datacite:usesIdentifierScheme {_sparql_prefixed_name('datacite', scheme)} ] ."
+    )
+
+
+def _product_identifier_value_filter(value: str) -> list[str]:
+    return [_identifier_value_filter("?local_identifier", value)]
+
+
+def _product_identifier_scheme_filter(value: str) -> list[str]:
+    return [_identifier_scheme_filter("?local_identifier", value)]
+
+
+def _product_contributor_filter(value: str) -> list[str]:
+    return [f"?local_identifier pro:isDocumentContextFor [ pro:isHeldBy {_sparql_iri(value)} ] ."]
+
+
+def _agent_identifier_value_filter(value: str) -> str:
+    return _identifier_value_filter("?_filter_agent", value)
+
+
+def _agent_identifier_scheme_filter(value: str) -> str:
+    return _identifier_scheme_filter("?_filter_agent", value)
+
+
+def _agent_orcid_filter(value: str) -> str:
+    return _identifier_value_filter("?_filter_agent", value, "orcid")
+
+
+_PRODUCT_FILTER_BUILDERS: dict[str, Callable[[str], list[str]]] = {
+    "identifiers.id": _product_identifier_value_filter,
+    "identifiers.scheme": _product_identifier_scheme_filter,
+    "product_type": _filter_product_type,
+    "contributions.by.local_identifier": _product_contributor_filter,
+}
+
+_AGENT_FILTER_BUILDERS: dict[str, Callable[[str], str]] = {
+    "contributions.by.identifiers.id": _agent_identifier_value_filter,
+    "contributions.by.identifiers.scheme": _agent_identifier_scheme_filter,
+    "cf.contributions_orcid": _agent_orcid_filter,
+}
+
+
 def _build_supported_product_filter(
     pairs: list[str],
     text_search_filter: TextSearchFilterBuilder,
@@ -847,18 +913,12 @@ def _build_supported_product_filter(
             preamble_parts.append(_CITATION_FILTER_BUILDERS[key](value))
         elif key in TEXT_SEARCH_TARGETS:
             clauses.extend(text_search_filter(TEXT_SEARCH_TARGETS[key], value))
-        elif key == "identifiers.id":
-            clauses.append(f'?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{value}" ] .')
-        elif key == "identifiers.scheme":
-            clauses.append(
-                f"?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{value} ] .",
-            )
-        elif key == "product_type":
-            clauses.extend(_filter_product_type(value))
-        elif key == "contributions.by.local_identifier":
-            clauses.append(f"?local_identifier pro:isDocumentContextFor [ pro:isHeldBy <{value}> ] .")
-        elif key in _AGENT_FILTER_TEMPLATES:
-            agent_clauses.append(_AGENT_FILTER_TEMPLATES[key].format(value=value))
+        elif key in _PRODUCT_FILTER_BUILDERS:
+            clauses.extend(_PRODUCT_FILTER_BUILDERS[key](value))
+        elif key in _AGENT_LITERAL_FILTER_PREDICATES:
+            agent_clauses.append(f"?_filter_agent {_AGENT_LITERAL_FILTER_PREDICATES[key]} {sparql_string(value)} .")
+        elif key in _AGENT_FILTER_BUILDERS:
+            agent_clauses.append(_AGENT_FILTER_BUILDERS[key](value))
 
     if agent_clauses:
         clauses.insert(0, "?local_identifier pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .")

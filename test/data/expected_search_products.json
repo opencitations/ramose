@@ -99,11 +99,11 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06401297735",
               "identifiers": [
                 {
-                  "value": "9783031069819",
+                  "value": "9783031069802",
                   "scheme": "isbn"
                 },
                 {
-                  "value": "9783031069802",
+                  "value": "9783031069819",
                   "scheme": "isbn"
                 }
               ]
@@ -909,12 +909,12 @@
           "scheme": "isbn"
         },
         {
-          "value": "10.1007/978-1-4020-9632-7",
-          "scheme": "doi"
-        },
-        {
           "value": "9781402096327",
           "scheme": "isbn"
+        },
+        {
+          "value": "10.1007/978-1-4020-9632-7",
+          "scheme": "doi"
         },
         {
           "value": "W4249829199",
@@ -1096,11 +1096,11 @@
                   "scheme": "openalex"
                 },
                 {
-                  "value": "2194-5357",
+                  "value": "2194-5365",
                   "scheme": "issn"
                 },
                 {
-                  "value": "2194-5365",
+                  "value": "2194-5357",
                   "scheme": "issn"
                 }
               ]
@@ -1182,7 +1182,11 @@
       },
       "identifiers": [
         {
-          "value": "9789264759596",
+          "value": "W4221051054",
+          "scheme": "openalex"
+        },
+        {
+          "value": "9789264960114",
           "scheme": "isbn"
         },
         {
@@ -1194,16 +1198,12 @@
           "scheme": "doi"
         },
         {
-          "value": "9789264960114",
-          "scheme": "isbn"
-        },
-        {
           "value": "9789264597587",
           "scheme": "isbn"
         },
         {
-          "value": "W4221051054",
-          "scheme": "openalex"
+          "value": "9789264759596",
+          "scheme": "isbn"
         }
       ],
       "contributions": [
@@ -1271,16 +1271,16 @@
       },
       "identifiers": [
         {
-          "value": "10.1007/978-3-319-58068-5",
-          "scheme": "doi"
-        },
-        {
           "value": "9783319580685",
           "scheme": "isbn"
         },
         {
           "value": "9783319580678",
           "scheme": "isbn"
+        },
+        {
+          "value": "10.1007/978-3-319-58068-5",
+          "scheme": "doi"
         },
         {
           "value": "W3115553721",
@@ -1607,11 +1607,11 @@
       },
       "identifiers": [
         {
-          "value": "9783031069819",
+          "value": "9783031069802",
           "scheme": "isbn"
         },
         {
-          "value": "9783031069802",
+          "value": "9783031069819",
           "scheme": "isbn"
         }
       ],
@@ -1806,12 +1806,12 @@
           "scheme": "isbn"
         },
         {
-          "value": "10.1007/978-1-4020-9632-7",
-          "scheme": "doi"
-        },
-        {
           "value": "9781402096327",
           "scheme": "isbn"
+        },
+        {
+          "value": "10.1007/978-1-4020-9632-7",
+          "scheme": "doi"
         },
         {
           "value": "W4249829199",
@@ -1976,11 +1976,11 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06401297735",
               "identifiers": [
                 {
-                  "value": "9783031069819",
+                  "value": "9783031069802",
                   "scheme": "isbn"
                 },
                 {
-                  "value": "9783031069802",
+                  "value": "9783031069819",
                   "scheme": "isbn"
                 }
               ]
@@ -2850,12 +2850,12 @@
                   "scheme": "issn"
                 },
                 {
-                  "value": "0040-3709",
-                  "scheme": "issn"
-                },
-                {
                   "value": "10.1002/(issn)1096-9926",
                   "scheme": "doi"
+                },
+                {
+                  "value": "0040-3709",
+                  "scheme": "issn"
                 }
               ]
             }
@@ -2949,12 +2949,12 @@
                   "scheme": "issn"
                 },
                 {
-                  "value": "0040-3709",
-                  "scheme": "issn"
-                },
-                {
                   "value": "10.1002/(issn)1096-9926",
                   "scheme": "doi"
+                },
+                {
+                  "value": "0040-3709",
+                  "scheme": "issn"
                 }
               ]
             }
@@ -3369,12 +3369,12 @@
                   "scheme": "issn"
                 },
                 {
-                  "value": "0040-3709",
-                  "scheme": "issn"
-                },
-                {
                   "value": "10.1002/(issn)1096-9926",
                   "scheme": "doi"
+                },
+                {
+                  "value": "0040-3709",
+                  "scheme": "issn"
                 }
               ]
             }
@@ -3628,12 +3628,12 @@
                   "scheme": "issn"
                 },
                 {
-                  "value": "0040-3709",
-                  "scheme": "issn"
-                },
-                {
                   "value": "10.1002/(issn)1096-9926",
                   "scheme": "doi"
+                },
+                {
+                  "value": "0040-3709",
+                  "scheme": "issn"
                 }
               ]
             }

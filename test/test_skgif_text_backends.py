@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from importlib import import_module
+from re import escape
 
 import pytest
 
@@ -61,3 +62,66 @@ def test_backend_keeps_non_text_product_filters(module_name: str) -> None:
         "filter_preamble": "",
         "filter": "?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:isbn ] .",
     }
+
+
+def test_identifier_filter_escapes_literal_value() -> None:
+    module = import_module("ramose.skg_if")
+    result = module.handle_skg_if_product_filter(['identifiers.id:10.0000/"quoted"'])
+    assert result == {
+        "filter_preamble": "",
+        "filter": (
+            "?local_identifier datacite:hasIdentifier"
+            ' [ literal:hasLiteralValue "10.0000/\\"quoted\\""^^<http://www.w3.org/2001/XMLSchema#string> ] .'
+        ),
+    }
+
+
+def test_agent_literal_filter_escapes_value() -> None:
+    module = import_module("ramose.skg_if")
+    result = module.handle_skg_if_product_filter(['contributions.by.name:Zenodo "community"'])
+    assert result == {
+        "filter_preamble": "",
+        "filter": (
+            "?local_identifier pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .\n"
+            '?_filter_agent foaf:name "Zenodo \\"community\\"" .'
+        ),
+    }
+
+
+def test_cites_doi_filter_escapes_literal_value() -> None:
+    module = import_module("ramose.skg_if")
+    result = module.handle_skg_if_product_filter(['cf.cites_doi:10.0000/"quoted"'])
+    assert result == {
+        "filter_preamble": (
+            "PREFIX datacite: <http://purl.org/spar/datacite/>\n"
+            "PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>\n"
+            "SELECT ?_target WHERE {\n"
+            "  ?_target datacite:hasIdentifier ?_id_node .\n"
+            "  ?_id_node datacite:usesIdentifierScheme datacite:doi ;\n"
+            '            literal:hasLiteralValue "10.0000/\\"quoted\\""'
+            "^^<http://www.w3.org/2001/XMLSchema#string> .\n"
+            "}\n"
+            "@@values ?_target\n"
+            "@@join ?_target ?_target type=inner\n"
+            "@@with source=index\n"
+            "PREFIX cito: <http://purl.org/spar/cito/>\n"
+            "SELECT ?_target ?local_identifier WHERE {\n"
+            "  ?_ci cito:hasCitingEntity ?_citing ;\n"
+            "       cito:hasCitedEntity ?_target .\n"
+            "  BIND(STR(?_citing) AS ?local_identifier)\n"
+            "}\n"
+            "@@remove ?_target\n"
+            "@@join ?local_identifier ?local_identifier type=inner"
+        ),
+        "filter": "",
+    }
+
+
+def test_citation_iri_filter_rejects_unsafe_value() -> None:
+    module = import_module("ramose.skg_if")
+    unsafe_uri = "https://example.org/resource> . ?x ?y ?z ."
+    expected_message = f"invalid IRI value: {unsafe_uri!r}"
+    with pytest.raises(ValueError, match=f"^{escape(expected_message)}$") as exc_info:
+        module.handle_skg_if_product_filter([f"cf.cites:{unsafe_uri}"])
+
+    assert str(exc_info.value) == expected_message
