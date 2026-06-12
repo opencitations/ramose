@@ -5,11 +5,15 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import yaml
 
 from ramose import APIManager, HTMLDocumentationHandler, OpenAPIDocumentationHandler, Operation
 from ramose.hash_format import BUILTIN_PARAMS
+
+with (Path(__file__).parent / "data" / "expected_search_products.json").open(encoding="utf8") as expected_search_file:
+    EXPECTED_SEARCH: dict[str, list[dict]] = json.load(expected_search_file)
 
 
 def _exec(skgif_api_manager: APIManager, url: str) -> list[dict]:
@@ -44,34 +48,8 @@ class TestNoFilter:
 
 class TestTitleFilter:
     def test_title_search_matches_content(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:adaptive")
-        assert results == [
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
-                "titles": {"none": ["Adaptive Environmental Management"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0615065546",
-                "titles": {"none": ["Adaptive System: The Study Of Information, Pattern, And Behavior"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
-                "titles": {
-                    "none": [
-                        (
-                            "Boon Or Bust? Access To Electronic Publishing "
-                            "By Individuals Using Adaptive Computer Technology"
-                        ),
-                    ],
-                },
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-        ]
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:OpenCitations")
+        assert results == EXPECTED_SEARCH["cf.search.title:OpenCitations"]
 
     def test_title_search_no_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:xyznonexistent999")
@@ -81,89 +59,20 @@ class TestTitleFilter:
 class TestIdentifierFilter:
     def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=identifiers.scheme:isbn")
-        assert results == [
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
-                "titles": {"none": ["Adaptive Environmental Management"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/061702785338",
-                "titles": {"none": ["Advances In Intelligent Systems And Computing"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/06302611905",
-                "titles": {"none": ["Communications In Computer And Information Science"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/06402611083",
-                "titles": {"none": ["Lecture Notes In Computer Science"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/06603870331",
-                "titles": {"none": ["OECD Economic Surveys: China 2022"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0611064823",
-                "titles": {"none": ["The Semantic Web"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0611064985",
-                "titles": {"none": ["The Semantic Web"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/06401297735",
-                "titles": {"none": ["The Semantic Web"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0612056541",
-                "titles": {"none": ["The Semantic Web: ESWC 2014 Satellite Events"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-        ]
+        assert results == EXPECTED_SEARCH["identifiers.scheme:isbn"]
 
     def test_filter_by_identifier_value(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=identifiers.id:9781402096327")
-        assert results == [
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
-                "titles": {"none": ["Adaptive Environmental Management"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-        ]
+        assert results == EXPECTED_SEARCH["identifiers.id:9781402096327"]
 
 
 class TestCombinedFilters:
     def test_title_and_scheme_combined(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
-            "/skgif/v1/products?filter=cf.search.title:adaptive,identifiers.scheme:isbn",
+            "/skgif/v1/products?filter=cf.search.title:OpenCitations,identifiers.scheme:doi",
         )
-        assert results == [
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
-                "titles": {"none": ["Adaptive Environmental Management"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-        ]
+        assert results == EXPECTED_SEARCH["cf.search.title:OpenCitations,identifiers.scheme:doi"]
 
 
 class TestProductTypeFilter:
@@ -192,71 +101,19 @@ class TestProductTypeFilter:
 class TestContributorFamilyNameFilter:
     def test_family_name_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.family_name:Slotkin")
-        assert results == [
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0601",
-                "titles": {
-                    "none": [
-                        "Response To The Letter Of Hanley Et Al. "
-                        "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                        "([1998] Teratology 58:62-68)",
-                    ],
-                },
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-        ]
+        assert results == EXPECTED_SEARCH["contributions.by.family_name:Slotkin"]
 
 
 class TestContributorGivenNameFilter:
     def test_given_name_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.given_name:Theodore A.")
-        assert results == [
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0601",
-                "titles": {
-                    "none": [
-                        "Response To The Letter Of Hanley Et Al. "
-                        "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                        "([1998] Teratology 58:62-68)",
-                    ],
-                },
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-        ]
+        assert results == EXPECTED_SEARCH["contributions.by.given_name:Theodore A."]
 
 
 class TestContributorNameFilter:
     def test_org_name_match(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/products?filter=contributions.by.name:Zenodo")
-        assert results == [
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/060504627",
-                "titles": {"none": ["Classes Of Errors In DOI Names (Data Management Plan)"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/060504628",
-                "titles": {"none": ["Classes Of Errors In DOI Names (Data Management Plan)"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/060504675",
-                "titles": {
-                    "none": [
-                        (
-                            "Cleaning Different Types Of DOI Errors Found In Cited "
-                            "References On Crossref Using Automated Methods"
-                        ),
-                    ],
-                },
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-        ]
+        assert results == EXPECTED_SEARCH["contributions.by.name:Zenodo"]
 
 
 class TestContributorLocalIdentifierFilter:
@@ -265,20 +122,7 @@ class TestContributorLocalIdentifierFilter:
             skgif_api_manager,
             "/skgif/v1/products?filter=contributions.by.local_identifier:https://w3id.org/oc/meta/ra/0601",
         )
-        assert results == [
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0601",
-                "titles": {
-                    "none": [
-                        "Response To The Letter Of Hanley Et Al. "
-                        "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                        "([1998] Teratology 58:62-68)",
-                    ],
-                },
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-        ]
+        assert results == EXPECTED_SEARCH["contributions.by.local_identifier:https://w3id.org/oc/meta/ra/0601"]
 
 
 class TestContributorIdentifierSchemeFilter:
@@ -293,19 +137,7 @@ class TestContributionsOrcidFilter:
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.contributions_orcid:0000-0003-4747-4708",
         )
-        assert results == [
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/06035",
-                "titles": {
-                    "none": [
-                        "H-ras, But Not N-ras, Induces An Invasive Phenotype In Human Breast Epithelial Cells: "
-                        "A Role For MMP-2 In The H-Ras-Induced Invasive Phenotype",
-                    ],
-                },
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-        ]
+        assert results == EXPECTED_SEARCH["cf.contributions_orcid:0000-0003-4747-4708"]
 
 
 class TestCombinedContributorFilters:
@@ -314,20 +146,9 @@ class TestCombinedContributorFilters:
             skgif_api_manager,
             "/skgif/v1/products?filter=contributions.by.family_name:Slotkin,contributions.by.given_name:Theodore A.",
         )
-        assert results == [
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0601",
-                "titles": {
-                    "none": [
-                        "Response To The Letter Of Hanley Et Al. "
-                        "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                        "([1998] Teratology 58:62-68)",
-                    ],
-                },
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-        ]
+        assert (
+            results == EXPECTED_SEARCH["contributions.by.family_name:Slotkin,contributions.by.given_name:Theodore A."]
+        )
 
 
 class TestUnsupportedFilter:
@@ -368,14 +189,14 @@ class TestUnsupportedFilter:
     def test_unsupported_title_abstract_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
-            "/skgif/v1/products?filter=cf.search.title_abstract:adaptive",
+            "/skgif/v1/products?filter=cf.search.title_abstract:OpenCitations",
         )
         assert results == []
 
     def test_unsupported_combined_with_supported_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
-            "/skgif/v1/products?filter=cf.search.title:adaptive,cf.search.title_abstract:test",
+            "/skgif/v1/products?filter=cf.search.title:OpenCitations,cf.search.title_abstract:test",
         )
         assert results == []
 
@@ -456,34 +277,8 @@ class TestMixedCitationAndRegularFilter:
 
 class TestBuiltinFilterOverride:
     def test_skgif_filter_overrides_builtin(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:adaptive")
-        assert results == [
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0612058700",
-                "titles": {"none": ["Adaptive Environmental Management"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0615065546",
-                "titles": {"none": ["Adaptive System: The Study Of Information, Pattern, And Behavior"]},
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-            {
-                "local_identifier": "https://w3id.org/oc/meta/br/0615066104",
-                "titles": {
-                    "none": [
-                        (
-                            "Boon Or Bust? Access To Electronic Publishing "
-                            "By Individuals Using Adaptive Computer Technology"
-                        ),
-                    ],
-                },
-                "entity_type": "product",
-                "product_type": "literature",
-            },
-        ]
+        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:OpenCitations")
+        assert results == EXPECTED_SEARCH["cf.search.title:OpenCitations"]
 
 
 class TestCustomParamsInDocumentation:
@@ -611,26 +406,26 @@ def _envelope(skgif_api_manager: APIManager, url: str) -> dict:
 
 class TestSkgifEnvelope:
     def test_envelope_without_pagination(self, skgif_api_manager: APIManager) -> None:
-        result = _envelope(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:adaptive")
+        result = _envelope(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:OpenCitations")
         assert result["@context"] == SKGIF_CONTEXT
         assert result["meta"] == {
-            "local_identifier": "/skgif/v1/products?filter=cf.search.title%3Aadaptive&page=1&page_size=3",
+            "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations&page=1&page_size=7",
             "entity_type": "search_result_page",
             "part_of": {
-                "local_identifier": "/skgif/v1/products?filter=cf.search.title%3Aadaptive",
+                "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations",
                 "entity_type": "search_result",
-                "total_items": 3,
+                "total_items": 7,
                 "first_page": {
-                    "local_identifier": "/skgif/v1/products?filter=cf.search.title%3Aadaptive&page=1&page_size=3",
+                    "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations&page=1&page_size=7",
                     "entity_type": "search_result_page",
                 },
                 "last_page": {
-                    "local_identifier": "/skgif/v1/products?filter=cf.search.title%3Aadaptive&page=1&page_size=3",
+                    "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations&page=1&page_size=7",
                     "entity_type": "search_result_page",
                 },
             },
         }
-        assert len(result["@graph"]) == 3
+        assert len(result["@graph"]) == 7
 
     def test_envelope_first_page(self, skgif_api_manager: APIManager) -> None:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?page_size=10")

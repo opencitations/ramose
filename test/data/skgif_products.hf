@@ -54,26 +54,1048 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 - `funding.local_identifier`
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
-#call /products?filter=cf.search.title:adaptive
-#output_json [{"local_identifier": "https://w3id.org/oc/meta/br/0612058700", "title": "Adaptive Environmental Management", "entity_type": "product", "product_type": "literature"}]
+#call /products?filter=cf.search.title:OpenCitations
+#output_json {
+    "@context": [
+        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
+        }
+    ],
+    "meta": {
+        "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations&page=1&page_size=7",
+        "entity_type": "search_result_page",
+        "part_of": {
+            "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations",
+            "entity_type": "search_result",
+            "total_items": 7,
+            "first_page": {
+                "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations&page=1&page_size=7",
+                "entity_type": "search_result_page"
+            },
+            "last_page": {
+                "local_identifier": "/skgif/v1/products?filter=cf.search.title%3AOpenCitations&page=1&page_size=7",
+                "entity_type": "search_result_page"
+            }
+        }
+    },
+    "@graph": [
+        {
+            "local_identifier": "https://w3id.org/oc/meta/br/06401296979",
+            "product_type": "literature",
+            "titles": {
+                "none": [
+                    "A Programming Interface For Creating Data According To The SPAR Ontologies And The OpenCitations Data Model"
+                ]
+            },
+            "identifiers": [
+                {
+                    "value": "10.1007/978-3-031-06981-9_18",
+                    "scheme": "doi"
+                },
+                {
+                    "value": "W4285173206",
+                    "scheme": "openalex"
+                }
+            ],
+            "contributions": [
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Persiani, Simone",
+                        "entity_type": "person",
+                        "family_name": "Persiani",
+                        "given_name": "Simone",
+                        "local_identifier": "https://w3id.org/oc/meta/ra/06403863047"
+                    },
+                    "rank": 1
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Daquino, Marilena",
+                        "entity_type": "person",
+                        "family_name": "Daquino",
+                        "given_name": "Marilena",
+                        "identifiers": [
+                            {
+                                "value": "0000-0002-1113-7550",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0625011225133"
+                    },
+                    "rank": 2
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Peroni, Silvio",
+                        "entity_type": "person",
+                        "family_name": "Peroni",
+                        "given_name": "Silvio",
+                        "identifiers": [
+                            {
+                                "value": "0000-0003-0530-4305",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729"
+                    },
+                    "rank": 3
+                },
+                {
+                    "role": "publisher",
+                    "by": {
+                        "name": "Springer Science And Business Media Llc",
+                        "entity_type": "organisation",
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0610116006"
+                    },
+                    "rank": 1
+                }
+            ],
+            "manifestations": [
+                {
+                    "type": {
+                        "class": "http://purl.org/spar/fabio/BookChapter",
+                        "defined_in": "http://purl.org/spar/fabio",
+                        "labels": {
+                            "en": "book chapter"
+                        }
+                    },
+                    "dates": {
+                        "publication": [
+                            "2022-01-01T00:00:00"
+                        ]
+                    },
+                    "biblio": {
+                        "pages": {
+                            "first": "305",
+                            "last": "322"
+                        },
+                        "in": {
+                            "name": "The Semantic Web",
+                            "entity_type": "venue",
+                            "local_identifier": "https://w3id.org/oc/meta/br/06401297735",
+                            "identifiers": [
+                                {
+                                    "value": "9783031069819",
+                                    "scheme": "isbn"
+                                },
+                                {
+                                    "value": "9783031069802",
+                                    "scheme": "isbn"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "entity_type": "product"
+        },
+        {
+            "local_identifier": "https://w3id.org/oc/meta/br/062104388184",
+            "product_type": "literature",
+            "titles": {
+                "none": [
+                    "OpenCitations Meta"
+                ]
+            },
+            "identifiers": [
+                {
+                    "value": "10.1162/qss_a_00292",
+                    "scheme": "doi"
+                }
+            ],
+            "contributions": [
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Massari, Arcangelo",
+                        "entity_type": "person",
+                        "family_name": "Massari",
+                        "given_name": "Arcangelo",
+                        "identifiers": [
+                            {
+                                "value": "0000-0002-8420-0696",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/06250110138"
+                    },
+                    "rank": 1
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Mariani, Fabio",
+                        "entity_type": "person",
+                        "family_name": "Mariani",
+                        "given_name": "Fabio",
+                        "identifiers": [
+                            {
+                                "value": "0000-0002-7382-0187",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0621012370562"
+                    },
+                    "rank": 2
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Heibi, Ivan",
+                        "entity_type": "person",
+                        "family_name": "Heibi",
+                        "given_name": "Ivan",
+                        "identifiers": [
+                            {
+                                "value": "0000-0001-5366-5194",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0621012370563"
+                    },
+                    "rank": 3
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Peroni, Silvio",
+                        "entity_type": "person",
+                        "family_name": "Peroni",
+                        "given_name": "Silvio",
+                        "identifiers": [
+                            {
+                                "value": "0000-0003-0530-4305",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0621012370564"
+                    },
+                    "rank": 4
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Shotton, David",
+                        "entity_type": "person",
+                        "family_name": "Shotton",
+                        "given_name": "David",
+                        "identifiers": [
+                            {
+                                "value": "0000-0001-5506-523X",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0621012370565"
+                    },
+                    "rank": 5
+                },
+                {
+                    "role": "publisher",
+                    "by": {
+                        "name": "Mit Press",
+                        "entity_type": "organisation",
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0610116105"
+                    },
+                    "rank": 1
+                }
+            ],
+            "manifestations": [
+                {
+                    "type": {
+                        "class": "http://purl.org/spar/fabio/JournalArticle",
+                        "defined_in": "http://purl.org/spar/fabio",
+                        "labels": {
+                            "en": "journal article"
+                        }
+                    },
+                    "dates": {
+                        "publication": [
+                            "2024-01-01T00:00:00"
+                        ]
+                    },
+                    "biblio": {
+                        "volume": "5",
+                        "issue": "1",
+                        "pages": {
+                            "first": "50",
+                            "last": "75"
+                        },
+                        "in": {
+                            "name": "Quantitative Science Studies",
+                            "entity_type": "venue",
+                            "local_identifier": "https://w3id.org/oc/meta/br/062501778099",
+                            "identifiers": [
+                                {
+                                    "value": "2641-3337",
+                                    "scheme": "issn"
+                                },
+                                {
+                                    "value": "S4210195326",
+                                    "scheme": "openalex"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "entity_type": "product"
+        },
+        {
+            "local_identifier": "https://w3id.org/oc/meta/br/062501777134",
+            "product_type": "literature",
+            "titles": {
+                "none": [
+                    "OpenCitations, An Infrastructure Organization For Open Scholarship"
+                ]
+            },
+            "identifiers": [
+                {
+                    "value": "W3106215946",
+                    "scheme": "openalex"
+                },
+                {
+                    "value": "10.1162/qss_a_00023",
+                    "scheme": "doi"
+                }
+            ],
+            "contributions": [
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Peroni, Silvio",
+                        "entity_type": "person",
+                        "family_name": "Peroni",
+                        "given_name": "Silvio",
+                        "identifiers": [
+                            {
+                                "value": "0000-0003-0530-4305",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729"
+                    },
+                    "rank": 1
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Shotton, D M",
+                        "entity_type": "person",
+                        "family_name": "Shotton",
+                        "given_name": "D M",
+                        "identifiers": [
+                            {
+                                "value": "0000-0001-5506-523X",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0621010775619"
+                    },
+                    "rank": 2
+                },
+                {
+                    "role": "publisher",
+                    "by": {
+                        "name": "Mit Press",
+                        "entity_type": "organisation",
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0610116105"
+                    },
+                    "rank": 1
+                }
+            ],
+            "manifestations": [
+                {
+                    "type": {
+                        "class": "http://purl.org/spar/fabio/JournalArticle",
+                        "defined_in": "http://purl.org/spar/fabio",
+                        "labels": {
+                            "en": "journal article"
+                        }
+                    },
+                    "dates": {
+                        "publication": [
+                            "2020-02-01T00:00:00"
+                        ]
+                    },
+                    "biblio": {
+                        "volume": "1",
+                        "issue": "1",
+                        "pages": {
+                            "first": "428",
+                            "last": "444"
+                        },
+                        "in": {
+                            "name": "Quantitative Science Studies",
+                            "entity_type": "venue",
+                            "local_identifier": "https://w3id.org/oc/meta/br/062501778099",
+                            "identifiers": [
+                                {
+                                    "value": "2641-3337",
+                                    "scheme": "issn"
+                                },
+                                {
+                                    "value": "S4210195326",
+                                    "scheme": "openalex"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "entity_type": "product"
+        },
+        {
+            "local_identifier": "https://w3id.org/oc/meta/br/061302130471",
+            "product_type": "literature",
+            "titles": {
+                "none": [
+                    "Software Review: COCI, The OpenCitations Index Of Crossref Open DOI-to-DOI Citations"
+                ]
+            },
+            "identifiers": [
+                {
+                    "value": "W2938946739",
+                    "scheme": "openalex"
+                },
+                {
+                    "value": "10.1007/s11192-019-03217-6",
+                    "scheme": "doi"
+                }
+            ],
+            "contributions": [
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Heibi, Ivan",
+                        "entity_type": "person",
+                        "family_name": "Heibi",
+                        "given_name": "Ivan",
+                        "identifiers": [
+                            {
+                                "value": "0000-0001-5366-5194",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/063011864088"
+                    },
+                    "rank": 1
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Peroni, Silvio",
+                        "entity_type": "person",
+                        "family_name": "Peroni",
+                        "given_name": "Silvio",
+                        "identifiers": [
+                            {
+                                "value": "0000-0003-0530-4305",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729"
+                    },
+                    "rank": 2
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Shotton, D M",
+                        "entity_type": "person",
+                        "family_name": "Shotton",
+                        "given_name": "D M",
+                        "identifiers": [
+                            {
+                                "value": "0000-0001-5506-523X",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0621010775619"
+                    },
+                    "rank": 3
+                },
+                {
+                    "role": "publisher",
+                    "by": {
+                        "name": "Springer Science And Business Media Llc",
+                        "entity_type": "organisation",
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0610116006"
+                    },
+                    "rank": 1
+                }
+            ],
+            "manifestations": [
+                {
+                    "type": {
+                        "class": "http://purl.org/spar/fabio/JournalArticle",
+                        "defined_in": "http://purl.org/spar/fabio",
+                        "labels": {
+                            "en": "journal article"
+                        }
+                    },
+                    "dates": {
+                        "publication": [
+                            "2019-09-14T00:00:00"
+                        ]
+                    },
+                    "biblio": {
+                        "volume": "121",
+                        "issue": "2",
+                        "pages": {
+                            "first": "1213",
+                            "last": "1228"
+                        },
+                        "in": {
+                            "name": "Scientometrics",
+                            "entity_type": "venue",
+                            "local_identifier": "https://w3id.org/oc/meta/br/0626055628",
+                            "identifiers": [
+                                {
+                                    "value": "1588-2861",
+                                    "scheme": "issn"
+                                },
+                                {
+                                    "value": "0138-9130",
+                                    "scheme": "issn"
+                                },
+                                {
+                                    "value": "S148561398",
+                                    "scheme": "openalex"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "entity_type": "product"
+        },
+        {
+            "local_identifier": "https://w3id.org/oc/meta/br/06404693975",
+            "product_type": "literature",
+            "titles": {
+                "none": [
+                    "The Integration Of The Japan Link Center’s Bibliographic Data Into OpenCitations"
+                ]
+            },
+            "identifiers": [
+                {
+                    "value": "10.5334/johd.178",
+                    "scheme": "doi"
+                }
+            ],
+            "contributions": [
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Moretti, Arianna",
+                        "entity_type": "person",
+                        "family_name": "Moretti",
+                        "given_name": "Arianna",
+                        "identifiers": [
+                            {
+                                "value": "0000-0001-5486-7070",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/061206532421"
+                    },
+                    "rank": 1
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Soricetti, Marta",
+                        "entity_type": "person",
+                        "family_name": "Soricetti",
+                        "given_name": "Marta",
+                        "identifiers": [
+                            {
+                                "value": "0009-0008-1466-7742",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/064013186641"
+                    },
+                    "rank": 2
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Heibi, Ivan",
+                        "entity_type": "person",
+                        "family_name": "Heibi",
+                        "given_name": "Ivan",
+                        "identifiers": [
+                            {
+                                "value": "0000-0001-5366-5194",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/063011864088"
+                    },
+                    "rank": 3
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Massari, Arcangelo",
+                        "entity_type": "person",
+                        "family_name": "Massari",
+                        "given_name": "Arcangelo",
+                        "identifiers": [
+                            {
+                                "value": "0000-0002-8420-0696",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/06250110138"
+                    },
+                    "rank": 4
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Peroni, Silvio",
+                        "entity_type": "person",
+                        "family_name": "Peroni",
+                        "given_name": "Silvio",
+                        "identifiers": [
+                            {
+                                "value": "0000-0003-0530-4305",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729"
+                    },
+                    "rank": 5
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Rizzetto, Elia",
+                        "entity_type": "person",
+                        "family_name": "Rizzetto",
+                        "given_name": "Elia",
+                        "identifiers": [
+                            {
+                                "value": "0009-0003-7161-9310",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/064013186645"
+                    },
+                    "rank": 6
+                },
+                {
+                    "role": "publisher",
+                    "by": {
+                        "name": "Ubiquity Press, Ltd.",
+                        "entity_type": "organisation",
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0610116010"
+                    },
+                    "rank": 1
+                }
+            ],
+            "manifestations": [
+                {
+                    "type": {
+                        "class": "http://purl.org/spar/fabio/JournalArticle",
+                        "defined_in": "http://purl.org/spar/fabio",
+                        "labels": {
+                            "en": "journal article"
+                        }
+                    },
+                    "dates": {
+                        "publication": [
+                            "2024-01-01T00:00:00"
+                        ]
+                    },
+                    "biblio": {
+                        "volume": "10",
+                        "in": {
+                            "name": "Journal Of Open Humanities Data",
+                            "entity_type": "venue",
+                            "local_identifier": "https://w3id.org/oc/meta/br/06160186133",
+                            "identifiers": [
+                                {
+                                    "value": "S4210240912",
+                                    "scheme": "openalex"
+                                },
+                                {
+                                    "value": "2059-481X",
+                                    "scheme": "issn"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "entity_type": "product"
+        },
+        {
+            "local_identifier": "https://w3id.org/oc/meta/br/06290518281",
+            "product_type": "literature",
+            "titles": {
+                "none": [
+                    "The OpenCitations Index: Description Of A Database Providing Open Citation Data"
+                ]
+            },
+            "identifiers": [
+                {
+                    "value": "10.1007/s11192-024-05160-7",
+                    "scheme": "doi"
+                }
+            ],
+            "contributions": [
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Heibi, Ivan",
+                        "entity_type": "person",
+                        "family_name": "Heibi",
+                        "given_name": "Ivan",
+                        "identifiers": [
+                            {
+                                "value": "0000-0001-5366-5194",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/063011864088"
+                    },
+                    "rank": 1
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Moretti, Arianna",
+                        "entity_type": "person",
+                        "family_name": "Moretti",
+                        "given_name": "Arianna",
+                        "identifiers": [
+                            {
+                                "value": "0000-0001-5486-7070",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/062901363345"
+                    },
+                    "rank": 2
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Peroni, Silvio",
+                        "entity_type": "person",
+                        "family_name": "Peroni",
+                        "given_name": "Silvio",
+                        "identifiers": [
+                            {
+                                "value": "0000-0003-0530-4305",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/062901363346"
+                    },
+                    "rank": 3
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Soricetti, Marta",
+                        "entity_type": "person",
+                        "family_name": "Soricetti",
+                        "given_name": "Marta",
+                        "identifiers": [
+                            {
+                                "value": "0009-0008-1466-7742",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/062901363347"
+                    },
+                    "rank": 4
+                },
+                {
+                    "role": "publisher",
+                    "by": {
+                        "name": "Springer Science And Business Media Llc",
+                        "entity_type": "organisation",
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0610116006"
+                    },
+                    "rank": 1
+                }
+            ],
+            "manifestations": [
+                {
+                    "type": {
+                        "class": "http://purl.org/spar/fabio/JournalArticle",
+                        "defined_in": "http://purl.org/spar/fabio",
+                        "labels": {
+                            "en": "journal article"
+                        }
+                    },
+                    "dates": {
+                        "publication": [
+                            "2024-09-28T00:00:00"
+                        ]
+                    },
+                    "biblio": {
+                        "in": {
+                            "name": "Scientometrics",
+                            "entity_type": "venue",
+                            "local_identifier": "https://w3id.org/oc/meta/br/0626055628",
+                            "identifiers": [
+                                {
+                                    "value": "1588-2861",
+                                    "scheme": "issn"
+                                },
+                                {
+                                    "value": "0138-9130",
+                                    "scheme": "issn"
+                                },
+                                {
+                                    "value": "S148561398",
+                                    "scheme": "openalex"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "entity_type": "product"
+        },
+        {
+            "local_identifier": "https://w3id.org/oc/meta/br/06011163661",
+            "product_type": "literature",
+            "titles": {
+                "none": [
+                    "Validating And Monitoring Bibliographic And Citation Data In OpenCitations Collections"
+                ]
+            },
+            "identifiers": [
+                {
+                    "value": "10.1007/s00799-025-00425-9",
+                    "scheme": "doi"
+                }
+            ],
+            "contributions": [
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Heibi, Ivan",
+                        "entity_type": "person",
+                        "family_name": "Heibi",
+                        "given_name": "Ivan",
+                        "local_identifier": "https://w3id.org/oc/meta/ra/06028914346"
+                    },
+                    "rank": 1
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Peroni, Silvio",
+                        "entity_type": "person",
+                        "family_name": "Peroni",
+                        "given_name": "Silvio",
+                        "local_identifier": "https://w3id.org/oc/meta/ra/06028914347"
+                    },
+                    "rank": 2
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Rizzetto, Elia",
+                        "entity_type": "person",
+                        "family_name": "Rizzetto",
+                        "given_name": "Elia",
+                        "identifiers": [
+                            {
+                                "value": "0009-0003-7161-9310",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "https://w3id.org/oc/meta/ra/064013186645"
+                    },
+                    "rank": 3
+                },
+                {
+                    "role": "publisher",
+                    "by": {
+                        "name": "Springer Science And Business Media Llc",
+                        "entity_type": "organisation",
+                        "local_identifier": "https://w3id.org/oc/meta/ra/0610116006"
+                    },
+                    "rank": 1
+                }
+            ],
+            "manifestations": [
+                {
+                    "type": {
+                        "class": "http://purl.org/spar/fabio/JournalArticle",
+                        "defined_in": "http://purl.org/spar/fabio",
+                        "labels": {
+                            "en": "journal article"
+                        }
+                    },
+                    "dates": {
+                        "publication": [
+                            "2025-07-27T00:00:00"
+                        ]
+                    },
+                    "biblio": {
+                        "volume": "26",
+                        "issue": "3",
+                        "in": {
+                            "name": "International Journal On Digital Libraries",
+                            "entity_type": "venue",
+                            "local_identifier": "https://w3id.org/oc/meta/br/06160781188",
+                            "identifiers": [
+                                {
+                                    "value": "S110615584",
+                                    "scheme": "openalex"
+                                },
+                                {
+                                    "value": "1432-5012",
+                                    "scheme": "issn"
+                                },
+                                {
+                                    "value": "1432-1300",
+                                    "scheme": "issn"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "entity_type": "product"
+        }
+    ]
+}
 #sparql [[filter_preamble]]
 @@with source=meta
 PREFIX fabio: <http://purl.org/spar/fabio/>
 PREFIX dcterm: <http://purl.org/dc/terms/>
+PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
+PREFIX frbr: <http://purl.org/vocab/frbr/core#>
 PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX pro: <http://purl.org/spar/pro/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT DISTINCT ?local_identifier ?title ?product_type
+SELECT ?local_identifier ?identifier_scheme ?identifier_value
+       ?title ?product_type
+       ?manifestation_type_class ?manifestation_type_label ?manifestation_type_label_lang
+       ?manifestation_dates_type ?manifestation_dates_value
+       ?manifestation_biblio_volume ?manifestation_biblio_issue
+       ?manifestation_biblio_pages_first ?manifestation_biblio_pages_last
+       ?manifestation_biblio_in_name ?manifestation_biblio_in_local_identifier
+       ?manifestation_biblio_in_identifier_scheme ?manifestation_biblio_in_identifier_value
 WHERE {
   ?local_identifier a fabio:Expression ;
           dcterm:title ?title .
-  OPTIONAL { ?local_identifier a ?_type_class . FILTER(?_type_class != fabio:Expression) }
-  BIND(IF(!BOUND(?_type_class), "literature", IF(?_type_class IN (<http://purl.org/spar/fabio/DataFile>, <http://purl.org/spar/fabio/DataManagementPlan>), "research data", IF(?_type_class = <http://purl.org/spar/fabio/ComputerProgram>, "research software", "literature"))) AS ?product_type)
   [[filter]]
+  OPTIONAL { ?local_identifier a ?manifestation_type_class . FILTER(?manifestation_type_class != fabio:Expression) }
+  BIND(IF(!BOUND(?manifestation_type_class), "literature", IF(?manifestation_type_class IN (<http://purl.org/spar/fabio/DataFile>, <http://purl.org/spar/fabio/DataManagementPlan>), "research data", IF(?manifestation_type_class = <http://purl.org/spar/fabio/ComputerProgram>, "research software", "literature"))) AS ?product_type)
+  BIND(IF(BOUND(?manifestation_type_class), LCASE(REPLACE(REPLACE(STR(?manifestation_type_class), "^.*[/#]", ""), "([a-z])([A-Z])", "$1 $2")), "") AS ?manifestation_type_label)
+  BIND(IF(BOUND(?manifestation_type_class), "en", "") AS ?manifestation_type_label_lang)
+  OPTIONAL {
+    ?local_identifier prism:publicationDate ?manifestation_dates_value .
+    BIND("publication" AS ?manifestation_dates_type)
+  }
+  OPTIONAL {
+    ?local_identifier frbr:embodiment ?resource_embodiment .
+    ?resource_embodiment prism:startingPage ?manifestation_biblio_pages_first ;
+                         prism:endingPage ?manifestation_biblio_pages_last .
+  }
+  OPTIONAL {
+    ?local_identifier frbr:partOf ?journal_issue .
+    ?journal_issue a fabio:JournalIssue ;
+                   fabio:hasSequenceIdentifier ?manifestation_biblio_issue .
+  }
+  OPTIONAL {
+    ?local_identifier frbr:partOf+ ?journal_volume .
+    ?journal_volume a fabio:JournalVolume ;
+                    fabio:hasSequenceIdentifier ?manifestation_biblio_volume .
+  }
+  OPTIONAL {
+    ?local_identifier datacite:hasIdentifier ?identifier_node .
+    ?identifier_node datacite:usesIdentifierScheme ?identifier_scheme_uri ;
+                     literal:hasLiteralValue ?identifier_value .
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
+  }
+  OPTIONAL {
+    {
+      ?local_identifier a fabio:JournalArticle ;
+              frbr:partOf+ ?venue_resource .
+      ?venue_resource a fabio:Journal .
+    } UNION {
+      ?local_identifier frbr:partOf ?venue_resource .
+      FILTER NOT EXISTS { ?venue_resource a fabio:JournalIssue }
+      FILTER NOT EXISTS { ?venue_resource a fabio:JournalVolume }
+    }
+    ?venue_resource dcterm:title ?manifestation_biblio_in_name .
+    BIND(STR(?venue_resource) AS ?manifestation_biblio_in_local_identifier)
+    OPTIONAL {
+      ?venue_resource datacite:hasIdentifier ?venue_identifier_node .
+      ?venue_identifier_node datacite:usesIdentifierScheme ?venue_identifier_scheme_uri ;
+                     literal:hasLiteralValue ?manifestation_biblio_in_identifier_value .
+      BIND(STRAFTER(STR(?venue_identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?manifestation_biblio_in_identifier_scheme)
+    }
+  }
 }
 ORDER BY STR(?title) STR(?local_identifier)
+
+@@values ?local_identifier
+@@join ?local_identifier ?local_identifier type=left
+PREFIX pro: <http://purl.org/spar/pro/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX oco: <https://w3id.org/oc/ontology/>
+
+SELECT ?local_identifier ?contribution_by_family_name ?contribution_by_given_name
+       ?contribution_by_name ?contribution_by_identifier_scheme ?contribution_by_identifier_value
+       ?contribution_by_local_identifier
+       ?contribution_role ?_contribution_key ?_contribution_next_key
+WHERE {
+  ?local_identifier pro:isDocumentContextFor ?agent_role .
+  ?agent_role pro:withRole ?role_type ;
+              pro:isHeldBy ?responsible_agent .
+  FILTER(?role_type IN (pro:author, pro:editor, pro:publisher))
+  BIND(IF(?role_type = pro:author, "author", IF(?role_type = pro:editor, "editor", "publisher")) AS ?contribution_role)
+  BIND(STR(?agent_role) AS ?_contribution_key)
+  OPTIONAL {
+    ?agent_role oco:hasNext ?next_agent_role .
+    BIND(STR(?next_agent_role) AS ?_contribution_next_key)
+  }
+  OPTIONAL { ?responsible_agent foaf:familyName ?contribution_by_family_name }
+  OPTIONAL { ?responsible_agent foaf:givenName ?contribution_by_given_name }
+  OPTIONAL { ?responsible_agent foaf:name ?contribution_by_name }
+  BIND(STR(?responsible_agent) AS ?contribution_by_local_identifier)
+  OPTIONAL {
+    ?responsible_agent datacite:hasIdentifier ?orcid_node .
+    ?orcid_node datacite:usesIdentifierScheme datacite:orcid ;
+                literal:hasLiteralValue ?contribution_by_identifier_value .
+    BIND("orcid" AS ?contribution_by_identifier_scheme)
+  }
+}
+
+@@values ?local_identifier
+@@join ?local_identifier ?local_identifier type=left
+@@with source=index
+PREFIX cito: <http://purl.org/spar/cito/>
+
+SELECT ?local_identifier ?related_products_cites
+WHERE {
+  ?citation cito:hasCitingEntity ?local_identifier ;
+            cito:hasCitedEntity ?cited_entity .
+  BIND(STR(?cited_entity) AS ?related_products_cites)
+}
 
 #url /products/{local_identifier}
 #type operation
