@@ -1,3 +1,10 @@
+## [2.5.3](https://github.com/opencitations/ramose/compare/v2.5.2...v2.5.3) (2026-06-15)
+
+
+### Bug Fixes
+
+* **skg-if:** emit single_entity meta for single-entity lookups [release] ([be00bb5](https://github.com/opencitations/ramose/commit/be00bb511cb5f4e6af499329a7852f4dbe2fbd3e))
+
 ## [2.5.2](https://github.com/opencitations/ramose/compare/v2.5.1...v2.5.2) (2026-06-12)
 
 
