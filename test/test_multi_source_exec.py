@@ -644,11 +644,18 @@ class TestInjectValuesClause:
         assert '"10.1"' in result
         assert result.count("(") - result.count("VALUES") == 1
 
-    def test_no_rows_returns_original(self) -> None:
+    def test_none_accumulator_returns_original(self) -> None:
+        op = self._make_op()
+        query = "SELECT ?x WHERE { }"
+        result = op._inject_values_clause(query, ["?x"], None)
+        assert result == query
+
+    def test_empty_accumulator_injects_empty_values(self) -> None:
         op = self._make_op()
         query = "SELECT ?x WHERE { }"
         result = op._inject_values_clause(query, ["?x"], [])
-        assert result == query
+        assert "VALUES (?x)" in result
+        assert result != query
 
 
 class TestHeaderFromFieldType:

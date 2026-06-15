@@ -842,16 +842,20 @@ class Operation:
         return self._run_sparql_dicts(endpoint_url, query_text)
 
     def _inject_values_clause(self, query_text: str, vars_: list[str], acc_rows: list[dict[str, object]] | None) -> str:
+        # None means no prior step ran: leave the query unrestricted.
+        # An empty list means a prior step matched nothing: keep going so the empty
+        # accumulator injects an empty VALUES block, which correctly yields zero solutions.
+        if acc_rows is None:
+            return query_text
+
         # build distinct tuples for requested vars from the accumulator
         cols = [v.lstrip("?") for v in vars_]
         tuples, seen = [], set()
-        for row in acc_rows or []:
+        for row in acc_rows:
             tup = tuple(row.get(c, "") for c in cols)
             if all(tup) and tup not in seen:
                 seen.add(tup)
                 tuples.append(tup)
-        if not tuples:
-            return query_text  # nothing to inject
 
         # format literals vs IRIs
         def fmt(x: object) -> str:
