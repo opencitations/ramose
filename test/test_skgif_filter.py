@@ -485,11 +485,12 @@ class TestSkgifEnvelope:
         assert status == 400
         assert ctype == "text/plain"
 
-    def test_single_product_with_pagination_counts_entities_not_rows(self, skgif_api_manager: APIManager) -> None:
+    def test_single_product_returns_single_entity_envelope(self, skgif_api_manager: APIManager) -> None:
         base_url = "/skgif/v1/products/https://w3id.org/oc/meta/br/0612058700"
         without_pagination = _envelope(skgif_api_manager, base_url)
         with_pagination = _envelope(skgif_api_manager, f"{base_url}?page_size=10&page=1")
-        assert with_pagination["meta"]["part_of"]["total_items"] == 1
+        assert with_pagination["meta"]["entity_type"] == "single_entity"
+        assert "part_of" not in with_pagination["meta"]
         assert "next_page" not in with_pagination["meta"]
         assert with_pagination["@graph"] == without_pagination["@graph"]
 

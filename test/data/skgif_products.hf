@@ -1112,21 +1112,8 @@ WHERE {
         }
     ],
     "meta": {
-        "local_identifier": "/skgif/v1/products/https://w3id.org/oc/meta/br/062104388184?page=1&page_size=1",
-        "entity_type": "search_result_page",
-        "part_of": {
-            "local_identifier": "/skgif/v1/products/https://w3id.org/oc/meta/br/062104388184",
-            "entity_type": "search_result",
-            "total_items": 1,
-            "first_page": {
-                "local_identifier": "/skgif/v1/products/https://w3id.org/oc/meta/br/062104388184?page=1&page_size=1",
-                "entity_type": "search_result_page"
-            },
-            "last_page": {
-                "local_identifier": "/skgif/v1/products/https://w3id.org/oc/meta/br/062104388184?page=1&page_size=1",
-                "entity_type": "search_result_page"
-            }
-        }
+        "local_identifier": "/skgif/v1/products/https://w3id.org/oc/meta/br/062104388184",
+        "entity_type": "single_entity"
     },
     "@graph": [
         {

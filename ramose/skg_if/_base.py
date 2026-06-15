@@ -986,6 +986,8 @@ def _page_url(base_path: str, params: dict[str, list[str]], page: int) -> str:
 def _build_meta(request_url: str, graph_size: int) -> dict:
     parsed = urlsplit(request_url)
     path = _canonical_path(parsed.path)
+    if _is_single_entity_request(request_url):
+        return {"local_identifier": path, "entity_type": "single_entity"}
     params = parse_qs(parsed.query)
     if "total_items" in params:
         total_items = int(params["total_items"][0])

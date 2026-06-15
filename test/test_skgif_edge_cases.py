@@ -61,14 +61,12 @@ class TestNormalizeLocalIdentifierUrl:
         merged = _execute(skgif_edge_api_manager, "https:/w3id.org/oc/meta/br/0601")
         assert merged == canonical
 
-    def test_pagination_urls_restore_the_scheme_separator(self, skgif_edge_api_manager: APIManager) -> None:
+    def test_single_entity_meta_restores_the_scheme_separator(self, skgif_edge_api_manager: APIManager) -> None:
         response = _execute(skgif_edge_api_manager, "https:/w3id.org/oc/meta/br/0601")
         canonical_path = "/skgif-edge/v1/products/https://w3id.org/oc/meta/br/0601"
         meta = response["meta"]
-        assert meta["local_identifier"] == f"{canonical_path}?page=1&page_size=1"
-        assert meta["part_of"]["local_identifier"] == canonical_path
-        assert meta["part_of"]["first_page"]["local_identifier"] == f"{canonical_path}?page=1&page_size=1"
-        assert meta["part_of"]["last_page"]["local_identifier"] == f"{canonical_path}?page=1&page_size=1"
+        assert meta["local_identifier"] == canonical_path
+        assert meta["entity_type"] == "single_entity"
 
 
 class TestMissingLocalIdentifier:
