@@ -1,3 +1,10 @@
+## [2.5.4](https://github.com/opencitations/ramose/compare/v2.5.3...v2.5.4) (2026-06-15)
+
+
+### Bug Fixes
+
+* **multi-source:** inject empty VALUES when a prior step matched nothing [release] ([15cb4bb](https://github.com/opencitations/ramose/commit/15cb4bb584c1a097f97e4ba7dc48fe1784a16510))
+
 ## [2.5.3](https://github.com/opencitations/ramose/compare/v2.5.2...v2.5.3) (2026-06-15)
 
 
