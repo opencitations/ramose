@@ -20,11 +20,14 @@ from urllib.parse import urlsplit
 
 from ramose._constants import FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME
 from ramose.cache import ResultCache
+from ramose.filters import load_filters_config
 from ramose.hash_format import HashFormatHandler, parse_auth, parse_custom_params, parse_disable_params
 from ramose.operation import Operation, OperationConfig
 
 if TYPE_CHECKING:
     import types
+
+    from ramose.filters import FiltersConfig
 
 
 class APIConfig(TypedDict):
@@ -40,6 +43,7 @@ class APIConfig(TypedDict):
     auth_required: bool
     addon: types.ModuleType | None
     sparql_http_method: str
+    conf_file: str
 
 
 class APIManager:
@@ -106,6 +110,7 @@ class APIManager:
             "auth_required": auth_required,
             "addon": addon,
             "sparql_http_method": sparql_http_method,
+            "conf_file": conf_file,
         }
 
     def __init__(
@@ -142,6 +147,7 @@ class APIManager:
 
         self._cache = ResultCache(cache_dir) if cache_dir else None
         self._cache_ttl = cache_ttl
+        self._config_cache: dict[str, FiltersConfig] = {}
 
         self.all_conf: OrderedDict[str, APIConfig] = OrderedDict()
         self.base_url: list[str] = []
@@ -227,6 +233,20 @@ class APIManager:
                     op_media_types[fields[0]] = fields[2]
         return op_format_map, op_media_types
 
+    def _resolve_custom_param_configs(
+        self, conf: APIConfig, custom_params_map: dict[str, dict[str, str]]
+    ) -> dict[str, FiltersConfig]:
+        result: dict[str, FiltersConfig] = {}
+        for name, param_conf in custom_params_map.items():
+            handler = param_conf["handler"]
+            if param_conf["phase"] != "preprocess" or not handler.endswith((".yaml", ".yml")):
+                continue
+            resolved = str((Path(conf["conf_file"]).parent / handler).resolve())
+            if resolved not in self._config_cache:
+                self._config_cache[resolved] = load_filters_config(resolved)
+            result[name] = self._config_cache[resolved]
+        return result
+
     def get_op(self, op_complete_url: str, method: str = "get") -> Operation | tuple[int, str, str]:
         """This method returns a new object of type Operation which represent the operation specified by
         the input URL (parameter 'op_complete_url)' and the HTTP method. In case no operation can be found
@@ -264,6 +284,7 @@ class APIManager:
                 requires_auth=requires_auth,
                 cache=self._cache,
                 default_cache_ttl=self._cache_ttl,
+                custom_param_configs=self._resolve_custom_param_configs(conf, custom_params_map),
             )
             return Operation(op_complete_url, op, op_conf, config)
 

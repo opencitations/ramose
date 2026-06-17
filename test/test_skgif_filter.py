@@ -95,7 +95,7 @@ class TestProductTypeFilter:
     def test_invalid_type_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, result = _exec_raw(skgif_api_manager, "/skgif/v1/products?filter=product_type:nonexistent")
         assert status == 400
-        assert "The product type 'nonexistent' is not valid" in result
+        assert "The value 'nonexistent' is not valid for filter 'product_type'" in result
 
 
 class TestContributorFamilyNameFilter:
@@ -160,8 +160,8 @@ class TestUnsupportedFilter:
         assert status == 400
         expected_prefix = (
             "HTTP status code 400: parameter in the request not compliant with the type specified - ValueError: "
-            "The filter unsupported_field is not supported, "
-            "valid filters are "
+            "The filter 'unsupported_field' is not configured, "
+            "configured filters are "
             "cf.cited_by, cf.cited_by_doi, cf.cites, cf.cites_doi, "
             "cf.contributions_aff_country, cf.contributions_aff_ror, cf.contributions_orcid, "
             "cf.search.title, cf.search.title_abstract, "
@@ -199,6 +199,16 @@ class TestUnsupportedFilter:
             "/skgif/v1/products?filter=cf.search.title:OpenCitations,cf.search.title_abstract:test",
         )
         assert results == []
+
+    def test_unsupported_combined_with_federated_filter_skips_preamble(self, skgif_api_manager: APIManager) -> None:
+        op = skgif_api_manager.get_op(
+            "/skgif/v1/products?"
+            "filter=cf.cites:https://w3id.org/oc/meta/br/06035,funding.local_identifier:grant"
+        )
+        assert isinstance(op, Operation)
+        params = op._prepare_params()
+        assert params["filter_preamble"] == ""
+        assert params["filter"] == "FILTER(false)"
 
     def test_unsupported_funding_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
         results = _exec(

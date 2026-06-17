@@ -17,7 +17,7 @@
 #type operation
 #method get
 #description Returns a list of research products matching the given filters.
-#custom_params filter,handle_skg_if_product_filter,preprocess,Search filter.
+#custom_params filter,skgif_filters.ocdm.yaml,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 
 **Filters with data:**
@@ -1442,7 +1442,7 @@ WHERE {
 #type operation
 #method get
 #description Returns a list of grants matching the given filters. Note: OpenCitations does not currently hold grant data; this endpoint always returns an empty result.
-#custom_params filter,handle_skg_if_grant_filter,preprocess,Search filter.
+#custom_params filter,skgif_filters.grants.yaml,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 
 **Accepted but always empty (OpenCitations does not hold grant data):**
@@ -1534,7 +1534,7 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #type operation
 #method get
 #description Returns a list of topics matching the given filters. Note: OpenCitations does not currently hold topic data; this endpoint always returns an empty result.
-#custom_params filter,handle_skg_if_topic_filter,preprocess,Search filter.
+#custom_params filter,skgif_filters.topics.yaml,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 
 **Accepted but always empty (OpenCitations does not hold topic data):**
@@ -1590,7 +1590,7 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #type operation
 #method get
 #description Returns a list of data sources matching the given filters. Note: OpenCitations does not currently hold data source records; this endpoint always returns an empty result.
-#custom_params filter,handle_skg_if_datasource_filter,preprocess,Search filter.
+#custom_params filter,skgif_filters.datasources.yaml,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 
 **Accepted but always empty (OpenCitations does not hold data source records):**

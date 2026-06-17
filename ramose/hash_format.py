@@ -11,6 +11,7 @@ from pathlib import Path
 from re import DOTALL, search
 
 BUILTIN_PARAMS = frozenset({"require", "filter", "sort", "format", "json", "page", "page_size"})
+CUSTOM_PARAM_PHASES = frozenset({"preprocess", "postprocess"})
 
 
 def parse_disable_params(raw: str) -> set[str]:
@@ -24,16 +25,29 @@ def parse_auth(raw: str) -> bool:
     return raw.strip() == "required"
 
 
+def _is_yaml_handler(handler: str) -> bool:
+    return handler.endswith((".yaml", ".yml"))
+
+
 def parse_custom_params(raw: str) -> dict[str, dict[str, str]]:
     result = {}
     for raw_part in raw.split(";"):
         part = raw_part.strip()
         if not part:
             continue
-        name, handler, phase, *desc_parts = part.split(",", 3)
+        name, handler, phase_or_description, *desc_parts = part.split(",", 3)
+        handler = handler.strip()
+        phase = phase_or_description.strip()
+        if _is_yaml_handler(handler):
+            if phase == "postprocess":
+                msg = f"YAML custom parameter handler '{handler}' cannot be used for postprocess"
+                raise ValueError(msg)
+            if phase not in CUSTOM_PARAM_PHASES:
+                desc_parts = [",".join([phase_or_description, *desc_parts])]
+                phase = "preprocess"
         result[name.strip()] = {
-            "handler": handler.strip(),
-            "phase": phase.strip(),
+            "handler": handler,
+            "phase": phase,
             "description": desc_parts[0].strip() if desc_parts else "",
         }
     return result

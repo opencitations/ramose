@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from ramose import APIManager, Operation
+from ramose.hash_format import parse_custom_params
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -78,6 +79,7 @@ class TestBestMatch:
             "engine",
             "disable_params",
             "auth_required",
+            "conf_file",
         }
 
     def test_invalid_url(self, api_mgr: APIManager) -> None:
@@ -171,3 +173,89 @@ class TestFormatParsingEmptyPart:
         assert isinstance(op, Operation)
         assert "" not in op.format
         assert "xml" in op.format
+
+
+class TestParseCustomParams:
+    def test_yaml_handler_phase_is_implicit(self) -> None:
+        result = parse_custom_params("filter,filters.yaml,Search filter")
+        assert result == {
+            "filter": {
+                "handler": "filters.yaml",
+                "phase": "preprocess",
+                "description": "Search filter",
+            }
+        }
+
+    def test_yaml_handler_description_can_contain_commas(self) -> None:
+        result = parse_custom_params("filter,filters.yml,Search filter, with commas")
+        assert result == {
+            "filter": {
+                "handler": "filters.yml",
+                "phase": "preprocess",
+                "description": "Search filter, with commas",
+            }
+        }
+
+    def test_yaml_handler_accepts_explicit_preprocess(self) -> None:
+        result = parse_custom_params("filter,filters.yaml,preprocess,Search filter")
+        assert result == {
+            "filter": {
+                "handler": "filters.yaml",
+                "phase": "preprocess",
+                "description": "Search filter",
+            }
+        }
+
+    def test_yaml_handler_rejects_postprocess(self) -> None:
+        with pytest.raises(
+            ValueError,
+            match=r"YAML custom parameter handler 'filters\.yaml' cannot be used for postprocess",
+        ):
+            parse_custom_params("filter,filters.yaml,postprocess,Search filter")
+
+    def test_python_handler_keeps_explicit_phase(self) -> None:
+        result = parse_custom_params("limit,handle_limit,postprocess,Limit results")
+        assert result == {
+            "limit": {
+                "handler": "handle_limit",
+                "phase": "postprocess",
+                "description": "Limit results",
+            }
+        }
+
+
+class TestCustomParamConfigs:
+    def test_each_param_binds_to_its_own_config(self, tmp_path: Path) -> None:
+        (tmp_path / "a.yaml").write_text('identifiers.id:\n  slot_a: \'?x ex:a "{{value}}" .\'\n', encoding="utf-8")
+        (tmp_path / "b.yaml").write_text("cf.cites:\n  slot_b: '?x ex:b <{{value}}> .'\n", encoding="utf-8")
+        spec = tmp_path / "spec.hf"
+        spec.write_text(
+            "#url /api/v2\n"
+            "#type api\n"
+            "#base http://localhost:5000\n"
+            "#endpoint http://localhost:9999/sparql\n"
+            "#engine sparql\n"
+            "#title Two config-driven params\n"
+            "#version 0.0.1\n"
+            "\n"
+            "#url /data/{id}\n"
+            "#type operation\n"
+            "#id str(.+)\n"
+            "#method get\n"
+            "#description Operation with two config-driven params\n"
+            "#field_type str(x)\n"
+            "#custom_params filter,a.yaml,A;extra,b.yaml,preprocess,B\n"
+            '#sparql SELECT ?x WHERE { BIND("test" AS ?x) [[slot_a]] [[slot_b]] }\n',
+            encoding="utf-8",
+        )
+        am = APIManager([str(spec)], endpoint_override="http://localhost:9999/sparql")
+        op = am.get_op("/api/v2/data/123")
+        assert isinstance(op, Operation)
+        assert op.custom_params == {
+            "filter": {"handler": "a.yaml", "phase": "preprocess", "description": "A"},
+            "extra": {"handler": "b.yaml", "phase": "preprocess", "description": "B"},
+        }
+        assert op.custom_param_configs == {
+            "filter": {"identifiers.id": {"slot_a": '?x ex:a "{{value}}" .'}},
+            "extra": {"cf.cites": {"slot_b": "?x ex:b <{{value}}> ."}},
+        }

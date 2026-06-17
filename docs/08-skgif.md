@@ -12,7 +12,21 @@ RAMOSE can expose any SPARQL triplestore as a [SKG-IF](https://skg-if.github.io/
 
 ### 1. Create the spec file
 
-Start with the API section. Set `#addon` to `ramose.skg_if` and disable the built-in query parameters that SKG-IF does not use.
+RAMOSE specs are split into one API section and one operation section for each route. For an SKG-IF product API, define the API section first, then add one operation for the single-product route and one operation for the product search route.
+
+In the API section, set `#addon` to `ramose.skg_if`. This loads the SKG-IF JSON-LD converter. Disable RAMOSE query parameters that are not part of the SKG-IF interface with `#disable_params`.
+
+In each product operation, register the SKG-IF output with `#format skg_if,to_skg_if,application/ld+json` and make it the default with `#default_format skg_if`.
+
+The search operation also defines the SKG-IF `filter` query parameter:
+
+```
+/products?filter=cf.search.title:OpenCitations,product_type:literature
+```
+
+In RAMOSE, this is a config-driven custom parameter. The `#custom_params` line points `filter` to a YAML file. The YAML file maps each accepted SKG-IF filter name to the SPARQL fragments injected into placeholders such as `[[filter]]`.
+
+The SPARQL queries must return the columns documented in [Product CSV columns](#product-csv-columns). Multiple rows per product are expected (one per combination of identifier, contributor, topic, etc.); the converter deduplicates and aggregates them.
 
 ```
 #url /skg-if/v1
@@ -25,26 +39,7 @@ Start with the API section. Set `#addon` to `ramose.skg_if` and disable the buil
 #method get
 #addon ramose.skg_if
 #disable_params require,filter,sort,format,json
-```
 
-`ramose.skg_if` is the portable backend. It uses SPARQL `FILTER(CONTAINS(...))` for text filters, and works on endpoints without a text index.
-
-For large datasets, select the addon module matching the triplestore so SKG-IF text filters use that store's text
-index:
-
-| Triplestore | Addon | Text search used for `cf.search.title` |
-|---|---|---|
-| Blazegraph | `ramose.skg_if.blazegraph` | `bds:search` |
-| Fuseki/Jena | `ramose.skg_if.fuseki` | `text:query` |
-| GraphDB | `ramose.skg_if.graphdb` | `onto:fts` |
-| QLever | `ramose.skg_if.qlever` | `ql:contains-word` |
-| Virtuoso | `ramose.skg_if.virtuoso` | `bif:contains` |
-
-### 2. Add an operation
-
-Each operation maps a URL pattern to a SPARQL query. The query must return the columns listed in the reference tables below. Multiple rows per product are expected (one per combination of identifier, contributor, topic, etc.); the converter deduplicates and aggregates them.
-
-```
 #url /products/{local_identifier}
 #type operation
 #method get
@@ -60,13 +55,31 @@ WHERE {
   ?local_identifier dcterm:title ?title .
   # ... your triplestore-specific patterns here
 }
+
+#url /products
+#type operation
+#method get
+#description Returns a list of research products matching the given filters.
+#custom_params filter,skgif_filters.ocdm.yaml,Search filter.
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#call /products?filter=cf.search.title:OpenCitations
+#sparql [[filter_preamble]]
+PREFIX dcterm: <http://purl.org/dc/terms/>
+
+SELECT ?local_identifier ?product_type ?title ?title_lang
+WHERE {
+  ?local_identifier dcterm:title ?title .
+  [[filter]]
+  # ... your triplestore-specific patterns here
+}
 ```
 
-`#format skg_if,to_skg_if,application/ld+json` registers the converter and declares its media type (so it is content-negotiable and listed in the OpenAPI spec); `#default_format skg_if` makes JSON-LD the default output instead of the built-in JSON.
+In this example, `skgif_filters.ocdm.yaml` decides what each search filter injects into the query. See [config-driven parameters](05-addons.md#config-driven-parameters) for the YAML syntax.
 
 For a complete example, see the [OpenCitations spec](https://github.com/opencitations/ramose/blob/master/test/data/skgif_products.hf).
 
-### 3. Run
+### 2. Run
 
 Start the built-in dev server:
 
@@ -74,13 +87,13 @@ Start the built-in dev server:
 ramose -s my_source.hf -w 127.0.0.1:8080
 ```
 
-The API serves JSON-LD at `http://127.0.0.1:8080/skg-if/v1/products/{local_identifier}`.
+The API is served at `http://127.0.0.1:8080/skg-if/v1`.
 
 For a runnable example querying ORKG and Wikidata, see the [live demo notebook](09-demo-skgif.ipynb).
 
 ## Product CSV columns
 
-The `products/{local_identifier}` operation uses the columns listed below. Every SPARQL source must produce rows conforming to this schema. Multiple rows per product are expected (one per combination of identifier, contributor, citation, topic); the converter deduplicates and aggregates them.
+Product operations use the columns listed below. Every SPARQL source must produce rows conforming to this schema. Multiple rows per product are expected (one per combination of identifier, contributor, citation, topic); the converter deduplicates and aggregates them.
 
 Column names mirror JSON-LD output paths with dots replaced by underscores (SPARQL variable constraint). Columns prefixed with `_` are internal to the converter and do not appear in the output.
 

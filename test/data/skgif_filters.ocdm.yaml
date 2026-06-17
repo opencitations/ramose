@@ -1,0 +1,128 @@
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: ISC
+
+
+identifiers.id:
+  filter: '?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> ] .'
+identifiers.scheme:
+  filter: "?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{{value}} ] ."
+contributions.by.local_identifier:
+  filter: "?local_identifier pro:isDocumentContextFor [ pro:isHeldBy <{{value}}> ] ."
+cf.search.title:
+  filter: 'FILTER(CONTAINS(LCASE(?title), LCASE("{{value}}")))'
+contributions.by.family_name:
+  filter: |-
+    ?local_identifier pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .
+    ?_filter_agent foaf:familyName "{{value}}" .
+contributions.by.given_name:
+  filter: |-
+    ?local_identifier pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .
+    ?_filter_agent foaf:givenName "{{value}}" .
+contributions.by.name:
+  filter: |-
+    ?local_identifier pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .
+    ?_filter_agent foaf:name "{{value}}" .
+contributions.by.identifiers.id:
+  filter: |-
+    ?local_identifier pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .
+    ?_filter_agent datacite:hasIdentifier [ literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> ] .
+contributions.by.identifiers.scheme:
+  filter: |-
+    ?local_identifier pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .
+    ?_filter_agent datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{{value}} ] .
+cf.contributions_orcid:
+  filter: |-
+    ?local_identifier pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .
+    ?_filter_agent datacite:hasIdentifier [ literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> ; datacite:usesIdentifierScheme datacite:orcid ] .
+product_type:
+  filter:
+    literature: |-
+      FILTER NOT EXISTS { ?local_identifier a <http://purl.org/spar/fabio/DataFile> }
+      FILTER NOT EXISTS { ?local_identifier a <http://purl.org/spar/fabio/DataManagementPlan> }
+      FILTER NOT EXISTS { ?local_identifier a <http://purl.org/spar/fabio/ComputerProgram> }
+    research data: |-
+      VALUES ?_filter_type { <http://purl.org/spar/fabio/DataFile> <http://purl.org/spar/fabio/DataManagementPlan> }
+      ?local_identifier a ?_filter_type .
+    research software: |-
+      VALUES ?_filter_type { <http://purl.org/spar/fabio/ComputerProgram> }
+      ?local_identifier a ?_filter_type .
+    other: "FILTER(false)"
+cf.cites:
+  filter_preamble: |-
+    @@with source=index
+    PREFIX cito: <http://purl.org/spar/cito/>
+    SELECT ?local_identifier WHERE {
+      ?_ci cito:hasCitingEntity ?_citing ; cito:hasCitedEntity <{{value}}> .
+      BIND(STR(?_citing) AS ?local_identifier)
+    }
+    @@join ?local_identifier ?local_identifier type=inner
+cf.cited_by:
+  filter_preamble: |-
+    @@with source=index
+    PREFIX cito: <http://purl.org/spar/cito/>
+    SELECT ?local_identifier WHERE {
+      ?_ci cito:hasCitingEntity <{{value}}> ; cito:hasCitedEntity ?_cited .
+      BIND(STR(?_cited) AS ?local_identifier)
+    }
+    @@join ?local_identifier ?local_identifier type=inner
+cf.cites_doi:
+  filter_preamble: |-
+    PREFIX datacite: <http://purl.org/spar/datacite/>
+    PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+    SELECT ?_target WHERE {
+      ?_target datacite:hasIdentifier ?_id_node .
+      ?_id_node datacite:usesIdentifierScheme datacite:doi ; literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> .
+    }
+    @@values ?_target
+    @@join ?_target ?_target type=inner
+    @@with source=index
+    PREFIX cito: <http://purl.org/spar/cito/>
+    SELECT ?_target ?local_identifier WHERE {
+      ?_ci cito:hasCitingEntity ?_citing ; cito:hasCitedEntity ?_target .
+      BIND(STR(?_citing) AS ?local_identifier)
+    }
+    @@remove ?_target
+    @@join ?local_identifier ?local_identifier type=inner
+cf.cited_by_doi:
+  filter_preamble: |-
+    PREFIX datacite: <http://purl.org/spar/datacite/>
+    PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+    SELECT ?_target WHERE {
+      ?_target datacite:hasIdentifier ?_id_node .
+      ?_id_node datacite:usesIdentifierScheme datacite:doi ; literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> .
+    }
+    @@values ?_target
+    @@join ?_target ?_target type=inner
+    @@with source=index
+    PREFIX cito: <http://purl.org/spar/cito/>
+    SELECT ?_target ?local_identifier WHERE {
+      ?_ci cito:hasCitingEntity ?_target ; cito:hasCitedEntity ?_cited .
+      BIND(STR(?_cited) AS ?local_identifier)
+    }
+    @@remove ?_target
+    @@join ?local_identifier ?local_identifier type=inner
+cf.contributions_aff_country:
+  filter: "FILTER(false)"
+cf.contributions_aff_ror:
+  filter: "FILTER(false)"
+cf.search.title_abstract:
+  filter: "FILTER(false)"
+contributions.declared_affiliations.identifiers.id:
+  filter: "FILTER(false)"
+contributions.declared_affiliations.identifiers.scheme:
+  filter: "FILTER(false)"
+contributions.declared_affiliations.local_identifier:
+  filter: "FILTER(false)"
+contributions.declared_affiliations.name:
+  filter: "FILTER(false)"
+contributions.declared_affiliations.short_name:
+  filter: "FILTER(false)"
+funding.grant_number:
+  filter: "FILTER(false)"
+funding.identifiers.id:
+  filter: "FILTER(false)"
+funding.identifiers.scheme:
+  filter: "FILTER(false)"
+funding.local_identifier:
+  filter: "FILTER(false)"

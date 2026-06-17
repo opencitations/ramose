@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 Query parameters are passed as standard HTTP query string arguments. They are applied after the SPARQL query returns and after postprocessing, in this fixed order: require, filter, sort, format/json. Pagination (`page`, `page_size`) is applied last, after all filtering and sorting.
 
-Operations can override any of these built-in parameters with a [custom parameter handler](custom-parameters) via the `#custom_params` field. When overridden, the built-in behavior is replaced by the addon function.
+Operations can override any of these built-in parameters with a [custom parameter handler](custom-parameters) via the `#custom_params` field. When overridden, the built-in behavior is replaced by the custom handler.
 
 ## require
 

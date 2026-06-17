@@ -38,6 +38,7 @@ from ramose._constants import (
     media_type_for_format,
 )
 from ramose.datatype import DataType
+from ramose.filters import apply_filters
 from ramose.paging import PaginationInfo, build_link_header, build_pagination_info
 
 if TYPE_CHECKING:
@@ -45,6 +46,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
     from ramose.cache import ResultCache
+    from ramose.filters import FiltersConfig
 
 
 _WRITE_METHODS = frozenset({"post", "put", "delete"})
@@ -72,6 +74,7 @@ class OperationConfig:
     requires_auth: bool = False
     cache: ResultCache | None = None
     default_cache_ttl: int = 86400
+    custom_param_configs: dict[str, FiltersConfig] = dataclass_field(default_factory=dict)
 
 
 class Operation:
@@ -102,6 +105,7 @@ class Operation:
         self._sa_engine = None
         self._cache = config.cache
         self._default_cache_ttl = config.default_cache_ttl
+        self.custom_param_configs = config.custom_param_configs
         self.pagination_info: PaginationInfo | None = None
 
         self.operation = {"=": eq, "<": lt, ">": gt}
@@ -1082,13 +1086,19 @@ class Operation:
             par_dict.update(body_params)
         return par_dict
 
+    def _resolve_preprocess_handler(self, param_name: str, handler: str) -> Callable[[list[str]], dict[str, str]]:
+        if param_name in self.custom_param_configs:
+            config = self.custom_param_configs[param_name]
+            return lambda values: apply_filters(config, values)
+        return getattr(self.addon, handler)
+
     def _apply_custom_preprocess_params(self, par_dict: dict[str, object]) -> None:
         q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
         for param_name, param_conf in self.custom_params.items():
             if param_conf["phase"] != "preprocess":
                 continue
             if param_name in q_string:
-                handler = getattr(self.addon, param_conf["handler"])
+                handler = self._resolve_preprocess_handler(param_name, param_conf["handler"])
                 par_dict.update(handler(q_string[param_name]))
             elif param_name not in par_dict:
                 par_dict[param_name] = ""

@@ -106,7 +106,7 @@ Functions are chained with `-->`:
 (custom-parameters)=
 ## Custom parameters
 
-The `#custom_params` field defines query string parameters handled by addon functions instead of the built-in RAMOSE pipeline. Each entry specifies the parameter name, handler function, processing phase, and description:
+The `#custom_params` field defines query string parameters handled by addon functions or YAML config files instead of the built-in RAMOSE pipeline. Python handlers specify the parameter name, handler function, processing phase, and description:
 
 ```
 #custom_params filter,handle_title_filter,preprocess,Filter products by title substring
@@ -176,6 +176,39 @@ A postprocessing handler transforms the result table after built-in filters have
 def handle_limit(table: list[list], values: list[str]) -> list[list]:
     limit = int(values[0])
     return [table[0], *table[1:limit + 1]]
+```
+
+### Config-driven parameters
+
+A preprocessing parameter can be backed by a config file instead of a Python function. Give the parameter a handler that ends in `.yaml` or `.yml`: the handler is read as a path to a config file, resolved relative to the spec file. YAML handlers are always preprocessing handlers, so they omit the phase. No addon is required.
+
+```
+#custom_params filter,filters.yaml,Filter products
+```
+
+The config maps each key to one or more named slots. A slot holds a SPARQL template injected into the matching `[[slot]]` placeholder:
+
+```yaml
+identifiers.id:
+  constraints: '?product ex:doi "{{value}}" .'
+cites:
+  federation: |
+    @@with source=index
+    SELECT ?product WHERE { ?product ex:cites <{{value}}> . }
+    @@join ?product ?product type=inner
+```
+
+A request to `?filter=identifiers.id:10.1/x,cites:https://example.org/1` fills `[[constraints]]` and `[[federation]]`. Slot names are arbitrary; they only need to match the `[[...]]` placeholders in the operation's `#sparql`. A template containing `@@` directives triggers [multi-source execution](06-multi-source.md), so a parameter can reach a second endpoint without editing the spec. A key absent from the config is rejected; a key mapped to an empty slot map is accepted and adds no constraint.
+
+Each parameter names its own config in its own handler, so one operation can drive several parameters from different files. The `{{value}}` placeholder is replaced with the filter value as received. Write the SPARQL delimiters you need directly in the template, such as `"{{value}}"` for a string literal or `<{{value}}>` for an IRI.
+
+A slot can also select its template from the value, which validates the value against the listed set:
+
+```yaml
+product_type:
+  constraints:
+    literature: "?product a ex:Article ."
+    dataset: "?product a ex:Dataset ."
 ```
 
 ### Overriding built-in parameters
