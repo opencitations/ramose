@@ -20,7 +20,7 @@ from json import dumps
 from math import ceil
 from operator import eq, gt, itemgetter, lt
 from re import findall, match, search, sub
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict, cast
 from urllib.parse import parse_qs, quote, urlsplit
 
 from requests.exceptions import RequestException
@@ -51,6 +51,19 @@ if TYPE_CHECKING:
 
 _WRITE_METHODS = frozenset({"post", "put", "delete"})
 _IRI_FORBIDDEN = r'[<>"{}|^`\\\x00-\x20]'
+ResultRow = list[str]
+ResultTable = list[ResultRow]
+
+
+class CachedPagination(TypedDict):
+    page: int
+    page_size: int
+    total_items: int
+
+
+class CachedResult(TypedDict):
+    rows: ResultTable
+    pagination: CachedPagination | None
 
 
 class HttpError(Exception):
@@ -552,12 +565,12 @@ class Operation:
 
         return [header, *result]  # type: ignore[return-value]
 
-    def remove_types(self, res: list[list[str] | list[tuple[object, str]]]) -> list[list[str] | tuple[str, ...]]:
+    def remove_types(self, res: list[list[str] | list[tuple[object, str]]]) -> ResultTable:
         """This method takes the results 'res' that include also the typed value and returns a version of such
         results without the types that is ready to be stored on the file system."""
-        result = [res[0]]
-        result.extend(tuple(Operation.pv(idx, row) for idx in range(len(row))) for row in res[1:])  # type: ignore[arg-type]
-        return result  # type: ignore[return-value]
+        result: ResultTable = [cast("list[str]", res[0])]
+        result.extend([Operation.pv(idx, row) for idx in range(len(row))] for row in res[1:])  # type: ignore[arg-type]
+        return result
 
     @staticmethod
     def _is_directive(line: str) -> bool:
@@ -643,6 +656,15 @@ class Operation:
             raise ValueError(msg) from None
         return None, ("FOREACH", var_name, args["placeholder"], delay)
 
+    @staticmethod
+    def _handle_directive_page(parts: list[str]) -> tuple[None, tuple[str, str, str, str]]:
+        args = Operation._parse_directive_args(parts[1:], ["variable"], defaults={"default_size": "", "max_size": ""})
+        var_name = args["variable"]
+        if not var_name.startswith("?"):
+            msg = f"@@page variable must start with '?', got {var_name!r}"
+            raise ValueError(msg)
+        return None, ("PAGE", var_name, args["default_size"], args["max_size"])
+
     def _process_directive(
         self, line: str, directive_handlers: dict[str, Callable[..., object]]
     ) -> tuple[str | None, tuple[str, ...] | None]:
@@ -665,6 +687,7 @@ class Operation:
           - ("REMOVE", [vars])
           - ("VALUES_INJECT", [vars])                # @@values ?var1 ?var2 ...
           - ("FOREACH", var_name, placeholder, delay)  # @@foreach ?var placeholder [wait=N]
+          - ("PAGE", var_name, default_size, max_size)  # @@page ?var [default_size=N] [max_size=M]
         """
         for p, v in params.items():
             text = text.replace(f"[[{p}]]", str(v))
@@ -679,6 +702,7 @@ class Operation:
             "remove": lambda parts: (None, ("REMOVE", parts[1:])),
             "values": self._handle_directive_values,
             "foreach": self._handle_directive_foreach,
+            "page": self._handle_directive_page,
         }
 
         def flush_query() -> None:
@@ -953,9 +977,7 @@ class Operation:
                 out.append(dict(left_row))
         return out
 
-    def _apply_custom_postprocess_params(
-        self, table: list[list[str] | list[tuple[object, str]] | tuple[str, ...]], q_string: dict[str, list[str]]
-    ) -> list[list[str] | list[tuple[object, str]] | tuple[str, ...]]:
+    def _apply_custom_postprocess_params(self, table: ResultTable, q_string: dict[str, list[str]]) -> ResultTable:
         for param_name, param_conf in self.custom_params.items():
             if param_conf["phase"] != "postprocess":
                 continue
@@ -971,7 +993,9 @@ class Operation:
         return self._default_cache_ttl
 
     def _build_cache_key(self, q_string: dict[str, list[str]]) -> str:
-        presentation_params = {"page", "page_size", "format", "json"}
+        presentation_params = {"format", "json"}
+        if "@@page" not in self.i["sparql"]:
+            presentation_params |= {"page", "page_size"}
         data_params = sorted((name, values) for name, values in q_string.items() if name not in presentation_params)
         if data_params:
             query_string = "&".join(f"{name}={value}" for name, values in data_params for value in values)
@@ -1004,13 +1028,15 @@ class Operation:
 
     def _paginate_and_format(
         self,
-        table: list[list[str] | list[tuple[object, str]] | tuple[str, ...]],
+        table: ResultTable,
         q_string: dict[str, list[str]],
         content_type: str,
     ) -> tuple[int, str, str]:
-        if self._has_custom_converter(q_string):
+        has_page_directive = "@@page" in self.i["sparql"]
+        if self._has_custom_converter(q_string) and not has_page_directive:
             self.pagination_info = None
-        else:
+        # A @@page step already paginated upstream; do not paginate again here.
+        elif not has_page_directive:
             page_params = self._extract_pagination_params(q_string)
             if page_params is not None:
                 page, page_size = page_params
@@ -1032,6 +1058,34 @@ class Operation:
 
         return 200, body, ctype
 
+    def _cache_value(self, rows: ResultTable) -> CachedResult:
+        pagination: CachedPagination | None = None
+        if "@@page" in self.i["sparql"] and self.pagination_info is not None:
+            pagination = {
+                "page": self.pagination_info.page,
+                "page_size": self.pagination_info.page_size,
+                "total_items": self.pagination_info.total_items,
+            }
+        return {"rows": rows, "pagination": pagination}
+
+    def _format_cached_result(
+        self,
+        cached_value: object,
+        q_string: dict[str, list[str]],
+        content_type: str,
+    ) -> tuple[int, str, str]:
+        entry = cast("CachedResult", cached_value)
+        if entry["pagination"] is not None:
+            pagination = entry["pagination"]
+            self.pagination_info = build_pagination_info(
+                self.op_url,
+                q_string,
+                pagination["page"],
+                pagination["page_size"],
+                pagination["total_items"],
+            )
+        return self._paginate_and_format(entry["rows"], q_string, content_type)
+
     def _finalize_result(
         self, csv_rows: list[list[str]] | list[list[str | object]], content_type: str
     ) -> tuple[int, str, str]:
@@ -1043,10 +1097,10 @@ class Operation:
         res = self.handling_params(q_string, res)
         res = self.remove_types(res)
         if self.custom_params:
-            res = self._apply_custom_postprocess_params(res, q_string)  # type: ignore[arg-type]
+            res = self._apply_custom_postprocess_params(res, q_string)
         if self._cache is not None and "cache_disable" not in self.i:
-            self._cache.set(self._build_cache_key(q_string), res, expire=self._cache_ttl)
-        return self._paginate_and_format(res, q_string, content_type)  # type: ignore[arg-type]
+            self._cache.set(self._build_cache_key(q_string), self._cache_value(res), expire=self._cache_ttl)
+        return self._paginate_and_format(res, q_string, content_type)
 
     @staticmethod
     def _header_from_field_type(op_item: dict[str, str], acc: list[dict[str, object]]) -> list[str]:
@@ -1221,6 +1275,43 @@ class Operation:
             msg = "Multiple QUERY steps without an explicit @@join directive"
             raise ValueError(msg)
 
+    def _exec_page_step(self, var: str, default_size: str, max_size: str, state: dict[str, object]) -> None:
+        q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
+
+        if "page_size" in q_string and "page_size" not in self.disabled_params:
+            page_size = int(q_string["page_size"][0])
+        elif default_size:
+            page_size = int(default_size)
+        else:
+            return
+        if page_size < 1:
+            msg = f"page_size must be >= 1, got {page_size}"
+            raise ValueError(msg)
+        if max_size:
+            page_size = min(page_size, int(max_size))
+
+        page = 1
+        if "page" in q_string and "page" not in self.disabled_params:
+            page = int(q_string["page"][0])
+            if page < 1:
+                msg = f"page must be >= 1, got {page}"
+                raise ValueError(msg)
+
+        column = var.lstrip("?")
+        acc = state["acc"]
+        rows = [] if acc is None else cast("list[dict[str, object]]", acc)
+        distinct = list(dict.fromkeys(row[column] for row in rows if row.get(column)))
+        total_items = len(distinct)
+        total_pages = ceil(total_items / page_size)
+        if total_items and page > total_pages:
+            msg = f"page {page} exceeds total pages {total_pages}"
+            raise ValueError(msg)
+
+        start = (page - 1) * page_size
+        keep = set(distinct[start : start + page_size])
+        state["acc"] = [row for row in rows if row.get(column) in keep]
+        self.pagination_info = build_pagination_info(self.op_url, q_string, page, page_size, total_items)
+
     def _exec_multi_source(self, par_dict: dict[str, object], content_type: str) -> tuple[int, str, str]:
         """Execute a multi-source query pipeline with @@ directives."""
         steps = self._parse_steps(self.i["sparql"], self.tp, par_dict)
@@ -1245,6 +1336,8 @@ class Operation:
                 state["pending_values_vars"] = st[1]
             elif tag == "FOREACH":
                 state["pending_foreach"] = (st[1], st[2], st[3])
+            elif tag == "PAGE":
+                self._exec_page_step(st[1], st[2], st[3], state)
             else:
                 msg = f"Unknown step tag {tag}"
                 raise RuntimeError(msg)
@@ -1323,7 +1416,7 @@ class Operation:
             q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
             cached_table = self._cache.get(self._build_cache_key(q_string))
             if cached_table is not None:
-                return self._paginate_and_format(cached_table, q_string, content_type)  # type: ignore[arg-type]
+                return self._format_cached_result(cached_table, q_string, content_type)
 
         sparql_text = self.i["sparql"]
         resolved_text = sparql_text

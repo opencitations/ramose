@@ -981,15 +981,32 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 @@with source=meta
 PREFIX fabio: <http://purl.org/spar/fabio/>
 PREFIX dcterm: <http://purl.org/dc/terms/>
-PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
-PREFIX frbr: <http://purl.org/vocab/frbr/core#>
 PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX pro: <http://purl.org/spar/pro/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT ?local_identifier ?identifier_scheme ?identifier_value
-       ?title ?product_type
+SELECT DISTINCT ?local_identifier
+WHERE {
+  ?local_identifier a fabio:Expression .
+  [[filter]]
+}
+ORDER BY ?local_identifier
+
+@@page ?local_identifier default_size=10 max_size=100
+
+@@values ?local_identifier
+@@join ?local_identifier ?local_identifier type=left
+@@with source=meta
+PREFIX fabio: <http://purl.org/spar/fabio/>
+PREFIX dcterm: <http://purl.org/dc/terms/>
+PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
+PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+
+SELECT ?local_identifier ?title ?identifier_scheme ?identifier_value
+       ?product_type
        ?manifestation_type_class ?manifestation_type_label ?manifestation_type_label_lang
        ?manifestation_dates_type ?manifestation_dates_value
        ?manifestation_biblio_volume ?manifestation_biblio_issue
@@ -997,9 +1014,8 @@ SELECT ?local_identifier ?identifier_scheme ?identifier_value
        ?manifestation_biblio_in_name ?manifestation_biblio_in_local_identifier
        ?manifestation_biblio_in_identifier_scheme ?manifestation_biblio_in_identifier_value
 WHERE {
-  ?local_identifier a fabio:Expression ;
-          dcterm:title ?title .
-  [[filter]]
+  ?local_identifier a fabio:Expression .
+  OPTIONAL { ?local_identifier dcterm:title ?title . }
   OPTIONAL { ?local_identifier a ?manifestation_type_class . FILTER(?manifestation_type_class != fabio:Expression) }
   BIND(IF(!BOUND(?manifestation_type_class), "literature", IF(?manifestation_type_class IN (<http://purl.org/spar/fabio/DataFile>, <http://purl.org/spar/fabio/DataManagementPlan>), "research data", IF(?manifestation_type_class = <http://purl.org/spar/fabio/ComputerProgram>, "research software", "literature"))) AS ?product_type)
   BIND(IF(BOUND(?manifestation_type_class), LCASE(REPLACE(REPLACE(STR(?manifestation_type_class), "^.*[/#]", ""), "([a-z])([A-Z])", "$1 $2")), "") AS ?manifestation_type_label)
@@ -1049,7 +1065,6 @@ WHERE {
     }
   }
 }
-ORDER BY STR(?title) STR(?local_identifier)
 
 @@values ?local_identifier
 @@join ?local_identifier ?local_identifier type=left

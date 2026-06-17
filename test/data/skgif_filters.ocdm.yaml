@@ -10,7 +10,9 @@ identifiers.scheme:
 contributions.by.local_identifier:
   filter: "?local_identifier pro:isDocumentContextFor [ pro:isHeldBy <{{value}}> ] ."
 cf.search.title:
-  filter: 'FILTER(CONTAINS(LCASE(?title), LCASE("{{value}}")))'
+  filter: |-
+    ?local_identifier dcterm:title ?title .
+    FILTER(CONTAINS(LCASE(?title), LCASE("{{value}}")))
 contributions.by.family_name:
   filter: |-
     ?local_identifier pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .

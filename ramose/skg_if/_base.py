@@ -851,7 +851,7 @@ def to_skg_if(csv_str: str, request_url: str = "") -> str:
 
     parsed = urlsplit(request_url)
     params = parse_qs(parsed.query)
-    if "page_size" in params:
+    if "page_size" in params and "total_items" not in params:
         page_size = int(params["page_size"][0])
         page = int(params.get("page", ["1"])[0])
         total_pages = ceil(total_entities / page_size) if page_size > 0 else 0

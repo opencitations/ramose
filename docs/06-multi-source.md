@@ -145,6 +145,22 @@ Syntax: `@@remove <var>...`
 
 Takes one or more `?variable` names. Useful for cleaning up intermediate columns before the final output.
 
+### @@page
+
+Keep only one page of distinct values of a variable, so the steps that follow resolve only that page.
+
+Syntax: `@@page <variable> [default_size=<N>] [max_size=<M>]`
+
+```
+@@page ?id default_size=10 max_size=100
+```
+
+The page number and page size come from the request's `page` and `page_size` parameters, the same ones used by RAMOSE's built-in pagination. When `page_size` is absent the directive uses `default_size`; with neither set it does nothing and every row passes through. A `page_size` above `max_size` is capped at `max_size`.
+
+The directive counts the distinct values of `<variable>` in first-appearance order, so a preceding `ORDER BY` decides which values land on each page. It keeps the rows whose value belongs to the requested page and records the total count of distinct values, the current page, and the page size on the operation. The output converter reads these through the request URL to report the totals.
+
+One way to use it: place `@@page` after a cheap query that returns just the variable to paginate (and any sort key), and before the queries that resolve full per-item data. The page is fixed first, so the expensive resolution runs for one page instead of every match.
+
 ## Full example
 
 A query that fetches metadata from OpenCitations Meta and joins citation counts from the OpenCitations Index:

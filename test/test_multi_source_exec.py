@@ -7,12 +7,17 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from ramose import APIManager, Operation, OperationConfig
+from ramose.paging import build_pagination_info
+
+if TYPE_CHECKING:
+    from ramose.operation import ResultTable
 
 TESTS_DIR = str(Path(__file__).resolve().parent / "fixtures")
 
@@ -438,6 +443,27 @@ class TestParseSteps:
         with pytest.raises(ValueError, match="must start with '\\?'"):
             op._parse_steps(text, "http://ep/sparql", {})
 
+    def test_page_directive(self) -> None:
+        op = self._make_op()
+        text = "SELECT ?a WHERE { }\n@@page ?a default_size=10 max_size=100\nSELECT ?a ?b WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[1] == ("PAGE", "?a", "10", "100")
+
+    def test_page_directive_defaults_empty(self) -> None:
+        op = self._make_op()
+        steps = op._parse_steps("@@page ?a\nSELECT ?a WHERE { }", "http://ep/sparql", {})
+        assert steps[0] == ("PAGE", "?a", "", "")
+
+    def test_page_directive_without_question_mark_raises(self) -> None:
+        op = self._make_op()
+        with pytest.raises(ValueError, match="must start with '\\?'"):
+            op._parse_steps("@@page a default_size=5", "http://ep/sparql", {})
+
+    def test_page_directive_unknown_kwarg_raises(self) -> None:
+        op = self._make_op()
+        with pytest.raises(ValueError, match="Unexpected argument"):
+            op._parse_steps("@@page ?a bogus=1", "http://ep/sparql", {})
+
     # @@with: keyword and positional
 
     def test_with_keyword_syntax(self) -> None:
@@ -756,3 +782,179 @@ class TestRunSparqlDicts:
         op = self._make_op("get")
         with pytest.raises(RuntimeError, match="SPARQL request failed: refused"):
             op._run_sparql_dicts("http://ep/sparql", "SELECT ?x WHERE { }")
+
+
+class TestPageStep:
+    def _make_op(self, query: str = "") -> Operation:
+        return Operation(
+            "/api/test/val" + query,
+            r"/api/test/(.+)",
+            {"url": "/test/{id}", "id": "str(.+)", "sparql": "SELECT ?x WHERE { ?x ?y ?z }", "method": "get"},
+            OperationConfig(sparql_endpoint="http://default-endpoint/sparql"),
+        )
+
+    @staticmethod
+    def _acc(state: dict[str, object]) -> list[dict[str, str]]:
+        acc = state["acc"]
+        assert isinstance(acc, list)
+        return acc
+
+    def test_slices_to_requested_page(self) -> None:
+        op = self._make_op("?page=2&page_size=2")
+        state: dict[str, object] = {"acc": [{"id": v} for v in ["a", "b", "c", "d", "e"]]}
+        op._exec_page_step("?id", "10", "100", state)
+        assert [r["id"] for r in self._acc(state)] == ["c", "d"]
+        assert op.pagination_info is not None
+        assert (op.pagination_info.page, op.pagination_info.page_size, op.pagination_info.total_items) == (2, 2, 5)
+
+    def test_default_size_applied_when_page_size_omitted(self) -> None:
+        op = self._make_op()
+        state: dict[str, object] = {"acc": [{"id": str(i)} for i in range(25)]}
+        op._exec_page_step("?id", "10", "100", state)
+        assert len(self._acc(state)) == 10
+        assert op.pagination_info is not None
+        assert (op.pagination_info.page, op.pagination_info.page_size, op.pagination_info.total_items) == (1, 10, 25)
+
+    def test_max_size_caps_explicit_page_size(self) -> None:
+        op = self._make_op("?page_size=1000")
+        state: dict[str, object] = {"acc": [{"id": str(i)} for i in range(300)]}
+        op._exec_page_step("?id", "10", "100", state)
+        assert len(self._acc(state)) == 100
+        assert op.pagination_info is not None
+        assert op.pagination_info.page_size == 100
+
+    def test_no_default_and_no_page_size_is_noop(self) -> None:
+        op = self._make_op()
+        rows = [{"id": str(i)} for i in range(5)]
+        state: dict[str, object] = {"acc": list(rows)}
+        op._exec_page_step("?id", "", "", state)
+        assert self._acc(state) == rows
+        assert op.pagination_info is None
+
+    def test_counts_distinct_values_preserving_first_appearance(self) -> None:
+        op = self._make_op("?page=2&page_size=2")
+        acc = [
+            {"id": "a", "m": "1"},
+            {"id": "a", "m": "2"},
+            {"id": "b", "m": "1"},
+            {"id": "c", "m": "1"},
+            {"id": "c", "m": "2"},
+            {"id": "d", "m": "1"},
+        ]
+        state: dict[str, object] = {"acc": acc}
+        op._exec_page_step("?id", "10", "100", state)
+        assert [r["id"] for r in self._acc(state)] == ["c", "c", "d"]
+        assert op.pagination_info is not None
+        assert op.pagination_info.total_items == 4
+
+    def test_page_beyond_total_raises(self) -> None:
+        op = self._make_op("?page=99&page_size=2")
+        state: dict[str, object] = {"acc": [{"id": v} for v in ["a", "b", "c"]]}
+        with pytest.raises(ValueError, match="exceeds total pages"):
+            op._exec_page_step("?id", "10", "100", state)
+
+    def test_empty_accumulator_does_not_raise(self) -> None:
+        op = self._make_op("?page=1&page_size=10")
+        state: dict[str, object] = {"acc": []}
+        op._exec_page_step("?id", "10", "100", state)
+        assert self._acc(state) == []
+        assert op.pagination_info is not None
+        assert op.pagination_info.total_items == 0
+
+
+class TestCacheKeyPaging:
+    def _make_op(self, sparql: str) -> Operation:
+        return Operation(
+            "/api/test/val",
+            r"/api/test/(.+)",
+            {"url": "/test/{id}", "id": "str(.+)", "sparql": sparql, "method": "get"},
+            OperationConfig(sparql_endpoint="http://default-endpoint/sparql"),
+        )
+
+    def test_page_params_excluded_without_page_directive(self) -> None:
+        op = self._make_op("SELECT ?x WHERE { ?x ?y ?z }")
+        q = {"filter": ["a"], "page": ["2"], "page_size": ["5"]}
+        assert op._build_cache_key(q) == "http://default-endpoint/sparql:/api/test/val?filter=a"
+
+    def test_page_params_included_with_page_directive(self) -> None:
+        op = self._make_op("SELECT ?x WHERE { ?x ?y ?z }\n@@page ?x default_size=10")
+        q = {"filter": ["a"], "page": ["2"], "page_size": ["5"]}
+        key2 = op._build_cache_key(q)
+        key1 = op._build_cache_key({"filter": ["a"], "page": ["1"], "page_size": ["5"]})
+        assert key2 != key1
+        assert key2 == "http://default-endpoint/sparql:/api/test/val?filter=a&page=2&page_size=5"
+
+    def test_page_directive_cache_hit_restores_converter_request_url(self) -> None:
+        class FakeAddon:
+            @staticmethod
+            def to_url(_csv_str: str, request_url: str = "") -> str:
+                return request_url
+
+        q = {"page": ["2"], "page_size": ["2"]}
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?id WHERE { ?id ?p ?o }\n@@page ?id default_size=2",
+            "method": "get",
+            "default_format": "url",
+        }
+        config = OperationConfig(
+            sparql_endpoint="http://default-endpoint/sparql",
+            addon=FakeAddon,  # type: ignore[arg-type]
+            format_map={"url": "to_url"},
+            format_media_types={"url": "text/plain"},
+        )
+        first_op = Operation("/api/test/val?page=2&page_size=2", r"/api/test/(.+)", op_item, config)
+        expected_pagination = build_pagination_info(first_op.op_url, q, 2, 2, 5)
+        first_op.pagination_info = expected_pagination
+        cached_value = first_op._cache_value([["id"], ["c"], ["d"]])
+
+        cached_op = Operation("/api/test/val?page=2&page_size=2", r"/api/test/(.+)", op_item, config)
+        status, body, ctype = cached_op._format_cached_result(cached_value, q, "text/csv")
+
+        assert (status, body, ctype, cached_op.pagination_info) == (
+            200,
+            "/api/test/val?page=2&page_size=2&total_items=5",
+            "text/plain",
+            expected_pagination,
+        )
+
+
+class TestPaginateAndFormatPageDirective:
+    def _make_op(self, sparql: str, query: str) -> Operation:
+        return Operation(
+            "/api/test/val" + query,
+            r"/api/test/(.+)",
+            {"url": "/test/{id}", "id": "str(.+)", "sparql": sparql, "method": "get"},
+            OperationConfig(sparql_endpoint="http://default-endpoint/sparql"),
+        )
+
+    def test_page_directive_skips_builtin_row_slicer_on_default_format(self) -> None:
+        op = self._make_op("SELECT ?id ?m WHERE { ?id ?p ?m }\n@@page ?id default_size=10", "?page_size=2")
+        table: ResultTable = [
+            ["id", "m"],
+            ["a", "1"],
+            ["a", "2"],
+            ["b", "1"],
+            ["b", "2"],
+            ["c", "1"],
+            ["c", "2"],
+        ]
+        status, body, _ctype = op._paginate_and_format(table, {"page_size": ["2"]}, "text/csv")
+        assert status == 200
+        assert body.strip().splitlines()[1:] == ["a,1", "a,2", "b,1", "b,2", "c,1", "c,2"]
+
+    def test_builtin_row_slicer_still_applies_without_page_directive(self) -> None:
+        op = self._make_op("SELECT ?id ?m WHERE { ?id ?p ?m }", "?page_size=2")
+        table: ResultTable = [
+            ["id", "m"],
+            ["a", "1"],
+            ["a", "2"],
+            ["b", "1"],
+            ["b", "2"],
+            ["c", "1"],
+            ["c", "2"],
+        ]
+        status, body, _ctype = op._paginate_and_format(table, {"page_size": ["2"]}, "text/csv")
+        assert status == 200
+        assert body.strip().splitlines()[1:] == ["a,1", "a,2"]
