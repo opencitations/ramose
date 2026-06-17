@@ -226,7 +226,7 @@ class TestParseCustomParams:
 
 class TestCustomParamConfigs:
     def test_each_param_binds_to_its_own_config(self, tmp_path: Path) -> None:
-        (tmp_path / "a.yaml").write_text('identifiers.id:\n  slot_a: \'?x ex:a "{{value}}" .\'\n', encoding="utf-8")
+        (tmp_path / "a.yaml").write_text("identifiers.id:\n  slot_a: '?x ex:a \"{{value}}\" .'\n", encoding="utf-8")
         (tmp_path / "b.yaml").write_text("cf.cites:\n  slot_b: '?x ex:b <{{value}}> .'\n", encoding="utf-8")
         spec = tmp_path / "spec.hf"
         spec.write_text(

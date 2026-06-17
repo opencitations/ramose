@@ -134,9 +134,7 @@ def test_apply_filters_always_empty_skips_other_slots_when_first() -> None:
 
 
 def test_apply_filters_always_empty_still_rejects_unconfigured_filter() -> None:
-    expected = (
-        "The filter 'unknown' is not configured, configured filters are cf.cites, funding.local_identifier"
-    )
+    expected = "The filter 'unknown' is not configured, configured filters are cf.cites, funding.local_identifier"
     with pytest.raises(ValueError, match=f"^{escape(expected)}$"):
         apply_filters(CONFIG_ALWAYS_EMPTY, ["funding.local_identifier:123,unknown:x"])
 
@@ -159,7 +157,7 @@ def test_apply_filters_value_dispatch_rejects_invalid_value() -> None:
 def test_load_filters_config_reads_yaml(tmp_path: Path) -> None:
     config_file = tmp_path / "filters.yaml"
     config_file.write_text(
-        'identifiers.id:\n  constraints: \'?product ex:doi "{{value}}" .\'\n',
+        "identifiers.id:\n  constraints: '?product ex:doi \"{{value}}\" .'\n",
         encoding="utf-8",
     )
     assert load_filters_config(str(config_file)) == {"identifiers.id": {"constraints": '?product ex:doi "{{value}}" .'}}

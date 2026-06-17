@@ -202,8 +202,7 @@ class TestUnsupportedFilter:
 
     def test_unsupported_combined_with_federated_filter_skips_preamble(self, skgif_api_manager: APIManager) -> None:
         op = skgif_api_manager.get_op(
-            "/skgif/v1/products?"
-            "filter=cf.cites:https://w3id.org/oc/meta/br/06035,funding.local_identifier:grant"
+            "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035,funding.local_identifier:grant"
         )
         assert isinstance(op, Operation)
         params = op._prepare_params()
