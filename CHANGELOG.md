@@ -1,3 +1,11 @@
+# [2.6.0](https://github.com/opencitations/ramose/compare/v2.5.4...v2.6.0) (2026-06-17)
+
+
+### Features
+
+* **multi-source:** add page directive ([e58064f](https://github.com/opencitations/ramose/commit/e58064ffb9b821e9f5b1fa9b9614df720489c0f6))
+* support config-driven custom filters ([9c1c1c1](https://github.com/opencitations/ramose/commit/9c1c1c16267466f0b62a199a109791599c535b57))
+
 ## [2.5.4](https://github.com/opencitations/ramose/compare/v2.5.3...v2.5.4) (2026-06-15)
 
 
