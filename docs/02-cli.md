@@ -9,12 +9,12 @@ SPDX-License-Identifier: CC-BY-4.0
 ## Arguments
 
 ```sh
-python -m ramose -s <spec.hf> [options]
+python -m ramose -s <spec.hf|spec.yaml> [options]
 ```
 
 | Argument | Description |
 |----------|-------------|
-| `-s`, `--spec` | Spec file(s) in hash format. Required. Accepts multiple files. |
+| `-s`, `--spec` | RAMOSE spec file(s). Required. Accepts `.hf`, `.yaml`, and `.yml`; accepts multiple files. |
 | `-c`, `--call` | API call URL, e.g. `/v1/metadata/doi:10.1162/qss_a_00292`. |
 | `-m`, `--method` | HTTP method for the call. Default: `get`. |
 | `-f`, `--format` | Response format: `application/json` (default) or `text/csv`. |
@@ -98,7 +98,7 @@ curl -H "Accept: text/csv" "http://localhost:8080/v1/metadata/doi:10.1162/qss_a_
 Load multiple APIs at once:
 
 ```sh
-python -m ramose -s meta_v1.hf index_v2.hf -w 127.0.0.1:8080
+python -m ramose -s meta_v1.hf index_v2.yaml -w 127.0.0.1:8080
 ```
 
 Apply custom CSS to the documentation:

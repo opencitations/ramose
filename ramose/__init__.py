@@ -10,7 +10,7 @@
 from ramose.api_manager import APIManager
 from ramose.datatype import DataType
 from ramose.documentation import DocumentationHandler
-from ramose.hash_format import HashFormatHandler
+from ramose.hash_format import HashFormatHandler, YAMLSpecHandler, read_spec_file
 from ramose.html_documentation import HTMLDocumentationHandler
 from ramose.openapi_documentation import OpenAPIDocumentationHandler
 from ramose.operation import HttpError, Operation, OperationConfig
@@ -25,4 +25,6 @@ __all__ = [
     "OpenAPIDocumentationHandler",
     "Operation",
     "OperationConfig",
+    "YAMLSpecHandler",
+    "read_spec_file",
 ]

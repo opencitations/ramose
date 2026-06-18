@@ -44,7 +44,7 @@ def _parse_args() -> Namespace:  # pragma: no cover
         "--spec",
         dest="spec",
         nargs="+",
-        help="The file(s) in hash format containing the specification of the API(s).",
+        help="The RAMOSE spec file(s) containing the API definition(s): .hf, .yaml, or .yml.",
     )
     arg_parser.add_argument(
         "-m",

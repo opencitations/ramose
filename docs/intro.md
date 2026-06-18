@@ -24,7 +24,8 @@ pip install ramose[sparql-anything]
 
 ## Create a spec file
 
-Save this as `meta_v1.hf`:
+Save this as `meta_v1.hf`. RAMOSE also accepts the same spec as `.yaml` or `.yml`; see the spec reference for the
+YAML mirror syntax.
 
 ```
 #url /v1
@@ -93,7 +94,7 @@ Open `http://localhost:8080/v1` for auto-generated documentation, or query `http
 
 ## What's next
 
-- [Spec file format](01-spec-file.md) for the full `.hf` reference
+- [Spec file format](01-spec-file.md) for HF and YAML source files
 - [CLI](02-cli.md) for all command-line options
 - [Python API](03-python-api.md) for programmatic usage
 - [Query parameters](04-parameters.md) for filtering and sorting results

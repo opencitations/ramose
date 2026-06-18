@@ -30,7 +30,7 @@ Functional comparison of the generators. `✓` supported, `✗` not supported, `
 | Input | SPARQL | SPARQL | SPARQL | OWL ontology | SPARQL, templates | JSON config | SPARQL, model | RDF spec | GraphQL-LD, SPARQL |
 | Output | Any | endpoint-dependent | XML, JSON, CSV, RDF | JSON | JSON | JSON | JSON | Any | HTML, JSON-LD, RDF |
 | Operations | CRUD | GET, POST | GET, POST | CRUD | GET | CRUD, PATCH | GET | GET | GET |
-| Configuration format | .hf | .rq, YAML | REST API | YAML | .sparql, .vm | JSON | Pydantic model | RDF/Turtle | YAML |
+| Configuration format | .hf/.yaml | .rq, YAML | REST API | YAML | .sparql, .vm | JSON | Pydantic model | RDF/Turtle | YAML |
 | Configurable queries | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Authentication | Bearer | ✗ | Basic | Bearer | Basic | Basic, Bearer | ✗ | ✗ | ✗ |
 | Resources | S, M, N | S, M, N | S, M | S, M, N | S, M, N | S, M, N | S, M, N | S, M, N | S, M, N |

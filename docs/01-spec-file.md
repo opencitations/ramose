@@ -6,9 +6,9 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # Spec file format
 
-A spec file (`.hf`) defines your API: metadata, operations, SPARQL queries, and processing pipelines. RAMOSE parses it to route requests and generate documentation.
+A spec file (`.hf`, `.yaml`, or `.yml`) defines your API: metadata, operations, SPARQL queries, and processing pipelines. RAMOSE parses it to route requests and generate documentation.
 
-The file contains sections separated by blank lines. The first section defines the API. Each subsequent section defines an operation.
+An HF file contains sections separated by blank lines. The first section defines the API. Each subsequent section defines an operation.
 
 ## API section
 
@@ -108,6 +108,50 @@ SELECT DISTINCT ?id ?title ?author ?pub_date ... WHERE {
 | `#cache_duration` | no | Cache TTL in seconds for this operation. Overrides the global `--cache-ttl` value. |
 | `#cache_disable` | no | Set to any value (e.g., `true`) to disable caching for this operation. |
 | `#auth` | no | Set to `required` to require a bearer token for this operation. Overrides the API-level `#auth`. |
+
+## YAML format
+
+YAML spec files are an alternative source format for the same RAMOSE API definition. They are not the OpenAPI YAML
+export. The top-level YAML value is a list: the first item is the API section, and each following item is an
+operation. Field names match HF names without the leading `#`.
+
+```yaml
+- url: /v1
+  type: api
+  base: https://api.opencitations.net/meta
+  title: OpenCitations Meta REST API
+  description: REST API for bibliographic metadata from OpenCitations Meta
+  version: "1.1.1"
+  license: ISC
+  contacts: contact@opencitations.net
+  endpoint: https://opencitations.net/meta/sparql
+  method: post
+
+- url: /metadata/{ids}
+  type: operation
+  ids: 'str((doi|issn|isbn|omid|openalex|pmid|pmcid):.+)'
+  preprocess: generate_id_search(ids)
+  method: get
+  description: |
+    Returns bibliographic metadata for the given identifiers.
+  call: /metadata/doi:10.1162/qss_a_00292
+  field_type: str(id) str(title) datetime(pub_date)
+  output_json: |
+    [
+      {
+        "id": "doi:10.1162/qss_a_00292",
+        "title": "OpenCitations Meta",
+        "pub_date": "2024"
+      }
+    ]
+  sparql: |
+    SELECT DISTINCT ?id ?title ?pub_date WHERE {
+      [[ids]]
+    }
+```
+
+All YAML field values are read as strings. Quote values that YAML would otherwise parse as numbers, booleans, lists, or
+maps. Use block scalars (`|`) for multi-line fields such as `description`, `output_json`, and `sparql`.
 
 ## Supported types
 

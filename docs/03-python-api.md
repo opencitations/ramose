@@ -8,12 +8,13 @@ SPDX-License-Identifier: CC-BY-4.0
 
 ## APIManager
 
-`APIManager` loads one or more spec files and routes API calls to the matching operation.
+`APIManager` loads one or more RAMOSE spec files and routes API calls to the matching operation. Spec files can use
+`.hf`, `.yaml`, or `.yml`.
 
 ```python
 from ramose import APIManager
 
-am = APIManager(["meta_v1.hf", "index_v2.hf"])
+am = APIManager(["meta_v1.hf", "index_v2.yaml"])
 ```
 
 To override the SPARQL endpoint defined in the spec files (useful for staging or testing):

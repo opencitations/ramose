@@ -72,6 +72,49 @@ SELECT ?title ?pub_date ?venue ?type WHERE {
 }
 ```
 
+Spec files can also use YAML:
+
+```yaml
+- url: /v1
+  type: api
+  base: https://api.opencitations.net/meta
+  title: OpenCitations Meta REST API
+  description: REST API for bibliographic metadata from OpenCitations Meta
+  version: "1.0.0"
+  license: ISC
+  contacts: "[contact@opencitations.net](mailto:contact@opencitations.net)"
+  endpoint: https://opencitations.net/meta/sparql
+  method: post
+
+- url: /metadata/{doi}
+  type: operation
+  doi: 'str(10\..+)'
+  method: get
+  description: Returns bibliographic metadata for the given DOI.
+  call: /metadata/10.1162/qss_a_00292
+  field_type: str(title) datetime(pub_date) str(venue) str(type)
+  sparql: |
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    PREFIX datacite: <http://purl.org/spar/datacite/>
+    PREFIX dcterm: <http://purl.org/dc/terms/>
+    PREFIX fabio: <http://purl.org/spar/fabio/>
+    PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+    PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+    PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
+    SELECT ?title ?pub_date ?venue ?type WHERE {
+      ?identifier literal:hasLiteralValue "[[doi]]"^^xsd:string ;
+        datacite:usesIdentifierScheme datacite:doi ;
+        ^datacite:hasIdentifier ?res .
+      OPTIONAL { ?res dcterm:title ?title }
+      OPTIONAL { ?res prism:publicationDate ?pub_date }
+      OPTIONAL {
+        ?res frbr:partOf+ ?journal .
+        ?journal a fabio:Journal ; dcterm:title ?venue
+      }
+      OPTIONAL { ?res a ?type . FILTER(?type != fabio:Expression) }
+    }
+```
+
 Run locally:
 
 ```sh

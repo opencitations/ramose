@@ -21,7 +21,7 @@ from urllib.parse import urlsplit
 from ramose._constants import FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME
 from ramose.cache import ResultCache
 from ramose.filters import load_filters_config
-from ramose.hash_format import HashFormatHandler, parse_auth, parse_custom_params, parse_disable_params
+from ramose.hash_format import parse_auth, parse_custom_params, parse_disable_params, read_spec_file
 from ramose.operation import Operation, OperationConfig
 
 if TYPE_CHECKING:
@@ -121,9 +121,9 @@ class APIManager:
         cache_ttl: int = 86400,
     ) -> None:
         """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
-        defined according to the Hash Format and following a particular structure, and stores all the operations
-        defined within a dictionary. Optionally, an endpoint_override parameter can be provided to override the
-        SPARQL endpoint defined in the configuration files (useful for staging/production environments).
+        defined according to the Hash Format or YAML mirror format, and stores all the operations defined within a
+        dictionary. Optionally, an endpoint_override parameter can be provided to override the SPARQL endpoint defined
+        in the configuration files (useful for staging/production environments).
         The structure of each item in the dictionary of the operations is defined as follows:
 
         {
@@ -137,8 +137,8 @@ class APIManager:
 
         In particular, each key in the dictionary identifies the full URL of a particular API operation, and it is
         used so as to understand with operation should be called once an API call is done. The object associated
-        as value of this key is the transformation of the related operation defined in the input Hash Format file
-        into a dictionary.
+        as value of this key is the transformation of the related operation defined in the input spec file into a
+        dictionary.
 
         In addition, it also defines additional structure, such as the functions to be used for interpreting the
         values returned by a SPARQL query, some operations that can be used for filtering the results, and the
@@ -152,7 +152,7 @@ class APIManager:
         self.all_conf: OrderedDict[str, APIConfig] = OrderedDict()
         self.base_url: list[str] = []
         for conf_file in conf_files:
-            conf_json = HashFormatHandler().read(conf_file)
+            conf_json = read_spec_file(conf_file)
             if not conf_json:
                 continue
             api_conf = APIManager._process_api_metadata(conf_json, conf_file, endpoint_override)

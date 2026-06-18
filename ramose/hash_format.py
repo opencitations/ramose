@@ -7,11 +7,15 @@
 #
 # SPDX-License-Identifier: ISC
 
+from collections.abc import Mapping
 from pathlib import Path
 from re import DOTALL, search
 
+import yaml
+
 BUILTIN_PARAMS = frozenset({"require", "filter", "sort", "format", "json", "page", "page_size"})
 CUSTOM_PARAM_PHASES = frozenset({"preprocess", "postprocess"})
+YAML_SPEC_SUFFIXES = frozenset({".yaml", ".yml"})
 
 
 def parse_disable_params(raw: str) -> set[str]:
@@ -113,3 +117,41 @@ class HashFormatHandler:
                 item[key] = item[key].rstrip()
 
         return result
+
+
+class YAMLSpecHandler:
+    def read(self, file_path: str) -> list[dict[str, str]]:
+        raw_data: object = yaml.safe_load(Path(file_path).read_text(encoding="utf-8"))
+        if raw_data is None:
+            return []
+        if not isinstance(raw_data, list):
+            msg = "YAML spec must be a list of sections"
+            raise TypeError(msg)
+
+        result: list[dict[str, str]] = []
+        for section_number, section in enumerate(raw_data, 1):
+            result.append(self._normalize_section(section_number, section))
+        return result
+
+    @staticmethod
+    def _normalize_section(section_number: int, section: object) -> dict[str, str]:
+        if not isinstance(section, Mapping):
+            msg = f"YAML spec section {section_number} must be a mapping"
+            raise TypeError(msg)
+
+        result: dict[str, str] = {}
+        for key, value in section.items():
+            if not isinstance(key, str):
+                msg = f"YAML spec section {section_number} has a non-string key: {key!r}"
+                raise TypeError(msg)
+            if not isinstance(value, str):
+                msg = f"YAML spec field '{key}' in section {section_number} must be a string"
+                raise TypeError(msg)
+            result[key] = value.rstrip()
+        return result
+
+
+def read_spec_file(file_path: str) -> list[dict[str, str]]:
+    if Path(file_path).suffix.lower() in YAML_SPEC_SUFFIXES:
+        return YAMLSpecHandler().read(file_path)
+    return HashFormatHandler().read(file_path)
