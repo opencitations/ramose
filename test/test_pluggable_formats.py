@@ -127,6 +127,35 @@ class TestDefaultFormat:
         assert "<xml>" in result
         assert "arcangelo" in result
 
+    def test_converter_receives_public_request_url(self) -> None:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?name WHERE { }",
+            "method": "get",
+            "field_type": "str(name)",
+            "default_format": "url",
+        }
+
+        class FakeAddon:
+            @staticmethod
+            def to_url(_csv_str: str, request_url: str = "") -> str:
+                return request_url
+
+        op = Operation(
+            "/api/test/hello?page=2",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(
+                sparql_endpoint="http://unused/sparql",
+                addon=FakeAddon,  # type: ignore[arg-type]
+                format_map={"url": "to_url"},
+                public_base_url="https://example.org/base",
+            ),
+        )
+        result, _ = op.conv("name\narcangelo\n", {})
+        assert result == "https://example.org/base/api/test/hello?page=2"
+
     def test_default_format_json(self) -> None:
         op_item = {
             "url": "/test/{id}",

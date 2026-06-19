@@ -239,7 +239,7 @@ def to_xml(csv_string, request_url=""):
     return xml_output
 ```
 
-`request_url` is the full request path with query string. When `page` and `page_size` are present, the URL includes them as-is (e.g., `/products?page=1&page_size=10`).
+`request_url` is the absolute request URL, built from the API's `#base` and the request path with its query string. When `page` and `page_size` are present, the URL includes them as-is (e.g., `https://example.org/products?page=1&page_size=10`).
 
 Custom formats can change the number of entities in the output, for example by collapsing multiple CSV rows into a single object. Because of this, RAMOSE cannot determine the correct total item count or page boundaries in advance. When a custom format is configured, RAMOSE passes the full result set to the converter without slicing. The converter is responsible for counting entities, validating page bounds, slicing to the requested page, and embedding pagination metadata in the output.
 

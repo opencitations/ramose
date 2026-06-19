@@ -27,18 +27,18 @@
         }
     ],
     "meta": {
-        "local_identifier": "/skg-if-orkg/v1/products/http://orkg.org/orkg/resource/R1637585?page=1&page_size=1",
+        "local_identifier": "https://w3id.org/skg-if/sandbox/orkg/skg-if-orkg/v1/products/http://orkg.org/orkg/resource/R1637585?page=1&page_size=1",
         "entity_type": "search_result_page",
         "part_of": {
-            "local_identifier": "/skg-if-orkg/v1/products/http://orkg.org/orkg/resource/R1637585",
+            "local_identifier": "https://w3id.org/skg-if/sandbox/orkg/skg-if-orkg/v1/products/http://orkg.org/orkg/resource/R1637585",
             "entity_type": "search_result",
             "total_items": 1,
             "first_page": {
-                "local_identifier": "/skg-if-orkg/v1/products/http://orkg.org/orkg/resource/R1637585?page=1&page_size=1",
+                "local_identifier": "https://w3id.org/skg-if/sandbox/orkg/skg-if-orkg/v1/products/http://orkg.org/orkg/resource/R1637585?page=1&page_size=1",
                 "entity_type": "search_result_page"
             },
             "last_page": {
-                "local_identifier": "/skg-if-orkg/v1/products/http://orkg.org/orkg/resource/R1637585?page=1&page_size=1",
+                "local_identifier": "https://w3id.org/skg-if/sandbox/orkg/skg-if-orkg/v1/products/http://orkg.org/orkg/resource/R1637585?page=1&page_size=1",
                 "entity_type": "search_result_page"
             }
         }

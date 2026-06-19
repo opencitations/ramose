@@ -285,6 +285,7 @@ class APIManager:
                 cache=self._cache,
                 default_cache_ttl=self._cache_ttl,
                 custom_param_configs=self._resolve_custom_param_configs(conf, custom_params_map),
+                public_base_url=conf["website"],
             )
             return Operation(op_complete_url, op, op_conf, config)
 

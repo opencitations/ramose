@@ -15,6 +15,12 @@ from ramose.hash_format import BUILTIN_PARAMS
 with (Path(__file__).parent / "data" / "expected_search_products.json").open(encoding="utf8") as expected_search_file:
     EXPECTED_SEARCH: dict[str, list[dict]] = json.load(expected_search_file)
 
+SKGIF_PUBLIC_BASE_URL = "https://w3id.org/skg-if/sandbox/opencitations"
+
+
+def _meta_url(path: str) -> str:
+    return f"{SKGIF_PUBLIC_BASE_URL}{path}"
+
 
 def _exec(skgif_api_manager: APIManager, url: str) -> list[dict]:
     sep = "&" if "?" in url else "?"
@@ -426,18 +432,24 @@ class TestSkgifEnvelope:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:OpenCitations")
         assert result["@context"] == SKGIF_CONTEXT
         assert result["meta"] == {
-            "local_identifier": "/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=10",
+            "local_identifier": _meta_url(
+                "/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=10"
+            ),
             "entity_type": "search_result_page",
             "part_of": {
-                "local_identifier": "/skgif/v1/products?filter=cf.search.title:OpenCitations",
+                "local_identifier": _meta_url("/skgif/v1/products?filter=cf.search.title:OpenCitations"),
                 "entity_type": "search_result",
                 "total_items": 7,
                 "first_page": {
-                    "local_identifier": "/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=10",
+                    "local_identifier": _meta_url(
+                        "/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=10"
+                    ),
                     "entity_type": "search_result_page",
                 },
                 "last_page": {
-                    "local_identifier": "/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=10",
+                    "local_identifier": _meta_url(
+                        "/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=10"
+                    ),
                     "entity_type": "search_result_page",
                 },
             },
@@ -448,22 +460,22 @@ class TestSkgifEnvelope:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?page_size=10")
         meta = result["meta"]
         assert meta["entity_type"] == "search_result_page"
-        assert meta["local_identifier"] == "/skgif/v1/products?page=1&page_size=10"
+        assert meta["local_identifier"] == _meta_url("/skgif/v1/products?page=1&page_size=10")
         assert meta["next_page"] == {
-            "local_identifier": "/skgif/v1/products?page=2&page_size=10",
+            "local_identifier": _meta_url("/skgif/v1/products?page=2&page_size=10"),
             "entity_type": "search_result_page",
         }
         assert "prev_page" not in meta
         assert meta["part_of"] == {
-            "local_identifier": "/skgif/v1/products",
+            "local_identifier": _meta_url("/skgif/v1/products"),
             "entity_type": "search_result",
             "total_items": TOTAL_PRODUCTS,
             "first_page": {
-                "local_identifier": "/skgif/v1/products?page=1&page_size=10",
+                "local_identifier": _meta_url("/skgif/v1/products?page=1&page_size=10"),
                 "entity_type": "search_result_page",
             },
             "last_page": {
-                "local_identifier": f"/skgif/v1/products?page={-(-TOTAL_PRODUCTS // 10)}&page_size=10",
+                "local_identifier": _meta_url(f"/skgif/v1/products?page={-(-TOTAL_PRODUCTS // 10)}&page_size=10"),
                 "entity_type": "search_result_page",
             },
         }
@@ -472,9 +484,9 @@ class TestSkgifEnvelope:
     def test_envelope_middle_page(self, skgif_api_manager: APIManager) -> None:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?page=2&page_size=10")
         meta = result["meta"]
-        assert meta["local_identifier"] == "/skgif/v1/products?page=2&page_size=10"
-        assert meta["next_page"]["local_identifier"] == "/skgif/v1/products?page=3&page_size=10"
-        assert meta["prev_page"]["local_identifier"] == "/skgif/v1/products?page=1&page_size=10"
+        assert meta["local_identifier"] == _meta_url("/skgif/v1/products?page=2&page_size=10")
+        assert meta["next_page"]["local_identifier"] == _meta_url("/skgif/v1/products?page=3&page_size=10")
+        assert meta["prev_page"]["local_identifier"] == _meta_url("/skgif/v1/products?page=1&page_size=10")
         assert len(result["@graph"]) == 10
 
     def test_envelope_last_page(self, skgif_api_manager: APIManager) -> None:
@@ -482,7 +494,9 @@ class TestSkgifEnvelope:
         result = _envelope(skgif_api_manager, f"/skgif/v1/products?page={last_page}&page_size=10")
         meta = result["meta"]
         assert "next_page" not in meta
-        assert meta["prev_page"]["local_identifier"] == f"/skgif/v1/products?page={last_page - 1}&page_size=10"
+        assert meta["prev_page"]["local_identifier"] == _meta_url(
+            f"/skgif/v1/products?page={last_page - 1}&page_size=10"
+        )
         assert meta["part_of"]["total_items"] == TOTAL_PRODUCTS
 
     def test_envelope_with_filter_and_pagination(self, skgif_api_manager: APIManager) -> None:
@@ -491,8 +505,10 @@ class TestSkgifEnvelope:
             "/skgif/v1/products?filter=identifiers.scheme:isbn&page=1&page_size=5",
         )
         meta = result["meta"]
-        assert meta["local_identifier"] == "/skgif/v1/products?filter=identifiers.scheme:isbn&page=1&page_size=5"
-        assert meta["part_of"]["local_identifier"] == "/skgif/v1/products?filter=identifiers.scheme:isbn"
+        assert meta["local_identifier"] == _meta_url(
+            "/skgif/v1/products?filter=identifiers.scheme:isbn&page=1&page_size=5"
+        )
+        assert meta["part_of"]["local_identifier"] == _meta_url("/skgif/v1/products?filter=identifiers.scheme:isbn")
         assert len(result["@graph"]) == 5
 
     def test_envelope_page_beyond_total_returns_400(self, skgif_api_manager: APIManager) -> None:
@@ -520,22 +536,22 @@ class TestSkgifEnvelope:
         assert len(result["@graph"]) == 10
         meta = result["meta"]
         assert meta == {
-            "local_identifier": "/skgif/v1/products?page=1&page_size=10",
+            "local_identifier": _meta_url("/skgif/v1/products?page=1&page_size=10"),
             "entity_type": "search_result_page",
             "next_page": {
-                "local_identifier": "/skgif/v1/products?page=2&page_size=10",
+                "local_identifier": _meta_url("/skgif/v1/products?page=2&page_size=10"),
                 "entity_type": "search_result_page",
             },
             "part_of": {
-                "local_identifier": "/skgif/v1/products",
+                "local_identifier": _meta_url("/skgif/v1/products"),
                 "entity_type": "search_result",
                 "total_items": TOTAL_PRODUCTS,
                 "first_page": {
-                    "local_identifier": "/skgif/v1/products?page=1&page_size=10",
+                    "local_identifier": _meta_url("/skgif/v1/products?page=1&page_size=10"),
                     "entity_type": "search_result_page",
                 },
                 "last_page": {
-                    "local_identifier": "/skgif/v1/products?page=135&page_size=10",
+                    "local_identifier": _meta_url("/skgif/v1/products?page=135&page_size=10"),
                     "entity_type": "search_result_page",
                 },
             },
@@ -558,8 +574,8 @@ class TestSkgifEnvelope:
         assert len(result["@graph"]) == 3
         meta = result["meta"]
         assert meta["part_of"]["total_items"] == 7
-        prev_id = "/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=3"
-        next_id = "/skgif/v1/products?filter=cf.search.title:OpenCitations&page=3&page_size=3"
+        prev_id = _meta_url("/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=3")
+        next_id = _meta_url("/skgif/v1/products?filter=cf.search.title:OpenCitations&page=3&page_size=3")
         assert meta["prev_page"]["local_identifier"] == prev_id
         assert meta["next_page"]["local_identifier"] == next_id
 
@@ -567,7 +583,7 @@ class TestSkgifEnvelope:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?page_size=100000")
         assert len(result["@graph"]) == 100
         meta = result["meta"]
-        assert meta["local_identifier"] == "/skgif/v1/products?page=1&page_size=100"
+        assert meta["local_identifier"] == _meta_url("/skgif/v1/products?page=1&page_size=100")
         assert meta["part_of"]["total_items"] == TOTAL_PRODUCTS
 
     def test_empty_result_set_is_paginated_with_zero_total(self, skgif_api_manager: APIManager) -> None:
@@ -575,20 +591,22 @@ class TestSkgifEnvelope:
         assert result["@graph"] == []
         meta = result["meta"]
         assert meta == {
-            "local_identifier": "/skgif/v1/products?filter=cf.search.title:xyznonexistent999&page=1&page_size=10",
+            "local_identifier": _meta_url(
+                "/skgif/v1/products?filter=cf.search.title:xyznonexistent999&page=1&page_size=10"
+            ),
             "entity_type": "search_result_page",
             "part_of": {
-                "local_identifier": "/skgif/v1/products?filter=cf.search.title:xyznonexistent999",
+                "local_identifier": _meta_url("/skgif/v1/products?filter=cf.search.title:xyznonexistent999"),
                 "entity_type": "search_result",
                 "total_items": 0,
                 "first_page": {
-                    "local_identifier": (
+                    "local_identifier": _meta_url(
                         "/skgif/v1/products?filter=cf.search.title:xyznonexistent999&page=1&page_size=10"
                     ),
                     "entity_type": "search_result_page",
                 },
                 "last_page": {
-                    "local_identifier": (
+                    "local_identifier": _meta_url(
                         "/skgif/v1/products?filter=cf.search.title:xyznonexistent999&page=1&page_size=10"
                     ),
                     "entity_type": "search_result_page",

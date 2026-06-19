@@ -88,6 +88,7 @@ class OperationConfig:
     cache: ResultCache | None = None
     default_cache_ttl: int = 86400
     custom_param_configs: dict[str, FiltersConfig] = dataclass_field(default_factory=dict)
+    public_base_url: str = ""
 
 
 class Operation:
@@ -119,11 +120,22 @@ class Operation:
         self._cache = config.cache
         self._default_cache_ttl = config.default_cache_ttl
         self.custom_param_configs = config.custom_param_configs
+        self.public_base_url = config.public_base_url
         self.pagination_info: PaginationInfo | None = None
 
         self.operation = {"=": eq, "<": lt, ">": gt}
 
         self.dt = DataType()
+
+    def _public_request_url(self, request_url: str) -> str:
+        parsed = urlsplit(request_url)
+        if parsed.scheme and parsed.netloc:
+            return request_url
+        if self.public_base_url:
+            return f"{self.public_base_url.rstrip('/')}/{request_url.lstrip('/')}"
+        if self.url_parsed.scheme and self.url_parsed.netloc:
+            return f"{self.url_parsed.scheme}://{self.url_parsed.netloc}/{request_url.lstrip('/')}"
+        return request_url
 
     @staticmethod
     def get_content_type(ct: str) -> str:
@@ -140,11 +152,11 @@ class Operation:
 
     def _resolve_format(self, s: str, query_string: dict[str, list[str]]) -> tuple[str, str] | None:
         if self.pagination_info is not None:
-            request_url = self.pagination_info.self_url
+            request_url = self._public_request_url(self.pagination_info.self_url)
         elif self.url_parsed.query:
-            request_url = f"{self.op_url}?{self.url_parsed.query}"
+            request_url = self._public_request_url(f"{self.op_url}?{self.url_parsed.query}")
         else:
-            request_url = self.op_url
+            request_url = self._public_request_url(self.op_url)
 
         if "format" in query_string and "format" not in self.disabled_params:
             for req_format in query_string["format"]:

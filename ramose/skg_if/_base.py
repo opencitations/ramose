@@ -663,6 +663,14 @@ def _build_search_result_page(url: str) -> dict:
     return {"local_identifier": url, "entity_type": "search_result_page"}
 
 
+def _meta_base_url(request_url: str) -> str:
+    parsed = urlsplit(request_url)
+    path = _canonical_path(parsed.path)
+    if parsed.scheme and parsed.netloc:
+        return f"{parsed.scheme}://{parsed.netloc}{path}"
+    return path
+
+
 def _page_url(base_path: str, params: dict[str, list[str]], page: int) -> str:
     page_params = {**params, "page": [str(page)]}
     return f"{base_path}?{urlencode(page_params, doseq=True, safe=':,')}"
@@ -670,9 +678,9 @@ def _page_url(base_path: str, params: dict[str, list[str]], page: int) -> str:
 
 def _build_meta(request_url: str, graph_size: int) -> dict:
     parsed = urlsplit(request_url)
-    path = _canonical_path(parsed.path)
+    base_url = _meta_base_url(request_url)
     if _is_single_entity_request(request_url):
-        return {"local_identifier": path, "entity_type": "single_entity"}
+        return {"local_identifier": base_url, "entity_type": "single_entity"}
     params = parse_qs(parsed.query)
     if "total_items" in params:
         total_items = int(params["total_items"][0])
@@ -689,20 +697,20 @@ def _build_meta(request_url: str, graph_size: int) -> dict:
     total_pages = ceil(total_items / page_size) if page_size > 0 else 0
     non_pagination_params = {k: v for k, v in params.items() if k not in ("page", "page_size", "total_items")}
     clean_params = {**non_pagination_params, "page": [str(page)], "page_size": [str(page_size)]}
-    self_url = f"{path}?{urlencode(clean_params, doseq=True, safe=':,')}"
+    self_url = f"{base_url}?{urlencode(clean_params, doseq=True, safe=':,')}"
     meta = _build_search_result_page(self_url)
     if page < total_pages:
-        meta["next_page"] = _build_search_result_page(_page_url(path, clean_params, page + 1))
+        meta["next_page"] = _build_search_result_page(_page_url(base_url, clean_params, page + 1))
     if page > 1:
-        meta["prev_page"] = _build_search_result_page(_page_url(path, clean_params, page - 1))
+        meta["prev_page"] = _build_search_result_page(_page_url(base_url, clean_params, page - 1))
     base_params = {k: v for k, v in clean_params.items() if k not in ("page", "page_size")}
-    base_url = f"{path}?{urlencode(base_params, doseq=True, safe=':,')}" if base_params else path
+    search_result_url = f"{base_url}?{urlencode(base_params, doseq=True, safe=':,')}" if base_params else base_url
     meta["part_of"] = {
-        "local_identifier": base_url,
+        "local_identifier": search_result_url,
         "entity_type": "search_result",
         "total_items": total_items,
-        "first_page": _build_search_result_page(_page_url(path, clean_params, 1)),
-        "last_page": _build_search_result_page(_page_url(path, clean_params, max(total_pages, 1))),
+        "first_page": _build_search_result_page(_page_url(base_url, clean_params, 1)),
+        "last_page": _build_search_result_page(_page_url(base_url, clean_params, max(total_pages, 1))),
     }
     return meta
 

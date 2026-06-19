@@ -14,6 +14,8 @@ from ramose.skg_if import _base, normalize_local_identifier_url
 if TYPE_CHECKING:
     from ramose import APIManager
 
+SKGIF_EDGE_PUBLIC_BASE_URL = "https://w3id.org/skg-if/sandbox/test"
+
 
 def _execute(manager: APIManager, local_identifier: str) -> dict:
     operation = manager.get_op(f"/skgif-edge/v1/products/{local_identifier}")
@@ -65,8 +67,18 @@ class TestNormalizeLocalIdentifierUrl:
         response = _execute(skgif_edge_api_manager, "https:/w3id.org/oc/meta/br/0601")
         canonical_path = "/skgif-edge/v1/products/https://w3id.org/oc/meta/br/0601"
         meta = response["meta"]
-        assert meta["local_identifier"] == canonical_path
+        assert meta["local_identifier"] == f"{SKGIF_EDGE_PUBLIC_BASE_URL}{canonical_path}"
         assert meta["entity_type"] == "single_entity"
+
+    def test_search_meta_preserves_absolute_request_url(self) -> None:
+        expected_self = f"{SKGIF_EDGE_PUBLIC_BASE_URL}/skgif-edge/v1/products?page=2&page_size=10"
+        expected_prev = f"{SKGIF_EDGE_PUBLIC_BASE_URL}/skgif-edge/v1/products?page=1&page_size=10"
+        meta = _base._build_meta(
+            expected_self,
+            25,
+        )
+        assert meta["local_identifier"] == expected_self
+        assert meta["prev_page"]["local_identifier"] == expected_prev
 
 
 class TestMissingLocalIdentifier:
