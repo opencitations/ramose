@@ -13,6 +13,343 @@
 #addon ramose.skg_if
 #disable_params require,filter,sort,format,json
 
+#url /products/{local_identifier}
+#type operation
+#local_identifier str(https://w3id\.org/oc/meta/.+)
+#method get
+#description Returns a single research product identified by its OpenCitations Meta identifier (OMID). The response includes bibliographic metadata from OpenCitations Meta and citation data from OpenCitations Index.
+#call /products/https://w3id.org/oc/meta/br/062104388184
+#output_json {
+    "@context": [
+        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+    ],
+    "meta": {
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/products/https://w3id.org/oc/meta/br/062104388184",
+        "entity_type": "single_entity"
+    },
+    "@graph": [
+        {
+            "local_identifier": "https://w3id.org/oc/meta/br/062104388184",
+            "entity_type": "product",
+            "product_type": "literature",
+            "titles": {
+                "none": [
+                    "OpenCitations Meta"
+                ]
+            },
+            "identifiers": [
+                {
+                    "value": "10.1162/qss_a_00292",
+                    "scheme": "doi"
+                }
+            ],
+            "contributions": [
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Massari, Arcangelo",
+                        "entity_type": "person",
+                        "family_name": "Massari",
+                        "given_name": "Arcangelo",
+                        "identifiers": [
+                            {
+                                "value": "0000-0002-8420-0696",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "persons/ra/06250110138"
+                    },
+                    "rank": 1
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Mariani, Fabio",
+                        "entity_type": "person",
+                        "family_name": "Mariani",
+                        "given_name": "Fabio",
+                        "identifiers": [
+                            {
+                                "value": "0000-0002-7382-0187",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "persons/ra/0621012370562"
+                    },
+                    "rank": 2
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Heibi, Ivan",
+                        "entity_type": "person",
+                        "family_name": "Heibi",
+                        "given_name": "Ivan",
+                        "identifiers": [
+                            {
+                                "value": "0000-0001-5366-5194",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "persons/ra/0621012370563"
+                    },
+                    "rank": 3
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Peroni, Silvio",
+                        "entity_type": "person",
+                        "family_name": "Peroni",
+                        "given_name": "Silvio",
+                        "identifiers": [
+                            {
+                                "value": "0000-0003-0530-4305",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "persons/ra/0621012370564"
+                    },
+                    "rank": 4
+                },
+                {
+                    "role": "author",
+                    "by": {
+                        "name": "Shotton, David",
+                        "entity_type": "person",
+                        "family_name": "Shotton",
+                        "given_name": "David",
+                        "identifiers": [
+                            {
+                                "value": "0000-0001-5506-523X",
+                                "scheme": "orcid"
+                            }
+                        ],
+                        "local_identifier": "persons/ra/0621012370565"
+                    },
+                    "rank": 5
+                },
+                {
+                    "role": "publisher",
+                    "by": {
+                        "name": "Mit Press",
+                        "entity_type": "organisation",
+                        "local_identifier": "organisations/ra/0610116105"
+                    },
+                    "rank": 1
+                }
+            ],
+            "manifestations": [
+                {
+                    "type": {
+                        "class": "http://purl.org/spar/fabio/JournalArticle",
+                        "defined_in": "http://purl.org/spar/fabio",
+                        "labels": {
+                            "en": "journal article"
+                        }
+                    },
+                    "biblio": {
+                        "volume": "5",
+                        "issue": "1",
+                        "pages": {
+                            "first": "50",
+                            "last": "75"
+                        },
+                        "in": {
+                            "name": "Quantitative Science Studies",
+                            "entity_type": "venue",
+                            "local_identifier": "venues/br/062501778099",
+                            "identifiers": [
+                                {
+                                    "value": "S4210195326",
+                                    "scheme": "openalex"
+                                },
+                                {
+                                    "value": "2641-3337",
+                                    "scheme": "issn"
+                                }
+                            ]
+                        }
+                    },
+                    "dates": {
+                        "publication": [
+                            "2024-01-01T00:00:00"
+                        ]
+                    }
+                }
+            ],
+            "related_products": {
+                "cites": [
+                    "https://w3id.org/oc/meta/br/06103007140",
+                    "https://w3id.org/oc/meta/br/0610867930",
+                    "https://w3id.org/oc/meta/br/061102015064",
+                    "https://w3id.org/oc/meta/br/061102015169",
+                    "https://w3id.org/oc/meta/br/061201341000",
+                    "https://w3id.org/oc/meta/br/061302130471",
+                    "https://w3id.org/oc/meta/br/061501741757",
+                    "https://w3id.org/oc/meta/br/061503029782",
+                    "https://w3id.org/oc/meta/br/061503595784",
+                    "https://w3id.org/oc/meta/br/06150878997",
+                    "https://w3id.org/oc/meta/br/061703213020",
+                    "https://w3id.org/oc/meta/br/061703367432",
+                    "https://w3id.org/oc/meta/br/061801986475",
+                    "https://w3id.org/oc/meta/br/061802636786",
+                    "https://w3id.org/oc/meta/br/062103573093",
+                    "https://w3id.org/oc/meta/br/062202390183",
+                    "https://w3id.org/oc/meta/br/062203843935",
+                    "https://w3id.org/oc/meta/br/062303563887",
+                    "https://w3id.org/oc/meta/br/062501777134",
+                    "https://w3id.org/oc/meta/br/062501777138",
+                    "https://w3id.org/oc/meta/br/062502075555",
+                    "https://w3id.org/oc/meta/br/062502379711",
+                    "https://w3id.org/oc/meta/br/06250648347",
+                    "https://w3id.org/oc/meta/br/062602030618",
+                    "https://w3id.org/oc/meta/br/062604422894",
+                    "https://w3id.org/oc/meta/br/062604422895",
+                    "https://w3id.org/oc/meta/br/062604422896",
+                    "https://w3id.org/oc/meta/br/062604422897",
+                    "https://w3id.org/oc/meta/br/062604422898",
+                    "https://w3id.org/oc/meta/br/062604422899",
+                    "https://w3id.org/oc/meta/br/06301298733",
+                    "https://w3id.org/oc/meta/br/06302611193",
+                    "https://w3id.org/oc/meta/br/0630685531",
+                    "https://w3id.org/oc/meta/br/06320129129",
+                    "https://w3id.org/oc/meta/br/06401296979",
+                    "https://w3id.org/oc/meta/br/06401334370",
+                    "https://w3id.org/oc/meta/br/06401935463",
+                    "https://w3id.org/oc/meta/br/06402610446",
+                    "https://w3id.org/oc/meta/br/0641097549",
+                    "https://w3id.org/oc/meta/br/0650312105",
+                    "https://w3id.org/oc/meta/br/06603394186",
+                    "https://w3id.org/oc/meta/br/06702573854",
+                    "https://w3id.org/oc/meta/br/06804723331",
+                    "https://w3id.org/oc/meta/br/06902362263",
+                    "https://w3id.org/oc/meta/br/06903616292"
+                ]
+            }
+        }
+    ]
+}
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#sparql PREFIX fabio: <http://purl.org/spar/fabio/>
+PREFIX dcterm: <http://purl.org/dc/terms/>
+PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
+PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+
+SELECT ?local_identifier ?identifier_scheme ?identifier_value
+       ?title ?product_type
+       ?manifestation_type_class ?manifestation_type_label ?manifestation_type_label_lang
+       ?manifestation_dates_type ?manifestation_dates_value
+       ?manifestation_biblio_volume ?manifestation_biblio_issue
+       ?manifestation_biblio_pages_first ?manifestation_biblio_pages_last
+       ?manifestation_biblio_in_name ?manifestation_biblio_in_local_identifier
+       ?manifestation_biblio_in_identifier_scheme ?manifestation_biblio_in_identifier_value
+WHERE {
+  BIND(<[[local_identifier]]> AS ?local_identifier)
+  ?local_identifier a fabio:Expression .
+  OPTIONAL { ?local_identifier dcterm:title ?title }
+  OPTIONAL { ?local_identifier a ?manifestation_type_class . FILTER(?manifestation_type_class != fabio:Expression) }
+  BIND(IF(!BOUND(?manifestation_type_class), "literature", IF(?manifestation_type_class IN (<http://purl.org/spar/fabio/DataFile>, <http://purl.org/spar/fabio/DataManagementPlan>), "research data", IF(?manifestation_type_class = <http://purl.org/spar/fabio/ComputerProgram>, "research software", "literature"))) AS ?product_type)
+  BIND(IF(BOUND(?manifestation_type_class), LCASE(REPLACE(REPLACE(STR(?manifestation_type_class), "^.*[/#]", ""), "([a-z])([A-Z])", "$1 $2")), "") AS ?manifestation_type_label)
+  BIND(IF(BOUND(?manifestation_type_class), "en", "") AS ?manifestation_type_label_lang)
+  OPTIONAL {
+    ?local_identifier prism:publicationDate ?manifestation_dates_value .
+    BIND("publication" AS ?manifestation_dates_type)
+  }
+  OPTIONAL {
+    ?local_identifier frbr:embodiment ?resource_embodiment .
+    ?resource_embodiment prism:startingPage ?manifestation_biblio_pages_first ;
+                         prism:endingPage ?manifestation_biblio_pages_last .
+  }
+  OPTIONAL {
+    ?local_identifier frbr:partOf ?journal_issue .
+    ?journal_issue a fabio:JournalIssue ;
+                   fabio:hasSequenceIdentifier ?manifestation_biblio_issue .
+  }
+  OPTIONAL {
+    ?local_identifier frbr:partOf+ ?journal_volume .
+    ?journal_volume a fabio:JournalVolume ;
+                    fabio:hasSequenceIdentifier ?manifestation_biblio_volume .
+  }
+  OPTIONAL {
+    ?local_identifier datacite:hasIdentifier ?identifier_node .
+    ?identifier_node datacite:usesIdentifierScheme ?identifier_scheme_uri ;
+                     literal:hasLiteralValue ?identifier_value .
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
+  }
+  OPTIONAL {
+    {
+      ?local_identifier a fabio:JournalArticle ;
+              frbr:partOf+ ?venue_resource .
+      ?venue_resource a fabio:Journal .
+    } UNION {
+      ?local_identifier frbr:partOf ?venue_resource .
+      FILTER NOT EXISTS { ?venue_resource a fabio:JournalIssue }
+      FILTER NOT EXISTS { ?venue_resource a fabio:JournalVolume }
+    }
+    ?venue_resource dcterm:title ?manifestation_biblio_in_name .
+    BIND(STR(?venue_resource) AS ?manifestation_biblio_in_local_identifier)
+    OPTIONAL {
+      ?venue_resource datacite:hasIdentifier ?venue_identifier_node .
+      ?venue_identifier_node datacite:usesIdentifierScheme ?venue_identifier_scheme_uri ;
+                     literal:hasLiteralValue ?manifestation_biblio_in_identifier_value .
+      BIND(STRAFTER(STR(?venue_identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?manifestation_biblio_in_identifier_scheme)
+    }
+  }
+}
+
+@@join ?local_identifier ?local_identifier type=left
+PREFIX pro: <http://purl.org/spar/pro/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX oco: <https://w3id.org/oc/ontology/>
+
+SELECT ?local_identifier ?contribution_by_family_name ?contribution_by_given_name
+       ?contribution_by_name ?contribution_by_identifier_scheme ?contribution_by_identifier_value
+       ?contribution_by_local_identifier
+       ?contribution_role ?_contribution_key ?_contribution_next_key
+WHERE {
+  BIND(<[[local_identifier]]> AS ?local_identifier)
+  ?local_identifier pro:isDocumentContextFor ?agent_role .
+  ?agent_role pro:withRole ?role_type ;
+              pro:isHeldBy ?responsible_agent .
+  FILTER(?role_type IN (pro:author, pro:editor, pro:publisher))
+  BIND(IF(?role_type = pro:author, "author", IF(?role_type = pro:editor, "editor", "publisher")) AS ?contribution_role)
+  BIND(STR(?agent_role) AS ?_contribution_key)
+  OPTIONAL {
+    ?agent_role oco:hasNext ?next_agent_role .
+    BIND(STR(?next_agent_role) AS ?_contribution_next_key)
+  }
+  OPTIONAL { ?responsible_agent foaf:familyName ?contribution_by_family_name }
+  OPTIONAL { ?responsible_agent foaf:givenName ?contribution_by_given_name }
+  OPTIONAL { ?responsible_agent foaf:name ?contribution_by_name }
+  BIND(STR(?responsible_agent) AS ?contribution_by_local_identifier)
+  OPTIONAL {
+    ?responsible_agent datacite:hasIdentifier ?orcid_node .
+    ?orcid_node datacite:usesIdentifierScheme datacite:orcid ;
+                literal:hasLiteralValue ?contribution_by_identifier_value .
+    BIND("orcid" AS ?contribution_by_identifier_scheme)
+  }
+}
+
+@@join ?local_identifier ?local_identifier type=left
+@@with source=index
+PREFIX cito: <http://purl.org/spar/cito/>
+
+SELECT ?local_identifier ?related_products_cites
+WHERE {
+  BIND(<[[local_identifier]]> AS ?citing_entity)
+  ?citation cito:hasCitingEntity ?citing_entity ;
+            cito:hasCitedEntity ?cited_entity .
+  BIND(STR(?citing_entity) AS ?local_identifier)
+  BIND(STR(?cited_entity) AS ?related_products_cites)
+}
+
 #url /products
 #type operation
 #method get
@@ -1112,342 +1449,15 @@ WHERE {
   BIND(STR(?cited_entity) AS ?related_products_cites)
 }
 
-#url /products/{local_identifier}
+#url /persons/{local_identifier}
 #type operation
-#local_identifier str(https://w3id\.org/oc/meta/.+)
 #method get
-#description Returns a single research product identified by its OpenCitations Meta identifier (OMID). The response includes bibliographic metadata from OpenCitations Meta and citation data from OpenCitations Index.
-#call /products/https://w3id.org/oc/meta/br/062104388184
-#output_json {
-    "@context": [
-        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
-    ],
-    "meta": {
-        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/products/https://w3id.org/oc/meta/br/062104388184",
-        "entity_type": "single_entity"
-    },
-    "@graph": [
-        {
-            "local_identifier": "https://w3id.org/oc/meta/br/062104388184",
-            "entity_type": "product",
-            "product_type": "literature",
-            "titles": {
-                "none": [
-                    "OpenCitations Meta"
-                ]
-            },
-            "identifiers": [
-                {
-                    "value": "10.1162/qss_a_00292",
-                    "scheme": "doi"
-                }
-            ],
-            "contributions": [
-                {
-                    "role": "author",
-                    "by": {
-                        "name": "Massari, Arcangelo",
-                        "entity_type": "person",
-                        "family_name": "Massari",
-                        "given_name": "Arcangelo",
-                        "identifiers": [
-                            {
-                                "value": "0000-0002-8420-0696",
-                                "scheme": "orcid"
-                            }
-                        ],
-                        "local_identifier": "persons/ra/06250110138"
-                    },
-                    "rank": 1
-                },
-                {
-                    "role": "author",
-                    "by": {
-                        "name": "Mariani, Fabio",
-                        "entity_type": "person",
-                        "family_name": "Mariani",
-                        "given_name": "Fabio",
-                        "identifiers": [
-                            {
-                                "value": "0000-0002-7382-0187",
-                                "scheme": "orcid"
-                            }
-                        ],
-                        "local_identifier": "persons/ra/0621012370562"
-                    },
-                    "rank": 2
-                },
-                {
-                    "role": "author",
-                    "by": {
-                        "name": "Heibi, Ivan",
-                        "entity_type": "person",
-                        "family_name": "Heibi",
-                        "given_name": "Ivan",
-                        "identifiers": [
-                            {
-                                "value": "0000-0001-5366-5194",
-                                "scheme": "orcid"
-                            }
-                        ],
-                        "local_identifier": "persons/ra/0621012370563"
-                    },
-                    "rank": 3
-                },
-                {
-                    "role": "author",
-                    "by": {
-                        "name": "Peroni, Silvio",
-                        "entity_type": "person",
-                        "family_name": "Peroni",
-                        "given_name": "Silvio",
-                        "identifiers": [
-                            {
-                                "value": "0000-0003-0530-4305",
-                                "scheme": "orcid"
-                            }
-                        ],
-                        "local_identifier": "persons/ra/0621012370564"
-                    },
-                    "rank": 4
-                },
-                {
-                    "role": "author",
-                    "by": {
-                        "name": "Shotton, David",
-                        "entity_type": "person",
-                        "family_name": "Shotton",
-                        "given_name": "David",
-                        "identifiers": [
-                            {
-                                "value": "0000-0001-5506-523X",
-                                "scheme": "orcid"
-                            }
-                        ],
-                        "local_identifier": "persons/ra/0621012370565"
-                    },
-                    "rank": 5
-                },
-                {
-                    "role": "publisher",
-                    "by": {
-                        "name": "Mit Press",
-                        "entity_type": "organisation",
-                        "local_identifier": "organisations/ra/0610116105"
-                    },
-                    "rank": 1
-                }
-            ],
-            "manifestations": [
-                {
-                    "type": {
-                        "class": "http://purl.org/spar/fabio/JournalArticle",
-                        "defined_in": "http://purl.org/spar/fabio",
-                        "labels": {
-                            "en": "journal article"
-                        }
-                    },
-                    "biblio": {
-                        "volume": "5",
-                        "issue": "1",
-                        "pages": {
-                            "first": "50",
-                            "last": "75"
-                        },
-                        "in": {
-                            "name": "Quantitative Science Studies",
-                            "entity_type": "venue",
-                            "local_identifier": "venues/br/062501778099",
-                            "identifiers": [
-                                {
-                                    "value": "S4210195326",
-                                    "scheme": "openalex"
-                                },
-                                {
-                                    "value": "2641-3337",
-                                    "scheme": "issn"
-                                }
-                            ]
-                        }
-                    },
-                    "dates": {
-                        "publication": [
-                            "2024-01-01T00:00:00"
-                        ]
-                    }
-                }
-            ],
-            "related_products": {
-                "cites": [
-                    "https://w3id.org/oc/meta/br/06103007140",
-                    "https://w3id.org/oc/meta/br/0610867930",
-                    "https://w3id.org/oc/meta/br/061102015064",
-                    "https://w3id.org/oc/meta/br/061102015169",
-                    "https://w3id.org/oc/meta/br/061201341000",
-                    "https://w3id.org/oc/meta/br/061302130471",
-                    "https://w3id.org/oc/meta/br/061501741757",
-                    "https://w3id.org/oc/meta/br/061503029782",
-                    "https://w3id.org/oc/meta/br/061503595784",
-                    "https://w3id.org/oc/meta/br/06150878997",
-                    "https://w3id.org/oc/meta/br/061703213020",
-                    "https://w3id.org/oc/meta/br/061703367432",
-                    "https://w3id.org/oc/meta/br/061801986475",
-                    "https://w3id.org/oc/meta/br/061802636786",
-                    "https://w3id.org/oc/meta/br/062103573093",
-                    "https://w3id.org/oc/meta/br/062202390183",
-                    "https://w3id.org/oc/meta/br/062203843935",
-                    "https://w3id.org/oc/meta/br/062303563887",
-                    "https://w3id.org/oc/meta/br/062501777134",
-                    "https://w3id.org/oc/meta/br/062501777138",
-                    "https://w3id.org/oc/meta/br/062502075555",
-                    "https://w3id.org/oc/meta/br/062502379711",
-                    "https://w3id.org/oc/meta/br/06250648347",
-                    "https://w3id.org/oc/meta/br/062602030618",
-                    "https://w3id.org/oc/meta/br/062604422894",
-                    "https://w3id.org/oc/meta/br/062604422895",
-                    "https://w3id.org/oc/meta/br/062604422896",
-                    "https://w3id.org/oc/meta/br/062604422897",
-                    "https://w3id.org/oc/meta/br/062604422898",
-                    "https://w3id.org/oc/meta/br/062604422899",
-                    "https://w3id.org/oc/meta/br/06301298733",
-                    "https://w3id.org/oc/meta/br/06302611193",
-                    "https://w3id.org/oc/meta/br/0630685531",
-                    "https://w3id.org/oc/meta/br/06320129129",
-                    "https://w3id.org/oc/meta/br/06401296979",
-                    "https://w3id.org/oc/meta/br/06401334370",
-                    "https://w3id.org/oc/meta/br/06401935463",
-                    "https://w3id.org/oc/meta/br/06402610446",
-                    "https://w3id.org/oc/meta/br/0641097549",
-                    "https://w3id.org/oc/meta/br/0650312105",
-                    "https://w3id.org/oc/meta/br/06603394186",
-                    "https://w3id.org/oc/meta/br/06702573854",
-                    "https://w3id.org/oc/meta/br/06804723331",
-                    "https://w3id.org/oc/meta/br/06902362263",
-                    "https://w3id.org/oc/meta/br/06903616292"
-                ]
-            }
-        }
-    ]
-}
+#description Coming soon. Returns a single person when implemented; this placeholder currently returns 404.
+#call /persons/example-person-id
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
-#sparql PREFIX fabio: <http://purl.org/spar/fabio/>
-PREFIX dcterm: <http://purl.org/dc/terms/>
-PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
-PREFIX frbr: <http://purl.org/vocab/frbr/core#>
-PREFIX datacite: <http://purl.org/spar/datacite/>
-PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
-
-SELECT ?local_identifier ?identifier_scheme ?identifier_value
-       ?title ?product_type
-       ?manifestation_type_class ?manifestation_type_label ?manifestation_type_label_lang
-       ?manifestation_dates_type ?manifestation_dates_value
-       ?manifestation_biblio_volume ?manifestation_biblio_issue
-       ?manifestation_biblio_pages_first ?manifestation_biblio_pages_last
-       ?manifestation_biblio_in_name ?manifestation_biblio_in_local_identifier
-       ?manifestation_biblio_in_identifier_scheme ?manifestation_biblio_in_identifier_value
-WHERE {
-  BIND(<[[local_identifier]]> AS ?local_identifier)
-  ?local_identifier a fabio:Expression .
-  OPTIONAL { ?local_identifier dcterm:title ?title }
-  OPTIONAL { ?local_identifier a ?manifestation_type_class . FILTER(?manifestation_type_class != fabio:Expression) }
-  BIND(IF(!BOUND(?manifestation_type_class), "literature", IF(?manifestation_type_class IN (<http://purl.org/spar/fabio/DataFile>, <http://purl.org/spar/fabio/DataManagementPlan>), "research data", IF(?manifestation_type_class = <http://purl.org/spar/fabio/ComputerProgram>, "research software", "literature"))) AS ?product_type)
-  BIND(IF(BOUND(?manifestation_type_class), LCASE(REPLACE(REPLACE(STR(?manifestation_type_class), "^.*[/#]", ""), "([a-z])([A-Z])", "$1 $2")), "") AS ?manifestation_type_label)
-  BIND(IF(BOUND(?manifestation_type_class), "en", "") AS ?manifestation_type_label_lang)
-  OPTIONAL {
-    ?local_identifier prism:publicationDate ?manifestation_dates_value .
-    BIND("publication" AS ?manifestation_dates_type)
-  }
-  OPTIONAL {
-    ?local_identifier frbr:embodiment ?resource_embodiment .
-    ?resource_embodiment prism:startingPage ?manifestation_biblio_pages_first ;
-                         prism:endingPage ?manifestation_biblio_pages_last .
-  }
-  OPTIONAL {
-    ?local_identifier frbr:partOf ?journal_issue .
-    ?journal_issue a fabio:JournalIssue ;
-                   fabio:hasSequenceIdentifier ?manifestation_biblio_issue .
-  }
-  OPTIONAL {
-    ?local_identifier frbr:partOf+ ?journal_volume .
-    ?journal_volume a fabio:JournalVolume ;
-                    fabio:hasSequenceIdentifier ?manifestation_biblio_volume .
-  }
-  OPTIONAL {
-    ?local_identifier datacite:hasIdentifier ?identifier_node .
-    ?identifier_node datacite:usesIdentifierScheme ?identifier_scheme_uri ;
-                     literal:hasLiteralValue ?identifier_value .
-    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
-  }
-  OPTIONAL {
-    {
-      ?local_identifier a fabio:JournalArticle ;
-              frbr:partOf+ ?venue_resource .
-      ?venue_resource a fabio:Journal .
-    } UNION {
-      ?local_identifier frbr:partOf ?venue_resource .
-      FILTER NOT EXISTS { ?venue_resource a fabio:JournalIssue }
-      FILTER NOT EXISTS { ?venue_resource a fabio:JournalVolume }
-    }
-    ?venue_resource dcterm:title ?manifestation_biblio_in_name .
-    BIND(STR(?venue_resource) AS ?manifestation_biblio_in_local_identifier)
-    OPTIONAL {
-      ?venue_resource datacite:hasIdentifier ?venue_identifier_node .
-      ?venue_identifier_node datacite:usesIdentifierScheme ?venue_identifier_scheme_uri ;
-                     literal:hasLiteralValue ?manifestation_biblio_in_identifier_value .
-      BIND(STRAFTER(STR(?venue_identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?manifestation_biblio_in_identifier_scheme)
-    }
-  }
-}
-
-@@join ?local_identifier ?local_identifier type=left
-PREFIX pro: <http://purl.org/spar/pro/>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-PREFIX datacite: <http://purl.org/spar/datacite/>
-PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
-PREFIX oco: <https://w3id.org/oc/ontology/>
-
-SELECT ?local_identifier ?contribution_by_family_name ?contribution_by_given_name
-       ?contribution_by_name ?contribution_by_identifier_scheme ?contribution_by_identifier_value
-       ?contribution_by_local_identifier
-       ?contribution_role ?_contribution_key ?_contribution_next_key
-WHERE {
-  BIND(<[[local_identifier]]> AS ?local_identifier)
-  ?local_identifier pro:isDocumentContextFor ?agent_role .
-  ?agent_role pro:withRole ?role_type ;
-              pro:isHeldBy ?responsible_agent .
-  FILTER(?role_type IN (pro:author, pro:editor, pro:publisher))
-  BIND(IF(?role_type = pro:author, "author", IF(?role_type = pro:editor, "editor", "publisher")) AS ?contribution_role)
-  BIND(STR(?agent_role) AS ?_contribution_key)
-  OPTIONAL {
-    ?agent_role oco:hasNext ?next_agent_role .
-    BIND(STR(?next_agent_role) AS ?_contribution_next_key)
-  }
-  OPTIONAL { ?responsible_agent foaf:familyName ?contribution_by_family_name }
-  OPTIONAL { ?responsible_agent foaf:givenName ?contribution_by_given_name }
-  OPTIONAL { ?responsible_agent foaf:name ?contribution_by_name }
-  BIND(STR(?responsible_agent) AS ?contribution_by_local_identifier)
-  OPTIONAL {
-    ?responsible_agent datacite:hasIdentifier ?orcid_node .
-    ?orcid_node datacite:usesIdentifierScheme datacite:orcid ;
-                literal:hasLiteralValue ?contribution_by_identifier_value .
-    BIND("orcid" AS ?contribution_by_identifier_scheme)
-  }
-}
-
-@@join ?local_identifier ?local_identifier type=left
-@@with source=index
-PREFIX cito: <http://purl.org/spar/cito/>
-
-SELECT ?local_identifier ?related_products_cites
-WHERE {
-  BIND(<[[local_identifier]]> AS ?citing_entity)
-  ?citation cito:hasCitingEntity ?citing_entity ;
-            cito:hasCitedEntity ?cited_entity .
-  BIND(STR(?citing_entity) AS ?local_identifier)
-  BIND(STR(?cited_entity) AS ?related_products_cites)
-}
+#output_json HTTP status code 404: entity not found
+#sparql SELECT ?dummy WHERE { FILTER(false) }
 
 #url /persons
 #type operation
@@ -1494,12 +1504,11 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
     "@graph": []
 }
 #sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
-
-#url /persons/{local_identifier}
+#url /organisations/{local_identifier}
 #type operation
 #method get
-#description Coming soon. Returns a single person when implemented; this placeholder currently returns 404.
-#call /persons/example-person-id
+#description Coming soon. Returns a single organisation when implemented; this placeholder currently returns 404.
+#call /organisations/example-organisation-id
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #output_json HTTP status code 404: entity not found
@@ -1546,11 +1555,61 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 }
 #sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
 
-#url /organisations/{local_identifier}
+#url /venues/{local_identifier}
 #type operation
 #method get
-#description Coming soon. Returns a single organisation when implemented; this placeholder currently returns 404.
-#call /organisations/example-organisation-id
+#description Coming soon. Returns a single venue when implemented; this placeholder currently returns 404.
+#call /venues/example-venue-id
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json HTTP status code 404: entity not found
+#sparql SELECT ?dummy WHERE { FILTER(false) }
+
+#url /venues
+#type operation
+#method get
+#description Coming soon. Returns a list of venues matching the given filters when implemented; this placeholder currently returns an empty result.
+#custom_params filter,skgif_filters.venues.yaml,Search filter.
+Format: comma-separated `filter_name:filter_value` pairs (AND logic).
+Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+**Attribute filters:**
+
+- `acronym`
+- `type`
+- `identifiers.scheme`
+- `identifiers.value`
+- `name`
+
+**Convenience filters (`cf.*`):**
+
+- `cf.search.name`
+
+#call /venues?filter=cf.search.name:Psychoceramics
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json {
+    "@context": [
+        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+    ],
+    "meta": {
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Psychoceramics&page=1&page_size=1",
+        "entity_type": "search_result_page",
+        "part_of": {
+            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Psychoceramics",
+            "entity_type": "search_result",
+            "total_items": 0
+        }
+    },
+    "@graph": []
+}
+#sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
+
+#url /grants/{local_identifier}
+#type operation
+#method get
+#description Returns a single grant. Note: OpenCitations does not currently hold grant data; this endpoint always returns 404.
+#call /grants/example-grant-id
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #output_json HTTP status code 404: entity not found
@@ -1640,36 +1699,37 @@ All filters below are accepted but currently return no matches because OpenCitat
 }
 #sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
 
-#url /grants/{local_identifier}
+#url /datasources/{local_identifier}
 #type operation
 #method get
-#description Returns a single grant. Note: OpenCitations does not currently hold grant data; this endpoint always returns 404.
-#call /grants/example-grant-id
+#description Returns a single data source. Note: OpenCitations does not currently hold data source records; this endpoint always returns 404.
+#call /datasources/example-datasource-id
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #output_json HTTP status code 404: entity not found
 #sparql SELECT ?dummy WHERE { FILTER(false) }
-
-#url /venues
+#url /datasources
 #type operation
 #method get
-#description Coming soon. Returns a list of venues matching the given filters when implemented; this placeholder currently returns an empty result.
-#custom_params filter,skgif_filters.venues.yaml,Search filter.
+#description Returns a list of data sources matching the given filters. Note: OpenCitations does not currently hold data source records; this endpoint always returns an empty result.
+#custom_params filter,skgif_filters.datasources.yaml,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+All filters below are accepted but currently return no matches because OpenCitations does not hold data source records.
+
 **Attribute filters:**
 
-- `acronym`
-- `type`
+- `data_source_classification`
+- `research_product_type`
 - `identifiers.scheme`
 - `identifiers.value`
-- `name`
+- `acronym`
 
 **Convenience filters (`cf.*`):**
 
 - `cf.search.name`
 
-#call /venues?filter=cf.search.name:Psychoceramics
+#call /datasources?filter=research_product_type:literature
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #output_json {
@@ -1678,23 +1738,31 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
     ],
     "meta": {
-        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Psychoceramics&page=1&page_size=1",
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/datasources?filter=research_product_type:literature&page=1&page_size=1",
         "entity_type": "search_result_page",
         "part_of": {
-            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Psychoceramics",
+            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/datasources?filter=research_product_type:literature",
             "entity_type": "search_result",
-            "total_items": 0
+            "total_items": 0,
+            "first_page": {
+                "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/datasources?filter=research_product_type:literature&page=1&page_size=1",
+                "entity_type": "search_result_page"
+            },
+            "last_page": {
+                "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/datasources?filter=research_product_type:literature&page=1&page_size=1",
+                "entity_type": "search_result_page"
+            }
         }
     },
     "@graph": []
 }
 #sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
 
-#url /venues/{local_identifier}
+#url /topics/{local_identifier}
 #type operation
 #method get
-#description Coming soon. Returns a single venue when implemented; this placeholder currently returns 404.
-#call /venues/example-venue-id
+#description Returns a single topic. Note: OpenCitations does not currently hold topic data; this endpoint always returns 404.
+#call /topics/example-topic-id
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #output_json HTTP status code 404: entity not found
@@ -1747,73 +1815,3 @@ All filters below are accepted but currently return no matches because OpenCitat
     "@graph": []
 }
 #sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
-
-#url /topics/{local_identifier}
-#type operation
-#method get
-#description Returns a single topic. Note: OpenCitations does not currently hold topic data; this endpoint always returns 404.
-#call /topics/example-topic-id
-#format skg_if,to_skg_if,application/ld+json
-#default_format skg_if
-#output_json HTTP status code 404: entity not found
-#sparql SELECT ?dummy WHERE { FILTER(false) }
-
-#url /datasources
-#type operation
-#method get
-#description Returns a list of data sources matching the given filters. Note: OpenCitations does not currently hold data source records; this endpoint always returns an empty result.
-#custom_params filter,skgif_filters.datasources.yaml,Search filter.
-Format: comma-separated `filter_name:filter_value` pairs (AND logic).
-Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
-All filters below are accepted but currently return no matches because OpenCitations does not hold data source records.
-
-**Attribute filters:**
-
-- `data_source_classification`
-- `research_product_type`
-- `identifiers.scheme`
-- `identifiers.value`
-- `acronym`
-
-**Convenience filters (`cf.*`):**
-
-- `cf.search.name`
-
-#call /datasources?filter=research_product_type:literature
-#format skg_if,to_skg_if,application/ld+json
-#default_format skg_if
-#output_json {
-    "@context": [
-        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
-    ],
-    "meta": {
-        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/datasources?filter=research_product_type:literature&page=1&page_size=1",
-        "entity_type": "search_result_page",
-        "part_of": {
-            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/datasources?filter=research_product_type:literature",
-            "entity_type": "search_result",
-            "total_items": 0,
-            "first_page": {
-                "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/datasources?filter=research_product_type:literature&page=1&page_size=1",
-                "entity_type": "search_result_page"
-            },
-            "last_page": {
-                "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/datasources?filter=research_product_type:literature&page=1&page_size=1",
-                "entity_type": "search_result_page"
-            }
-        }
-    },
-    "@graph": []
-}
-#sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
-
-#url /datasources/{local_identifier}
-#type operation
-#method get
-#description Returns a single data source. Note: OpenCitations does not currently hold data source records; this endpoint always returns 404.
-#call /datasources/example-datasource-id
-#format skg_if,to_skg_if,application/ld+json
-#default_format skg_if
-#output_json HTTP status code 404: entity not found
-#sparql SELECT ?dummy WHERE { FILTER(false) }
