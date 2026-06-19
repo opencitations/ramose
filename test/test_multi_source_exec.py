@@ -13,7 +13,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
-from ramose import APIManager, Operation, OperationConfig
+from ramose import APIManager, HttpError, Operation, OperationConfig
 from ramose.paging import build_pagination_info
 
 if TYPE_CHECKING:
@@ -815,13 +815,13 @@ class TestPageStep:
         assert op.pagination_info is not None
         assert (op.pagination_info.page, op.pagination_info.page_size, op.pagination_info.total_items) == (1, 10, 25)
 
-    def test_max_size_caps_explicit_page_size(self) -> None:
+    def test_max_size_rejects_explicit_page_size(self) -> None:
         op = self._make_op("?page_size=1000")
         state: dict[str, object] = {"acc": [{"id": str(i)} for i in range(300)]}
-        op._exec_page_step("?id", "10", "100", state)
-        assert len(self._acc(state)) == 100
-        assert op.pagination_info is not None
-        assert op.pagination_info.page_size == 100
+        with pytest.raises(HttpError) as exc_info:
+            op._exec_page_step("?id", "10", "100", state)
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: page_size must be <= 100, got 1000"
 
     def test_no_default_and_no_page_size_is_noop(self) -> None:
         op = self._make_op()
@@ -830,6 +830,14 @@ class TestPageStep:
         op._exec_page_step("?id", "", "", state)
         assert self._acc(state) == rows
         assert op.pagination_info is None
+
+    def test_page_without_page_size_and_without_default_raises(self) -> None:
+        op = self._make_op("?page=2")
+        state: dict[str, object] = {"acc": [{"id": str(i)} for i in range(5)]}
+        with pytest.raises(HttpError) as exc_info:
+            op._exec_page_step("?id", "", "", state)
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: page requires page_size"
 
     def test_counts_distinct_values_preserving_first_appearance(self) -> None:
         op = self._make_op("?page=2&page_size=2")
@@ -850,8 +858,10 @@ class TestPageStep:
     def test_page_beyond_total_raises(self) -> None:
         op = self._make_op("?page=99&page_size=2")
         state: dict[str, object] = {"acc": [{"id": v} for v in ["a", "b", "c"]]}
-        with pytest.raises(ValueError, match="exceeds total pages"):
+        with pytest.raises(HttpError) as exc_info:
             op._exec_page_step("?id", "10", "100", state)
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: page 99 exceeds total pages 2"
 
     def test_empty_accumulator_does_not_raise(self) -> None:
         op = self._make_op("?page=1&page_size=10")

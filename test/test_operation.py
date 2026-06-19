@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ramose import Operation, OperationConfig
+from ramose import HttpError, Operation, OperationConfig
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -69,6 +69,13 @@ class TestConv:
         result, ct = op.conv(csv_str, {"format": ["csv"]}, "application/json")
         assert result == csv_str
         assert ct == "text/csv"
+
+    def test_unsupported_format_returns_422(self, op: Operation) -> None:
+        csv_str = "name,age\nJohn,30\n"
+        with pytest.raises(HttpError) as exc_info:
+            op.conv(csv_str, {"format": ["xml"]}, "text/csv")
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: unsupported format 'xml'"
 
 
 class TestPvTv:
@@ -202,6 +209,31 @@ class TestStructured:
             {"fname": "Smith", "gname": "Jane"},
         ]
 
+    def test_invalid_transform_returns_422(self) -> None:
+        table = [{"name": "Doe, John"}]
+        with pytest.raises(HttpError) as exc_info:
+            Operation.structured({"json": ["bad(name)"]}, table)  # type: ignore[arg-type]
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: invalid json transform 'bad(name)'"
+
+    def test_array_transform_with_extra_fields_returns_422(self) -> None:
+        table = [{"name": "Doe, John"}]
+        with pytest.raises(HttpError) as exc_info:
+            Operation.structured({"json": ['array(", ",name,fname)']}, table)  # type: ignore[arg-type]
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == (
+            "HTTP status code 422: json array transform expects one field, got 'array(\", \",name,fname)'"
+        )
+
+    def test_dict_transform_without_output_fields_returns_422(self) -> None:
+        table = [{"name": "Doe, John"}]
+        with pytest.raises(HttpError) as exc_info:
+            Operation.structured({"json": ['dict(", ",name)']}, table)  # type: ignore[arg-type]
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == (
+            "HTTP status code 422: json dict transform expects output fields, got 'dict(\", \",name)'"
+        )
+
 
 @pytest.fixture
 def make_operation() -> Callable[..., Operation]:
@@ -229,8 +261,7 @@ class TestHandlingParams:
     """``handling_params`` applies query-string directives (``require``,
     ``filter``, ``sort``) to a typed result table. Filters support comparison
     operators (``>``, ``<``, ``=``) and regex matching. Sort accepts
-    ``asc()``, ``desc()``, or bare field names (defaults to ascending).
-    Invalid field names are silently ignored."""
+    ``asc()``, ``desc()``, or bare field names (defaults to ascending)."""
 
     @pytest.fixture
     def typed_table(self, make_operation: Callable[..., Operation]) -> TypedTable:
@@ -248,6 +279,15 @@ class TestHandlingParams:
         result = op.handling_params({"require": ["age"]}, typed_table)
         names = [Operation.pv(0, row) for row in result[1:]]  # type: ignore[arg-type]
         assert names == ["alice", "bob"]
+
+    def test_require_invalid_field_returns_422(
+        self, make_operation: Callable[..., Operation], typed_table: TypedTable
+    ) -> None:
+        op = make_operation()
+        with pytest.raises(HttpError) as exc_info:
+            op.handling_params({"require": ["missing"]}, typed_table)
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: require field 'missing' is not in the result header"
 
     def test_filter_gt(self, make_operation: Callable[..., Operation], typed_table: TypedTable) -> None:
         op = make_operation()
@@ -275,8 +315,48 @@ class TestHandlingParams:
 
     def test_filter_invalid_field(self, make_operation: Callable[..., Operation], typed_table: TypedTable) -> None:
         op = make_operation()
-        result = op.handling_params({"filter": ["nonexistent:>5"]}, typed_table)
-        assert len(result) == len(typed_table)
+        with pytest.raises(HttpError) as exc_info:
+            op.handling_params({"filter": ["nonexistent:>5"]}, typed_table)
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: filter field 'nonexistent' is not in the result header"
+
+    def test_filter_missing_separator_returns_422(
+        self, make_operation: Callable[..., Operation], typed_table: TypedTable
+    ) -> None:
+        op = make_operation()
+        with pytest.raises(HttpError) as exc_info:
+            op.handling_params({"filter": ["age>5"]}, typed_table)
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: filter must use field:value syntax, got 'age>5'"
+
+    def test_filter_invalid_typed_value_returns_422(
+        self, make_operation: Callable[..., Operation], typed_table: TypedTable
+    ) -> None:
+        op = make_operation()
+        with pytest.raises(HttpError) as exc_info:
+            op.handling_params({"filter": ["age:>abc"]}, typed_table)
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: filter value 'abc' is invalid for field 'age'"
+
+    def test_filter_empty_comparison_value_returns_422(
+        self, make_operation: Callable[..., Operation], typed_table: TypedTable
+    ) -> None:
+        op = make_operation()
+        with pytest.raises(HttpError) as exc_info:
+            op.handling_params({"filter": ["age:>"]}, typed_table)
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == (
+            "HTTP status code 422: filter comparison value for field 'age' must not be empty"
+        )
+
+    def test_filter_invalid_regex_returns_422(
+        self, make_operation: Callable[..., Operation], typed_table: TypedTable
+    ) -> None:
+        op = make_operation()
+        with pytest.raises(HttpError) as exc_info:
+            op.handling_params({"filter": ["name:["]}, typed_table)
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value).startswith("HTTP status code 422: filter regex for field 'name' is invalid:")
 
     def test_sort_asc(self, make_operation: Callable[..., Operation], typed_table: TypedTable) -> None:
         op = make_operation()
@@ -298,8 +378,19 @@ class TestHandlingParams:
 
     def test_sort_invalid_field(self, make_operation: Callable[..., Operation], typed_table: TypedTable) -> None:
         op = make_operation()
-        result = op.handling_params({"sort": ["asc(nonexistent)"]}, typed_table)
-        assert len(result) == len(typed_table)
+        with pytest.raises(HttpError) as exc_info:
+            op.handling_params({"sort": ["asc(nonexistent)"]}, typed_table)
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: sort field 'nonexistent' is not in the result header"
+
+    def test_sort_invalid_expression_returns_422(
+        self, make_operation: Callable[..., Operation], typed_table: TypedTable
+    ) -> None:
+        op = make_operation()
+        with pytest.raises(HttpError) as exc_info:
+            op.handling_params({"sort": ["up(name)"]}, typed_table)
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: invalid sort expression 'up(name)'"
 
 
 class TestPostprocess:

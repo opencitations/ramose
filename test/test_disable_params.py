@@ -115,6 +115,13 @@ class TestConvFormatDisabled:
         assert ct == "text/csv"
         assert result == csv_str
 
+    def test_invalid_format_param_ignored_when_disabled(self) -> None:
+        op = _make_op(disabled_params={"format"})
+        csv_str = "name,age\nJohn,30\n"
+        result, ct = op.conv(csv_str, {"format": ["xml"]}, "text/csv")
+        assert ct == "text/csv"
+        assert result == csv_str
+
     def test_format_param_works_when_not_disabled(self) -> None:
         op = _make_op()
         csv_str = "name,age\nJohn,30\n"
@@ -145,6 +152,13 @@ class TestConvJsonDisabled:
         op = _make_op(disabled_params={"json"})
         csv_str = "name,age\nDoe; John,30\n"
         result, _ct = op.conv(csv_str, {"json": ['array("; ",name)']}, "application/json")
+        parsed = json.loads(result)
+        assert parsed == [{"name": "Doe; John", "age": "30"}]
+
+    def test_invalid_json_structuring_ignored_when_disabled(self) -> None:
+        op = _make_op(disabled_params={"json"})
+        csv_str = "name,age\nDoe; John,30\n"
+        result, _ct = op.conv(csv_str, {"json": ["bad(name)"]}, "application/json")
         parsed = json.loads(result)
         assert parsed == [{"name": "Doe; John", "age": "30"}]
 

@@ -155,7 +155,7 @@ Syntax: `@@page <variable> [default_size=<N>] [max_size=<M>]`
 @@page ?id default_size=10 max_size=100
 ```
 
-The page number and page size come from the request's `page` and `page_size` parameters, the same ones used by RAMOSE's built-in pagination. When `page_size` is absent the directive uses `default_size`; with neither set it does nothing and every row passes through. A `page_size` above `max_size` is capped at `max_size`.
+The page number and page size come from the request's `page` and `page_size` parameters, the same ones used by RAMOSE's built-in pagination. When `page_size` is absent the directive uses `default_size`; with neither set it does nothing and every row passes through. An explicit `page_size` above `max_size` is rejected with HTTP 422.
 
 The directive counts the distinct values of `<variable>` in first-appearance order, so a preceding `ORDER BY` decides which values land on each page. It keeps the rows whose value belongs to the requested page and records the total count of distinct values, the current page, and the page size on the operation. The output converter reads these through the request URL to report the totals.
 

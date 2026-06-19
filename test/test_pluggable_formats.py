@@ -10,7 +10,9 @@ from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from ramose import APIManager, Operation, OperationConfig
+import pytest
+
+from ramose import APIManager, HttpError, Operation, OperationConfig
 
 if "pysparql_anything" not in sys.modules:
     _mock_module = ModuleType("pysparql_anything")
@@ -55,12 +57,13 @@ class TestCustomFormatConversion:
         assert "<xml>" in result
         assert "vergine" in result
 
-    def test_unknown_format_falls_back_to_csv(self) -> None:
+    def test_unknown_format_returns_422(self) -> None:
         op = self._make_op_with_formats()
         csv_str = "name,age\nvergine,30\n"
-        result, ct = op.conv(csv_str, {"format": ["nonexistent"]})
-        assert ct == "text/csv"
-        assert result == csv_str
+        with pytest.raises(HttpError) as exc_info:
+            op.conv(csv_str, {"format": ["nonexistent"]})
+        assert exc_info.value.status_code == 422
+        assert str(exc_info.value) == "HTTP status code 422: unsupported format 'nonexistent'"
 
 
 class TestDefaultFormat:

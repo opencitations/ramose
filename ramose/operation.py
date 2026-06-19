@@ -19,8 +19,9 @@ from itertools import product
 from json import dumps
 from math import ceil
 from operator import eq, gt, itemgetter, lt
-from re import findall, match, search, sub
-from typing import TYPE_CHECKING, TypedDict, cast
+from re import error as regex_error
+from re import findall, fullmatch, match, search, sub
+from typing import TYPE_CHECKING, NoReturn, TypedDict, cast
 from urllib.parse import parse_qs, quote, urlsplit
 
 from requests.exceptions import RequestException
@@ -51,6 +52,9 @@ if TYPE_CHECKING:
 
 _WRITE_METHODS = frozenset({"post", "put", "delete"})
 _IRI_FORBIDDEN = r'[<>"{}|^`\\\x00-\x20]'
+_UNPROCESSABLE_CONTENT = 422
+_JSON_TRANSFORM_RE = r'^(?P<op_type>array|dict)\((?P<separator>"[^"]+"),(?P<entries>[^)]+)\)$'
+_DICT_TRANSFORM_MIN_FIELD_COUNT = 2
 ResultRow = list[str]
 ResultTable = list[ResultRow]
 
@@ -140,6 +144,29 @@ class Operation:
             return self._public_request_url(f"{self.op_url}?{self.url_parsed.query}")
         return self._public_request_url(self.op_url)
 
+    def _is_builtin_param_active(self, name: str) -> bool:
+        return name not in self.disabled_params and name not in self.custom_params
+
+    @staticmethod
+    def _raise_unprocessable(message: str) -> NoReturn:
+        raise HttpError(_UNPROCESSABLE_CONTENT, f"HTTP status code {_UNPROCESSABLE_CONTENT}: {message}")
+
+    @staticmethod
+    def _parse_positive_int_param(params: dict[str, list[str]], name: str) -> int:
+        raw_value = params[name][0]
+        try:
+            value = int(raw_value)
+        except ValueError:
+            Operation._raise_unprocessable(f"{name} must be an integer, got {raw_value!r}")
+        if value < 1:
+            Operation._raise_unprocessable(f"{name} must be >= 1, got {value}")
+        return value
+
+    @staticmethod
+    def _validate_page_range(page: int, total_items: int, total_pages: int) -> None:
+        if total_items and page > total_pages:
+            Operation._raise_unprocessable(f"page {page} exceeds total pages {total_pages}")
+
     @staticmethod
     def get_content_type(ct: str) -> str:
         """It returns the mime type of a given textual representation of a format, being it either
@@ -154,7 +181,7 @@ class Operation:
         return content_type
 
     def _resolve_format(self, s: str, query_string: dict[str, list[str]]) -> tuple[str, str] | None:
-        if "format" in query_string and "format" not in self.disabled_params:
+        if "format" in query_string and self._is_builtin_param_active("format"):
             for req_format in query_string["format"]:
                 if req_format in self.format:
                     request_url = self._converter_request_url()
@@ -173,8 +200,14 @@ class Operation:
             return self.format_media_types[fmt]
         return Operation.get_content_type(fmt)
 
+    def _validate_format_values(self, formats: list[str]) -> None:
+        supported_formats = {"csv", "json", *self.format}
+        for req_format in formats:
+            if req_format not in supported_formats:
+                Operation._raise_unprocessable(f"unsupported format {req_format!r}")
+
     def media_type_to_format(self) -> dict[str, str]:
-        if "format" in self.disabled_params:
+        if not self._is_builtin_param_active("format"):
             return {}
         default_token = self.i["default_format"].strip() if "default_format" in self.i else "json"
         media_type_to_token: dict[str, str] = {}
@@ -193,11 +226,14 @@ class Operation:
 
         content_type = Operation.get_content_type(c_type)
 
+        if "format" in query_string and self._is_builtin_param_active("format"):
+            self._validate_format_values(query_string["format"])
+
         resolved = self._resolve_format(s, query_string)
         if resolved is not None:
             return resolved
 
-        if "format" in query_string and "format" not in self.disabled_params:
+        if "format" in query_string and self._is_builtin_param_active("format"):
             for req_format in query_string["format"]:
                 content_type = Operation.get_content_type(req_format)
         elif "default_format" in self.i:
@@ -210,7 +246,7 @@ class Operation:
             with StringIO(s) as f:
                 r = [dict(i) for i in DictReader(f)]
 
-                if "json" not in self.disabled_params:
+                if self._is_builtin_param_active("json"):
                     r = Operation.structured(query_string, r)  # type: ignore[arg-type]
 
                 return dumps(r, ensure_ascii=False, indent=4), content_type
@@ -366,18 +402,25 @@ class Operation:
         if "json" in params:
             fields = params["json"]
             for field in fields:
-                ops = findall(r'([a-z]+)\(("[^"]+"),([^\)]+)\)', field)
-                for op_type, s, es in ops:
-                    separator = sub('"(.+)"', "\\1", s)
-                    entries = [i.strip() for i in es.split(",")]
-                    keys = entries[0].split(".")
+                op_match = fullmatch(_JSON_TRANSFORM_RE, field)
+                if op_match is None:
+                    Operation._raise_unprocessable(f"invalid json transform {field!r}")
+                op_type = op_match.group("op_type")
+                quoted_separator = op_match.group("separator")
+                entries = [i.strip() for i in op_match.group("entries").split(",")]
+                separator = quoted_separator[1:-1]
+                if op_type == "array" and len(entries) != 1:
+                    Operation._raise_unprocessable(f"json array transform expects one field, got {field!r}")
+                if op_type == "dict" and len(entries) < _DICT_TRANSFORM_MIN_FIELD_COUNT:
+                    Operation._raise_unprocessable(f"json dict transform expects output fields, got {field!r}")
+                keys = entries[0].split(".")
 
-                    for row in json_table:
-                        v_list = Operation.get_item_in_dict(row, keys)
-                        if op_type == "array":
-                            Operation._apply_array_transform(row, keys, separator, v_list)
-                        elif op_type == "dict":
-                            Operation._apply_dict_transform(row, keys, separator, entries, v_list)
+                for row in json_table:
+                    v_list = Operation.get_item_in_dict(row, keys)
+                    if op_type == "array":
+                        Operation._apply_array_transform(row, keys, separator, v_list)
+                    elif op_type == "dict":
+                        Operation._apply_dict_transform(row, keys, separator, entries, v_list)
 
         return json_table
 
@@ -458,6 +501,8 @@ class Operation:
     ) -> list[list[tuple[object, str]]]:
         """Exclude rows with empty values in the specified fields."""
         for field in fields:
+            if field not in header:
+                Operation._raise_unprocessable(f"require field {field!r} is not in the result header")
             field_idx = header.index(field)
             result = [row for row in result if Operation.pv(field_idx, row) not in (None, "")]
         return result
@@ -467,25 +512,41 @@ class Operation:
     ) -> list[list[tuple[object, str]]]:
         """Filter rows by comparison operators or regex patterns."""
         for field in fields:
+            if ":" not in field:
+                Operation._raise_unprocessable(f"filter must use field:value syntax, got {field!r}")
             field_name, field_value = field.split(":", 1)
-            try:
-                field_idx = header.index(field_name)
-                flag = field_value[0]
-                if flag in ("<", ">", "="):
-                    value = field_value[1:].lower()
-                    result = [
-                        row
-                        for row in result
-                        if self.operation[flag](
-                            Operation.tv(field_idx, row),
-                            self.dt.get_func(type(Operation.tv(field_idx, row)).__name__)(value),
-                        )
-                    ]
-                else:
-                    pattern = field_value.lower()
+            if field_name not in header:
+                Operation._raise_unprocessable(f"filter field {field_name!r} is not in the result header")
+            if field_value == "":
+                Operation._raise_unprocessable(f"filter value for field {field_name!r} must not be empty")
+            field_idx = header.index(field_name)
+            if not result:
+                continue
+            flag = field_value[0]
+            if flag in ("<", ">", "="):
+                value = field_value[1:].lower()
+                if value == "":
+                    Operation._raise_unprocessable(
+                        f"filter comparison value for field {field_name!r} must not be empty"
+                    )
+                try:
+                    typed_value = self.dt.get_func(type(Operation.tv(field_idx, result[0])).__name__)(value)
+                except ValueError:
+                    Operation._raise_unprocessable(f"filter value {value!r} is invalid for field {field_name!r}")
+                result = [
+                    row
+                    for row in result
+                    if self.operation[flag](
+                        Operation.tv(field_idx, row),
+                        typed_value,
+                    )
+                ]
+            else:
+                pattern = field_value.lower()
+                try:
                     result = [row for row in result if search(pattern, Operation.pv(field_idx, row).lower())]
-            except ValueError:
-                pass
+                except regex_error as exc:
+                    Operation._raise_unprocessable(f"filter regex for field {field_name!r} is invalid: {exc}")
         return result
 
     @staticmethod
@@ -494,16 +555,18 @@ class Operation:
     ) -> list[list[tuple[object, str]]]:
         """Sort rows by the specified fields and directions."""
         for field in sorted(fields, reverse=True):
-            order_names = findall(r"^(desc|asc)\(([^\(\)]+)\)$", field)
-            if order_names:
-                direction, field_name = order_names[0]
+            order_match = fullmatch(r"(?P<direction>desc|asc)\((?P<field_name>[^()]+)\)", field)
+            if order_match:
+                direction = order_match.group("direction")
+                field_name = order_match.group("field_name")
             else:
+                if "(" in field or ")" in field:
+                    Operation._raise_unprocessable(f"invalid sort expression {field!r}")
                 direction, field_name = "asc", field
-            try:
-                field_idx = header.index(field_name)
-                result = sorted(result, key=itemgetter(field_idx), reverse=(direction == "desc"))
-            except ValueError:
-                pass
+            if field_name not in header:
+                Operation._raise_unprocessable(f"sort field {field_name!r} is not in the result header")
+            field_idx = header.index(field_name)
+            result = sorted(result, key=itemgetter(field_idx), reverse=(direction == "desc"))
         return result
 
     def handling_params(
@@ -1013,22 +1076,20 @@ class Operation:
         return f"{self.tp}:{self.op_url}"
 
     def _extract_pagination_params(self, q_string: dict[str, list[str]]) -> tuple[int, int] | None:
-        if "page_size" not in q_string or "page_size" in self.disabled_params:
+        page_size_active = self._is_builtin_param_active("page_size")
+        page_active = self._is_builtin_param_active("page")
+        if "page_size" not in q_string or not page_size_active:
+            if page_size_active and page_active and "page" in q_string:
+                Operation._raise_unprocessable("page requires page_size")
             return None
-        page_size = int(q_string["page_size"][0])
-        if page_size < 1:
-            msg = f"page_size must be >= 1, got {page_size}"
-            raise ValueError(msg)
+        page_size = Operation._parse_positive_int_param(q_string, "page_size")
         page = 1
-        if "page" in q_string and "page" not in self.disabled_params:
-            page = int(q_string["page"][0])
-            if page < 1:
-                msg = f"page must be >= 1, got {page}"
-                raise ValueError(msg)
+        if "page" in q_string and page_active:
+            page = Operation._parse_positive_int_param(q_string, "page")
         return page, page_size
 
     def _has_custom_converter(self, q_string: dict[str, list[str]]) -> bool:
-        if "format" in q_string and "format" not in self.disabled_params:
+        if "format" in q_string and self._is_builtin_param_active("format"):
             for req_format in q_string["format"]:
                 if req_format in self.format:
                     return True
@@ -1052,9 +1113,7 @@ class Operation:
                 page, page_size = page_params
                 total_items = len(table) - 1
                 total_pages = ceil(total_items / page_size)
-                if page > total_pages:
-                    msg = f"page {page} exceeds total pages {total_pages}"
-                    raise ValueError(msg)
+                Operation._validate_page_range(page, total_items, total_pages)
                 start = (page - 1) * page_size
                 end = start + page_size
                 table = [table[0], *table[1 + start : 1 + end]]
@@ -1288,24 +1347,30 @@ class Operation:
     def _exec_page_step(self, var: str, default_size: str, max_size: str, state: dict[str, object]) -> None:
         q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
 
-        if "page_size" in q_string and "page_size" not in self.disabled_params:
-            page_size = int(q_string["page_size"][0])
+        page_size_active = self._is_builtin_param_active("page_size")
+        page_active = self._is_builtin_param_active("page")
+        explicit_page_size = page_size_active and "page_size" in q_string
+
+        if explicit_page_size:
+            page_size = Operation._parse_positive_int_param(q_string, "page_size")
         elif default_size:
             page_size = int(default_size)
         else:
+            if page_size_active and page_active and "page" in q_string:
+                Operation._raise_unprocessable("page requires page_size")
             return
         if page_size < 1:
             msg = f"page_size must be >= 1, got {page_size}"
             raise ValueError(msg)
         if max_size:
-            page_size = min(page_size, int(max_size))
+            max_page_size = int(max_size)
+            if explicit_page_size and page_size > max_page_size:
+                Operation._raise_unprocessable(f"page_size must be <= {max_page_size}, got {page_size}")
+            page_size = min(page_size, max_page_size)
 
         page = 1
-        if "page" in q_string and "page" not in self.disabled_params:
-            page = int(q_string["page"][0])
-            if page < 1:
-                msg = f"page must be >= 1, got {page}"
-                raise ValueError(msg)
+        if "page" in q_string and page_active:
+            page = Operation._parse_positive_int_param(q_string, "page")
 
         column = var.lstrip("?")
         acc = state["acc"]
@@ -1313,9 +1378,7 @@ class Operation:
         distinct = list(dict.fromkeys(row[column] for row in rows if row.get(column)))
         total_items = len(distinct)
         total_pages = ceil(total_items / page_size)
-        if total_items and page > total_pages:
-            msg = f"page {page} exceeds total pages {total_pages}"
-            raise ValueError(msg)
+        Operation._validate_page_range(page, total_items, total_pages)
 
         start = (page - 1) * page_size
         keep = set(distinct[start : start + page_size])

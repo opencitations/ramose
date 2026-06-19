@@ -511,11 +511,12 @@ class TestSkgifEnvelope:
         assert meta["part_of"]["local_identifier"] == _meta_url("/skgif/v1/products?filter=identifiers.scheme:isbn")
         assert len(result["@graph"]) == 5
 
-    def test_envelope_page_beyond_total_returns_400(self, skgif_api_manager: APIManager) -> None:
+    def test_envelope_page_beyond_total_returns_422(self, skgif_api_manager: APIManager) -> None:
         op = skgif_api_manager.get_op("/skgif/v1/products?page=9999&page_size=10")
         assert isinstance(op, Operation)
-        status, _, ctype, _ = op.exec(method="get", content_type="application/json")
-        assert status == 400
+        status, result, ctype, _ = op.exec(method="get", content_type="application/json")
+        assert status == 422
+        assert result == "HTTP status code 422: page 9999 exceeds total pages 135"
         assert ctype == "text/plain"
 
     def test_single_product_returns_single_entity_envelope(self, skgif_api_manager: APIManager) -> None:
@@ -579,12 +580,13 @@ class TestSkgifEnvelope:
         assert meta["prev_page"]["local_identifier"] == prev_id
         assert meta["next_page"]["local_identifier"] == next_id
 
-    def test_explicit_page_size_capped_at_max(self, skgif_api_manager: APIManager) -> None:
-        result = _envelope(skgif_api_manager, "/skgif/v1/products?page_size=100000")
-        assert len(result["@graph"]) == 100
-        meta = result["meta"]
-        assert meta["local_identifier"] == _meta_url("/skgif/v1/products?page=1&page_size=100")
-        assert meta["part_of"]["total_items"] == TOTAL_PRODUCTS
+    def test_explicit_page_size_above_max_returns_422(self, skgif_api_manager: APIManager) -> None:
+        op = skgif_api_manager.get_op("/skgif/v1/products?page_size=100000")
+        assert isinstance(op, Operation)
+        status, result, ctype, _ = op.exec(method="get", content_type="application/json")
+        assert status == 422
+        assert result == "HTTP status code 422: page_size must be <= 100, got 100000"
+        assert ctype == "text/plain"
 
     def test_empty_result_set_is_paginated_with_zero_total(self, skgif_api_manager: APIManager) -> None:
         result = _envelope(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:xyznonexistent999")

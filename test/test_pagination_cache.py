@@ -87,11 +87,12 @@ class TestPagination:
         assert len(result) == TOTAL_AUTHOR_WORKS
         assert op.pagination_info is None
 
-    def test_page_beyond_total_returns_400(self, api_manager: APIManager) -> None:
+    def test_page_beyond_total_returns_422(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page=10&page_size=3")
         assert isinstance(op, Operation)
-        status, _, ctype, _ = op.exec(content_type="application/json")
-        assert status == 400
+        status, body, ctype, _ = op.exec(content_type="application/json")
+        assert status == 422
+        assert body == "HTTP status code 422: page 10 exceeds total pages 3"
         assert ctype == "text/plain"
 
     def test_all_pages_cover_full_result(self, api_manager: APIManager) -> None:
@@ -114,25 +115,36 @@ class TestPagination:
         lines = [line for line in body.strip().split("\r\n") if line]
         assert len(lines) == 4
 
-    def test_invalid_page_size_returns_400(self, api_manager: APIManager) -> None:
+    def test_invalid_page_size_returns_422(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page_size=0")
         assert isinstance(op, Operation)
-        status, _, ctype, _ = op.exec(content_type="application/json")
-        assert status == 400
+        status, body, ctype, _ = op.exec(content_type="application/json")
+        assert status == 422
+        assert body == "HTTP status code 422: page_size must be >= 1, got 0"
         assert ctype == "text/plain"
 
-    def test_negative_page_returns_400(self, api_manager: APIManager) -> None:
+    def test_negative_page_returns_422(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page=-1&page_size=3")
         assert isinstance(op, Operation)
-        status, _, ctype, _ = op.exec(content_type="application/json")
-        assert status == 400
+        status, body, ctype, _ = op.exec(content_type="application/json")
+        assert status == 422
+        assert body == "HTTP status code 422: page must be >= 1, got -1"
         assert ctype == "text/plain"
 
-    def test_non_integer_page_size_returns_400(self, api_manager: APIManager) -> None:
+    def test_non_integer_page_size_returns_422(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page_size=abc")
         assert isinstance(op, Operation)
-        status, _, ctype, _ = op.exec(content_type="application/json")
-        assert status == 400
+        status, body, ctype, _ = op.exec(content_type="application/json")
+        assert status == 422
+        assert body == "HTTP status code 422: page_size must be an integer, got 'abc'"
+        assert ctype == "text/plain"
+
+    def test_page_without_page_size_returns_422(self, api_manager: APIManager) -> None:
+        op = api_manager.get_op(f"{AUTHOR_ORCID}?page=2")
+        assert isinstance(op, Operation)
+        status, body, ctype, _ = op.exec(content_type="application/json")
+        assert status == 422
+        assert body == "HTTP status code 422: page requires page_size"
         assert ctype == "text/plain"
 
     def test_link_header_middle_page(self, api_manager: APIManager) -> None:

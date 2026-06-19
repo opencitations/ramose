@@ -145,7 +145,9 @@ Each comma-separated entry is a separate link. `rel="first"` and `rel="last"` ar
 
 The response body contains only the results for the requested page, in the same format as a non-paginated response (JSON array or CSV rows). When a [custom format](format-converters) is configured, pagination is delegated to the format converter because custom formats can change the number of entities in the output. The `Link` header is only generated when no custom format is active.
 
-Invalid values (`page_size=0`, `page=-1`, non-integer values, `page` exceeding total pages) return HTTP 400.
+Invalid values (`page` without `page_size`, `page_size=0`, `page=-1`, non-integer values, `page` exceeding total pages) return HTTP 422.
+
+Invalid built-in query parameters return HTTP 422 instead of being ignored or normalized. This applies to unsupported `format` values, malformed `json` transforms, unknown `require`, `filter`, or `sort` fields, malformed filters, invalid filter regexes, and malformed sort expressions.
 
 ## Combined example
 

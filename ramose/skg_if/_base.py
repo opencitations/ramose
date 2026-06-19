@@ -10,11 +10,13 @@ from dataclasses import field as dataclass_field
 from io import StringIO
 from math import ceil
 from re import sub
+from typing import NoReturn
 from urllib.parse import parse_qs, urlencode, urlsplit
 
 from ramose import HttpError
 
 _YEAR_MONTH_PART_COUNT = 2
+_UNPROCESSABLE_CONTENT = 422
 
 _PRODUCT_COLUMNS: dict[str, str] = dict.fromkeys(
     (
@@ -676,6 +678,26 @@ def _page_url(base_path: str, params: dict[str, list[str]], page: int) -> str:
     return f"{base_path}?{urlencode(page_params, doseq=True, safe=':,')}"
 
 
+def _raise_unprocessable(message: str) -> NoReturn:
+    raise HttpError(_UNPROCESSABLE_CONTENT, f"HTTP status code {_UNPROCESSABLE_CONTENT}: {message}")
+
+
+def _parse_positive_int_param(params: dict[str, list[str]], name: str) -> int:
+    raw_value = params[name][0]
+    try:
+        value = int(raw_value)
+    except ValueError:
+        _raise_unprocessable(f"{name} must be an integer, got {raw_value!r}")
+    if value < 1:
+        _raise_unprocessable(f"{name} must be >= 1, got {value}")
+    return value
+
+
+def _validate_page_range(page: int, total_items: int, total_pages: int) -> None:
+    if total_items and page > total_pages:
+        _raise_unprocessable(f"page {page} exceeds total pages {total_pages}")
+
+
 def _build_meta(request_url: str, graph_size: int) -> dict:
     parsed = urlsplit(request_url)
     base_url = _meta_base_url(request_url)
@@ -684,12 +706,14 @@ def _build_meta(request_url: str, graph_size: int) -> dict:
     params = parse_qs(parsed.query)
     if "total_items" in params:
         total_items = int(params["total_items"][0])
-        page = int(params["page"][0])
-        page_size = int(params["page_size"][0])
+        page = _parse_positive_int_param(params, "page")
+        page_size = _parse_positive_int_param(params, "page_size")
     elif "page_size" in params:
         total_items = graph_size
-        page = int(params.get("page", ["1"])[0])
-        page_size = int(params["page_size"][0])
+        page = _parse_positive_int_param(params, "page") if "page" in params else 1
+        page_size = _parse_positive_int_param(params, "page_size")
+    elif "page" in params:
+        _raise_unprocessable("page requires page_size")
     else:
         total_items = graph_size
         page = 1
@@ -860,14 +884,14 @@ def to_skg_if(csv_str: str, request_url: str = "") -> str:
     parsed = urlsplit(request_url)
     params = parse_qs(parsed.query)
     if "page_size" in params and "total_items" not in params:
-        page_size = int(params["page_size"][0])
-        page = int(params.get("page", ["1"])[0])
+        page_size = _parse_positive_int_param(params, "page_size")
+        page = _parse_positive_int_param(params, "page") if "page" in params else 1
         total_pages = ceil(total_entities / page_size) if page_size > 0 else 0
-        if total_pages > 0 and page > total_pages:
-            msg = f"page {page} exceeds total pages {total_pages}"
-            raise ValueError(msg)
+        _validate_page_range(page, total_entities, total_pages)
         start = (page - 1) * page_size
         graph = graph[start : start + page_size]
+    elif "page" in params and "total_items" not in params:
+        _raise_unprocessable("page requires page_size")
 
     entity_type = _extract_entity_type(request_url)
     if entity_type:

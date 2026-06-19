@@ -84,7 +84,7 @@ The execution follows these steps in order:
 5. Run `#postprocess` functions on results
 6. Apply [query string filters](04-parameters.md) (require, filter, sort)
 7. Cache the processed result (if caching is enabled)
-8. Apply pagination slicing (if `page_size` is present)
+8. Apply pagination slicing (if `page_size` is present; `page` requires `page_size`)
 9. Convert to the requested output format
 
 ### Error codes
@@ -93,6 +93,7 @@ The execution follows these steps in order:
 |------|---------|
 | 200 | Success |
 | 400 | Invalid parameter or malformed multi-source query |
+| 422 | Invalid built-in query parameter (`format`, `json`, `require`, `filter`, `sort`, `page`, `page_size`) |
 | 404 | No matching operation |
 | 405 | HTTP method not allowed |
 | 408 | SPARQL endpoint timeout |
