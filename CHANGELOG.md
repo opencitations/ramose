@@ -1,3 +1,17 @@
+# [2.7.0](https://github.com/opencitations/ramose/compare/v2.6.0...v2.7.0) (2026-06-19)
+
+
+### Bug Fixes
+
+* reject invalid built-in query parameters with HTTP 422 [release] ([779956e](https://github.com/opencitations/ramose/commit/779956eb08788aadb124aab89ac8dc8a14c4fd3d))
+* require absolute API #base and always emit absolute converter URLs ([752ebd1](https://github.com/opencitations/ramose/commit/752ebd1324f0b6e9112a85eed8be51b4d23e4022)), closes [#base](https://github.com/opencitations/ramose/issues/base)
+* **skg-if:** emit absolute local_identifier URLs in result meta ([ee01c8e](https://github.com/opencitations/ramose/commit/ee01c8e7a22cc03d69dbecd8e741a6e1f5b59517))
+
+
+### Features
+
+* support YAML spec files as a mirror of the hash format ([78b3c05](https://github.com/opencitations/ramose/commit/78b3c05e56877bfb403d2f15cde2090c957f03af))
+
 # [2.6.0](https://github.com/opencitations/ramose/compare/v2.5.4...v2.6.0) (2026-06-17)
 
 
