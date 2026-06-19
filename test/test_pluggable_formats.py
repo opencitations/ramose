@@ -87,6 +87,7 @@ class TestDefaultFormat:
                 sparql_endpoint="http://unused/sparql",
                 addon=FakeAddon,  # type: ignore[arg-type]
                 format_map={"upper": "to_upper"},
+                public_base_url="https://example.org/base",
             ),
         )
         csv_str = "name,age\narcangelo,30\n"
@@ -120,6 +121,7 @@ class TestDefaultFormat:
                 sparql_endpoint="http://unused/sparql",
                 addon=FakeAddon,  # type: ignore[arg-type]
                 format_map={"upper": "to_upper", "dummyxml": "to_dummyxml"},
+                public_base_url="https://example.org/base",
             ),
         )
         csv_str = "name,age\narcangelo,30\n"
@@ -200,6 +202,7 @@ class TestDefaultFormat:
                 addon=FakeAddon,  # type: ignore[arg-type]
                 format_map={"skg_if": "to_skg_if"},
                 format_media_types={"skg_if": "application/ld+json"},
+                public_base_url="https://example.org/base",
             ),
         )
         result, ct = op.conv("name\narcangelo\n", {})

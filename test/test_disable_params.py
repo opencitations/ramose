@@ -63,6 +63,7 @@ def _make_op(
             addon=addon,  # type: ignore[arg-type]
             format_map=format_map or {},
             disabled_params=disabled_params or set(),
+            public_base_url="https://example.org/base",
         ),
     )
 

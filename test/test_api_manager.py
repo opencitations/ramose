@@ -38,6 +38,19 @@ class TestLoadAddon:
         assert module.__name__ == "ramose.skg_if"
 
 
+class TestApiBaseValidation:
+    @pytest.mark.parametrize("base", ["/relative/base", "example.org/base"])
+    def test_base_must_be_absolute_url(self, tmp_path: Path, base: str) -> None:
+        spec = tmp_path / "spec.hf"
+        spec.write_text(
+            f"#url /api\n#type api\n#base {base}\n#endpoint http://localhost:9999/sparql\n",
+            encoding="utf-8",
+        )
+        with pytest.raises(ValueError, match=r"^API #base must be an absolute URL$") as exc_info:
+            APIManager([str(spec)])
+        assert str(exc_info.value) == "API #base must be an absolute URL"
+
+
 class TestNorApiUrl:
     def test_with_typed_param(self) -> None:
         item = {"url": "/metadata/{id}", "id": "str(.+)"}

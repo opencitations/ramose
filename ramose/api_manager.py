@@ -75,6 +75,10 @@ class APIManager:
         item = conf_json[0]
         base_url = item["url"]
         website = item["base"]
+        website_parsed = urlsplit(website)
+        if not website_parsed.scheme or not website_parsed.netloc:
+            msg = "API #base must be an absolute URL"
+            raise ValueError(msg)
         tp = endpoint_override or item["endpoint"]
         update_endpoint = endpoint_override or ""
         if not endpoint_override and "update_endpoint" in item:

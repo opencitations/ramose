@@ -903,6 +903,7 @@ class TestCacheKeyPaging:
             addon=FakeAddon,  # type: ignore[arg-type]
             format_map={"url": "to_url"},
             format_media_types={"url": "text/plain"},
+            public_base_url="https://example.org/base",
         )
         first_op = Operation("/api/test/val?page=2&page_size=2", r"/api/test/(.+)", op_item, config)
         expected_pagination = build_pagination_info(first_op.op_url, q, 2, 2, 5)
@@ -914,7 +915,7 @@ class TestCacheKeyPaging:
 
         assert (status, body, ctype, cached_op.pagination_info) == (
             200,
-            "/api/test/val?page=2&page_size=2&total_items=5",
+            "https://example.org/base/api/test/val?page=2&page_size=2&total_items=5",
             "text/plain",
             expected_pagination,
         )

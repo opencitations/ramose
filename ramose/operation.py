@@ -131,11 +131,14 @@ class Operation:
         parsed = urlsplit(request_url)
         if parsed.scheme and parsed.netloc:
             return request_url
-        if self.public_base_url:
-            return f"{self.public_base_url.rstrip('/')}/{request_url.lstrip('/')}"
-        if self.url_parsed.scheme and self.url_parsed.netloc:
-            return f"{self.url_parsed.scheme}://{self.url_parsed.netloc}/{request_url.lstrip('/')}"
-        return request_url
+        return f"{self.public_base_url.rstrip('/')}/{request_url.lstrip('/')}"
+
+    def _converter_request_url(self) -> str:
+        if self.pagination_info is not None:
+            return self._public_request_url(self.pagination_info.self_url)
+        if self.url_parsed.query:
+            return self._public_request_url(f"{self.op_url}?{self.url_parsed.query}")
+        return self._public_request_url(self.op_url)
 
     @staticmethod
     def get_content_type(ct: str) -> str:
@@ -151,21 +154,16 @@ class Operation:
         return content_type
 
     def _resolve_format(self, s: str, query_string: dict[str, list[str]]) -> tuple[str, str] | None:
-        if self.pagination_info is not None:
-            request_url = self._public_request_url(self.pagination_info.self_url)
-        elif self.url_parsed.query:
-            request_url = self._public_request_url(f"{self.op_url}?{self.url_parsed.query}")
-        else:
-            request_url = self._public_request_url(self.op_url)
-
         if "format" in query_string and "format" not in self.disabled_params:
             for req_format in query_string["format"]:
                 if req_format in self.format:
+                    request_url = self._converter_request_url()
                     converter_func = getattr(self.addon, self.format[req_format])
                     return converter_func(s, request_url=request_url), self._media_type_for_format(req_format)
         elif "default_format" in self.i:
             default_fmt = self.i["default_format"].strip()
             if default_fmt in self.format:
+                request_url = self._converter_request_url()
                 converter_func = getattr(self.addon, self.format[default_fmt])
                 return converter_func(s, request_url=request_url), self._media_type_for_format(default_fmt)
         return None
