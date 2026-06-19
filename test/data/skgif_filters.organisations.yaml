@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: ISC
+
+# Validate-only filter vocabulary: every key is accepted and produces no constraint; unknown keys are rejected.
+identifiers.id: {}
+identifiers.scheme: {}
+name: {}
+short_name: {}
+website: {}
+country: {}
+cf.search.name: {}

@@ -16,6 +16,135 @@ with (Path(__file__).parent / "data" / "expected_search_products.json").open(enc
     EXPECTED_SEARCH: dict[str, list[dict]] = json.load(expected_search_file)
 
 SKGIF_PUBLIC_BASE_URL = "https://w3id.org/skg-if/sandbox/opencitations"
+COMING_SOON_MOCK_ENDPOINTS = ("persons", "organisations", "venues")
+EMPTY_DATA_MOCK_ENDPOINTS = ("grants", "topics", "datasources")
+MOCK_ENDPOINTS = (*COMING_SOON_MOCK_ENDPOINTS, *EMPTY_DATA_MOCK_ENDPOINTS)
+MOCK_FILTER_EXAMPLES = {
+    "persons": "cf.search.name:Carberry",
+    "organisations": "cf.search.name:Brown",
+    "venues": "cf.search.name:Psychoceramics",
+    "grants": "grant_number:12345",
+    "topics": "cf.search.labels:biology",
+    "datasources": "research_product_type:literature",
+}
+FILTER_DESCRIPTION_ORDER = {
+    "products": (
+        "product_type",
+        "identifiers.id",
+        "identifiers.scheme",
+        "contributions.by.local_identifier",
+        "contributions.by.identifiers.id",
+        "contributions.by.identifiers.scheme",
+        "contributions.by.family_name",
+        "contributions.by.given_name",
+        "contributions.by.name",
+        "contributions.declared_affiliations.local_identifier",
+        "contributions.declared_affiliations.identifiers.id",
+        "contributions.declared_affiliations.identifiers.scheme",
+        "contributions.declared_affiliations.name",
+        "contributions.declared_affiliations.short_name",
+        "funding.local_identifier",
+        "funding.grant_number",
+        "funding.identifiers.id",
+        "funding.identifiers.scheme",
+        "cf.search.title",
+        "cf.search.title_abstract",
+        "cf.contributions_orcid",
+        "cf.contributions_aff_ror",
+        "cf.contributions_aff_country",
+        "cf.cites",
+        "cf.cited_by",
+        "cf.cites_doi",
+        "cf.cited_by_doi",
+    ),
+    "persons": (
+        "identifiers.id",
+        "identifiers.scheme",
+        "given_name",
+        "family_name",
+        "name",
+        "affiliations.affiliation.local_identifier",
+        "affiliations.affiliation.name",
+        "affiliations.affiliation.short_name",
+        "affiliations.role",
+        "cf.search.family_name",
+        "cf.search.given_name",
+        "cf.search.name",
+    ),
+    "organisations": (
+        "identifiers.id",
+        "identifiers.scheme",
+        "name",
+        "short_name",
+        "website",
+        "country",
+        "cf.search.name",
+    ),
+    "grants": (
+        "identifiers.scheme",
+        "identifiers.value",
+        "acronym",
+        "currency",
+        "website",
+        "beneficiaries.identifiers.scheme",
+        "beneficiaries.identifiers.value",
+        "beneficiaries.name",
+        "beneficiaries.short_name",
+        "beneficiaries.website",
+        "beneficiaries.country",
+        "contributions.by.local_identifier",
+        "contributions.by.identifiers.scheme",
+        "contributions.by.identifiers.value",
+        "contributions.by.given_name",
+        "contributions.by.family_name",
+        "contributions.by.name",
+        "contributions.declared_affiliations.local_identifier",
+        "contributions.declared_affiliations.identifiers.scheme",
+        "contributions.declared_affiliations.identifiers.value",
+        "contributions.declared_affiliations.name",
+        "contributions.declared_affiliations.short_name",
+        "contributions.declared_affiliations.website",
+        "contributions.declared_affiliations.country",
+        "contributions.role",
+        "grant_number",
+        "funding_agency.identifiers.scheme",
+        "funding_agency.identifiers.value",
+        "funding_agency.name",
+        "funding_agency.short_name",
+        "funding_agency.website",
+        "funding_agency.country",
+        "funding_stream",
+        "cf.search.title",
+        "cf.search.title_abstract",
+        "cf.funded_amount.from",
+        "cf.funded_amount.to",
+        "cf.duration.start.from",
+        "cf.duration.start.to",
+        "cf.duration.end.from",
+    ),
+    "venues": (
+        "acronym",
+        "type",
+        "identifiers.scheme",
+        "identifiers.value",
+        "name",
+        "cf.search.name",
+    ),
+    "topics": (
+        "identifiers.scheme",
+        "identifiers.value",
+        "cf.search.labels",
+        "cf.search.language",
+    ),
+    "datasources": (
+        "data_source_classification",
+        "research_product_type",
+        "identifiers.scheme",
+        "identifiers.value",
+        "acronym",
+        "cf.search.name",
+    ),
+}
 
 
 def _meta_url(path: str) -> str:
@@ -52,6 +181,17 @@ def _exec_raw(skgif_api_manager: APIManager, url: str) -> tuple[int, str]:
         raise TypeError(msg)
     status, result, _, _ = op.exec(method="get", content_type="application/json")
     return status, result
+
+
+def _filter_param_description(spec: dict, entity: str) -> str:
+    op_spec = spec["paths"][f"/{entity}"]["get"]
+    inline_params = [p for p in op_spec["parameters"] if isinstance(p, dict) and p.get("name") == "filter"]
+    assert len(inline_params) == 1
+    return inline_params[0]["description"]
+
+
+def _filter_keys_from_description(description: str) -> list[str]:
+    return [line.split("`", 2)[1] for line in description.splitlines() if line.startswith("- `")]
 
 
 class TestNoFilter:
@@ -342,7 +482,7 @@ class TestCustomParamsInDocumentation:
         handler = OpenAPIDocumentationHandler(skgif_api_manager)
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
-        for entity in ["grants", "topics", "datasources"]:
+        for entity in MOCK_ENDPOINTS:
             assert f"/{entity}" in spec["paths"]
             assert f"/{entity}/{{local_identifier}}" in spec["paths"]
 
@@ -350,10 +490,48 @@ class TestCustomParamsInDocumentation:
         handler = OpenAPIDocumentationHandler(skgif_api_manager)
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
-        for entity in ["grants", "topics", "datasources"]:
+        for entity in MOCK_ENDPOINTS:
             op_spec = spec["paths"][f"/{entity}"]["get"]
             inline_params = [p for p in op_spec["parameters"] if isinstance(p, dict) and p.get("name") == "filter"]
             assert len(inline_params) == 1
+
+    def test_filter_descriptions_keep_expected_order(self, skgif_api_manager: APIManager) -> None:
+        handler = OpenAPIDocumentationHandler(skgif_api_manager)
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        for entity, expected_order in FILTER_DESCRIPTION_ORDER.items():
+            description = _filter_param_description(spec, entity)
+            assert _filter_keys_from_description(description) == list(expected_order)
+
+    def test_coming_soon_mock_endpoints_are_labelled(self, skgif_api_manager: APIManager) -> None:
+        handler = OpenAPIDocumentationHandler(skgif_api_manager)
+        _, yml = handler.get_documentation()
+        spec = yaml.safe_load(yml)
+        for entity in COMING_SOON_MOCK_ENDPOINTS:
+            assert spec["paths"][f"/{entity}"]["get"]["summary"].startswith("Coming soon")
+            assert spec["paths"][f"/{entity}/{{local_identifier}}"]["get"]["summary"].startswith("Coming soon")
+
+
+class TestComingSoonMockEndpoints:
+    def test_list_returns_empty(self, skgif_api_manager: APIManager) -> None:
+        for entity in COMING_SOON_MOCK_ENDPOINTS:
+            results = _exec(skgif_api_manager, f"/skgif/v1/{entity}")
+            assert results == []
+
+    def test_list_with_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
+        for entity in COMING_SOON_MOCK_ENDPOINTS:
+            results = _exec(skgif_api_manager, f"/skgif/v1/{entity}?filter={MOCK_FILTER_EXAMPLES[entity]}")
+            assert results == []
+
+    def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
+        for entity in COMING_SOON_MOCK_ENDPOINTS:
+            status, _ = _exec_raw(skgif_api_manager, f"/skgif/v1/{entity}?filter=invalid_field:value")
+            assert status == 400
+
+    def test_single_returns_404(self, skgif_api_manager: APIManager) -> None:
+        for entity in COMING_SOON_MOCK_ENDPOINTS:
+            status, _ = _exec_raw(skgif_api_manager, f"/skgif/v1/{entity}/example-id")
+            assert status == 404
 
 
 class TestGrantsEndpoints:

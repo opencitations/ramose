@@ -19,39 +19,41 @@
 #description Returns a list of research products matching the given filters.
 #custom_params filter,skgif_filters.ocdm.yaml,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
+Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+Filters marked as currently empty are accepted but return no matches in OpenCitations at the moment.
 
-**Filters with data:**
+**Attribute filters:**
 
-- `cf.cited_by`
-- `cf.cited_by_doi`
-- `cf.cites`
-- `cf.cites_doi`
-- `cf.contributions_orcid`
-- `cf.search.title`
-- `contributions.by.family_name`
-- `contributions.by.given_name`
-- `contributions.by.identifiers.id`
-- `contributions.by.identifiers.scheme`
-- `contributions.by.local_identifier`
-- `contributions.by.name`
+- `product_type`
 - `identifiers.id`
 - `identifiers.scheme`
-- `product_type`
+- `contributions.by.local_identifier`
+- `contributions.by.identifiers.id`
+- `contributions.by.identifiers.scheme`
+- `contributions.by.family_name`
+- `contributions.by.given_name`
+- `contributions.by.name`
+- `contributions.declared_affiliations.local_identifier` (currently empty)
+- `contributions.declared_affiliations.identifiers.id` (currently empty)
+- `contributions.declared_affiliations.identifiers.scheme` (currently empty)
+- `contributions.declared_affiliations.name` (currently empty)
+- `contributions.declared_affiliations.short_name` (currently empty)
+- `funding.local_identifier` (currently empty)
+- `funding.grant_number` (currently empty)
+- `funding.identifiers.id` (currently empty)
+- `funding.identifiers.scheme` (currently empty)
 
-**Accepted but always empty (OpenCitations does not hold this data):**
+**Convenience filters (`cf.*`):**
 
-- `cf.contributions_aff_country`
-- `cf.contributions_aff_ror`
-- `cf.search.title_abstract`
-- `contributions.declared_affiliations.identifiers.id`
-- `contributions.declared_affiliations.identifiers.scheme`
-- `contributions.declared_affiliations.local_identifier`
-- `contributions.declared_affiliations.name`
-- `contributions.declared_affiliations.short_name`
-- `funding.grant_number`
-- `funding.identifiers.id`
-- `funding.identifiers.scheme`
-- `funding.local_identifier`
+- `cf.search.title`
+- `cf.search.title_abstract` (currently empty)
+- `cf.contributions_orcid`
+- `cf.contributions_aff_ror` (currently empty)
+- `cf.contributions_aff_country` (currently empty)
+- `cf.cites`
+- `cf.cited_by`
+- `cf.cites_doi`
+- `cf.cited_by_doi`
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #call /products?filter=cf.search.title:OpenCitations
@@ -1447,55 +1449,167 @@ WHERE {
   BIND(STR(?cited_entity) AS ?related_products_cites)
 }
 
+#url /persons
+#type operation
+#method get
+#description Coming soon. Returns a list of persons matching the given filters when implemented; this placeholder currently returns an empty result.
+#custom_params filter,skgif_filters.persons.yaml,Search filter.
+Format: comma-separated `filter_name:filter_value` pairs (AND logic).
+Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+**Attribute filters:**
+
+- `identifiers.id`
+- `identifiers.scheme`
+- `given_name`
+- `family_name`
+- `name`
+- `affiliations.affiliation.local_identifier`
+- `affiliations.affiliation.name`
+- `affiliations.affiliation.short_name`
+- `affiliations.role`
+
+**Convenience filters (`cf.*`):**
+
+- `cf.search.family_name`
+- `cf.search.given_name`
+- `cf.search.name`
+
+#call /persons?filter=cf.search.name:Carberry
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json {
+    "@context": [
+        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+    ],
+    "meta": {
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/persons?filter=cf.search.name:Carberry&page=1&page_size=1",
+        "entity_type": "search_result_page",
+        "part_of": {
+            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/persons?filter=cf.search.name:Carberry",
+            "entity_type": "search_result",
+            "total_items": 0
+        }
+    },
+    "@graph": []
+}
+#sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
+
+#url /persons/{local_identifier}
+#type operation
+#method get
+#description Coming soon. Returns a single person when implemented; this placeholder currently returns 404.
+#call /persons/example-person-id
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json HTTP status code 404: entity not found
+#sparql SELECT ?dummy WHERE { FILTER(false) }
+
+#url /organisations
+#type operation
+#method get
+#description Coming soon. Returns a list of organisations matching the given filters when implemented; this placeholder currently returns an empty result.
+#custom_params filter,skgif_filters.organisations.yaml,Search filter.
+Format: comma-separated `filter_name:filter_value` pairs (AND logic).
+Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+**Attribute filters:**
+
+- `identifiers.id`
+- `identifiers.scheme`
+- `name`
+- `short_name`
+- `website`
+- `country`
+
+**Convenience filters (`cf.*`):**
+
+- `cf.search.name`
+
+#call /organisations?filter=cf.search.name:Brown
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json {
+    "@context": [
+        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+    ],
+    "meta": {
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/organisations?filter=cf.search.name:Brown&page=1&page_size=1",
+        "entity_type": "search_result_page",
+        "part_of": {
+            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/organisations?filter=cf.search.name:Brown",
+            "entity_type": "search_result",
+            "total_items": 0
+        }
+    },
+    "@graph": []
+}
+#sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
+
+#url /organisations/{local_identifier}
+#type operation
+#method get
+#description Coming soon. Returns a single organisation when implemented; this placeholder currently returns 404.
+#call /organisations/example-organisation-id
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json HTTP status code 404: entity not found
+#sparql SELECT ?dummy WHERE { FILTER(false) }
+
 #url /grants
 #type operation
 #method get
 #description Returns a list of grants matching the given filters. Note: OpenCitations does not currently hold grant data; this endpoint always returns an empty result.
 #custom_params filter,skgif_filters.grants.yaml,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
+Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+All filters below are accepted but currently return no matches because OpenCitations does not hold grant data.
 
-**Accepted but always empty (OpenCitations does not hold grant data):**
+**Attribute filters:**
 
+- `identifiers.scheme`
+- `identifiers.value`
 - `acronym`
-- `beneficiaries.country`
+- `currency`
+- `website`
 - `beneficiaries.identifiers.scheme`
 - `beneficiaries.identifiers.value`
 - `beneficiaries.name`
 - `beneficiaries.short_name`
 - `beneficiaries.website`
-- `cf.duration.end.from`
-- `cf.duration.start.from`
-- `cf.duration.start.to`
-- `cf.funded_amount.from`
-- `cf.funded_amount.to`
-- `cf.search.title`
-- `cf.search.title_abstract`
-- `contributions.by.family_name`
-- `contributions.by.given_name`
+- `beneficiaries.country`
+- `contributions.by.local_identifier`
 - `contributions.by.identifiers.scheme`
 - `contributions.by.identifiers.value`
-- `contributions.by.local_identifier`
+- `contributions.by.given_name`
+- `contributions.by.family_name`
 - `contributions.by.name`
-- `contributions.declared_affiliations.country`
+- `contributions.declared_affiliations.local_identifier`
 - `contributions.declared_affiliations.identifiers.scheme`
 - `contributions.declared_affiliations.identifiers.value`
-- `contributions.declared_affiliations.local_identifier`
 - `contributions.declared_affiliations.name`
 - `contributions.declared_affiliations.short_name`
 - `contributions.declared_affiliations.website`
+- `contributions.declared_affiliations.country`
 - `contributions.role`
-- `currency`
-- `funding_agency.country`
+- `grant_number`
 - `funding_agency.identifiers.scheme`
 - `funding_agency.identifiers.value`
 - `funding_agency.name`
 - `funding_agency.short_name`
 - `funding_agency.website`
+- `funding_agency.country`
 - `funding_stream`
-- `grant_number`
-- `identifiers.scheme`
-- `identifiers.value`
-- `website`
+
+**Convenience filters (`cf.*`):**
+
+- `cf.search.title`
+- `cf.search.title_abstract`
+- `cf.funded_amount.from`
+- `cf.funded_amount.to`
+- `cf.duration.start.from`
+- `cf.duration.start.to`
+- `cf.duration.end.from`
 
 #call /grants?filter=grant_number:12345
 #format skg_if,to_skg_if,application/ld+json
@@ -1536,19 +1650,74 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #output_json HTTP status code 404: entity not found
 #sparql SELECT ?dummy WHERE { FILTER(false) }
 
+#url /venues
+#type operation
+#method get
+#description Coming soon. Returns a list of venues matching the given filters when implemented; this placeholder currently returns an empty result.
+#custom_params filter,skgif_filters.venues.yaml,Search filter.
+Format: comma-separated `filter_name:filter_value` pairs (AND logic).
+Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+**Attribute filters:**
+
+- `acronym`
+- `type`
+- `identifiers.scheme`
+- `identifiers.value`
+- `name`
+
+**Convenience filters (`cf.*`):**
+
+- `cf.search.name`
+
+#call /venues?filter=cf.search.name:Psychoceramics
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json {
+    "@context": [
+        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+    ],
+    "meta": {
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Psychoceramics&page=1&page_size=1",
+        "entity_type": "search_result_page",
+        "part_of": {
+            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Psychoceramics",
+            "entity_type": "search_result",
+            "total_items": 0
+        }
+    },
+    "@graph": []
+}
+#sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
+
+#url /venues/{local_identifier}
+#type operation
+#method get
+#description Coming soon. Returns a single venue when implemented; this placeholder currently returns 404.
+#call /venues/example-venue-id
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json HTTP status code 404: entity not found
+#sparql SELECT ?dummy WHERE { FILTER(false) }
+
 #url /topics
 #type operation
 #method get
 #description Returns a list of topics matching the given filters. Note: OpenCitations does not currently hold topic data; this endpoint always returns an empty result.
 #custom_params filter,skgif_filters.topics.yaml,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
+Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+All filters below are accepted but currently return no matches because OpenCitations does not hold topic data.
 
-**Accepted but always empty (OpenCitations does not hold topic data):**
+**Attribute filters:**
+
+- `identifiers.scheme`
+- `identifiers.value`
+
+**Convenience filters (`cf.*`):**
 
 - `cf.search.labels`
 - `cf.search.language`
-- `identifiers.scheme`
-- `identifiers.value`
 
 #call /topics?filter=cf.search.labels:biology
 #format skg_if,to_skg_if,application/ld+json
@@ -1595,15 +1764,20 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #description Returns a list of data sources matching the given filters. Note: OpenCitations does not currently hold data source records; this endpoint always returns an empty result.
 #custom_params filter,skgif_filters.datasources.yaml,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
+Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+All filters below are accepted but currently return no matches because OpenCitations does not hold data source records.
 
-**Accepted but always empty (OpenCitations does not hold data source records):**
+**Attribute filters:**
 
-- `acronym`
-- `cf.search.name`
 - `data_source_classification`
+- `research_product_type`
 - `identifiers.scheme`
 - `identifiers.value`
-- `research_product_type`
+- `acronym`
+
+**Convenience filters (`cf.*`):**
+
+- `cf.search.name`
 
 #call /datasources?filter=research_product_type:literature
 #format skg_if,to_skg_if,application/ld+json
