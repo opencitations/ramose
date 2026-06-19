@@ -48,7 +48,9 @@ def _load_product_response_schema() -> dict:
     response_schema = openapi_spec["paths"]["/products/{local_identifier}"]["get"]["responses"]["200"]["content"][
         "application/json"
     ]["schema"]
-    return _resolve_refs(copy.deepcopy(response_schema), components)
+    resolved_schema = _resolve_refs(copy.deepcopy(response_schema), components)
+    resolved_schema["properties"]["@context"]["minItems"] = 2
+    return resolved_schema
 
 
 SKGIF_PRODUCT_RESPONSE_SCHEMA = _load_product_response_schema()
@@ -93,7 +95,6 @@ def _validate_skgif_shacl(response: dict) -> None:
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-    {"@base": "https://w3id.org/skg-if/sandbox/"},
 ]
 
 

@@ -121,7 +121,6 @@ _PRODUCT_COLUMNS: dict[str, str] = dict.fromkeys(
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-    {"@base": "https://w3id.org/skg-if/sandbox/"},
 ]
 
 

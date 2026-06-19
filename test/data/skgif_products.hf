@@ -58,10 +58,7 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-        {
-            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
-        }
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=7",
@@ -1122,10 +1119,7 @@ WHERE {
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-        {
-            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
-        }
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/products/https://w3id.org/oc/meta/br/062104388184",
@@ -1509,10 +1503,7 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-        {
-            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
-        }
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/grants?filter=grant_number:12345&page=1&page_size=1",
@@ -1565,10 +1556,7 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-        {
-            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
-        }
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/topics?filter=cf.search.labels:biology&page=1&page_size=1",
@@ -1623,10 +1611,7 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-        {
-            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
-        }
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/datasources?filter=research_product_type:literature&page=1&page_size=1",
