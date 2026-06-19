@@ -1453,7 +1453,7 @@ WHERE {
 #type operation
 #method get
 #description Coming soon. Returns a single person when implemented; this placeholder currently returns 404.
-#call /persons/example-person-id
+#call /persons/https://w3id.org/oc/meta/ra/0621012370564
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #output_json HTTP status code 404: entity not found
@@ -1484,7 +1484,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 - `cf.search.given_name`
 - `cf.search.name`
 
-#call /persons?filter=cf.search.name:Carberry
+#call /persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #output_json {
@@ -1493,10 +1493,10 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
     ],
     "meta": {
-        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/persons?filter=cf.search.name:Carberry&page=1&page_size=1",
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni&page=1&page_size=1",
         "entity_type": "search_result_page",
         "part_of": {
-            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/persons?filter=cf.search.name:Carberry",
+            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni",
             "entity_type": "search_result",
             "total_items": 0
         }
@@ -1508,7 +1508,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 #type operation
 #method get
 #description Coming soon. Returns a single organisation when implemented; this placeholder currently returns 404.
-#call /organisations/example-organisation-id
+#call /organisations/https://w3id.org/oc/meta/ra/0610116105
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #output_json HTTP status code 404: entity not found
@@ -1534,7 +1534,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 
 - `cf.search.name`
 
-#call /organisations?filter=cf.search.name:Brown
+#call /organisations?filter=cf.search.name:Mit Press
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #output_json {
@@ -1543,10 +1543,10 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
     ],
     "meta": {
-        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/organisations?filter=cf.search.name:Brown&page=1&page_size=1",
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/organisations?filter=cf.search.name:Mit Press&page=1&page_size=1",
         "entity_type": "search_result_page",
         "part_of": {
-            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/organisations?filter=cf.search.name:Brown",
+            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/organisations?filter=cf.search.name:Mit Press",
             "entity_type": "search_result",
             "total_items": 0
         }
@@ -1559,7 +1559,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 #type operation
 #method get
 #description Coming soon. Returns a single venue when implemented; this placeholder currently returns 404.
-#call /venues/example-venue-id
+#call /venues/https://w3id.org/oc/meta/br/062501778099
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #output_json HTTP status code 404: entity not found
@@ -1584,7 +1584,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 
 - `cf.search.name`
 
-#call /venues?filter=cf.search.name:Psychoceramics
+#call /venues?filter=cf.search.name:Quantitative Science Studies
 #format skg_if,to_skg_if,application/ld+json
 #default_format skg_if
 #output_json {
@@ -1593,10 +1593,10 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
     ],
     "meta": {
-        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Psychoceramics&page=1&page_size=1",
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Quantitative Science Studies&page=1&page_size=1",
         "entity_type": "search_result_page",
         "part_of": {
-            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Psychoceramics",
+            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Quantitative Science Studies",
             "entity_type": "search_result",
             "total_items": 0
         }

@@ -20,9 +20,9 @@ COMING_SOON_MOCK_ENDPOINTS = ("persons", "organisations", "venues")
 EMPTY_DATA_MOCK_ENDPOINTS = ("grants", "datasources", "topics")
 MOCK_ENDPOINTS = (*COMING_SOON_MOCK_ENDPOINTS, *EMPTY_DATA_MOCK_ENDPOINTS)
 MOCK_FILTER_EXAMPLES = {
-    "persons": "cf.search.name:Carberry",
-    "organisations": "cf.search.name:Brown",
-    "venues": "cf.search.name:Psychoceramics",
+    "persons": "cf.search.given_name:Silvio,cf.search.family_name:Peroni",
+    "organisations": "cf.search.name:Mit Press",
+    "venues": "cf.search.name:Quantitative Science Studies",
     "grants": "grant_number:12345",
     "datasources": "research_product_type:literature",
     "topics": "cf.search.labels:biology",
