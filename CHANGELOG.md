@@ -1,3 +1,10 @@
+## [2.7.1](https://github.com/opencitations/ramose/compare/v2.7.0...v2.7.1) (2026-06-19)
+
+
+### Bug Fixes
+
+* **skg-if:** drop [@base](https://github.com/base) from emitted [@context](https://github.com/context) ([849dd22](https://github.com/opencitations/ramose/commit/849dd22194f1fae2af5501798f1e9a2cd7d09b66))
+
 # [2.7.0](https://github.com/opencitations/ramose/compare/v2.6.0...v2.7.0) (2026-06-19)
 
 
