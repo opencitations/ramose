@@ -7,6 +7,8 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from requests.exceptions import ConnectionError as RequestsConnectionError
+
 from ramose import Operation, OperationConfig
 
 
@@ -14,6 +16,7 @@ def _mock_response(status_code: int = 200, text: str = "name,age\nAlice,30\n", r
     resp = SimpleNamespace()
     resp.status_code = status_code
     resp.text = text
+    resp.content = text.encode()
     resp.reason = reason
     resp.encoding = None
     return resp
@@ -34,7 +37,7 @@ def _make_op(
             "field_type": "str(name) int(age)",
         }
     if config is None:
-        config = OperationConfig(sparql_endpoint="http://localhost/sparql")
+        config = OperationConfig(sparql_endpoint="http://localhost/sparql", retry_wait=0)
     return Operation(op_url, op_key, op_item, config)
 
 
@@ -74,6 +77,40 @@ class TestExecNon200:
         assert sc == 500
         assert msg == "HTTP status code 500: Internal Server Error"
         assert ct == "text/plain"
+        assert mock_session.get.call_count == 3  # type: ignore[attr-defined]
+
+    @patch("ramose.operation._http_session")
+    def test_retryable_error_then_success(self, mock_session: object) -> None:
+        mock_session.get.side_effect = [  # type: ignore[attr-defined]
+            _mock_response(status_code=503, reason="Service Unavailable"),
+            _mock_response(),
+        ]
+        op = _make_op()
+        sc, body, ct, _ = op.exec(method="get", content_type="text/csv")
+        assert sc == 200
+        assert body == "name,age\r\nAlice,30\r\n"
+        assert ct == "text/csv"
+        assert mock_session.get.call_count == 2  # type: ignore[attr-defined]
+
+    @patch("ramose.operation._http_session")
+    def test_non_retryable_error_is_not_retried(self, mock_session: object) -> None:
+        mock_session.get.return_value = _mock_response(status_code=400, reason="Bad Request")  # type: ignore[attr-defined]
+        op = _make_op()
+        sc, msg, ct, _ = op.exec(method="get")
+        assert sc == 400
+        assert msg == "HTTP status code 400: Bad Request"
+        assert ct == "text/plain"
+        assert mock_session.get.call_count == 1  # type: ignore[attr-defined]
+
+    @patch("ramose.operation._http_session")
+    def test_retry_attempts_one_disables_retry(self, mock_session: object) -> None:
+        mock_session.get.return_value = _mock_response(status_code=503, reason="Service Unavailable")  # type: ignore[attr-defined]
+        op = _make_op(config=OperationConfig(sparql_endpoint="http://localhost/sparql", retry_attempts=1))
+        sc, msg, ct, _ = op.exec(method="get")
+        assert sc == 503
+        assert msg == "HTTP status code 503: Service Unavailable"
+        assert ct == "text/plain"
+        assert mock_session.get.call_count == 1  # type: ignore[attr-defined]
 
 
 class TestExecTimeout:
@@ -83,8 +120,43 @@ class TestExecTimeout:
         op = _make_op()
         sc, msg, ct, _ = op.exec(method="get")
         assert sc == 408
-        assert msg.startswith("HTTP status code 408: request timeout - TimeoutError: timed out (line ")
+        assert msg == "HTTP status code 408: SPARQL request timeout: timed out"
         assert ct == "text/plain"
+        assert mock_session.get.call_count == 3  # type: ignore[attr-defined]
+
+
+class TestExecConnectionError:
+    @patch("ramose.operation._http_session")
+    def test_connection_error_returns_502(self, mock_session: object) -> None:
+        mock_session.get.side_effect = RequestsConnectionError("refused")  # type: ignore[attr-defined]
+        op = _make_op()
+        sc, msg, ct, _ = op.exec(method="get")
+        assert sc == 502
+        assert msg == "HTTP status code 502: SPARQL request failed: refused"
+        assert ct == "text/plain"
+        assert mock_session.get.call_count == 3  # type: ignore[attr-defined]
+
+
+class TestExecCacheHit:
+    @patch("ramose.operation._http_session")
+    def test_cache_hit_skips_sparql_request(self, mock_session: object) -> None:
+        class FakeCache:
+            @staticmethod
+            def get(key: str) -> dict[str, object]:
+                return {"rows": [["name", "age"], ["Alice", "30"]], "pagination": None}
+
+        config = OperationConfig(
+            sparql_endpoint="http://localhost/sparql",
+            cache=FakeCache(),  # type: ignore[arg-type]
+            retry_attempts=3,
+            retry_wait=0,
+        )
+        op = _make_op(config=config)
+        sc, body, ct, _ = op.exec(method="get", content_type="text/csv")
+        assert sc == 200
+        assert body == "name,age\r\nAlice,30\r\n"
+        assert ct == "text/csv"
+        assert mock_session.get.call_count == 0  # type: ignore[attr-defined]
 
 
 class TestExecTypeError:

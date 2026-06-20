@@ -28,6 +28,9 @@ python -m ramose -s <spec.hf|spec.yaml> [options]
 | `--cache-dir` | Directory for result caching. Default: `.cache`. |
 | `--no-cache` | Disable result caching entirely. |
 | `--cache-ttl` | Cache TTL in seconds. Default: `86400` (1 day). |
+| `--retry-attempts` | Total SPARQL read attempts, including the first one. Applies to standard SPARQL and SPARQL Anything reads. Default: `3`; use `1` to disable retries. |
+| `--retry-wait` | Seconds to wait before the first SPARQL read retry. Applies to standard SPARQL and SPARQL Anything reads. Default: `0.5`. |
+| `--retry-backoff` | Multiplier applied between SPARQL read retry waits. Applies to standard SPARQL and SPARQL Anything reads. Default: `2.0`. |
 | `--auth-db` | Directory for the bearer token store. Default: `.auth`. |
 | `--token-create` | Create a bearer token with the given label, print it once, and exit. |
 | `--token-ttl` | Token lifetime in seconds for `--token-create`. Default: no expiry. |
@@ -124,6 +127,16 @@ python -m ramose -s meta_v1.hf -w 127.0.0.1:8080 --no-cache
 ```
 
 Per-operation cache control is available via `#cache_duration` and `#cache_disable` in the [spec file](01-spec-file.md).
+
+## SPARQL read retries
+
+RAMOSE retries failed SPARQL read requests before returning an error. Retries apply to standard queries, HTTP SPARQL steps in multi-source queries, and SPARQL Anything read steps. Write operations are not retried.
+
+```sh
+python -m ramose -s meta_v1.hf -w 127.0.0.1:8080 --retry-attempts 4 --retry-wait 1 --retry-backoff 2
+```
+
+The retry policy covers network errors, timeouts, and backend status codes `408 Request Timeout`, `429 Too Many Requests`, `500 Internal Server Error`, `502 Bad Gateway`, `503 Service Unavailable`, and `504 Gateway Timeout`. Status codes such as `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`, and `422 Unprocessable Content` return without retrying. For SPARQL Anything, RAMOSE classifies failures from Java exception messages because PySPARQL-Anything does not expose HTTP status codes. Per-operation overrides are available through `#retry_attempts`, `#retry_wait`, and `#retry_backoff` in the [spec file](01-spec-file.md).
 
 ## Authentication
 

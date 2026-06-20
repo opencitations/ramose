@@ -96,6 +96,6 @@ The execution follows these steps in order:
 | 422 | Invalid built-in query parameter (`format`, `json`, `require`, `filter`, `sort`, `page`, `page_size`) |
 | 404 | No matching operation |
 | 405 | HTTP method not allowed |
-| 408 | SPARQL endpoint timeout |
+| 408 | SPARQL or SPARQL Anything timeout after all read attempts fail |
 | 500 | Unexpected error |
-| 502 | SPARQL endpoint returned an error |
+| 502 | SPARQL endpoint returned an error or all SPARQL/SPARQL Anything connection attempts failed |

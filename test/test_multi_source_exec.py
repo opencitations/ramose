@@ -80,6 +80,16 @@ WIKIDATA_FULL_SCHOLARLY = [
 ]
 
 
+def _csv_response(status_code: int = 200, text: str = "id\nA\n", reason: str = "OK") -> SimpleNamespace:
+    return SimpleNamespace(
+        status_code=status_code,
+        text=text,
+        content=text.encode(),
+        reason=reason,
+        encoding=None,
+    )
+
+
 def _load_api_manager(hf_file: str) -> APIManager:
     return APIManager(
         [str(Path(TESTS_DIR) / hf_file)],
@@ -262,6 +272,160 @@ class TestMultiSourceValuesInject:
             sc, _body, _ctype, _ = op.exec(method="get", content_type="application/json")
 
         assert sc == 200
+
+
+class TestMultiSourceRetry:
+    @patch("ramose.operation._http_session")
+    def test_federated_step_retries_before_join(self, mock_session: MagicMock) -> None:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?id WHERE { }\n@@join ?id ?id\nSELECT ?id ?extra WHERE { }",
+            "method": "get",
+            "field_type": "str(id) str(extra)",
+        }
+        op = Operation(
+            "/api/test/A",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(sparql_endpoint="http://ep1/sparql", retry_wait=0),
+        )
+        mock_session.get.side_effect = [
+            _csv_response(text="id\nA\n"),
+            _csv_response(status_code=503, text="error", reason="Service Unavailable"),
+            _csv_response(text="id,extra\nA,B\n"),
+        ]
+
+        def mock_parse_steps(text: str, tp: str, par_dict: dict[str, object]) -> list[tuple[str, ...]]:
+            return [
+                ("QUERY", "http://ep1/sparql", "SELECT ?id WHERE { }"),
+                ("JOIN", "?id", "?id", "inner"),
+                ("QUERY", "http://ep2/sparql", "SELECT ?id ?extra WHERE { }"),
+            ]
+
+        with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
+            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
+
+        assert sc == 200
+        assert json.loads(body) == [{"id": "A", "extra": "B"}]
+        assert ctype == "application/json"
+        assert mock_session.get.call_count == 3
+
+    @patch("ramose.operation._http_session")
+    def test_foreach_retries_only_failed_iteration(self, mock_session: MagicMock) -> None:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?id WHERE { }\n@@foreach ?id item\nSELECT ?id ?value WHERE { }",
+            "method": "get",
+            "field_type": "str(id) str(value)",
+        }
+        op = Operation(
+            "/api/test/A",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(sparql_endpoint="http://ep1/sparql", retry_wait=0),
+        )
+        mock_session.get.side_effect = [
+            _csv_response(text="id\nA\nB\n"),
+            _csv_response(text="id,value\nA,one\n"),
+            _csv_response(status_code=503, text="error", reason="Service Unavailable"),
+            _csv_response(text="id,value\nB,two\n"),
+        ]
+
+        def mock_parse_steps(text: str, tp: str, par_dict: dict[str, object]) -> list[tuple[str, ...]]:
+            return [
+                ("QUERY", "http://ep1/sparql", "SELECT ?id WHERE { }"),
+                ("JOIN", "?id", "?id", "inner"),
+                ("FOREACH", "?id", "item", 0.0),  # type: ignore[list-item]
+                ("QUERY", "http://ep2/sparql", "SELECT ?id ?value WHERE { BIND([[item]] AS ?id) }"),
+            ]
+
+        with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
+            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
+
+        assert sc == 200
+        assert json.loads(body) == [{"id": "A", "value": "one"}, {"id": "B", "value": "two"}]
+        assert ctype == "application/json"
+        assert mock_session.get.call_count == 4
+        called_urls = [call.args[0] for call in mock_session.get.call_args_list]
+        assert called_urls[0].startswith("http://ep1/sparql?")
+        assert all(url.startswith("http://ep2/sparql?") for url in called_urls[1:])
+
+    def test_sparql_anything_endpoint_retries_before_join(self) -> None:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": ("SELECT ?id WHERE { }\n@@join ?id ?id\n@@endpoint sparql-anything\nSELECT ?id ?extra WHERE { }"),
+            "method": "get",
+            "field_type": "str(id) str(extra)",
+        }
+        op = Operation(
+            "/api/test/A",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(sparql_endpoint="http://ep1/sparql", retry_wait=0),
+        )
+        error = Exception("HTTP/1.0 503 Service Unavailable - URL was: https://example.org/data.csv")
+        with (
+            patch("ramose.operation._http_session") as mock_session,
+            patch("ramose.operation.SparqlAnything") as mock_sa,
+        ):
+            mock_session.get.return_value = _csv_response(text="id\nA\n")
+            select = mock_sa.return_value.select
+            select.side_effect = [error, [{"id": "A", "extra": "B"}]]
+            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
+
+        assert sc == 200
+        assert json.loads(body) == [{"id": "A", "extra": "B"}]
+        assert ctype == "application/json"
+        assert mock_session.get.call_count == 1
+        assert select.call_count == 2
+
+    def test_sparql_anything_foreach_retries_only_failed_iteration(self) -> None:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": (
+                "SELECT ?id WHERE { }\n"
+                "@@join ?id ?id\n"
+                "@@foreach ?id item\n"
+                "@@endpoint sparql-anything\n"
+                'SELECT ?id ?value WHERE { BIND("[[item]]" AS ?id) }'
+            ),
+            "method": "get",
+            "field_type": "str(id) str(value)",
+        }
+        op = Operation(
+            "/api/test/A",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(sparql_endpoint="http://ep1/sparql", retry_wait=0),
+        )
+        error = Exception("HTTP/1.0 503 Service Unavailable - URL was: https://example.org/B.csv")
+        with (
+            patch("ramose.operation._http_session") as mock_session,
+            patch("ramose.operation.SparqlAnything") as mock_sa,
+        ):
+            mock_session.get.return_value = _csv_response(text="id\nA\nB\n")
+            select = mock_sa.return_value.select
+            select.side_effect = [
+                [{"id": "A", "value": "one"}],
+                error,
+                [{"id": "B", "value": "two"}],
+            ]
+            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
+
+        assert sc == 200
+        assert json.loads(body) == [{"id": "A", "value": "one"}, {"id": "B", "value": "two"}]
+        assert ctype == "application/json"
+        assert mock_session.get.call_count == 1
+        assert select.call_count == 3
+        assert [call.kwargs["query"] for call in select.call_args_list] == [
+            'SELECT ?id ?value WHERE { BIND("A" AS ?id) }',
+            'SELECT ?id ?value WHERE { BIND("B" AS ?id) }',
+            'SELECT ?id ?value WHERE { BIND("B" AS ?id) }',
+        ]
 
 
 class TestMultiSourceMissingJoin:
@@ -727,7 +891,7 @@ class TestRunSparqlDicts:
             "/api/test/v",
             r"/api/test/(.+)",
             op_item,
-            OperationConfig(sparql_endpoint="http://ep/sparql", sparql_http_method=method),
+            OperationConfig(sparql_endpoint="http://ep/sparql", sparql_http_method=method, retry_wait=0),
         )
 
     @patch("ramose.operation._http_session")
@@ -774,14 +938,18 @@ class TestRunSparqlDicts:
         op = self._make_op("get")
         with pytest.raises(RuntimeError, match="SPARQL 500: Internal Server Error"):
             op._run_sparql_dicts("http://ep/sparql", "SELECT ?x WHERE { }")
+        assert mock_session.get.call_count == 3
 
     @patch("ramose.operation._http_session")
     def test_request_exception_raises(self, mock_session: MagicMock) -> None:
         mock_session.get.side_effect = RequestsConnectionError("refused")
 
         op = self._make_op("get")
-        with pytest.raises(RuntimeError, match="SPARQL request failed: refused"):
+        with pytest.raises(HttpError) as exc_info:
             op._run_sparql_dicts("http://ep/sparql", "SELECT ?x WHERE { }")
+        assert exc_info.value.status_code == 502
+        assert str(exc_info.value) == "HTTP status code 502: SPARQL request failed: refused"
+        assert mock_session.get.call_count == 3
 
 
 class TestPageStep:

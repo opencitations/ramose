@@ -128,6 +128,27 @@ def _parse_args() -> Namespace:  # pragma: no cover
         help="Cache TTL in seconds (default: 86400 = 1 day).",
     )
     arg_parser.add_argument(
+        "--retry-attempts",
+        dest="retry_attempts",
+        type=int,
+        default=3,
+        help="Total SPARQL read attempts, including the first one (default: 3). Use 1 to disable retries.",
+    )
+    arg_parser.add_argument(
+        "--retry-wait",
+        dest="retry_wait",
+        type=float,
+        default=0.5,
+        help="Seconds to wait before the first SPARQL read retry (default: 0.5).",
+    )
+    arg_parser.add_argument(
+        "--retry-backoff",
+        dest="retry_backoff",
+        type=float,
+        default=2.0,
+        help="Multiplier applied between SPARQL read retry waits (default: 2.0).",
+    )
+    arg_parser.add_argument(
         "--auth-db",
         dest="auth_db",
         default=".auth",
@@ -403,7 +424,14 @@ def main() -> None:  # pragma: no cover
     _backend_auth.update(parse_backend_auth(args.backend_auth, os.environ.get("RAMOSE_BACKEND_AUTH")))
 
     cache_dir = None if args.no_cache else args.cache_dir
-    api_manager = APIManager(args.spec, cache_dir=cache_dir, cache_ttl=args.cache_ttl)
+    api_manager = APIManager(
+        args.spec,
+        cache_dir=cache_dir,
+        cache_ttl=args.cache_ttl,
+        retry_attempts=args.retry_attempts,
+        retry_wait=args.retry_wait,
+        retry_backoff=args.retry_backoff,
+    )
     html_handler = HTMLDocumentationHandler(api_manager)
     openapi_handler = OpenAPIDocumentationHandler(api_manager)
     css_path = args.css or None

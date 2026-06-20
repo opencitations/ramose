@@ -419,6 +419,119 @@ class TestRunSparqlAnythingDictsNormalization:
         assert call_kwargs[1]["values"] == {"doi": "10.1"}
 
 
+class TestSparqlAnythingRetry:
+    def _make_op(self, retry_attempts: int = 3) -> Operation:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?x WHERE { }",
+            "method": "get",
+            "field_type": "str(x)",
+        }
+        return Operation(
+            "/api/test/v",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(
+                sparql_endpoint="http://ep/sparql",
+                engine="sparql-anything",
+                retry_attempts=retry_attempts,
+                retry_wait=0,
+            ),
+        )
+
+    def test_retryable_status_then_success(self) -> None:
+        op = self._make_op()
+        error = Exception("HTTP/1.0 503 Service Unavailable - URL was: https://example.org/data.csv")
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
+            select = mock_sa.return_value.select
+            select.side_effect = [error, [{"x": "ok"}]]
+            rows = op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert rows == [{"x": "ok"}]
+        assert select.call_count == 2
+
+    def test_non_retryable_status_is_not_retried(self) -> None:
+        op = self._make_op()
+        error = Exception("HTTP/1.0 400 Bad Request - URL was: https://example.org/data.csv")
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
+            select = mock_sa.return_value.select
+            select.side_effect = error
+            with pytest.raises(HttpError) as exc_info:
+                op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert exc_info.value.status_code == 400
+        assert str(exc_info.value) == (
+            "HTTP status code 400: SPARQL Anything request failed: "
+            "HTTP/1.0 400 Bad Request - URL was: https://example.org/data.csv"
+        )
+        assert select.call_count == 1
+
+    def test_network_error_exhaustion_returns_502(self) -> None:
+        op = self._make_op(retry_attempts=2)
+        error = Exception("org.apache.http.conn.HttpHostConnectException: Connect to example.org failed")
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
+            select = mock_sa.return_value.select
+            select.side_effect = error
+            with pytest.raises(HttpError) as exc_info:
+                op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert exc_info.value.status_code == 502
+        assert str(exc_info.value) == (
+            "HTTP status code 502: SPARQL Anything request failed: "
+            "org.apache.http.conn.HttpHostConnectException: Connect to example.org failed"
+        )
+        assert select.call_count == 2
+
+    def test_timeout_error_exhaustion_returns_408(self) -> None:
+        op = self._make_op(retry_attempts=2)
+        error = Exception("java.net.SocketTimeoutException: Read timed out")
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
+            select = mock_sa.return_value.select
+            select.side_effect = error
+            with pytest.raises(HttpError) as exc_info:
+                op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert exc_info.value.status_code == 408
+        assert str(exc_info.value) == (
+            "HTTP status code 408: SPARQL Anything request failed: java.net.SocketTimeoutException: Read timed out"
+        )
+        assert select.call_count == 2
+
+    def test_unclassified_error_is_not_retried(self) -> None:
+        op = self._make_op()
+        error = ValueError("SPARQL syntax error")
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
+            select = mock_sa.return_value.select
+            select.side_effect = error
+            with pytest.raises(ValueError, match="SPARQL syntax error") as exc_info:
+                op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert str(exc_info.value) == "SPARQL syntax error"
+        assert select.call_count == 1
+
+    def test_retry_attempts_one_disables_retry(self) -> None:
+        op = self._make_op(retry_attempts=1)
+        error = Exception("HTTP/1.0 503 Service Unavailable - URL was: https://example.org/data.csv")
+        with patch("ramose.operation.SparqlAnything") as mock_sa:
+            select = mock_sa.return_value.select
+            select.side_effect = error
+            with pytest.raises(HttpError) as exc_info:
+                op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert exc_info.value.status_code == 503
+        assert str(exc_info.value) == (
+            "HTTP status code 503: SPARQL Anything request failed: "
+            "HTTP/1.0 503 Service Unavailable - URL was: https://example.org/data.csv"
+        )
+        assert select.call_count == 1
+
+    def test_missing_sparql_anything_dependency_is_not_retried(self) -> None:
+        op = self._make_op()
+        with (
+            patch("ramose.operation.SparqlAnything", None),
+            pytest.raises(ImportError) as exc_info,
+        ):
+            op._run_sparql_anything_dicts("SELECT ?x WHERE { }")
+        assert str(exc_info.value) == (
+            "pysparql_anything not installed. Install with: pip install ramose[sparql-anything]"
+        )
+
+
 class TestRunQueryDictsDispatch:
     def _make_op(self, engine: str = "sparql") -> Operation:
         op_item = {

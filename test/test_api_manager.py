@@ -176,6 +176,80 @@ class TestPerOperationEngine:
         assert am.all_conf[base]["engine"] == "sparql"
 
 
+class TestRetryConfig:
+    def test_default_retry_config(self, api_mgr: APIManager) -> None:
+        op = api_mgr.get_op(api_mgr.base_url[0] + "/metadata/doi:10.1234")
+        assert isinstance(op, Operation)
+        assert (op.retry_attempts, op.retry_wait, op.retry_backoff) == (3, 0.5, 2.0)
+
+    def test_api_manager_retry_config_override(self) -> None:
+        am = APIManager(
+            ["test/data/meta_v1.hf"],
+            endpoint_override="http://localhost:9999/sparql",
+            retry_attempts=5,
+            retry_wait=0.25,
+            retry_backoff=1.5,
+        )
+        op = am.get_op(am.base_url[0] + "/metadata/doi:10.1234")
+        assert isinstance(op, Operation)
+        assert (op.retry_attempts, op.retry_wait, op.retry_backoff) == (5, 0.25, 1.5)
+
+    @pytest.mark.parametrize("suffix", [".hf", ".yaml"])
+    def test_operation_retry_config_override(self, tmp_path: Path, suffix: str) -> None:
+        spec = tmp_path / f"spec{suffix}"
+        if suffix == ".hf":
+            spec.write_text(
+                "#url /api\n"
+                "#type api\n"
+                "#base http://localhost:5000\n"
+                "#endpoint http://localhost:9999/sparql\n"
+                "#title Retry config API\n"
+                "#description Retry config API.\n"
+                "#version 0.0.1\n"
+                "\n"
+                "#url /items/{id}\n"
+                "#type operation\n"
+                "#id str(.+)\n"
+                "#method get\n"
+                "#description Retry config operation.\n"
+                "#field_type str(id)\n"
+                "#retry_attempts 4\n"
+                "#retry_wait 0.1\n"
+                "#retry_backoff 3.0\n"
+                '#sparql SELECT ?id WHERE { BIND("[[id]]" AS ?id) }\n',
+                encoding="utf-8",
+            )
+        else:
+            spec.write_text(
+                """- url: /api
+  type: api
+  base: http://localhost:5000
+  endpoint: http://localhost:9999/sparql
+  title: Retry config API
+  description: Retry config API.
+  version: "0.0.1"
+
+- url: /items/{id}
+  type: operation
+  id: 'str(.+)'
+  method: get
+  description: Retry config operation.
+  field_type: str(id)
+  retry_attempts: "4"
+  retry_wait: "0.1"
+  retry_backoff: "3.0"
+  sparql: |
+    SELECT ?id WHERE { BIND("[[id]]" AS ?id) }
+""",
+                encoding="utf-8",
+            )
+
+        am = APIManager([str(spec)], retry_attempts=7, retry_wait=0.7, retry_backoff=1.7)
+        op = am.get_op("/api/items/ABC")
+        assert isinstance(op, Operation)
+        assert (op.retry_attempts, op.retry_wait, op.retry_backoff) == (4, 0.1, 3.0)
+
+
 class TestFormatParsingEmptyPart:
     def test_trailing_semicolon_ignored(self) -> None:
         am = APIManager(

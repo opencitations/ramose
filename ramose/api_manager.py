@@ -117,12 +117,15 @@ class APIManager:
             "conf_file": conf_file,
         }
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         conf_files: list[str],
         endpoint_override: str | None = None,
         cache_dir: str | None = None,
         cache_ttl: int = 86400,
+        retry_attempts: int = 3,
+        retry_wait: float = 0.5,
+        retry_backoff: float = 2.0,
     ) -> None:
         """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
         defined according to the Hash Format or YAML mirror format, and stores all the operations defined within a
@@ -152,6 +155,9 @@ class APIManager:
         self._cache = ResultCache(cache_dir) if cache_dir else None
         self._cache_ttl = cache_ttl
         self._config_cache: dict[str, FiltersConfig] = {}
+        self._retry_attempts = retry_attempts
+        self._retry_wait = retry_wait
+        self._retry_backoff = retry_backoff
 
         self.all_conf: OrderedDict[str, APIConfig] = OrderedDict()
         self.base_url: list[str] = []
@@ -237,6 +243,12 @@ class APIManager:
                     op_media_types[fields[0]] = fields[2]
         return op_format_map, op_media_types
 
+    def _retry_config_for_operation(self, op_conf: dict[str, str]) -> tuple[int, float, float]:
+        retry_attempts = int(op_conf["retry_attempts"]) if "retry_attempts" in op_conf else self._retry_attempts
+        retry_wait = float(op_conf["retry_wait"]) if "retry_wait" in op_conf else self._retry_wait
+        retry_backoff = float(op_conf["retry_backoff"]) if "retry_backoff" in op_conf else self._retry_backoff
+        return retry_attempts, retry_wait, retry_backoff
+
     def _resolve_custom_param_configs(
         self, conf: APIConfig, custom_params_map: dict[str, dict[str, str]]
     ) -> dict[str, FiltersConfig]:
@@ -274,6 +286,7 @@ class APIManager:
             requires_auth = parse_auth(op_conf["auth"]) if "auth" in op_conf else conf["auth_required"]
 
             op_format_map, op_format_media_types = APIManager._parse_format_map(op_conf)
+            retry_attempts, retry_wait, retry_backoff = self._retry_config_for_operation(op_conf)
             config = OperationConfig(
                 sparql_endpoint=conf["tp"],
                 update_endpoint=conf["update_endpoint"],
@@ -290,6 +303,9 @@ class APIManager:
                 default_cache_ttl=self._cache_ttl,
                 custom_param_configs=self._resolve_custom_param_configs(conf, custom_params_map),
                 public_base_url=conf["website"],
+                retry_attempts=retry_attempts,
+                retry_wait=retry_wait,
+                retry_backoff=retry_backoff,
             )
             return Operation(op_complete_url, op, op_conf, config)
 

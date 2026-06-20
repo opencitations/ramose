@@ -107,6 +107,9 @@ SELECT DISTINCT ?id ?title ?author ?pub_date ... WHERE {
 | `#disable_params` | no | Comma-separated list of built-in query parameters to suppress for this operation. Use `*` to disable all. Merged with any API-level `#disable_params`. |
 | `#cache_duration` | no | Cache TTL in seconds for this operation. Overrides the global `--cache-ttl` value. |
 | `#cache_disable` | no | Set to any value (e.g., `true`) to disable caching for this operation. |
+| `#retry_attempts` | no | Total SPARQL read attempts for this operation, including the first one. Applies to standard SPARQL and SPARQL Anything reads. Overrides the `APIManager` or CLI value. Use `1` to disable retries. |
+| `#retry_wait` | no | Seconds to wait before the first SPARQL read retry for this operation. Applies to standard SPARQL and SPARQL Anything reads. Overrides the `APIManager` or CLI value. |
+| `#retry_backoff` | no | Multiplier applied between SPARQL read retry waits for this operation. Applies to standard SPARQL and SPARQL Anything reads. Overrides the `APIManager` or CLI value. |
 | `#auth` | no | Set to `required` to require a bearer token for this operation. Overrides the API-level `#auth`. |
 
 ## YAML format
@@ -136,6 +139,9 @@ operation. Field names match HF names without the leading `#`.
     Returns bibliographic metadata for the given identifiers.
   call: /metadata/doi:10.1162/qss_a_00292
   field_type: str(id) str(title) datetime(pub_date)
+  retry_attempts: "3"
+  retry_wait: "0.5"
+  retry_backoff: "2.0"
   output_json: |
     [
       {

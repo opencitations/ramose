@@ -10,6 +10,8 @@ RAMOSE can combine results from multiple SPARQL endpoints in a single operation.
 
 When no directives are present, the query runs against the default endpoint as usual. When directives appear, RAMOSE splits the block into steps and executes them in sequence, building up an accumulator of rows.
 
+SPARQL read retries apply per HTTP SPARQL step and per SPARQL Anything read step. In an `@@foreach` block, RAMOSE retries only the failed iteration. It does not restart the whole multi-source pipeline. Write operations are not retried by this policy.
+
 ## Setup
 
 Register named endpoints in the API section:

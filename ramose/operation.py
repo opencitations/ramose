@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, NoReturn, TypedDict, cast
 from urllib.parse import parse_qs, quote, urlsplit
 
 from requests.exceptions import RequestException
+from requests.exceptions import Timeout as RequestsTimeout
 
 try:
     from pysparql_anything import SparqlAnything  # pyright: ignore[reportMissingImports, reportAttributeAccessIssue]
@@ -45,12 +46,44 @@ from ramose.paging import PaginationInfo, build_link_header, build_pagination_in
 if TYPE_CHECKING:
     import types
     from collections.abc import Callable, Mapping
+    from typing import Protocol
+
+    from requests import Response
 
     from ramose.cache import ResultCache
     from ramose.filters import FiltersConfig
 
+    class SparqlAnythingEngine(Protocol):
+        def select(self, output_type: type[object], **kwargs: object) -> object: ...
+
 
 _WRITE_METHODS = frozenset({"post", "put", "delete"})
+_RETRYABLE_STATUS_CODES = frozenset(
+    {
+        HTTPStatus.REQUEST_TIMEOUT,
+        HTTPStatus.TOO_MANY_REQUESTS,
+        HTTPStatus.INTERNAL_SERVER_ERROR,
+        HTTPStatus.BAD_GATEWAY,
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        HTTPStatus.GATEWAY_TIMEOUT,
+    }
+)
+_SPARQL_ANYTHING_HTTP_STATUS_RE = r"\bHTTP/\d(?:\.\d)?\s+(\d{3})\b"
+_SPARQL_ANYTHING_TIMEOUT_MARKERS = frozenset(
+    {
+        "sockettimeoutexception",
+        "timed out",
+    }
+)
+_SPARQL_ANYTHING_NETWORK_MARKERS = frozenset(
+    {
+        "httphostconnectexception",
+        "connectexception",
+        "noroutetohostexception",
+        "unknownhostexception",
+        "connection refused",
+    }
+)
 _IRI_FORBIDDEN = r'[<>"{}|^`\\\x00-\x20]'
 _UNPROCESSABLE_CONTENT = 422
 _JSON_TRANSFORM_RE = r'^(?P<op_type>array|dict)\((?P<separator>"[^"]+"),(?P<entries>[^)]+)\)$'
@@ -93,6 +126,20 @@ class OperationConfig:
     default_cache_ttl: int = 86400
     custom_param_configs: dict[str, FiltersConfig] = dataclass_field(default_factory=dict)
     public_base_url: str = ""
+    retry_attempts: int = 3
+    retry_wait: float = 0.5
+    retry_backoff: float = 2.0
+
+    def __post_init__(self) -> None:
+        if self.retry_attempts < 1:
+            msg = "retry_attempts must be >= 1"
+            raise ValueError(msg)
+        if self.retry_wait < 0:
+            msg = "retry_wait must be >= 0"
+            raise ValueError(msg)
+        if self.retry_backoff < 1:
+            msg = "retry_backoff must be >= 1"
+            raise ValueError(msg)
 
 
 class Operation:
@@ -125,6 +172,9 @@ class Operation:
         self._default_cache_ttl = config.default_cache_ttl
         self.custom_param_configs = config.custom_param_configs
         self.public_base_url = config.public_base_url
+        self.retry_attempts = config.retry_attempts
+        self.retry_wait = config.retry_wait
+        self.retry_backoff = config.retry_backoff
         self.pagination_info: PaginationInfo | None = None
 
         self.operation = {"=": eq, "<": lt, ">": gt}
@@ -806,39 +856,64 @@ class Operation:
         flush_query()
         return steps
 
+    def _send_sparql_csv_request(self, endpoint_url: str, query_text: str) -> Response:
+        headers = {
+            "Accept": "text/csv",
+            "User-Agent": "RAMOSE/2.0.0",
+            **backend_auth_header(endpoint_url),
+        }
+        if self.sparql_http_method == "get":
+            return _http_session.get(
+                endpoint_url + "?query=" + quote(query_text),
+                headers=headers,
+                timeout=DEFAULT_HTTP_TIMEOUT,
+            )
+        return _http_session.post(
+            endpoint_url,
+            data=query_text,
+            headers={
+                **headers,
+                "Content-Type": "application/sparql-query",
+            },
+            timeout=DEFAULT_HTTP_TIMEOUT,
+        )
+
+    def _request_sparql_csv(self, endpoint_url: str, query_text: str) -> Response:
+        retry_wait = self.retry_wait
+        for attempt in range(self.retry_attempts):
+            try:
+                response = self._send_sparql_csv_request(endpoint_url, query_text)
+            except (RequestsTimeout, TimeoutError) as exc:
+                if attempt + 1 == self.retry_attempts:
+                    msg = f"HTTP status code 408: SPARQL request timeout: {exc}"
+                    raise HttpError(HTTPStatus.REQUEST_TIMEOUT, msg) from exc
+                self._sleep_before_retry(retry_wait)
+                retry_wait *= self.retry_backoff
+                continue
+            except RequestException as exc:
+                if attempt + 1 == self.retry_attempts:
+                    msg = f"HTTP status code 502: SPARQL request failed: {exc}"
+                    raise HttpError(HTTPStatus.BAD_GATEWAY, msg) from exc
+                self._sleep_before_retry(retry_wait)
+                retry_wait *= self.retry_backoff
+                continue
+
+            response.encoding = "utf-8"
+            if response.status_code not in _RETRYABLE_STATUS_CODES or attempt + 1 == self.retry_attempts:
+                return response
+            self._sleep_before_retry(retry_wait)
+            retry_wait *= self.retry_backoff
+
+        msg = "SPARQL request did not run"
+        raise RuntimeError(msg)
+
+    @staticmethod
+    def _sleep_before_retry(retry_wait: float) -> None:
+        if retry_wait:
+            time.sleep(retry_wait)
+
     def _run_sparql_dicts(self, endpoint_url: str, query_text: str) -> list[dict[str, object]]:
-        """Run a SELECT query against a SPARQL endpoint and return a list of dict rows.
-
-        This always requests CSV and parses it via DictReader, to stay consistent
-        with RAMOSE's legacy pipeline.
-        """
-        try:
-            if self.sparql_http_method == "get":
-                r = _http_session.get(
-                    endpoint_url + "?query=" + quote(query_text),
-                    headers={
-                        "Accept": "text/csv",
-                        "User-Agent": "RAMOSE/2.0.0",
-                        **backend_auth_header(endpoint_url),
-                    },
-                    timeout=DEFAULT_HTTP_TIMEOUT,
-                )
-            else:
-                r = _http_session.post(
-                    endpoint_url,
-                    data=query_text,
-                    headers={
-                        "Accept": "text/csv",
-                        "Content-Type": "application/sparql-query",
-                        "User-Agent": "RAMOSE/2.0.0",
-                        **backend_auth_header(endpoint_url),
-                    },
-                    timeout=DEFAULT_HTTP_TIMEOUT,
-                )
-        except RequestException as e:
-            msg = f"SPARQL request failed: {e}"
-            raise RuntimeError(msg) from e
-
+        r = self._request_sparql_csv(endpoint_url, query_text)
         r.encoding = "utf-8"
         if r.status_code != HTTPStatus.OK:
             msg = f"SPARQL {r.status_code}: {r.reason}"
@@ -878,6 +953,47 @@ class Operation:
             rows.append(row)
         return rows
 
+    @staticmethod
+    def _sparql_anything_error_status(exc: Exception) -> int | None:
+        message = str(exc)
+        status_match = search(_SPARQL_ANYTHING_HTTP_STATUS_RE, message)
+        if status_match is not None:
+            return int(status_match.group(1))
+
+        message = message.lower()
+        if any(marker in message for marker in _SPARQL_ANYTHING_TIMEOUT_MARKERS):
+            return int(HTTPStatus.REQUEST_TIMEOUT)
+        if any(marker in message for marker in _SPARQL_ANYTHING_NETWORK_MARKERS):
+            return int(HTTPStatus.BAD_GATEWAY)
+        return None
+
+    @staticmethod
+    def _raise_sparql_anything_error(status_code: int, exc: Exception) -> NoReturn:
+        msg = f"HTTP status code {status_code}: SPARQL Anything request failed: {exc}"
+        raise HttpError(status_code, msg) from exc
+
+    def _request_sparql_anything_select(self, kwargs: dict[str, object]) -> object:
+        if self._sa_engine is None:
+            msg = "SPARQL Anything engine not initialized"
+            raise RuntimeError(msg)
+        sa_engine = cast("SparqlAnythingEngine", self._sa_engine)
+
+        retry_wait = self.retry_wait
+        for attempt in range(self.retry_attempts):
+            try:
+                return sa_engine.select(output_type=dict, **kwargs)
+            except Exception as exc:  # noqa: PERF203
+                status_code = self._sparql_anything_error_status(exc)
+                if status_code is None:
+                    raise
+                if status_code not in _RETRYABLE_STATUS_CODES or attempt + 1 == self.retry_attempts:
+                    self._raise_sparql_anything_error(status_code, exc)
+                self._sleep_before_retry(retry_wait)
+                retry_wait *= self.retry_backoff
+
+        msg = "SPARQL Anything request did not run"
+        raise RuntimeError(msg)
+
     def _run_sparql_anything_dicts(
         self, query_text: str, values: dict[str, str] | None = None
     ) -> list[dict[str, object]]:
@@ -896,11 +1012,11 @@ class Operation:
                 raise ImportError(msg)
             self._sa_engine = SparqlAnything()
 
-        kwargs = {"query": query_text}
+        kwargs: dict[str, object] = {"query": query_text}
         if values:
             kwargs["values"] = {str(k): str(v) for k, v in values.items()}  # type: ignore[assignment]
 
-        result = self._sa_engine.select(output_type=dict, **kwargs)
+        result = self._request_sparql_anything_select(kwargs)
 
         # Normalize to list[dict]
         if isinstance(result, list):
@@ -1258,24 +1374,7 @@ class Operation:
             for param, val in comb.items():
                 query = query.replace(f"[[{param}]]", str(val))
 
-            if self.sparql_http_method == "get":
-                r = _http_session.get(
-                    self.tp + "?query=" + quote(query),
-                    headers={"Accept": "text/csv", **backend_auth_header(self.tp)},
-                    timeout=DEFAULT_HTTP_TIMEOUT,
-                )
-            else:
-                r = _http_session.post(
-                    self.tp,
-                    data=query,
-                    headers={
-                        "Accept": "text/csv",
-                        "Content-Type": "application/sparql-query",
-                        **backend_auth_header(self.tp),
-                    },
-                    timeout=DEFAULT_HTTP_TIMEOUT,
-                )
-            r.encoding = "utf-8"
+            r = self._request_sparql_csv(self.tp, query)
 
             if r.status_code != HTTPStatus.OK:
                 return r.status_code, f"HTTP status code {r.status_code}: {r.reason}", "text/plain"
