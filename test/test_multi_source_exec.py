@@ -521,13 +521,17 @@ class TestParseSteps:
         steps = op._parse_steps(text, "http://ep/sparql", {})
         assert steps[1] == ("JOIN", "?a", "?b", "inner")
 
-    def test_endpoint_directive(self) -> None:
+    def test_with_endpoint_after_join(self) -> None:
         op = self._make_op()
-        text = "SELECT ?a WHERE { }\n@@join ?a ?a\n@@endpoint https://other.endpoint/sparql\nSELECT ?a ?b WHERE { }"
+        text = (
+            "SELECT ?a WHERE { }\n@@join ?a ?a\n@@with endpoint=https://other.endpoint/sparql\nSELECT ?a ?b WHERE { }"
+        )
         steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[2][0] == "QUERY"
-        assert steps[2][1] == "https://other.endpoint/sparql"
-        assert steps[2][2] == "sparql"
+        assert steps == [
+            ("QUERY", "http://ep/sparql", "sparql", "SELECT ?a WHERE { }"),
+            ("JOIN", "?a", "?a", "inner"),
+            ("QUERY", "https://other.endpoint/sparql", "sparql", "SELECT ?a ?b WHERE { }"),
+        ]
 
     def test_values_inject(self) -> None:
         op = self._make_op()
@@ -565,13 +569,37 @@ class TestParseSteps:
         with pytest.raises(ValueError, match="Unknown directive @@bogus"):
             op._parse_steps(text, "http://ep/sparql", {})
 
+    def test_endpoint_directive_raises(self) -> None:
+        op = self._make_op()
+        text = "@@endpoint https://other.endpoint/sparql\nSELECT ?a WHERE { }"
+        with pytest.raises(ValueError, match="Unknown directive @@endpoint"):
+            op._parse_steps(text, "http://ep/sparql", {})
+
     def test_with_directive_known_source(self) -> None:
         op = self._make_op(sources_map={"wikidata": "https://wikidata.org/sparql"})
         text = "@@with wikidata\nSELECT ?a WHERE { }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[0][0] == "QUERY"
-        assert steps[0][1] == "https://wikidata.org/sparql"
-        assert steps[0][2] == "sparql"
+        assert steps == [("QUERY", "https://wikidata.org/sparql", "sparql", "SELECT ?a WHERE { }")]
+
+    def test_with_directive_explicit_endpoint(self) -> None:
+        op = self._make_op()
+        text = "@@with endpoint=https://example.org/sparql\nSELECT ?a WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps == [("QUERY", "https://example.org/sparql", "sparql", "SELECT ?a WHERE { }")]
+
+    def test_with_directive_explicit_endpoint_and_sparql_engine(self) -> None:
+        op = self._make_op()
+        text = "@@with endpoint=https://example.org/sparql engine=sparql\nSELECT ?a WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps == [("QUERY", "https://example.org/sparql", "sparql", "SELECT ?a WHERE { }")]
+
+    def test_with_directive_explicit_endpoint_with_equals(self) -> None:
+        op = self._make_op()
+        text = "@@with endpoint=https://example.org/sparql?format=json&token=a=b\nSELECT ?a WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps == [
+            ("QUERY", "https://example.org/sparql?format=json&token=a=b", "sparql", "SELECT ?a WHERE { }"),
+        ]
 
     def test_with_directive_sparql_anything_engine_without_source(self) -> None:
         op = self._make_op()
@@ -587,23 +615,34 @@ class TestParseSteps:
             ("QUERY", "https://api.crossref.org/works", "sparql-anything", "SELECT ?a WHERE { }"),
         ]
 
-    def test_with_directive_sparql_engine_requires_source(self) -> None:
+    def test_with_directive_sparql_engine_requires_source_or_endpoint(self) -> None:
         op = self._make_op()
-        with pytest.raises(ValueError, match="@@with source is required when engine=sparql"):
+        with pytest.raises(ValueError, match="@@with source or endpoint is required when engine=sparql"):
             op._parse_steps("@@with engine=sparql\nSELECT ?a WHERE { }", "http://ep/sparql", {})
+
+    def test_with_directive_rejects_source_and_endpoint(self) -> None:
+        op = self._make_op(sources_map={"wikidata": "https://wikidata.org/sparql"})
+        text = "@@with source=wikidata endpoint=https://example.org/sparql\nSELECT ?a WHERE { }"
+        with pytest.raises(ValueError, match="@@with cannot combine source and endpoint"):
+            op._parse_steps(text, "http://ep/sparql", {})
+
+    def test_with_directive_rejects_empty_endpoint(self) -> None:
+        op = self._make_op()
+        with pytest.raises(ValueError, match="@@with endpoint cannot be empty"):
+            op._parse_steps("@@with endpoint=\nSELECT ?a WHERE { }", "http://ep/sparql", {})
 
     def test_with_directive_unknown_engine_raises(self) -> None:
         op = self._make_op()
         with pytest.raises(ValueError, match="Unknown engine 'bad' in @@with"):
             op._parse_steps("@@with engine=bad\nSELECT ?a WHERE { }", "http://ep/sparql", {})
 
-    def test_endpoint_directive_resets_engine_to_sparql(self) -> None:
+    def test_with_endpoint_resets_engine_to_sparql(self) -> None:
         op = self._make_op()
         text = (
             "@@with engine=sparql-anything\n"
             "SELECT ?a WHERE { }\n"
             "@@join ?a ?a\n"
-            "@@endpoint https://other/sparql\n"
+            "@@with endpoint=https://other/sparql\n"
             "SELECT ?a WHERE { }"
         )
         steps = op._parse_steps(text, "http://ep/sparql", {})
@@ -673,27 +712,7 @@ class TestParseSteps:
         op = self._make_op(sources_map={"wikidata": "https://wikidata.org/sparql"})
         text = "@@with source=wikidata\nSELECT ?a WHERE { }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[0][1] == "https://wikidata.org/sparql"
-        assert steps[0][2] == "sparql"
-
-    # @@endpoint: keyword, positional, and URL with =
-
-    def test_endpoint_keyword_syntax(self) -> None:
-        op = self._make_op()
-        text = "@@endpoint target=https://other/sparql\nSELECT ?a WHERE { }"
-        steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[0][1] == "https://other/sparql"
-
-    def test_endpoint_positional_url_with_equals(self) -> None:
-        op = self._make_op()
-        text = "@@endpoint https://example.org/sparql?format=json\nSELECT ?a WHERE { }"
-        steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[0][1] == "https://example.org/sparql?format=json"
-
-    def test_endpoint_sparql_anything_raises(self) -> None:
-        op = self._make_op()
-        with pytest.raises(ValueError, match="@@endpoint sparql-anything is no longer supported"):
-            op._parse_steps("@@endpoint sparql-anything\nSELECT ?a WHERE { }", "http://ep/sparql", {})
+        assert steps == [("QUERY", "https://wikidata.org/sparql", "sparql", "SELECT ?a WHERE { }")]
 
     # @@join: positional, keyword, mixed, wrong order
 

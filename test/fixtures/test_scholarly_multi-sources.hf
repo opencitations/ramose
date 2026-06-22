@@ -73,7 +73,7 @@ SELECT DISTINCT ?author ?year ?title ?source_title ?volume ?issue ?page ?doi ?re
 } LIMIT 1000
 
 @@join ?doi ?doi type=left
-@@endpoint https://sparql.opencitations.net/meta
+@@with endpoint=https://sparql.opencitations.net/meta
 PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal:  <http://www.essepuntato.it/2010/06/literalreification/>
 
@@ -85,7 +85,7 @@ SELECT ?doi ?br WHERE {
 }
 
 @@join ?br ?br type=left
-@@endpoint https://sparql.opencitations.net/index
+@@with endpoint=https://sparql.opencitations.net/index
 @@foreach ?br item wait=0.1
 PREFIX cito: <http://purl.org/spar/cito/>
 

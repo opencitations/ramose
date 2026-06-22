@@ -66,7 +66,7 @@ SELECT ?doi ?title ?br WHERE {
 }
 
 @@join ?br ?br type=left
-@@endpoint https://sparql.opencitations.net/index
+@@with endpoint=https://sparql.opencitations.net/index
 @@foreach ?br item wait=0
 PREFIX cito: <http://purl.org/spar/cito/>
 
@@ -105,7 +105,7 @@ SELECT ?doi ?br WHERE {
 }
 
 @@join ?br ?br type=left
-@@endpoint https://sparql.opencitations.net/index
+@@with endpoint=https://sparql.opencitations.net/index
 @@foreach ?br item wait=0
 PREFIX cito: <http://purl.org/spar/cito/>
 

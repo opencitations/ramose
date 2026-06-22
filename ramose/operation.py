@@ -738,29 +738,35 @@ class Operation:
         return result
 
     def _handle_directive_with(self, parts: list[str]) -> tuple[str | None, str, None]:
-        args = Operation._parse_directive_args(parts[1:], ["source"], defaults={"source": "", "engine": "sparql"})
-        name = args["source"]
+        args = Operation._parse_directive_args(
+            parts[1:],
+            ["source"],
+            defaults={"source": "", "endpoint": "", "engine": "sparql"},
+        )
+        name = args["source"].strip()
+        endpoint = args["endpoint"].strip()
         engine = args["engine"].strip().lower()
         if engine not in {"sparql", "sparql-anything"}:
             msg = f"Unknown engine '{args['engine']}' in @@with"
             raise ValueError(msg)
-        if engine == "sparql" and not name:
-            msg = "@@with source is required when engine=sparql"
+        if name and endpoint:
+            msg = "@@with cannot combine source and endpoint"
+            raise ValueError(msg)
+        endpoint_was_given = any(token.startswith("endpoint=") for token in parts[1:])
+        if endpoint_was_given and not endpoint:
+            msg = "@@with endpoint cannot be empty"
+            raise ValueError(msg)
+        if engine == "sparql" and not name and not endpoint:
+            msg = "@@with source or endpoint is required when engine=sparql"
             raise ValueError(msg)
         if name and name not in self.sources_map:
             msg = f"Unknown source '{name}' in @@with; declare it in #sources."
             raise ValueError(msg)
-        endpoint = self.sources_map[name] if name else None
-        return endpoint, engine, None
-
-    @staticmethod
-    def _handle_directive_endpoint(parts: list[str]) -> tuple[str, str, None]:
-        args = Operation._parse_directive_args(parts[1:], ["target"])
-        target = args["target"]
-        if target.strip().lower() == "sparql-anything":
-            msg = "@@endpoint sparql-anything is no longer supported; use @@with engine=sparql-anything"
-            raise ValueError(msg)
-        return target, "sparql", None
+        if endpoint:
+            return endpoint, engine, None
+        if name:
+            return self.sources_map[name], engine, None
+        return None, engine, None
 
     @staticmethod
     def _handle_directive_join(parts: list[str]) -> tuple[None, None, tuple[str, str, str, str]]:
@@ -844,7 +850,6 @@ class Operation:
 
         directive_handlers = {
             "with": self._handle_directive_with,
-            "endpoint": self._handle_directive_endpoint,
             "join": self._handle_directive_join,
             "remove": lambda parts: (None, None, ("REMOVE", parts[1:])),
             "values": self._handle_directive_values,

@@ -41,7 +41,7 @@ An HF file contains sections separated by blank lines. The first section defines
 | `#method` | no | HTTP method for SPARQL requests: `get` or `post`. Default: `post`. |
 | `#auth` | no | Set to `required` to make every operation in this API require a bearer token. Operation-level `#auth` overrides this default. |
 | `#addon` | no | Python module name for custom functions. Path relative to the spec file. |
-| `#sources` | no | Named endpoints for multi-source queries: `name1=url1; name2=url2`. |
+| `#sources` | no | Optional endpoint aliases for multi-source queries: `name1=url1; name2=url2`. Select an alias with `@@with name` or `@@with source=name`; select a direct URL with `@@with endpoint=...`. |
 | `#disable_params` | no | Comma-separated list of built-in query parameters to suppress (`require`, `filter`, `sort`, `format`, `json`, `page`, `page_size`). Use `*` to disable all. Applies to all operations in this API. Operation-level `#disable_params` extends this set. |
 | `#html_meta_description` | no | HTML meta description for documentation pages. |
 

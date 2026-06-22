@@ -44,34 +44,25 @@ These three forms are equivalent.
 
 ### @@with
 
-Switch to a named source and, when needed, select the query engine for subsequent queries. Source names must be declared in `#sources`.
+Switch to a named source or explicit endpoint and, when needed, select the query engine for subsequent queries. Source names are declared in `#sources`; direct endpoint URLs can be used without declaring a source.
 
-Syntax: `@@with [source=<source>] [engine=<sparql|sparql-anything>]`
+Syntax: `@@with [source=<source>|endpoint=<url>] [engine=<sparql|sparql-anything>]`
 
 ```
 @@with index
 SELECT ?citing ?cited WHERE { ... }
 ```
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `source` | yes for `engine=sparql` | Name declared in `#sources` |
-| `engine` | no | `sparql` by default; use `sparql-anything` for SPARQL Anything queries |
-
-### @@endpoint
-
-Override the SPARQL endpoint with an explicit URL.
-
-Syntax: `@@endpoint <target>`
-
 ```
-@@endpoint https://opencitations.net/index/sparql
+@@with endpoint=https://opencitations.net/index/sparql
 SELECT ?citing ?cited WHERE { ... }
 ```
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `target` | yes | SPARQL endpoint URL |
+| `source` | yes for `engine=sparql` unless `endpoint` is set | Name declared in `#sources` |
+| `endpoint` | yes for `engine=sparql` unless `source` is set | SPARQL endpoint URL |
+| `engine` | no | `sparql` by default; use `sparql-anything` for SPARQL Anything queries |
 
 ### @@join
 
