@@ -33,7 +33,7 @@ class TestOpenAPISpecIsValid:
             "test_openapi_skgif_like.hf",
         ],
     )
-    def test_generated_spec_validates_as_openapi_31(self, hf_file: str) -> None:
+    def test_generated_spec_validates_as_openapi_32(self, hf_file: str) -> None:
         handler = _build_handler(hf_file)
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
@@ -93,7 +93,7 @@ class TestOpenAPIStoreDocumentation:
         handler.store_documentation(str(out))
         assert out.exists()
         spec = yaml.safe_load(out.read_text())
-        assert spec["openapi"] == "3.1.0"
+        assert spec["openapi"] == "3.2.0"
 
 
 class TestOpenAPIGetIndex:

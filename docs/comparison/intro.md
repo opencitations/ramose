@@ -26,7 +26,7 @@ Functional comparison of the generators. `✓` supported, `✗` not supported, `
 
 | Dimension | RAMOSE | grlc | BASIL | OBA | R4R | CRAFTS | RDFProxy | Elda | Walder |
 |---|---|---|---|---|---|---|---|---|---|
-| Interface description language | OpenAPI 3.1, HTML | OpenAPI 2.0 | Swagger 1.2 | OpenAPI 3.0 | --- | OpenAPI 3.0 | OpenAPI 3.1 | LDA spec | OpenAPI 3.0 |
+| Interface description language | OpenAPI 3.2, HTML | OpenAPI 2.0 | Swagger 1.2 | OpenAPI 3.0 | --- | OpenAPI 3.0 | OpenAPI 3.1 | LDA spec | OpenAPI 3.0 |
 | Input | SPARQL | SPARQL | SPARQL | OWL ontology | SPARQL, templates | JSON config | SPARQL, model | RDF spec | GraphQL-LD, SPARQL |
 | Output | Any | endpoint-dependent | XML, JSON, CSV, RDF | JSON | JSON | JSON | JSON | Any | HTML, JSON-LD, RDF |
 | Operations | CRUD | GET, POST | GET, POST | CRUD | GET | CRUD, PATCH | GET | GET | GET |

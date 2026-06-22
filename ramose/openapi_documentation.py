@@ -538,7 +538,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
         formats_enum = self._collect_format_tokens(conf)
 
         spec = OrderedDict()
-        spec["openapi"] = "3.1.0"
+        spec["openapi"] = "3.2.0"
         spec["info"] = self._build_info(api_meta)
 
         spec["servers"] = [{"url": self._server_url(api_meta)}]

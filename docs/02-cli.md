@@ -19,7 +19,7 @@ python -m ramose -s <spec.hf|spec.yaml> [options]
 | `-m`, `--method` | HTTP method for the call. Default: `get`. |
 | `-f`, `--format` | Response format: `application/json` (default) or `text/csv`. |
 | `-d`, `--doc` | Generate HTML documentation. Ignores `-m`, `-c`, `-f`. |
-| `--openapi` | Export OpenAPI 3.1 YAML specification. |
+| `--openapi` | Export OpenAPI 3.2 YAML specification. |
 | `--api-base` | Select which API base to export when multiple specs are loaded. |
 | `-o`, `--output` | Write response to file instead of stdout. |
 | `-w`, `--webserver` | Start Flask server at `host:port`. |
