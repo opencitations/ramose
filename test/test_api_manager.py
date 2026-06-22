@@ -89,7 +89,6 @@ class TestBestMatch:
             "addon",
             "sparql_http_method",
             "sources_map",
-            "engine",
             "disable_params",
             "auth_required",
             "conf_file",
@@ -155,25 +154,6 @@ class TestSourcesParsing:
         base = am.base_url[0]
         sources = am.all_conf[base]["sources_map"]
         assert "" not in sources
-
-
-class TestPerOperationEngine:
-    def test_operation_level_engine_override(self) -> None:
-        am = APIManager(
-            ["test/fixtures/test_with_sources.hf"],
-            endpoint_override="http://localhost:9999/sparql",
-        )
-        op = am.get_op("/api/v2/data/test")
-        assert isinstance(op, Operation)
-        assert op.engine == "sparql"
-
-    def test_api_level_engine(self) -> None:
-        am = APIManager(
-            ["test/fixtures/mixed_scholarly_crossref.hf"],
-            endpoint_override="http://localhost:9999/sparql",
-        )
-        base = am.base_url[0]
-        assert am.all_conf[base]["engine"] == "sparql"
 
 
 class TestRetryConfig:
@@ -321,7 +301,6 @@ class TestCustomParamConfigs:
             "#type api\n"
             "#base http://localhost:5000\n"
             "#endpoint http://localhost:9999/sparql\n"
-            "#engine sparql\n"
             "#title Two config-driven params\n"
             "#version 0.0.1\n"
             "\n"

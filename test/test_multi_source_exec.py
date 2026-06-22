@@ -259,10 +259,10 @@ class TestMultiSourceValuesInject:
 
         def mock_parse_steps(text: str, tp: str, par_dict: dict[str, object]) -> list[tuple[str, ...]]:
             return [
-                ("QUERY", "http://ep/sparql", "SELECT ?doi ?qid WHERE { }"),
+                ("QUERY", "http://ep/sparql", "sparql", "SELECT ?doi ?qid WHERE { }"),
                 ("VALUES_INJECT", ["?doi"]),  # type: ignore[list-item]
                 ("JOIN", "?doi", "?doi", "inner"),
-                ("QUERY", "http://ep2/sparql", "SELECT ?doi ?extra WHERE { }"),
+                ("QUERY", "http://ep2/sparql", "sparql", "SELECT ?doi ?extra WHERE { }"),
             ]
 
         with (
@@ -298,9 +298,9 @@ class TestMultiSourceRetry:
 
         def mock_parse_steps(text: str, tp: str, par_dict: dict[str, object]) -> list[tuple[str, ...]]:
             return [
-                ("QUERY", "http://ep1/sparql", "SELECT ?id WHERE { }"),
+                ("QUERY", "http://ep1/sparql", "sparql", "SELECT ?id WHERE { }"),
                 ("JOIN", "?id", "?id", "inner"),
-                ("QUERY", "http://ep2/sparql", "SELECT ?id ?extra WHERE { }"),
+                ("QUERY", "http://ep2/sparql", "sparql", "SELECT ?id ?extra WHERE { }"),
             ]
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
@@ -335,10 +335,10 @@ class TestMultiSourceRetry:
 
         def mock_parse_steps(text: str, tp: str, par_dict: dict[str, object]) -> list[tuple[str, ...]]:
             return [
-                ("QUERY", "http://ep1/sparql", "SELECT ?id WHERE { }"),
+                ("QUERY", "http://ep1/sparql", "sparql", "SELECT ?id WHERE { }"),
                 ("JOIN", "?id", "?id", "inner"),
                 ("FOREACH", "?id", "item", 0.0),  # type: ignore[list-item]
-                ("QUERY", "http://ep2/sparql", "SELECT ?id ?value WHERE { BIND([[item]] AS ?id) }"),
+                ("QUERY", "http://ep2/sparql", "sparql", "SELECT ?id ?value WHERE { BIND([[item]] AS ?id) }"),
             ]
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
@@ -356,7 +356,9 @@ class TestMultiSourceRetry:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
-            "sparql": ("SELECT ?id WHERE { }\n@@join ?id ?id\n@@endpoint sparql-anything\nSELECT ?id ?extra WHERE { }"),
+            "sparql": (
+                "SELECT ?id WHERE { }\n@@join ?id ?id\n@@with engine=sparql-anything\nSELECT ?id ?extra WHERE { }"
+            ),
             "method": "get",
             "field_type": "str(id) str(extra)",
         }
@@ -390,7 +392,7 @@ class TestMultiSourceRetry:
                 "SELECT ?id WHERE { }\n"
                 "@@join ?id ?id\n"
                 "@@foreach ?id item\n"
-                "@@endpoint sparql-anything\n"
+                "@@with engine=sparql-anything\n"
                 'SELECT ?id ?value WHERE { BIND("[[item]]" AS ?id) }'
             ),
             "method": "get",
@@ -438,8 +440,8 @@ class TestMultiSourceMissingJoin:
 
         def mock_parse_steps(text: str, tp: str, par_dict: dict[str, object]) -> list[tuple[str, ...]]:
             return [
-                ("QUERY", "http://ep/sparql", "SELECT ?x WHERE { }"),
-                ("QUERY", "http://ep2/sparql", "SELECT ?y WHERE { }"),
+                ("QUERY", "http://ep/sparql", "sparql", "SELECT ?x WHERE { }"),
+                ("QUERY", "http://ep2/sparql", "sparql", "SELECT ?y WHERE { }"),
             ]
 
         with (
@@ -462,10 +464,10 @@ class TestMultiSourceForeachNoMatchingColumn:
 
         def mock_parse_steps(text: str, tp: str, par_dict: dict[str, object]) -> list[tuple[str, ...]]:
             return [
-                ("QUERY", "http://ep/sparql", "SELECT ?x WHERE { }"),
+                ("QUERY", "http://ep/sparql", "sparql", "SELECT ?x WHERE { }"),
                 ("FOREACH", "?nonexistent", "item", 0.0),  # type: ignore[list-item]
                 ("JOIN", "?x", "?x", "inner"),
-                ("QUERY", "http://ep/sparql", "SELECT ?x WHERE { }"),
+                ("QUERY", "http://ep/sparql", "sparql", "SELECT ?x WHERE { }"),
             ]
 
         with (
@@ -502,9 +504,7 @@ class TestParseSteps:
         op = self._make_op()
         text = "SELECT ?x WHERE { ?x ?y ?z }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert len(steps) == 1
-        assert steps[0][0] == "QUERY"
-        assert steps[0][1] == "http://ep/sparql"
+        assert steps == [("QUERY", "http://ep/sparql", "sparql", text)]
 
     def test_join_directive(self) -> None:
         op = self._make_op()
@@ -527,6 +527,7 @@ class TestParseSteps:
         steps = op._parse_steps(text, "http://ep/sparql", {})
         assert steps[2][0] == "QUERY"
         assert steps[2][1] == "https://other.endpoint/sparql"
+        assert steps[2][2] == "sparql"
 
     def test_values_inject(self) -> None:
         op = self._make_op()
@@ -556,7 +557,7 @@ class TestParseSteps:
         op = self._make_op()
         text = "SELECT ?a WHERE { VALUES ?a { [[id]] } }"
         steps = op._parse_steps(text, "http://ep/sparql", {"id": "hello"})
-        assert steps[0][2] == "SELECT ?a WHERE { VALUES ?a { hello } }"
+        assert steps[0][3] == "SELECT ?a WHERE { VALUES ?a { hello } }"
 
     def test_unknown_directive_raises(self) -> None:
         op = self._make_op()
@@ -570,6 +571,44 @@ class TestParseSteps:
         steps = op._parse_steps(text, "http://ep/sparql", {})
         assert steps[0][0] == "QUERY"
         assert steps[0][1] == "https://wikidata.org/sparql"
+        assert steps[0][2] == "sparql"
+
+    def test_with_directive_sparql_anything_engine_without_source(self) -> None:
+        op = self._make_op()
+        text = "@@with engine=sparql-anything\nSELECT ?a WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps == [("QUERY", "http://ep/sparql", "sparql-anything", "SELECT ?a WHERE { }")]
+
+    def test_with_directive_sparql_anything_engine_with_source(self) -> None:
+        op = self._make_op(sources_map={"crossref": "https://api.crossref.org/works"})
+        text = "@@with source=crossref engine=sparql-anything\nSELECT ?a WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps == [
+            ("QUERY", "https://api.crossref.org/works", "sparql-anything", "SELECT ?a WHERE { }"),
+        ]
+
+    def test_with_directive_sparql_engine_requires_source(self) -> None:
+        op = self._make_op()
+        with pytest.raises(ValueError, match="@@with source is required when engine=sparql"):
+            op._parse_steps("@@with engine=sparql\nSELECT ?a WHERE { }", "http://ep/sparql", {})
+
+    def test_with_directive_unknown_engine_raises(self) -> None:
+        op = self._make_op()
+        with pytest.raises(ValueError, match="Unknown engine 'bad' in @@with"):
+            op._parse_steps("@@with engine=bad\nSELECT ?a WHERE { }", "http://ep/sparql", {})
+
+    def test_endpoint_directive_resets_engine_to_sparql(self) -> None:
+        op = self._make_op()
+        text = (
+            "@@with engine=sparql-anything\n"
+            "SELECT ?a WHERE { }\n"
+            "@@join ?a ?a\n"
+            "@@endpoint https://other/sparql\n"
+            "SELECT ?a WHERE { }"
+        )
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[0] == ("QUERY", "http://ep/sparql", "sparql-anything", "SELECT ?a WHERE { }")
+        assert steps[2] == ("QUERY", "https://other/sparql", "sparql", "SELECT ?a WHERE { }")
 
     def test_with_directive_unknown_source_raises(self) -> None:
         op = self._make_op(sources_map={})
@@ -635,6 +674,7 @@ class TestParseSteps:
         text = "@@with source=wikidata\nSELECT ?a WHERE { }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
         assert steps[0][1] == "https://wikidata.org/sparql"
+        assert steps[0][2] == "sparql"
 
     # @@endpoint: keyword, positional, and URL with =
 
@@ -649,6 +689,11 @@ class TestParseSteps:
         text = "@@endpoint https://example.org/sparql?format=json\nSELECT ?a WHERE { }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
         assert steps[0][1] == "https://example.org/sparql?format=json"
+
+    def test_endpoint_sparql_anything_raises(self) -> None:
+        op = self._make_op()
+        with pytest.raises(ValueError, match="@@endpoint sparql-anything is no longer supported"):
+            op._parse_steps("@@endpoint sparql-anything\nSELECT ?a WHERE { }", "http://ep/sparql", {})
 
     # @@join: positional, keyword, mixed, wrong order
 

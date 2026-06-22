@@ -2,7 +2,6 @@
 #type api
 #base http://localhost:5000
 #endpoint https://query-scholarly.wikidata.org/sparql
-#engine sparql
 #method get
 #title Mixed Wikidata + OpenCitations + Crossref
 #description Example RAMOSE operation combining SPARQL endpoints with SPARQL.ANYTHING
@@ -88,7 +87,7 @@ SELECT ?br (COUNT(?citing) AS ?oc_citation_count) WHERE {
 GROUP BY ?br
 
 @@join ?doi ?doi type=left
-@@endpoint sparql-anything
+@@with engine=sparql-anything
 PREFIX fx:  <http://sparql.xyz/facade-x/ns/>
 PREFIX xyz: <http://sparql.xyz/facade-x/data/>
 

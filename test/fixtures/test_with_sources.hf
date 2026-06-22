@@ -3,14 +3,12 @@
 #base http://localhost:5000
 #endpoint http://localhost:9999/sparql
 #sources oc_meta=https://sparql.opencitations.net/meta; oc_index=https://sparql.opencitations.net/index;
-#engine sparql
 #title Test API with sources
 #version 0.0.1
 
 #url /data/{id}
 #type operation
 #id str(.+)
-#engine sparql
 #method get
 #description Test operation with per-operation engine and sources
 #field_type str(x)

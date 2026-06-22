@@ -27,7 +27,6 @@ HF_SPEC = """#url /api
 #type api
 #base http://localhost:5000
 #endpoint http://localhost:9999/sparql
-#engine sparql
 #method get
 #title YAML mirror API
 #description API defined in two formats.
@@ -55,7 +54,6 @@ YAML_SPEC = """- url: /api
   type: api
   base: http://localhost:5000
   endpoint: http://localhost:9999/sparql
-  engine: sparql
   method: get
   title: YAML mirror API
   description: API defined in two formats.
@@ -87,7 +85,6 @@ EXPECTED_SPEC = [
         "type": "api",
         "base": "http://localhost:5000",
         "endpoint": "http://localhost:9999/sparql",
-        "engine": "sparql",
         "method": "get",
         "title": "YAML mirror API",
         "description": "API defined in two formats.",

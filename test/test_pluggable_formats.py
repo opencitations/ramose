@@ -289,7 +289,10 @@ class TestSparqlAnythingSingleQueryExec:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
-            "sparql": "SELECT ?title WHERE { SERVICE <x-sparql-anything:...> { ?r ?p ?title } }",
+            "sparql": (
+                "@@with engine=sparql-anything\n"
+                "SELECT ?title WHERE { SERVICE <x-sparql-anything:...> { ?r ?p ?title } }"
+            ),
             "method": "get",
             "field_type": "str(title)",
         }
@@ -301,7 +304,6 @@ class TestSparqlAnythingSingleQueryExec:
                 sparql_endpoint="http://unused/sparql",
                 format_map={},
                 sources_map={},
-                engine="sparql-anything",
             ),
         )
 
@@ -328,7 +330,7 @@ class TestRunSparqlAnythingDictsNormalization:
             "/api/test/v",
             r"/api/test/(.+)",
             op_item,
-            OperationConfig(sparql_endpoint="http://ep/sparql", engine="sparql-anything"),
+            OperationConfig(sparql_endpoint="http://ep/sparql"),
         )
 
     def test_list_of_dicts(self) -> None:
@@ -434,7 +436,6 @@ class TestSparqlAnythingRetry:
             op_item,
             OperationConfig(
                 sparql_endpoint="http://ep/sparql",
-                engine="sparql-anything",
                 retry_attempts=retry_attempts,
                 retry_wait=0,
             ),
@@ -533,7 +534,7 @@ class TestSparqlAnythingRetry:
 
 
 class TestRunQueryDictsDispatch:
-    def _make_op(self, engine: str = "sparql") -> Operation:
+    def _make_op(self) -> Operation:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
@@ -545,13 +546,13 @@ class TestRunQueryDictsDispatch:
             "/api/test/v",
             r"/api/test/(.+)",
             op_item,
-            OperationConfig(sparql_endpoint="http://ep/sparql", engine=engine),
+            OperationConfig(sparql_endpoint="http://ep/sparql"),
         )
 
-    def test_op_level_sparql_anything_engine(self) -> None:
-        op = self._make_op(engine="sparql-anything")
+    def test_sparql_anything_engine(self) -> None:
+        op = self._make_op()
         with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"x": "1"}]) as mock_sa:
-            rows = op._run_query_dicts("http://some-endpoint/sparql", "SELECT ?x WHERE { }")
+            rows = op._run_query_dicts("http://some-endpoint/sparql", "sparql-anything", "SELECT ?x WHERE { }")
         mock_sa.assert_called_once_with("SELECT ?x WHERE { }")
         assert rows == [{"x": "1"}]
 
@@ -568,7 +569,7 @@ class TestSparqlAnythingSingleQueryWithAddon:
         op_item = {
             "url": "/test/{id}",
             "id": "str(.+)",
-            "sparql": "SELECT ?title WHERE { }",
+            "sparql": "@@with engine=sparql-anything\nSELECT ?title WHERE { }",
             "method": "get",
             "field_type": "str(title)",
             "postprocess": "my_post()",
@@ -582,7 +583,6 @@ class TestSparqlAnythingSingleQueryWithAddon:
                 addon=FakeAddon,  # type: ignore[arg-type]
                 format_map={},
                 sources_map={},
-                engine="sparql-anything",
             ),
         )
 

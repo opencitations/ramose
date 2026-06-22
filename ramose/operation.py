@@ -118,7 +118,6 @@ class OperationConfig:
     format_map: dict = dataclass_field(default_factory=dict)
     format_media_types: dict = dataclass_field(default_factory=dict)
     sources_map: dict = dataclass_field(default_factory=dict)
-    engine: str = "sparql"
     custom_params: dict = dataclass_field(default_factory=dict)
     disabled_params: set = dataclass_field(default_factory=set)
     requires_auth: bool = False
@@ -163,7 +162,6 @@ class Operation:
         self.format = config.format_map
         self.format_media_types = config.format_media_types
         self.sources_map = config.sources_map
-        self.engine = config.engine
         self.custom_params = config.custom_params
         self.disabled_params = config.disabled_params
         self.requires_auth = config.requires_auth
@@ -739,34 +737,46 @@ class Operation:
 
         return result
 
-    def _handle_directive_with(self, parts: list[str]) -> tuple[str, None]:
-        args = Operation._parse_directive_args(parts[1:], ["source"])
+    def _handle_directive_with(self, parts: list[str]) -> tuple[str | None, str, None]:
+        args = Operation._parse_directive_args(parts[1:], ["source"], defaults={"source": "", "engine": "sparql"})
         name = args["source"]
-        if name not in self.sources_map:
+        engine = args["engine"].strip().lower()
+        if engine not in {"sparql", "sparql-anything"}:
+            msg = f"Unknown engine '{args['engine']}' in @@with"
+            raise ValueError(msg)
+        if engine == "sparql" and not name:
+            msg = "@@with source is required when engine=sparql"
+            raise ValueError(msg)
+        if name and name not in self.sources_map:
             msg = f"Unknown source '{name}' in @@with; declare it in #sources."
             raise ValueError(msg)
-        return self.sources_map[name], None
+        endpoint = self.sources_map[name] if name else None
+        return endpoint, engine, None
 
     @staticmethod
-    def _handle_directive_endpoint(parts: list[str]) -> tuple[str, None]:
+    def _handle_directive_endpoint(parts: list[str]) -> tuple[str, str, None]:
         args = Operation._parse_directive_args(parts[1:], ["target"])
-        return args["target"], None
+        target = args["target"]
+        if target.strip().lower() == "sparql-anything":
+            msg = "@@endpoint sparql-anything is no longer supported; use @@with engine=sparql-anything"
+            raise ValueError(msg)
+        return target, "sparql", None
 
     @staticmethod
-    def _handle_directive_join(parts: list[str]) -> tuple[None, tuple[str, str, str, str]]:
+    def _handle_directive_join(parts: list[str]) -> tuple[None, None, tuple[str, str, str, str]]:
         args = Operation._parse_directive_args(parts[1:], ["left_var", "right_var"], defaults={"type": "inner"})
-        return None, ("JOIN", args["left_var"], args["right_var"], args["type"].lower())
+        return None, None, ("JOIN", args["left_var"], args["right_var"], args["type"].lower())
 
     @staticmethod
-    def _handle_directive_values(parts: list[str]) -> tuple[None, tuple[str, list[str]]]:
+    def _handle_directive_values(parts: list[str]) -> tuple[None, None, tuple[str, list[str]]]:
         tokens = parts[1:]
         if not tokens:
             msg = "@@values needs at least one variable"
             raise ValueError(msg)
-        return None, ("VALUES_INJECT", tokens)
+        return None, None, ("VALUES_INJECT", tokens)
 
     @staticmethod
-    def _handle_directive_foreach(parts: list[str]) -> tuple[None, tuple[str, str, str, float]]:
+    def _handle_directive_foreach(parts: list[str]) -> tuple[None, None, tuple[str, str, str, float]]:
         args = Operation._parse_directive_args(parts[1:], ["variable", "placeholder"], defaults={"wait": "0"})
         var_name = args["variable"]
         if not var_name.startswith("?"):
@@ -777,20 +787,20 @@ class Operation:
         except ValueError:
             msg = f"Invalid wait value in @@foreach: {args['wait']!r}"
             raise ValueError(msg) from None
-        return None, ("FOREACH", var_name, args["placeholder"], delay)
+        return None, None, ("FOREACH", var_name, args["placeholder"], delay)
 
     @staticmethod
-    def _handle_directive_page(parts: list[str]) -> tuple[None, tuple[str, str, str, str]]:
+    def _handle_directive_page(parts: list[str]) -> tuple[None, None, tuple[str, str, str, str]]:
         args = Operation._parse_directive_args(parts[1:], ["variable"], defaults={"default_size": "", "max_size": ""})
         var_name = args["variable"]
         if not var_name.startswith("?"):
             msg = f"@@page variable must start with '?', got {var_name!r}"
             raise ValueError(msg)
-        return None, ("PAGE", var_name, args["default_size"], args["max_size"])
+        return None, None, ("PAGE", var_name, args["default_size"], args["max_size"])
 
     def _process_directive(
         self, line: str, directive_handlers: dict[str, Callable[..., object]]
-    ) -> tuple[str | None, tuple[str, ...] | None]:
+    ) -> tuple[str | None, str | None, tuple[str, ...] | None]:
         body = line.strip()[2:].strip()
         parts = body.split()
         cmd = parts[0].lower()
@@ -802,10 +812,23 @@ class Operation:
 
         return handler(parts)  # type: ignore[return-value]
 
+    @staticmethod
+    def _update_directive_state(
+        current_endpoint: str,
+        current_engine: str,
+        new_endpoint: str | None,
+        new_engine: str | None,
+    ) -> tuple[str, str]:
+        if new_endpoint is not None:
+            current_endpoint = new_endpoint
+        if new_engine is not None:
+            current_engine = new_engine
+        return current_endpoint, current_engine
+
     def _parse_steps(self, text: str, default_endpoint: str, params: dict[str, object]) -> list[tuple[str, ...]]:
         """
         Returns a list of steps:
-          - ("QUERY", endpoint_url, query_text)
+          - ("QUERY", endpoint_url, engine, query_text)
           - ("JOIN", left_var, right_var, how)       # how in {"inner","left"}
           - ("REMOVE", [vars])
           - ("VALUES_INJECT", [vars])                # @@values ?var1 ?var2 ...
@@ -817,12 +840,13 @@ class Operation:
         steps: list[tuple[str, ...]] = []
         cur_query: list[str] = []
         current_endpoint = default_endpoint
+        current_engine = "sparql"
 
         directive_handlers = {
             "with": self._handle_directive_with,
             "endpoint": self._handle_directive_endpoint,
             "join": self._handle_directive_join,
-            "remove": lambda parts: (None, ("REMOVE", parts[1:])),
+            "remove": lambda parts: (None, None, ("REMOVE", parts[1:])),
             "values": self._handle_directive_values,
             "foreach": self._handle_directive_foreach,
             "page": self._handle_directive_page,
@@ -836,7 +860,7 @@ class Operation:
                     return
                 for p, v in params.items():
                     q = q.replace(f"[[{p}]]", str(v))
-                steps.append(("QUERY", current_endpoint, q))
+                steps.append(("QUERY", current_endpoint, current_engine, q))
                 cur_query.clear()
 
         for raw in text.splitlines():
@@ -847,9 +871,13 @@ class Operation:
 
             flush_query()
 
-            new_endpoint, step = self._process_directive(line, directive_handlers)
-            if new_endpoint is not None:
-                current_endpoint = new_endpoint
+            new_endpoint, new_engine, step = self._process_directive(line, directive_handlers)
+            current_endpoint, current_engine = Operation._update_directive_state(
+                current_endpoint,
+                current_engine,
+                new_endpoint,
+                new_engine,
+            )
             if step is not None:
                 steps.append(step)
 
@@ -1036,26 +1064,12 @@ class Operation:
         # Column-oriented dict or single-row fallback
         return self._normalize_columnar_dict(result)
 
-    def _run_query_dicts(self, endpoint_url: str, query_text: str) -> list[dict[str, object]]:
-        """
-        Dispatch query execution to the appropriate backend, with support
-        for per-query engine selection in multi-source mode.
-
-        Rules:
-        - If endpoint_url is the special string "sparql-anything" (case-insensitive),
-        then always use SPARQL.ANYTHING (PySPARQL-Anything) for this query.
-        - Otherwise, fall back to the operation-level engine:
-            * engine == "sparql-anything" -> SPARQL.ANYTHING
-            * else                        -> standard HTTP SPARQL
-        """
-
-        # Per-query override: @@endpoint sparql-anything
-        if endpoint_url and str(endpoint_url).strip().lower() == "sparql-anything":
+    def _run_query_dicts(self, endpoint_url: str, engine: str, query_text: str) -> list[dict[str, object]]:
+        if engine == "sparql-anything":
             return self._run_sparql_anything_dicts(query_text)
-
-        # Default behaviour: operation-level engine
-        if self.engine == "sparql-anything":
-            return self._run_sparql_anything_dicts(query_text)
+        if engine != "sparql":
+            msg = f"Unknown query engine {engine!r}"
+            raise ValueError(msg)
         return self._run_sparql_dicts(endpoint_url, query_text)
 
     def _inject_values_clause(self, query_text: str, vars_: list[str], acc_rows: list[dict[str, object]] | None) -> str:
@@ -1345,16 +1359,6 @@ class Operation:
             if placeholder not in par_dict:
                 par_dict[placeholder] = ""
 
-    def _exec_sparql_anything_single(self, par_dict: dict[str, object], content_type: str) -> tuple[int, str, str]:
-        """Execute a single SPARQL Anything query and return the finalized result."""
-        query = self.i["sparql"]
-        for param, val in par_dict.items():
-            query = query.replace(f"[[{param}]]", str(val))
-        rows = self._run_sparql_anything_dicts(query)
-        header = self._header_from_field_type(self.i, rows or [])
-        csv_rows = self._to_csv_rows(header, rows or [])
-        return self._finalize_result(csv_rows, content_type)
-
     def _exec_standard_sparql(self, par_dict: dict[str, object], content_type: str) -> tuple[int, str, str]:
         """Execute standard SPARQL queries, handling parameter combinations via cartesian product."""
         # Wrap scalar values in lists for cartesian product
@@ -1394,6 +1398,7 @@ class Operation:
     def _exec_foreach_query(
         self,
         endpoint_url: str,
+        engine: str,
         qtxt: str,
         foreach: tuple[str, str, float],
         acc: list[dict[str, object]] | None,
@@ -1413,7 +1418,7 @@ class Operation:
         all_rows = []
         for idx_val, val in enumerate(values):
             q_one = qtxt.replace(f"[[{placeholder}]]", str(val))
-            sub_rows = self._run_query_dicts(endpoint_url, q_one)
+            sub_rows = self._run_query_dicts(endpoint_url, engine, q_one)
             if sub_rows:
                 all_rows.extend(sub_rows)
             if delay and idx_val + 1 < len(values):
@@ -1421,17 +1426,19 @@ class Operation:
 
         return all_rows
 
-    def _exec_multi_source_query_step(self, endpoint_url: str, qtxt: str, state: dict[str, object]) -> None:
+    def _exec_multi_source_query_step(
+        self, endpoint_url: str, engine: str, qtxt: str, state: dict[str, object]
+    ) -> None:
         """Handle a QUERY step in the multi-source pipeline."""
         if state["pending_foreach"] is not None:
-            rows = self._exec_foreach_query(endpoint_url, qtxt, state["pending_foreach"], state["acc"])  # type: ignore[arg-type]
+            rows = self._exec_foreach_query(endpoint_url, engine, qtxt, state["pending_foreach"], state["acc"])  # type: ignore[arg-type]
             state["pending_foreach"] = None
             state["pending_values_vars"] = None
         else:
             if state["pending_values_vars"]:
                 qtxt = self._inject_values_clause(qtxt, state["pending_values_vars"], state["acc"])  # type: ignore[arg-type]
                 state["pending_values_vars"] = None
-            rows = self._run_query_dicts(endpoint_url, qtxt)
+            rows = self._run_query_dicts(endpoint_url, engine, qtxt)
 
         if state["acc"] is None:
             state["acc"] = rows
@@ -1499,7 +1506,7 @@ class Operation:
             tag = st[0]
 
             if tag == "QUERY":
-                self._exec_multi_source_query_step(st[1], st[2], state)
+                self._exec_multi_source_query_step(st[1], st[2], st[3], state)
             elif tag == "JOIN":
                 state["pending_join"] = (st[1], st[2], st[3])
             elif tag == "REMOVE":
@@ -1596,8 +1603,6 @@ class Operation:
             resolved_text = resolved_text.replace(f"[[{param}]]", str(val))
 
         if "@@" not in resolved_text:
-            if self.engine == "sparql-anything":
-                return self._exec_sparql_anything_single(par_dict, content_type)
             return self._exec_standard_sparql(par_dict, content_type)
 
         try:

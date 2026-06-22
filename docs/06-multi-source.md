@@ -44,9 +44,9 @@ These three forms are equivalent.
 
 ### @@with
 
-Switch to a named source for subsequent queries. The name must be declared in `#sources`.
+Switch to a named source and, when needed, select the query engine for subsequent queries. Source names must be declared in `#sources`.
 
-Syntax: `@@with <source>`
+Syntax: `@@with [source=<source>] [engine=<sparql|sparql-anything>]`
 
 ```
 @@with index
@@ -55,11 +55,12 @@ SELECT ?citing ?cited WHERE { ... }
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `source` | yes | Name declared in `#sources` |
+| `source` | yes for `engine=sparql` | Name declared in `#sources` |
+| `engine` | no | `sparql` by default; use `sparql-anything` for SPARQL Anything queries |
 
 ### @@endpoint
 
-Override the endpoint with an explicit URL.
+Override the SPARQL endpoint with an explicit URL.
 
 Syntax: `@@endpoint <target>`
 
@@ -68,16 +69,9 @@ Syntax: `@@endpoint <target>`
 SELECT ?citing ?cited WHERE { ... }
 ```
 
-The special value `sparql-anything` routes the query through the SPARQL Anything engine instead:
-
-```
-@@endpoint target=sparql-anything
-SELECT * WHERE { SERVICE <x-sparql-anything:location=data.csv> { ... } }
-```
-
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `target` | yes | Endpoint URL or `sparql-anything` |
+| `target` | yes | SPARQL endpoint URL |
 
 ### @@join
 
@@ -205,16 +199,10 @@ This requires the optional extra:
 pip install ramose[sparql-anything]
 ```
 
-Set the engine in the API section (applies to all operations) or in a single operation section (overrides the API-level setting):
+Use `@@with engine=sparql-anything` before the query:
 
 ```
-#engine sparql-anything
-```
-
-Or per query in a multi-source block:
-
-```
-@@endpoint sparql-anything
+@@with engine=sparql-anything
 SELECT * WHERE {
   SERVICE <x-sparql-anything:location=https://example.org/data.csv> {
     ?s ?p ?o

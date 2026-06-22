@@ -37,7 +37,6 @@ class APIConfig(TypedDict):
     tp: str
     update_endpoint: str
     website: str
-    engine: str
     sources_map: dict[str, str]
     disable_params: set[str]
     auth_required: bool
@@ -83,7 +82,6 @@ class APIManager:
         update_endpoint = endpoint_override or ""
         if not endpoint_override and "update_endpoint" in item:
             update_endpoint = item["update_endpoint"]
-        engine = item["engine"].strip().lower() if "engine" in item else "sparql"
         sources_map: dict[str, str] = {}
         if "sources" in item:
             for raw_pair in item["sources"].split(";"):
@@ -108,7 +106,6 @@ class APIManager:
             "tp": tp or "",
             "update_endpoint": update_endpoint,
             "website": website,
-            "engine": engine,
             "sources_map": sources_map,
             "disable_params": disable_params_api,
             "auth_required": auth_required,
@@ -273,10 +270,6 @@ class APIManager:
 
         conf, op, op_conf = self.best_match(op_url, method)
         if conf is not None and op is not None and op_conf is not None:
-            op_engine = conf["engine"]
-            if "engine" in op_conf:
-                op_engine = op_conf["engine"].strip().lower()
-
             custom_params_map = parse_custom_params(op_conf["custom_params"]) if "custom_params" in op_conf else {}
 
             api_disabled = conf["disable_params"]
@@ -295,7 +288,6 @@ class APIManager:
                 format_map=op_format_map,
                 format_media_types=op_format_media_types,
                 sources_map=conf["sources_map"],
-                engine=op_engine,
                 custom_params=custom_params_map,
                 disabled_params=effective_disabled,
                 requires_auth=requires_auth,

@@ -41,7 +41,6 @@ An HF file contains sections separated by blank lines. The first section defines
 | `#method` | no | HTTP method for SPARQL requests: `get` or `post`. Default: `post`. |
 | `#auth` | no | Set to `required` to make every operation in this API require a bearer token. Operation-level `#auth` overrides this default. |
 | `#addon` | no | Python module name for custom functions. Path relative to the spec file. |
-| `#engine` | no | Execution backend: `sparql` (default) or `sparql-anything`. See [multi-source queries](06-multi-source.md). |
 | `#sources` | no | Named endpoints for multi-source queries: `name1=url1; name2=url2`. |
 | `#disable_params` | no | Comma-separated list of built-in query parameters to suppress (`require`, `filter`, `sort`, `format`, `json`, `page`, `page_size`). Use `*` to disable all. Applies to all operations in this API. Operation-level `#disable_params` extends this set. |
 | `#html_meta_description` | no | HTML meta description for documentation pages. |
@@ -61,7 +60,6 @@ Each operation maps a URL pattern to a SPARQL query. Here is the `/metadata/{ids
 #call /metadata/doi:10.1162/qss_a_00292
 #field_type str(id) str(title) str(author) datetime(pub_date) str(issue) str(volume) str(venue) str(page) str(type) str(publisher) str(editor)
 #format xml,to_xml;turtle,to_turtle
-#engine sparql
 #output_json [
     {
         "id": "doi:10.1162/qss_a_00292 omid:br/062104388184",
@@ -103,7 +101,6 @@ SELECT DISTINCT ?id ?title ?author ?pub_date ... WHERE {
 | `#format` | no | Custom output format converters: `name,function;...`. See [addon modules](format-converters). |
 | `#default_format` | no | Default output format when neither a `?format=` query parameter nor an `Accept` header selects one. Must match a name registered in `#format` or a built-in format (`csv`, `json`). Without this field, the default is JSON. When set to a custom format, the "Result fields type" section is hidden from the HTML documentation since the output structure does not match the tabular columns declared in `#field_type`. |
 | `#custom_params` | no | Custom query parameters with addon handlers (`name,function,phase,description;...`) or YAML handlers (`name,file.yaml,description;...`). See [addon modules](custom-parameters). |
-| `#engine` | no | Override the API-level engine for this operation only. |
 | `#disable_params` | no | Comma-separated list of built-in query parameters to suppress for this operation. Use `*` to disable all. Merged with any API-level `#disable_params`. |
 | `#cache_duration` | no | Cache TTL in seconds for this operation. Overrides the global `--cache-ttl` value. |
 | `#cache_disable` | no | Set to any value (e.g., `true`) to disable caching for this operation. |
