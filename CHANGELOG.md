@@ -1,3 +1,17 @@
+# [2.8.0](https://github.com/opencitations/ramose/compare/v2.7.1...v2.8.0) (2026-06-25)
+
+
+### Bug Fixes
+
+* **multi-source:** select query engine through @[@with](https://github.com/with) ([d434658](https://github.com/opencitations/ramose/commit/d4346585871c880b4e4dad9896e20500369df9d3)), closes [#engine](https://github.com/opencitations/ramose/issues/engine)
+
+
+### Features
+
+* add SPARQL read retries ([b9ff22e](https://github.com/opencitations/ramose/commit/b9ff22efca2db98d633069aedf6e3a3b9633ff2a))
+* **multi-source:** select direct endpoints through @[@with](https://github.com/with) ([737240b](https://github.com/opencitations/ramose/commit/737240b80d5d286e7053241d2aa28ba9323557aa)), closes [#sources](https://github.com/opencitations/ramose/issues/sources)
+* **openapi:** export OpenAPI 3.2 documents ([08d9123](https://github.com/opencitations/ramose/commit/08d9123a326888e2f044da46d0ff2736b71fb10a))
+
 ## [2.7.1](https://github.com/opencitations/ramose/compare/v2.7.0...v2.7.1) (2026-06-19)
 
 
