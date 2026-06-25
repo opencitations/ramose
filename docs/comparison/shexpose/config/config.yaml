@@ -1,0 +1,11 @@
+app:
+  port: 3000
+
+rdf:
+  sparql_endpoint: https://sparql.opencitations.net/meta
+
+data:
+  base_uri: https://w3id.org/oc/meta/
+
+debug:
+  do_sparql_update: false

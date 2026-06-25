@@ -33,3 +33,4 @@ parts:
     - file: comparison/oba
     - file: comparison/elda
     - file: comparison/walder
+    - file: comparison/shexpose

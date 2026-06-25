@@ -1,0 +1,23 @@
+id: https://w3id.org/oc/meta/
+name: expression
+prefixes:
+  dcterms: http://purl.org/dc/terms/
+  fabio: http://purl.org/spar/fabio/
+  ex: https://w3id.org/oc/meta/
+  rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
+  rdfs: http://www.w3.org/2000/01/rdf-schema#
+  xsd: http://www.w3.org/2001/XMLSchema#
+default_prefix: ex
+classes:
+  Expression:
+    class_uri: fabio:Expression
+    slots:
+      - title
+slots:
+  title:
+    slot_uri: dcterms:title
+    range: string
+types:
+  string:
+    base: str
+    uri: xsd:string

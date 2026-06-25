@@ -62,6 +62,11 @@ services:
     ports:
       - "8089:8089"
 
+  shexpose:
+    build: ./shexpose
+    ports:
+      - "8090:3000"
+
   basil-init:
     image: python:3.13-alpine@sha256:420cd0bf0f3998275875e02ecd5808168cf0843cbb4d3c536432f729247b2acc
     user: root
