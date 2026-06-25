@@ -18,7 +18,7 @@ Endpoints:
 - Meta: `https://sparql.opencitations.net/meta`
 - Index: `https://sparql.opencitations.net/index`
 
-All tools are tested across six dimensions: join, output, pagination, versioning, API description, and authentication.
+All tools are tested across six dimensions: join, output, pagination, versioning, API description, and consumer authentication. The RAMOSE notebook additionally demonstrates reading a non-RDF CSV source.
 
 ## The comparison map
 
@@ -32,7 +32,8 @@ Functional comparison of the generators. `✓` supported, `✗` not supported, `
 | Operations | CRUD | GET, POST | GET, POST | CRUD | GET | CRUD, PATCH | GET | GET | GET |
 | Configuration format | .hf/.yaml | .rq, YAML | REST API | YAML | .sparql, .vm | JSON | Pydantic model | RDF/Turtle | YAML |
 | Configurable queries | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Authentication | Bearer | ✗ | Basic | Bearer | Basic | Basic, Bearer | ✗ | ✗ | ✗ |
+| Consumer auth. | Bearer | ✗ | Basic | Bearer | Basic | Basic, Bearer | ✗ | ✗ | ✗ |
+| Endpoint auth. | Any | Basic | Basic | ✗ | ✗ | Basic, Digest | ✗ | Basic | ✗ |
 | Resources | S, M, N | S, M, N | S, M | S, M, N | S, M, N | S, M, N | S, M, N | S, M, N | S, M, N |
 | Versioning | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Control over JSON | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
@@ -42,7 +43,7 @@ Functional comparison of the generators. `✓` supported, `✗` not supported, `
 | Pagination | ✓ | ✓ | ✗ | ∼ | ∼ | ✗ | ✓ | ✓ | ∼ |
 | Caching | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ | ✓ |
 
-Resources: `S` single resource, `M` flat collection, `N` nested resources. Pagination counts as supported only when all three are present: a request parameter for a bounded window, navigation to adjacent pages, and a termination signal. OBA, R4R, and Walder offer only windowing, hence `∼`.
+Resources: `S` single resource, `M` flat collection, `N` nested resources. Authentication splits in two: consumer auth. is whether the generated API challenges its own clients for credentials; endpoint auth. is whether the tool can authenticate to the upstream SPARQL endpoint. Pagination counts as supported only when all three are present: a request parameter for a bounded window, navigation to adjacent pages, and a termination signal. OBA, R4R, and Walder offer only windowing, hence `∼`.
 
 ## Reproduce locally
 

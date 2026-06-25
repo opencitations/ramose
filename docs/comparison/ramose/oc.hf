@@ -143,3 +143,30 @@ SELECT ?doi ?title WHERE {
       dcterms:title ?title .
   BIND("[[doi]]" AS ?doi)
 }
+
+#url /non-rdf/{doi}
+#type operation
+#doi str(.+)
+#method get
+#description Given a DOI, return the same article read from a non-RDF CSV file via SPARQL Anything, showing RAMOSE exposing a REST API over a non-RDF source.
+#call /non-rdf/10.1007/s11192-022-04367-w
+#field_type str(doi) str(title) str(venue)
+#output_json [
+    {
+        "doi": "10.1007/s11192-022-04367-w",
+        "title": "Identifying And Correcting Invalid Citations Due To DOI Errors In Crossref Data",
+        "venue": "Scientometrics"
+    }
+]
+#sparql @@with engine=sparql-anything
+PREFIX fx:  <http://sparql.xyz/facade-x/ns/>
+PREFIX xyz: <http://sparql.xyz/facade-x/data/>
+
+SELECT ?doi ?title ?venue WHERE {
+  SERVICE <x-sparql-anything:media-type=text/csv,csv.headers=true,location=file:///app/articles.csv> {
+    ?row xyz:doi ?doi ;
+         xyz:title ?title ;
+         xyz:venue ?venue .
+  }
+  FILTER(?doi = "[[doi]]")
+}
