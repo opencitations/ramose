@@ -1504,6 +1504,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
     "@graph": []
 }
 #sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
+
 #url /organisations/{local_identifier}
 #type operation
 #method get
