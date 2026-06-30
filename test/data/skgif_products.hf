@@ -22,7 +22,10 @@
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+        }
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/products/https://w3id.org/oc/meta/br/062104388184",
@@ -397,7 +400,10 @@ Filters marked as currently empty are accepted but return no matches in OpenCita
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+        }
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/products?filter=cf.search.title:OpenCitations&page=1&page_size=7",
@@ -1490,7 +1496,10 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+        }
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni&page=1&page_size=1",
@@ -1540,7 +1549,10 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+        }
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/organisations?filter=cf.search.name:Mit Press&page=1&page_size=1",
@@ -1590,7 +1602,10 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+        }
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Quantitative Science Studies&page=1&page_size=1",
@@ -1676,7 +1691,10 @@ All filters below are accepted but currently return no matches because OpenCitat
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+        }
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/grants?filter=grant_number:12345&page=1&page_size=1",
@@ -1735,7 +1753,10 @@ All filters below are accepted but currently return no matches because OpenCitat
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+        }
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/datasources?filter=research_product_type:literature&page=1&page_size=1",
@@ -1793,7 +1814,10 @@ All filters below are accepted but currently return no matches because OpenCitat
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+        }
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/topics?filter=cf.search.labels:biology&page=1&page_size=1",

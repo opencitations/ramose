@@ -14,6 +14,8 @@ import yaml
 from jsonschema import validate
 from rdflib import Graph
 
+from ramose.skg_if import to_skg_if
+
 if TYPE_CHECKING:
     from ramose import APIManager
 
@@ -48,9 +50,7 @@ def _load_product_response_schema() -> dict:
     response_schema = openapi_spec["paths"]["/products/{local_identifier}"]["get"]["responses"]["200"]["content"][
         "application/json"
     ]["schema"]
-    resolved_schema = _resolve_refs(copy.deepcopy(response_schema), components)
-    resolved_schema["properties"]["@context"]["minItems"] = 2
-    return resolved_schema
+    return _resolve_refs(copy.deepcopy(response_schema), components)
 
 
 SKGIF_PRODUCT_RESPONSE_SCHEMA = _load_product_response_schema()
@@ -95,7 +95,13 @@ def _validate_skgif_shacl(response: dict) -> None:
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+    {"@base": "https://w3id.org/skg-if/sandbox/acme/"},
 ]
+
+
+def test_direct_converter_uses_skgif_placeholder_base() -> None:
+    result = json.loads(to_skg_if("local_identifier\n"))
+    assert result["@context"] == SKGIF_CONTEXT
 
 
 class TestSkgifJournalArticle:
@@ -237,6 +243,9 @@ class TestSkgifBook:
 
 
 class TestSkgifSchemaConformance:
+    def test_schema_context_min_items_matches_upstream(self) -> None:
+        assert SKGIF_PRODUCT_RESPONSE_SCHEMA["properties"]["@context"]["minItems"] == 3
+
     def test_journal_article_conforms(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")
         _validate_skgif_response(response)
