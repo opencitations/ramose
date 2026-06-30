@@ -1,3 +1,10 @@
+## [2.8.1](https://github.com/opencitations/ramose/compare/v2.8.0...v2.8.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* **skg-if:** emit json-ld base placeholder [release] ([e14ffed](https://github.com/opencitations/ramose/commit/e14ffed25ff7730a713a1a18e5d3f05cab47b4c0))
+
 # [2.8.0](https://github.com/opencitations/ramose/compare/v2.7.1...v2.8.0) (2026-06-25)
 
 
