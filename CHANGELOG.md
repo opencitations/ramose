@@ -1,3 +1,10 @@
+## [2.8.2](https://github.com/opencitations/ramose/compare/v2.8.1...v2.8.2) (2026-07-01)
+
+
+### Bug Fixes
+
+* **skg-if:** use oc sandbox base iri [release] ([cf7c622](https://github.com/opencitations/ramose/commit/cf7c622470138bc768d01e510db50f27e3f0c682))
+
 ## [2.8.1](https://github.com/opencitations/ramose/compare/v2.8.0...v2.8.1) (2026-06-30)
 
 
