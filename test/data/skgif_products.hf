@@ -24,7 +24,7 @@
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+            "@base": "https://w3id.org/skg-if/sandbox/oc/"
         }
     ],
     "meta": {
@@ -402,7 +402,7 @@ Filters marked as currently empty are accepted but return no matches in OpenCita
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+            "@base": "https://w3id.org/skg-if/sandbox/oc/"
         }
     ],
     "meta": {
@@ -1498,7 +1498,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+            "@base": "https://w3id.org/skg-if/sandbox/oc/"
         }
     ],
     "meta": {
@@ -1551,7 +1551,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+            "@base": "https://w3id.org/skg-if/sandbox/oc/"
         }
     ],
     "meta": {
@@ -1604,7 +1604,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+            "@base": "https://w3id.org/skg-if/sandbox/oc/"
         }
     ],
     "meta": {
@@ -1693,7 +1693,7 @@ All filters below are accepted but currently return no matches because OpenCitat
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+            "@base": "https://w3id.org/skg-if/sandbox/oc/"
         }
     ],
     "meta": {
@@ -1755,7 +1755,7 @@ All filters below are accepted but currently return no matches because OpenCitat
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+            "@base": "https://w3id.org/skg-if/sandbox/oc/"
         }
     ],
     "meta": {
@@ -1816,7 +1816,7 @@ All filters below are accepted but currently return no matches because OpenCitat
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/acme/"
+            "@base": "https://w3id.org/skg-if/sandbox/oc/"
         }
     ],
     "meta": {
