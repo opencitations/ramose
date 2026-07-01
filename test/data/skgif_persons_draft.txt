@@ -7,6 +7,9 @@
   "@context": [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+    {
+      "@base": "https://w3id.org/skg-if/sandbox/acme/"
+    }
   ],
   "@graph": [
     {
@@ -30,13 +33,12 @@
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT ?local_identifier ?entity_type ?name ?famliyName ?givenName ?identifier ?identifier_scheme ?identifier_value 
+SELECT ?local_identifier ?name ?famliyName ?givenName ?identifier ?identifier_scheme ?identifier_value 
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
   ?local_identifier a foaf:Agent.
-  ?local_identifier a ?entity_type.
   OPTIONAL { 
-    ?local_identifier foaf:familyName ?famliyName;
+    ?local_identifier foaf:familyName ?familyName;
       foaf:givenName ?givenName .
   }
   OPTIONAL { ?local_identifier foaf:name ?name. }
@@ -50,7 +52,7 @@ WHERE {
 #url /persons
 #type operation
 #method get
-#description Coming soon. Returns a list of persons matching the given filters when implemented; this placeholder currently returns an empty result.
+#description Coming soon. Returns a list of persons matching the given filters when implemented.
 #custom_params filter,skgif_filters.persons.yaml,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
@@ -61,10 +63,10 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 - `given_name`
 - `family_name`
 - `name`
-- `affiliations.affiliation.local_identifier`
-- `affiliations.affiliation.name`
-- `affiliations.affiliation.short_name`
-- `affiliations.role`
+- `affiliations.affiliation.local_identifier` (currently empty)
+- `affiliations.affiliation.name` (currently empty)
+- `affiliations.affiliation.short_name` (currently empty)
+- `affiliations.role` (currently empty)
 
 **Convenience filters (`cf.*`):**
 
@@ -78,7 +80,10 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
-        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json"
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+          "@base": "https://w3id.org/skg-if/sandbox/acme/"
+        }
     ],
     "meta": {
         "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni&page=1&page_size=1",
@@ -86,9 +91,41 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         "part_of": {
             "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni",
             "entity_type": "search_result",
-            "total_items": 0
+            "total_items": 1
         }
     },
-    "@graph": []
+    "@graph": [
+      {
+        "local_identifier": "https://w3id.org/oc/meta/ra/0621012370564",
+        "entity_type": "person",
+        "identifiers": [
+          {
+            "scheme": "orcid",
+            "value": "0000-0003-0530-4305"
+          }
+        ],
+        "given_name": "Silvio",
+        "family_name": "Peroni",
+        "name": "Silvio Peroni"
+      }
+  ]
 }
-#sparql SELECT ?dummy WHERE { FILTER(false) [[filter]] }
+#sparql PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?local_identifier ?name ?famliyName ?givenName ?identifier ?identifier_scheme ?identifier_value 
+WHERE {
+  ?local_identifier a foaf:Agent.
+  OPTIONAL { 
+    ?local_identifier foaf:familyName ?familyName;
+      foaf:givenName ?givenName .
+  }
+  OPTIONAL { ?local_identifier foaf:name ?name. }
+  OPTIONAL {
+    ?local_identifier datacite:hasIdentifier ?identifier .
+    ?identifier datacite:usesIdentifierScheme ?identifier_scheme;
+      literal:hasLiteralValue ?identifier_value.
+  }
+  [[filter]]
+}

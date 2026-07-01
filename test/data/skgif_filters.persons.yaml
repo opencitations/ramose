@@ -3,15 +3,33 @@
 # SPDX-License-Identifier: ISC
 
 # Validate-only filter vocabulary: every key is accepted and produces no constraint; unknown keys are rejected.
-identifiers.id: {}
-identifiers.scheme: {}
-given_name: {}
-family_name: {}
-name: {}
-affiliations.affiliation.local_identifier: {}
-affiliations.affiliation.name: {}
-affiliations.affiliation.short_name: {}
-affiliations.role: {}
-cf.search.family_name: {}
-cf.search.given_name: {}
+identifiers.id:
+  filter: '?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> ] .'
+identifiers.scheme:
+  filter: "?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{{value}} ] ."
+given_name:
+  filter: "?local_identifier foaf:givenName '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> ] . "
+family_name:
+  filter: "?local_identifier foaf:familyName '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> ] . "
+name:
+  filter: "?local_identifier foaf:name '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> ] . "
+affiliations.affiliation.local_identifier:
+  filter: "FILTER(false)"
+affiliations.affiliation.name:
+  filter: "FILTER(false)"
+affiliations.affiliation.short_name:
+  filter: "FILTER(false)"
+affiliations.role:
+  filter: "FILTER(false)" 
+cf.search.family_name:
+  filter: |-
+    ?local_identifier foaf:familyName ?familyName .
+    FILTER(CONTAINS(LCASE(?familyName), LCASE("{{value}}")))
+cf.search.given_name:
+  filter: |-
+    ?local_identifier foaf:givenName ?givenName .
+    FILTER(CONTAINS(LCASE(?givenName), LCASE("{{value}}")))
 cf.search.name: {}
+  filter: |-
+    ?local_identifier foaf:name ?name .
+    FILTER(CONTAINS(LCASE(?name), LCASE("{{value}}")))
