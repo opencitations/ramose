@@ -95,6 +95,7 @@ def _validate_skgif_shacl(response: dict) -> None:
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+    {"@base": "https://w3id.org/skg-if/sandbox/oc/"}
 ]
 
 
@@ -252,3 +253,25 @@ class TestSkgifSchemaConformance:
     def test_book_shacl(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")
         _validate_skgif_shacl(response)
+
+class TestSkgifPerson:
+    def test_context(self, skgif_api_manager: APIManager) -> None:
+        result = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0614010840729")
+        assert result["@context"] == SKGIF_CONTEXT
+
+    def test_person_metadata(self, skgif_api_manager: APIManager) -> None:
+        person = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0614010840729")["@graph"][0]
+        assert person["local_identifier"] == "https://w3id.org/oc/meta/ra/0614010840729"
+        assert person["entity_type"] == "person"
+        assert person["given_name"] == "Silvio"
+        assert person["family_name"] == "Peroni"
+        assert person["name"] == "Silvio Peroni"
+
+    def test_identifiers(self, skgif_api_manager: APIManager) -> None:
+        person = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0614010840729")["@graph"][0]
+        assert person["identifiers"] == [
+        {
+          "scheme": "orcid",
+          "value": "0000-0003-0530-4305"
+        }
+      ]
