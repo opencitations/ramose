@@ -136,7 +136,17 @@ If you use RAMOSE, please cite both the article and the software:
 > Daquino, M., Heibi, I., Peroni, S., Shotton, D. (2022). Creating RESTful APIs over SPARQL endpoints using RAMOSE. *Semantic Web*, 13(2), 195-213. https://doi.org/10.3233/SW-210439
 
 <!-- software-citation-action:start -->
-> Brembilla, D., Peroni, S., Daquino, M., Massari, A., Heibi, I. (2026). opencitations/ramose (v2.0.0). Zenodo. https://doi.org/10.5281/zenodo.19399602
+To cite the latest version of this software (2.8.3), use this BibTeX entry:
+
+```bibtex
+@software{RAMOSE-2.8.3,
+author = {Peroni, Silvio and Daquino, Marilena and Brembilla, Davide and Heibi, Ivan and Massari, Arcangelo},
+title = {RAMOSE},
+url = {https://archive.softwareheritage.org/swh:1:snp:d9143da495332541d80421c49a8d59dfc12311d1;origin=https://github.com/opencitations/ramose},
+version = {2.8.3},
+year = {2026}
+}
+```
 <!-- software-citation-action:end -->
 
 ## License
