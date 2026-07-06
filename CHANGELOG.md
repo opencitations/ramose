@@ -1,3 +1,10 @@
+## [2.8.3](https://github.com/opencitations/ramose/compare/v2.8.2...v2.8.3) (2026-07-06)
+
+
+### Bug Fixes
+
+* **ci:** sync citation metadata after release [release] ([a0be3de](https://github.com/opencitations/ramose/commit/a0be3de942aaca26fe818fb32cde75e57477a534))
+
 ## [2.8.2](https://github.com/opencitations/ramose/compare/v2.8.1...v2.8.2) (2026-07-01)
 
 
