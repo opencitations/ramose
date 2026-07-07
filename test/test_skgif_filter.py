@@ -16,11 +16,11 @@ with (Path(__file__).parent / "data" / "expected_search_products.json").open(enc
     EXPECTED_SEARCH: dict[str, list[dict]] = json.load(expected_search_file)
 
 SKGIF_PUBLIC_BASE_URL = "https://w3id.org/skg-if/sandbox/opencitations"
-COMING_SOON_MOCK_ENDPOINTS = ("persons", "organisations", "venues")
+COMING_SOON_MOCK_ENDPOINTS = ("organisations", "venues")
 EMPTY_DATA_MOCK_ENDPOINTS = ("grants", "datasources", "topics")
 MOCK_ENDPOINTS = (*COMING_SOON_MOCK_ENDPOINTS, *EMPTY_DATA_MOCK_ENDPOINTS)
 MOCK_FILTER_EXAMPLES = {
-    "persons": "cf.search.given_name:Silvio,cf.search.family_name:Peroni",
+    # "persons": "cf.search.given_name:Silvio,cf.search.family_name:Peroni",
     "organisations": "cf.search.name:Mit Press",
     "venues": "cf.search.name:Quantitative Science Studies",
     "grants": "grant_number:12345",
@@ -609,6 +609,29 @@ class TestDatasourcesEndpoints:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/datasources/example-id")
         assert status == 404
 
+class TestPersonsEndpoint:
+    # def test_returns_all_products(self, skgif_api_manager: APIManager) -> None:
+    #     return None
+    #change
+    # def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
+    #     results = _exec(skgif_api_manager, "/skgif/v1/products?filter=identifiers.scheme:isbn")
+    #     assert results == EXPECTED_SEARCH["identifiers.scheme:isbn"]
+    #change
+    # def test_filter_by_identifier_value(self, skgif_api_manager: APIManager) -> None:
+    #     results = _exec(skgif_api_manager, "/skgif/v1/products?filter=identifiers.id:9781402096327")
+    #     assert results == EXPECTED_SEARCH["identifiers.id:9781402096327"]
+    # def test_filter_by_given_name(self, skgif_api_manager: APIManager) -> None:
+    #     return None
+    # def test_filter_by_family_name(self, skgif_api_manager: APIManager) -> None:
+    #     return None
+    # def test_filter_by_name(self, skgif_api_manager: APIManager) -> None:
+    #     return None
+    def test_filter_by_combined_name(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(
+            skgif_api_manager,
+            "/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni",
+        )
+        assert results == EXPECTED_SEARCH["cf.search.given_name:Silvio,cf.search.family_name:Peroni"]
 
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",

@@ -96,20 +96,59 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         }
     },
     "@graph": [
-      {
-        "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
-        "entity_type": "person",
-        "identifiers": [
-          {
-            "scheme": "orcid",
-            "value": "0000-0003-0530-4305"
-          }
+    {
+        'entity_type': 'person',
+        'family_name': 'Peroni',
+        'given_name': 'Silvio',
+        'local_identifier': 'https://w3id.org/oc/meta/ra/06028914347',
+    },
+    {
+        'entity_type': 'person',
+        'family_name': 'Peroni',
+        'given_name': 'Silvio',
+        'identifier': 'https://w3id.org/oc/meta/id/06304949238',
+        'identifiers': [
+            {
+                'scheme': 'http://purl.org/spar/datacite/orcid',
+                'value': '0000-0003-0530-4305',
+            },
         ],
-        "given_name": "Silvio",
-        "family_name": "Peroni",
-        "name": "Peroni Silvio"
-      }
-  ]
+        'local_identifier': 'https://w3id.org/oc/meta/ra/0614010840729',
+        'name': 'Peroni Silvio',
+    },
+    {
+        'entity_type': 'person',
+        'family_name': 'Peroni',
+        'given_name': 'Silvio',
+        'identifier': 'https://w3id.org/oc/meta/id/062106313906',
+        'identifiers': [
+            {
+                'scheme': 'http://purl.org/spar/datacite/orcid',
+                'value': '0000-0003-0530-4305',
+            },
+        ],
+        'local_identifier': 'https://w3id.org/oc/meta/ra/0621012370564',
+    },
+    {
+        'entity_type': 'person',
+        'family_name': 'Peroni',
+        'given_name': 'Silvio',
+        'identifier': 'https://w3id.org/oc/meta/id/062901586017',
+        'identifiers': [
+            {
+                'scheme': 'http://purl.org/spar/datacite/orcid',
+                'value': '0000-0003-0530-4305',
+            },
+        ],
+        'local_identifier': 'https://w3id.org/oc/meta/ra/062901363346',
+    },
+    {
+        'entity_type': 'person',
+        'family_name': 'Peroni',
+        'given_name': 'Silvio',
+        'local_identifier': 'https://w3id.org/oc/meta/ra/06609658687',
+    },
+ ]
 }
 #sparql PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>

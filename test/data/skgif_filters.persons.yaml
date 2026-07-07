@@ -8,11 +8,11 @@ identifiers.id:
 identifiers.scheme:
   filter: "?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{{value}} ] ."
 given_name:
-  filter: "?local_identifier foaf:givenName '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> ] . "
+  filter: "?local_identifier foaf:givenName '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> . "
 family_name:
-  filter: "?local_identifier foaf:familyName '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> ] . "
+  filter: "?local_identifier foaf:familyName '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> . "
 name:
-  filter: "?local_identifier foaf:name '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> ] . "
+  filter: "?local_identifier foaf:name '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> . "
 affiliations.affiliation.local_identifier:
   filter: "FILTER(false)"
 affiliations.affiliation.name:
@@ -29,7 +29,7 @@ cf.search.given_name:
   filter: |-
     ?local_identifier foaf:givenName ?givenName .
     FILTER(CONTAINS(LCASE(?givenName), LCASE("{{value}}")))
-cf.search.name: {}
+cf.search.name:
   filter: |-
     ?local_identifier foaf:name ?name .
     FILTER(CONTAINS(LCASE(?name), LCASE("{{value}}")))
