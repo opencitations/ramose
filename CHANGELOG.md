@@ -1,3 +1,24 @@
+## [2.8.3](https://github.com/opencitations/ramose/compare/v2.8.2...v2.8.3) (2026-07-06)
+
+
+### Bug Fixes
+
+* **ci:** sync citation metadata after release [release] ([a0be3de](https://github.com/opencitations/ramose/commit/a0be3de942aaca26fe818fb32cde75e57477a534))
+
+## [2.8.2](https://github.com/opencitations/ramose/compare/v2.8.1...v2.8.2) (2026-07-01)
+
+
+### Bug Fixes
+
+* **skg-if:** use oc sandbox base iri [release] ([cf7c622](https://github.com/opencitations/ramose/commit/cf7c622470138bc768d01e510db50f27e3f0c682))
+
+## [2.8.1](https://github.com/opencitations/ramose/compare/v2.8.0...v2.8.1) (2026-06-30)
+
+
+### Bug Fixes
+
+* **skg-if:** emit json-ld base placeholder [release] ([e14ffed](https://github.com/opencitations/ramose/commit/e14ffed25ff7730a713a1a18e5d3f05cab47b4c0))
+
 # [2.8.0](https://github.com/opencitations/ramose/compare/v2.7.1...v2.8.0) (2026-06-25)
 
 

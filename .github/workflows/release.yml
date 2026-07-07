@@ -79,3 +79,17 @@ jobs:
         run: |
           uv build
           uv publish --token $UV_PUBLISH_TOKEN
+
+      - name: Sync software citation metadata
+        id: citation
+        if: steps.check_message.outputs.should_release == 'true' && success()
+        uses: arcangelo7/software-citation-sync@0b18b7e155e903db9661bb14d60e6f8a40e8c8cf # v2.0.1
+
+      - name: Commit software citation metadata
+        if: steps.check_message.outputs.should_release == 'true' && steps.citation.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CITATION.cff README.md
+          git commit -m "docs: update software citation metadata"
+          git push origin HEAD:master

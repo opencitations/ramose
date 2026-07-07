@@ -613,6 +613,7 @@ class TestDatasourcesEndpoints:
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+    {"@base": "https://w3id.org/skg-if/sandbox/oc/"},
 ]
 
 TOTAL_PRODUCTS = 1349
