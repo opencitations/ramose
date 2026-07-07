@@ -1459,7 +1459,7 @@ WHERE {
 #type operation
 #method get
 #description Returns a single person agent identified by their OpenCitations Meta identifier (OMID). The response includes agent metadata from OpenCitations Meta.
-#call /persons/https://w3id.org/oc/meta/ra/0621012370564
+#call /persons/https://w3id.org/oc/meta/ra/0614010840729
 #output_json {
   "@context": [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
@@ -1470,7 +1470,7 @@ WHERE {
   ],
   "@graph": [
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0621012370564",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
       "entity_type": "person",
       "identifiers": [
         {
@@ -1480,7 +1480,7 @@ WHERE {
       ],
       "given_name": "Silvio",
       "family_name": "Peroni",
-      "name": "Silvio Peroni"
+      "name": "Peroni Silvio"
     }
   ]
 }
@@ -1490,19 +1490,20 @@ WHERE {
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT ?local_identifier ?name ?famliyName ?givenName ?identifier ?identifier_scheme ?identifier_value 
+SELECT ?local_identifier ?name ?family_name ?given_name ?identifier ?identifier_scheme ?identifier_value 
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
   ?local_identifier a foaf:Agent.
   OPTIONAL { 
-    ?local_identifier foaf:familyName ?familyName;
-      foaf:givenName ?givenName .
+    ?local_identifier foaf:familyName ?family_name;
+      foaf:givenName ?given_name .
   }
   OPTIONAL { ?local_identifier foaf:name ?name. }
   OPTIONAL {
     ?local_identifier datacite:hasIdentifier ?identifier .
-    ?identifier datacite:usesIdentifierScheme ?identifier_scheme;
+    ?identifier datacite:usesIdentifierScheme ?identifier_scheme_uri;
       literal:hasLiteralValue ?identifier_value.
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
   }
 }
 
@@ -1553,7 +1554,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
     },
     "@graph": [
       {
-        "local_identifier": "https://w3id.org/oc/meta/ra/0621012370564",
+        "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
         "entity_type": "person",
         "identifiers": [
           {
@@ -1563,7 +1564,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         ],
         "given_name": "Silvio",
         "family_name": "Peroni",
-        "name": "Silvio Peroni"
+        "name": "Peroni Silvio"
       }
   ]
 }
@@ -1571,12 +1572,12 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT ?local_identifier ?name ?famliyName ?givenName ?identifier ?identifier_scheme ?identifier_value 
+SELECT ?local_identifier ?name ?family_name ?given_name ?identifier ?identifier_scheme ?identifier_value 
 WHERE {
   ?local_identifier a foaf:Agent.
   OPTIONAL { 
-    ?local_identifier foaf:familyName ?familyName;
-      foaf:givenName ?givenName .
+    ?local_identifier foaf:familyName ?family_name;
+      foaf:givenName ?given_name .
   }
   OPTIONAL { ?local_identifier foaf:name ?name. }
   OPTIONAL {

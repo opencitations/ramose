@@ -285,7 +285,7 @@ class TestSkgifPerson:
         assert person["entity_type"] == "person"
         assert person["given_name"] == "Silvio"
         assert person["family_name"] == "Peroni"
-        assert person["name"] == "Silvio Peroni"
+        assert person["name"] == "Peroni Silvio"
 
     def test_identifiers(self, skgif_api_manager: APIManager) -> None:
         person = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0614010840729", "persons")["@graph"][0]
