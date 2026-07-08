@@ -3648,6 +3648,10 @@
       "entity_type": "product"
     }
   ],
+  "identifiers.scheme:orcid": [],
+  "identifiers.id:0000-0002-9259-850X":[],
+  "given_name:Greg":[],
+  "family_name:Peroni":[],
   "cf.search.given_name:Silvio,cf.search.family_name:Peroni": [
       {
         "entity_type": "person",

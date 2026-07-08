@@ -610,27 +610,23 @@ class TestDatasourcesEndpoints:
         assert status == 404
 
 class TestPersonsEndpoint:
-    # def test_returns_all_products(self, skgif_api_manager: APIManager) -> None:
-    #     return None
-    #change
-    # def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
-    #     results = _exec(skgif_api_manager, "/skgif/v1/products?filter=identifiers.scheme:isbn")
-    #     assert results == EXPECTED_SEARCH["identifiers.scheme:isbn"]
-    #change
-    # def test_filter_by_identifier_value(self, skgif_api_manager: APIManager) -> None:
-    #     results = _exec(skgif_api_manager, "/skgif/v1/products?filter=identifiers.id:9781402096327")
-    #     assert results == EXPECTED_SEARCH["identifiers.id:9781402096327"]
-    # def test_filter_by_given_name(self, skgif_api_manager: APIManager) -> None:
-    #     return None
-    # def test_filter_by_family_name(self, skgif_api_manager: APIManager) -> None:
-    #     return None
-    # def test_filter_by_name(self, skgif_api_manager: APIManager) -> None:
-    #     return None
+    def test_returns_all_persons(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/persons")
+        assert len(results) == 50000
+    def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/persons?filter=identifiers.scheme:orcid")
+        assert results == EXPECTED_SEARCH["identifiers.scheme:orcid"]
+    def test_filter_by_identifier_value(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/persons?filter=identifiers.id:0000-0002-9259-850X")
+        assert results == EXPECTED_SEARCH["identifiers.id:0000-0002-9259-850X"]
+    def test_filter_by_given_name(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/persons?filter=given_name:Greg")
+        assert results == EXPECTED_SEARCH["given_name:Greg"]
+    def test_filter_by_family_name(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/persons?filter=family_name:Peroni")
+        assert results == EXPECTED_SEARCH["family_name:Peroni"]
     def test_filter_by_combined_name(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(
-            skgif_api_manager,
-            "/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni",
-        )
+        results = _exec(skgif_api_manager, "/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni")
         assert results == EXPECTED_SEARCH["cf.search.given_name:Silvio,cf.search.family_name:Peroni"]
 
 SKGIF_CONTEXT = [
