@@ -12,6 +12,8 @@ import tempfile
 import time
 from pathlib import Path
 
+import requests
+
 QLEVER_IMAGE = "adfreiburg/qlever@sha256:4672a53f0ff4e55ac921d25832a21ec0bb3ca08f54d7c1950d04ebf6af7b8c21"
 INDEX_NAME = "ramose-test"
 DATA_DIR = Path(__file__).resolve().parent / "data"
@@ -25,13 +27,15 @@ def _docker(*args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["docker", *args], check=check, capture_output=True, text=True)
 
 
-def wait_for_port(port: int, timeout: int = 60) -> None:
+def wait_for_qlever(port: int, timeout: int = 60) -> None:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        with contextlib.suppress(OSError), socket.create_connection(("127.0.0.1", port), timeout=2):
-            return
+        with contextlib.suppress(requests.RequestException):
+            response = requests.get(f"http://127.0.0.1:{port}", timeout=2)
+            if response.status_code in range(200, 500):
+                return
         time.sleep(1)
-    msg = f"Port {port} did not respond within {timeout}s"
+    msg = f"QLever did not become ready on port {port} within {timeout}s"
     raise RuntimeError(msg)
 
 
@@ -59,7 +63,7 @@ def start_qlever_server(
     cmd = f"qlever-server -i {INDEX_NAME} -j 4 -p {port} -m 1G -c 500M -e 500M -k 50 -s 30s {server_flags}".strip()
     run_args += ["-v", mount, "-w", "/index", "-p", f"{port}:{port}", QLEVER_IMAGE, "-c", cmd]
     _docker(*run_args)
-    wait_for_port(port)
+    wait_for_qlever(port)
     return f"http://127.0.0.1:{port}"
 
 
