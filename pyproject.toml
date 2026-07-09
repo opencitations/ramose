@@ -76,6 +76,9 @@ ignore = [
     "PLR2004", # magic values in test assertions
     "C901",    # complex test fixtures
 ]
+"test/start_qlever.py" = [
+    "T20",     # print in CLI script
+]
 "ramose/__main__.py" = [
     "T20",     # print in CLI
 ]
