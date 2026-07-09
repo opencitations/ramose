@@ -33,7 +33,7 @@
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT ?local_identifier ?name ?family_name ?given_name ?identifier ?identifier_scheme ?identifier_value 
+SELECT ?local_identifier ?name ?family_name ?given_name ?identifier_scheme ?identifier_value 
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
   ?local_identifier a foaf:Agent.
@@ -96,65 +96,26 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         }
     },
     "@graph": [
-    {
-        'entity_type': 'person',
-        'family_name': 'Peroni',
-        'given_name': 'Silvio',
-        'local_identifier': 'https://w3id.org/oc/meta/ra/06028914347',
-    },
-    {
-        'entity_type': 'person',
-        'family_name': 'Peroni',
-        'given_name': 'Silvio',
-        'identifier': 'https://w3id.org/oc/meta/id/06304949238',
-        'identifiers': [
-            {
-                'scheme': 'http://purl.org/spar/datacite/orcid',
-                'value': '0000-0003-0530-4305',
-            },
+      {
+        "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
+        "entity_type": "person",
+        "identifiers": [
+          {
+            "scheme": "orcid",
+            "value": "0000-0003-0530-4305"
+          }
         ],
-        'local_identifier': 'https://w3id.org/oc/meta/ra/0614010840729',
-        'name': 'Peroni Silvio',
-    },
-    {
-        'entity_type': 'person',
-        'family_name': 'Peroni',
-        'given_name': 'Silvio',
-        'identifier': 'https://w3id.org/oc/meta/id/062106313906',
-        'identifiers': [
-            {
-                'scheme': 'http://purl.org/spar/datacite/orcid',
-                'value': '0000-0003-0530-4305',
-            },
-        ],
-        'local_identifier': 'https://w3id.org/oc/meta/ra/0621012370564',
-    },
-    {
-        'entity_type': 'person',
-        'family_name': 'Peroni',
-        'given_name': 'Silvio',
-        'identifier': 'https://w3id.org/oc/meta/id/062901586017',
-        'identifiers': [
-            {
-                'scheme': 'http://purl.org/spar/datacite/orcid',
-                'value': '0000-0003-0530-4305',
-            },
-        ],
-        'local_identifier': 'https://w3id.org/oc/meta/ra/062901363346',
-    },
-    {
-        'entity_type': 'person',
-        'family_name': 'Peroni',
-        'given_name': 'Silvio',
-        'local_identifier': 'https://w3id.org/oc/meta/ra/06609658687',
-    },
- ]
+        "given_name": "Silvio",
+        "family_name": "Peroni",
+        "name": "Peroni Silvio"
+      }
+  ]
 }
 #sparql PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT ?local_identifier ?name ?family_name ?given_name ?identifier ?identifier_scheme ?identifier_value 
+SELECT ?local_identifier ?name ?family_name ?given_name ?identifier_scheme ?identifier_value 
 WHERE {
   ?local_identifier a foaf:Agent.
   OPTIONAL { 
@@ -164,8 +125,9 @@ WHERE {
   OPTIONAL { ?local_identifier foaf:name ?name. }
   OPTIONAL {
     ?local_identifier datacite:hasIdentifier ?identifier .
-    ?identifier datacite:usesIdentifierScheme ?identifier_scheme;
+    ?identifier datacite:usesIdentifierScheme ?identifier_scheme_uri;
       literal:hasLiteralValue ?identifier_value.
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
   }
   [[filter]]
 }

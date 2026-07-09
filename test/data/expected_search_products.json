@@ -3648,62 +3648,1796 @@
       "entity_type": "product"
     }
   ],
-  "identifiers.scheme:orcid": [],
-  "identifiers.id:0000-0002-9259-850X":[],
-  "given_name:Greg":[],
-  "family_name:Peroni":[],
-  "cf.search.given_name:Silvio,cf.search.family_name:Peroni": [
+  "identifiers.scheme:orcid": [
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06011403627",
+      "family_name": "Goble",
+      "given_name": "Carole",
+      "identifiers": [
+        {
+          "value": "0000-0003-1219-2137",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06011405026",
+      "family_name": "Groth",
+      "given_name": "Paul",
+      "identifiers": [
+        {
+          "value": "0000-0003-0183-6910",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061010626791",
+      "family_name": "Grethe",
+      "given_name": "Jeffery S.",
+      "identifiers": [
+        {
+          "value": "0000-0001-5212-7052",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061010626792",
+      "family_name": "Martone",
+      "given_name": "Maryann E.",
+      "identifiers": [
+        {
+          "value": "0000-0002-8406-3871",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061011762682",
+      "name": "Stefano Zacchiroli",
+      "family_name": "Zacchiroli",
+      "given_name": "Stefano",
+      "identifiers": [
+        {
+          "value": "0000-0002-4576-136X",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061012740050",
+      "family_name": "Haak",
+      "given_name": "Laurel",
+      "identifiers": [
+        {
+          "value": "0000-0001-5109-3700",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061012768625",
+      "family_name": "’T Hoen",
+      "given_name": "Peter A C",
+      "identifiers": [
+        {
+          "value": "0000-0003-4450-3112",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610144",
+      "family_name": "Borgman",
+      "given_name": "Christine",
+      "identifiers": [
+        {
+          "value": "0000-0002-9344-1029",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610145",
+      "family_name": "Case",
+      "given_name": "Donald",
+      "identifiers": [
+        {
+          "value": "0000-0001-5137-5804",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610146",
+      "family_name": "Robertson",
+      "given_name": "Stephen",
+      "identifiers": [
+        {
+          "value": "0000-0003-4115-6215",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061041976",
+      "family_name": "Packer",
+      "given_name": "Abel L.",
+      "identifiers": [
+        {
+          "value": "0000-0001-9610-5728",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0611010246",
+      "family_name": "Voorhees",
+      "given_name": "Ellen",
+      "identifiers": [
+        {
+          "value": "0000-0002-5658-2308",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0611011366962",
+      "family_name": "Prieta",
+      "given_name": "Fernando De La",
+      "identifiers": [
+        {
+          "value": "0000-0002-8239-5020",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0611011841907",
+      "family_name": "Wilkinson",
+      "given_name": "Mark D",
+      "identifiers": [
+        {
+          "value": "0000-0001-6960-357X",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0611011973820",
+      "family_name": "Blomberg",
+      "given_name": "Niklas",
+      "identifiers": [
+        {
+          "value": "0000-0003-4155-5910",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0611016894",
+      "family_name": "Lacoste",
+      "given_name": "Vincent",
+      "identifiers": [
+        {
+          "value": "0000-0002-3173-4053",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061107327",
+      "family_name": "Porter",
+      "given_name": "Alan",
+      "identifiers": [
+        {
+          "value": "0000-0002-4520-6518",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0612019943",
+      "family_name": "Mietchen",
+      "given_name": "Daniel",
+      "identifiers": [
+        {
+          "value": "0000-0001-9488-1870",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061206532419",
+      "family_name": "Cioffi",
+      "given_name": "Alessia",
+      "identifiers": [
+        {
+          "value": "0000-0002-9812-4065",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061206532420",
+      "family_name": "Coppini",
+      "given_name": "Sara",
+      "identifiers": [
+        {
+          "value": "0000-0002-6279-3830",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061206532421",
+      "family_name": "Moretti",
+      "given_name": "Arianna",
+      "identifiers": [
+        {
+          "value": "0000-0001-5486-7070",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061208240",
+      "family_name": "Tekaia",
+      "given_name": "Fredj",
+      "identifiers": [
+        {
+          "value": "0000-0003-1934-2396",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061209664359",
+      "family_name": "Bourne",
+      "given_name": "Philip E",
+      "identifiers": [
+        {
+          "value": "0000-0002-7618-7292",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06130101498",
+      "family_name": "Fricke",
+      "given_name": "Suzanne",
+      "identifiers": [
+        {
+          "value": "0000-0002-4412-9717",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06130111781",
+      "family_name": "Slater",
+      "given_name": "Ted",
+      "identifiers": [
+        {
+          "value": "0000-0003-1386-0731",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061301432",
+      "family_name": "Chen",
+      "given_name": "Yongquan",
+      "identifiers": [
+        {
+          "value": "0000-0003-4747-4708",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0613061168",
+      "family_name": "Tkaczyk",
+      "given_name": "Dominika",
+      "identifiers": [
+        {
+          "value": "0000-0001-5055-7876",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0613061169",
+      "family_name": "Atzori",
+      "given_name": "Claudio",
+      "identifiers": [
+        {
+          "value": "0000-0001-9613-6639",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061308112",
+      "family_name": "Eisenbach",
+      "given_name": "Lea",
+      "identifiers": [
+        {
+          "value": "0000-0002-4816-1968",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061309573725",
+      "family_name": "Mora-Cantallops",
+      "given_name": "Marçal",
+      "identifiers": [
+        {
+          "value": "0000-0002-2480-1078",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
+      "name": "Peroni Silvio",
+      "family_name": "Peroni",
+      "given_name": "Silvio",
+      "identifiers": [
+        {
+          "value": "0000-0003-0530-4305",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0614010898726",
+      "family_name": "Evelo",
+      "given_name": "Chris T",
+      "identifiers": [
+        {
+          "value": "0000-0002-5301-3142",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0614011339074",
+      "family_name": "Zhao",
+      "given_name": "Jun",
+      "identifiers": [
+        {
+          "value": "0000-0001-6935-9028",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0614011357586",
+      "family_name": "Gonzalez-Beltran",
+      "given_name": "Alejandra",
+      "identifiers": [
+        {
+          "value": "0000-0003-3499-8262",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0615010617330",
+      "name": "Christoph Lange",
+      "family_name": "Lange",
+      "given_name": "Christoph",
+      "identifiers": [
+        {
+          "value": "0000-0001-9879-3827",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0615019533",
+      "family_name": "Wolstencroft",
+      "given_name": "Katherine J.",
+      "identifiers": [
+        {
+          "value": "0000-0002-1279-5133",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0616010651610",
+      "family_name": "Zhang",
+      "given_name": "Ziqi",
+      "identifiers": [
+        {
+          "value": "0000-0002-8587-8618",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0616011223137",
+      "family_name": "Van Mulligen",
+      "given_name": "Erik M",
+      "identifiers": [
+        {
+          "value": "0000-0003-1377-9386",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0616068030",
+      "family_name": "García-Castro",
+      "given_name": "Alexander",
+      "identifiers": [
+        {
+          "value": "0000-0003-1238-2539",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0617010138137",
+      "family_name": "Axton",
+      "given_name": "Myles",
+      "identifiers": [
+        {
+          "value": "0000-0002-8042-4131",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0617010294917",
+      "family_name": "Persson",
+      "given_name": "Bengt",
+      "identifiers": [
+        {
+          "value": "0000-0003-3165-5344",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0618011111225",
+      "name": "Mannocci Andrea",
+      "family_name": "Mannocci",
+      "given_name": "Andrea",
+      "identifiers": [
+        {
+          "value": "0000-0002-5193-7851",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0618031021",
+      "family_name": "Gray",
+      "given_name": "Alasdair J. G.",
+      "identifiers": [
+        {
+          "value": "0000-0002-5711-4872",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0618033885",
+      "family_name": "Edmunds",
+      "given_name": "Scott",
+      "identifiers": [
+        {
+          "value": "0000-0001-6444-1436",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0619011562087",
+      "family_name": "Corchado",
+      "given_name": "Juan Manuel",
+      "identifiers": [
+        {
+          "value": "0000-0002-2829-1829",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0619018265",
+      "family_name": "Lin",
+      "given_name": "Jennifer",
+      "identifiers": [
+        {
+          "value": "0000-0002-9680-2328",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0619018411",
+      "name": "Nielsen Finn Årup",
+      "family_name": "Nielsen",
+      "given_name": "Finn Årup",
+      "identifiers": [
+        {
+          "value": "0000-0001-6128-3356",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0619018670",
+      "family_name": "Brase",
+      "given_name": "Jan",
+      "identifiers": [
+        {
+          "value": "0000-0002-8250-6253",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0619049849",
+      "family_name": "Pentz",
+      "given_name": "Ed",
+      "identifiers": [
+        {
+          "value": "0000-0002-5993-8592",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0619081600",
+      "family_name": "Pranckutė",
+      "given_name": "Raminta",
+      "identifiers": [
+        {
+          "value": "0000-0003-0095-3568",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/062010666227",
+      "family_name": "Kuhn",
+      "given_name": "Tobias",
+      "identifiers": [
+        {
+          "value": "0000-0002-1267-0234",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/062014518",
+      "family_name": "Agrafiotis",
+      "given_name": "Dimitris",
+      "identifiers": [
+        {
+          "value": "0000-0002-5604-5692",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/062041435",
+      "family_name": "Brookes",
+      "given_name": "Anthony J.",
+      "identifiers": [
+        {
+          "value": "0000-0001-8686-0017",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/062041437",
+      "family_name": "Sengstag",
+      "given_name": "Thierry",
+      "identifiers": [
+        {
+          "value": "0000-0002-7516-6246",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/062042319",
+      "family_name": "Calabrò",
+      "given_name": "Maria Luisa",
+      "identifiers": [
+        {
+          "value": "0000-0001-9401-6182",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621010775619",
+      "name": "Shotton David",
+      "family_name": "Shotton",
+      "given_name": "D M",
+      "identifiers": [
+        {
+          "value": "0000-0001-5506-523X",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621011878607",
+      "name": "Willighagen Egon",
+      "family_name": "Willighagen",
+      "given_name": "Egon",
+      "identifiers": [
+        {
+          "value": "0000-0001-7542-0286",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621012370562",
+      "family_name": "Mariani",
+      "given_name": "Fabio",
+      "identifiers": [
+        {
+          "value": "0000-0002-7382-0187",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621012370563",
+      "family_name": "Heibi",
+      "given_name": "Ivan",
+      "identifiers": [
+        {
+          "value": "0000-0001-5366-5194",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621012370564",
+      "family_name": "Peroni",
+      "given_name": "Silvio",
+      "identifiers": [
+        {
+          "value": "0000-0003-0530-4305",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621012370565",
+      "family_name": "Shotton",
+      "given_name": "David",
+      "identifiers": [
+        {
+          "value": "0000-0001-5506-523X",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621020333",
+      "family_name": "Zurian",
+      "given_name": "Juan Carlos Valderrama",
+      "identifiers": [
+        {
+          "value": "0000-0001-5787-6853",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621055597",
+      "family_name": "Lopez",
+      "given_name": "Federico",
+      "identifiers": [
+        {
+          "value": "0000-0002-7138-3542",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621065344",
+      "family_name": "Bucheli",
+      "given_name": "Victor A.",
+      "identifiers": [
+        {
+          "value": "0000-0002-0885-8699",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06220102410",
+      "family_name": "Usdin",
+      "given_name": "B. Tommie",
+      "identifiers": [
+        {
+          "value": "0000-0002-7620-1496",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0622010479355",
+      "family_name": "Dillo",
+      "given_name": "Ingrid",
+      "identifiers": [
+        {
+          "value": "0000-0001-5654-2392",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0622011040459",
+      "name": "Fabio Vitali",
+      "family_name": "Vitali",
+      "given_name": "Fabio",
+      "identifiers": [
+        {
+          "value": "0000-0002-7562-5203",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06220110984",
+      "family_name": "Shahidzadeh",
+      "given_name": "Nooshin",
+      "identifiers": [
+        {
+          "value": "0000-0003-4114-074X",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0622025635",
+      "family_name": "Gasperini",
+      "given_name": "Paola",
+      "identifiers": [
+        {
+          "value": "0000-0002-3016-9742",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0622025785",
+      "family_name": "Zamora",
+      "given_name": "Antonio",
+      "identifiers": [
+        {
+          "value": "0000-0003-0293-0829",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0622032021",
+      "family_name": "Bilgin",
+      "given_name": "Hülya",
+      "identifiers": [
+        {
+          "value": "0000-0001-6639-5533",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0623011051",
+      "family_name": "Schroeder",
+      "given_name": "Aaron",
+      "identifiers": [
+        {
+          "value": "0000-0003-4372-2241",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0623011679409",
+      "family_name": "Swertz",
+      "given_name": "Morris A",
+      "identifiers": [
+        {
+          "value": "0000-0002-0979-3401",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/062301267",
+      "family_name": "Jacobs",
+      "given_name": "Ian J",
+      "identifiers": [
+        {
+          "value": "0000-0002-5005-2672",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/062301488",
+      "family_name": "Ind",
+      "given_name": "Thomas",
+      "identifiers": [
+        {
+          "value": "0000-0001-5260-199X",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0623026045",
+      "family_name": "Clark",
+      "given_name": "Timothy",
+      "identifiers": [
+        {
+          "value": "0000-0003-4060-7360",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0623026153",
+      "family_name": "Velterop",
+      "given_name": "Jan",
+      "identifiers": [
+        {
+          "value": "0000-0002-4836-6568",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06230457",
+    "family_name": "Harris",
+    "given_name": "Adrian",
+    "identifiers": [
       {
-        "entity_type": "person",
-        "family_name": "Peroni",
-        "given_name": "Silvio",
-        "local_identifier": "https://w3id.org/oc/meta/ra/06028914347"
-      },
-      {
-        "entity_type": "person",
-        "family_name": "Peroni",
-        "given_name": "Silvio",
-        "identifier": "https://w3id.org/oc/meta/id/06304949238",
-        "identifiers": [
-          {
-            "scheme": "http://purl.org/spar/datacite/orcid",
-            "value": "0000-0003-0530-4305"
-          }
-        ],
-        "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
-        "name": "Peroni Silvio"
-      },
-      {
-        "entity_type": "person",
-        "family_name": "Peroni",
-        "given_name": "Silvio",
-        "identifier": "https://w3id.org/oc/meta/id/062106313906",
-        "identifiers": [
-          {
-            "scheme": "http://purl.org/spar/datacite/orcid",
-            "value": "0000-0003-0530-4305"
-          }
-        ],
-        "local_identifier": "https://w3id.org/oc/meta/ra/0621012370564"
-      },
-      {
-        "entity_type": "person",
-        "family_name": "Peroni",
-        "given_name": "Silvio",
-        "identifier": "https://w3id.org/oc/meta/id/062901586017",
-        "identifiers": [
-          {
-            "scheme": "http://purl.org/spar/datacite/orcid",
-            "value": "0000-0003-0530-4305"
-          }
-        ],
-        "local_identifier": "https://w3id.org/oc/meta/ra/062901363346"
-      },
-      {
-        "entity_type": "person",
-        "family_name": "Peroni",
-        "given_name": "Silvio",
-        "local_identifier": "https://w3id.org/oc/meta/ra/06609658687"
+        "value": "0000-0003-1376-8409",
+        "scheme": "orcid"
       }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/0624010958207",
+    "name": "Hendricks Ginny",
+    "family_name": "Hendricks",
+    "given_name": "Ginny",
+    "identifiers": [
+      {
+        "value": "0000-0002-0353-2702",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/0624011362533",
+    "family_name": "Gangemi",
+    "given_name": "Aldo",
+    "identifiers": [
+      {
+        "value": "0000-0001-5568-2684",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/062401463",
+    "family_name": "Ria",
+    "given_name": "Roberto",
+    "identifiers": [
+      {
+        "value": "0000-0002-1515-0090",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/062409589977",
+    "family_name": "Schultes",
+    "given_name": "Erik",
+    "identifiers": [
+      {
+        "value": "0000-0001-8888-635X",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06250110138",
+    "family_name": "Massari",
+    "given_name": "Arcangelo",
+    "identifiers": [
+      {
+        "value": "0000-0002-8420-0696",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/0625011225133",
+    "family_name": "Daquino",
+    "given_name": "Marilena",
+    "identifiers": [
+      {
+        "value": "0000-0002-1113-7550",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/0625011773273",
+    "family_name": "Boiten",
+    "given_name": "Jan-Willem",
+    "identifiers": [
+      {
+        "value": "0000-0003-0327-638X",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/0625095048",
+    "family_name": "Dhakal",
+    "given_name": "Kerry",
+    "identifiers": [
+      {
+        "value": "0000-0001-7782-5922",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/0626010701",
+    "family_name": "Waagmeester",
+    "given_name": "Andra",
+    "identifiers": [
+      {
+        "value": "0000-0001-9773-4008",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/0626010742587",
+    "name": "Laura A D Paglione",
+    "family_name": "Paglione",
+    "given_name": "Laura",
+    "identifiers": [
+      {
+        "value": "0000-0003-3188-6273",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/0626020639",
+    "family_name": "Lammey",
+    "given_name": "Rachael",
+    "identifiers": [
+      {
+        "value": "0000-0001-5800-1434",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/0626063568",
+    "family_name": "Auer",
+    "given_name": "Soren",
+    "identifiers": [
+      {
+        "value": "0000-0002-0698-2864",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/062901363345",
+    "family_name": "Moretti",
+    "given_name": "Arianna",
+    "identifiers": [
+      {
+        "value": "0000-0001-5486-7070",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/062901363346",
+    "family_name": "Peroni",
+    "given_name": "Silvio",
+    "identifiers": [
+      {
+        "value": "0000-0003-0530-4305",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/062901363347",
+    "family_name": "Soricetti",
+    "given_name": "Marta",
+    "identifiers": [
+      {
+        "value": "0009-0008-1466-7742",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/063011864088",
+    "name": "Heibi Ivan",
+    "family_name": "Heibi",
+    "given_name": "Ivan",
+    "identifiers": [
+      {
+        "value": "0000-0001-5366-5194",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/063012677601",
+    "family_name": "Mons",
+    "given_name": "Barend",
+    "identifiers": [
+      {
+        "value": "0000-0003-3934-0072",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/063012677602",
+    "family_name": "Roos",
+    "given_name": "M.",
+    "identifiers": [
+      {
+        "value": "0000-0002-8691-772X",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/063012677604",
+    "family_name": "Olavo Bonino Da Silva Santos",
+    "given_name": "Luiz",
+    "identifiers": [
+      {
+        "value": "0000-0002-1164-1351",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06302019",
+    "family_name": "De Rossi",
+    "given_name": "Anita",
+    "identifiers": [
+      {
+        "value": "0000-0001-6435-7509",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06302052914",
+    "family_name": "Baak",
+    "given_name": "Arie",
+    "identifiers": [
+      {
+        "value": "0000-0003-2829-6715",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06302052917",
+    "family_name": "Dumon",
+    "given_name": "Olivier",
+    "identifiers": [
+      {
+        "value": "0000-0001-8599-7345",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06302052919",
+    "family_name": "Kok",
+    "given_name": "Joost",
+    "identifiers": [
+      {
+        "value": "0000-0002-7352-1400",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06302052920",
+    "family_name": "Lusher",
+    "given_name": "Scott J.",
+    "identifiers": [
+      {
+        "value": "0000-0003-2401-4223",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/063068066",
+    "family_name": "Ratner",
+    "given_name": "Howard",
+    "identifiers": [
+      {
+        "value": "0000-0002-2123-6317",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06320323954",
+    "family_name": "Nuzzolese",
+    "given_name": "Andrea Giovanni",
+    "identifiers": [
+      {
+        "value": "0000-0003-2928-9496",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06350929684",
+    "family_name": "Heringa",
+    "given_name": "Jaap",
+    "identifiers": [
+      {
+        "value": "0000-0001-8641-4930",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06370488090",
+    "family_name": "Sikos",
+    "given_name": "Leslie F.",
+    "identifiers": [
+      {
+        "value": "0000-0003-3368-2215",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/064013186641",
+    "family_name": "Soricetti",
+    "given_name": "Marta",
+    "identifiers": [
+      {
+        "value": "0009-0008-1466-7742",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/064013186645",
+    "family_name": "Rizzetto",
+    "given_name": "Elia",
+    "identifiers": [
+      {
+        "value": "0009-0003-7161-9310",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/064019827",
+    "family_name": "Aalbersberg",
+    "given_name": "IJsbrand Jan",
+    "identifiers": [
+      {
+        "value": "0000-0002-0209-4480",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/064020965",
+    "family_name": "Buckland",
+    "given_name": "Michael",
+    "identifiers": [
+      {
+        "value": "0000-0002-1527-8350",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06408386",
+    "family_name": "Thorsen",
+    "given_name": "Frits",
+    "identifiers": [
+      {
+        "value": "0000-0002-7762-3703",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/0640943",
+    "family_name": "Fischhoff",
+    "given_name": "Baruch",
+    "identifiers": [
+      {
+        "value": "0000-0002-3030-6874",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06460319812",
+    "family_name": "Feeney",
+    "given_name": "Patricia",
+    "identifiers": [
+      {
+        "value": "0000-0002-4011-3590",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06480570090",
+    "family_name": "Finkers",
+    "given_name": "Richard",
+    "identifiers": [
+      {
+        "value": "0000-0002-4368-8058",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/065011897946",
+    "family_name": "Crosas",
+    "given_name": "Mercè",
+    "identifiers": [
+      {
+        "value": "0000-0003-1304-1939",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/065011897947",
+    "family_name": "Dumontier",
+    "given_name": "Michel",
+    "identifiers": [
+      {
+        "value": "0000-0003-4727-9435",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/065012229219",
+    "name": "Fenner Martin",
+    "family_name": "Fenner",
+    "given_name": "Martin",
+    "identifiers": [
+      {
+        "value": "0000-0003-1419-2405",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06502569",
+    "family_name": "Kulldorff",
+    "given_name": "Martin",
+    "identifiers": [
+      {
+        "value": "0000-0002-5284-2993",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06503130",
+    "family_name": "Gölzhäuser",
+    "given_name": "Armin",
+    "identifiers": [
+      {
+        "value": "0000-0002-0838-9028",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06508499",
+    "family_name": "Read",
+    "given_name": "Tracy-Ann",
+    "identifiers": [
+      {
+        "value": "0000-0002-5436-1296",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/066074697",
+    "family_name": "Appleton",
+    "given_name": "Gaby",
+    "identifiers": [
+      {
+        "value": "0000-0003-0179-7384",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/066088364",
+    "family_name": "Pellissier Tanon",
+    "given_name": "Thomas",
+    "identifiers": [
+      {
+        "value": "0000-0002-0620-6486",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/067085479",
+    "family_name": "Thompson",
+    "given_name": "Mark",
+    "identifiers": [
+      {
+        "value": "0000-0002-7633-1442",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/067099715",
+    "family_name": "Santini",
+    "given_name": "Cristian",
+    "identifiers": [
+      {
+        "value": "0000-0001-7363-6737",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06808763",
+    "family_name": "Perry",
+    "given_name": "Arie",
+    "identifiers": [
+      {
+        "value": "0000-0002-8300-7261",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/069011237391",
+    "family_name": "Rocca-Serra",
+    "given_name": "Philippe",
+    "identifiers": [
+      {
+        "value": "0000-0001-9853-5668",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/069011237394",
+    "family_name": "Sansone",
+    "given_name": "Susanna-Assunta",
+    "identifiers": [
+      {
+        "value": "0000-0001-5306-5690",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/069012996",
+    "family_name": "Allan",
+    "given_name": "Catherine",
+    "identifiers": [
+      {
+        "value": "0000-0003-2098-4759",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/069014933",
+    "family_name": "Hooft",
+    "given_name": "Rob",
+    "identifiers": [
+      {
+        "value": "0000-0001-6825-9439",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/0690346",
+    "family_name": "Somasundaram",
+    "given_name": "Rajasekharan",
+    "identifiers": [
+      {
+        "value": "0000-0002-8444-8472",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/069039517",
+    "family_name": "Gorraiz",
+    "given_name": "Juan",
+    "identifiers": [
+      {
+        "value": "0000-0002-2414-3212",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/069039558",
+    "family_name": "Gumpenberger",
+    "given_name": "Christian",
+    "identifiers": [
+      {
+        "value": "0000-0002-9188-8716",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06906860",
+    "family_name": "Buell",
+    "given_name": "Duncan",
+    "identifiers": [
+      {
+        "value": "0000-0002-4668-5848",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06908359558",
+    "family_name": "Boente",
+    "given_name": "Ricarda",
+    "identifiers": [
+      {
+        "value": "0000-0002-2133-8735",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/ra/06908359559",
+    "family_name": "Tural",
+    "given_name": "Deniz",
+    "identifiers": [
+      {
+        "value": "0000-0002-6391-4198",
+        "scheme": "orcid"
+      }
+    ],
+    "entity_type": "person"
+  }
+  ],
+  "identifiers.id:0000-0002-7562-5203":[
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0622011040459",
+      "entity_type": "person",
+      "identifiers": [
+        {
+          "scheme": "orcid",
+          "value": "0000-0002-7562-5203"
+        }
+      ],
+      "given_name": "Fabio",
+      "family_name": "Vitali",
+      "name": "Fabio Vitali"
+    }
+  ],
+  "given_name:Greg":[
+    {
+      "entity_type": "person",
+      "family_name": "Kearsley",
+      "given_name": "Greg",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114519"
+    }
+  ],
+  "cf.search.given_name:Greg":[
+    {
+      "entity_type": "person",
+      "family_name": "Smith",
+      "given_name": "J. Macgregor",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114061"
+    },
+    {
+      "entity_type": "person",
+      "family_name": "Kearsley",
+      "given_name": "Greg",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114519"
+    },
+    {
+      "entity_type": "person",
+      "family_name": "Smith",
+      "given_name": "J. Macgregor",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114797"
+    },
+    {
+      "entity_type": "person",
+      "family_name": "O'Brien",
+      "given_name": "Gregory",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115060"
+    }
+  ],
+  "family_name:Nakamura":[
+    {
+      "entity_type": "person",
+      "family_name": "Nakamura",
+      "given_name": "Takashi",
+      "local_identifier": "https://w3id.org/oc/meta/ra/060176"
+    }
+  ],
+  "cf.search.family_name:o'":[
+    {
+      "entity_type": "person",
+      "family_name": "O'Hara",
+      "given_name": "F. M.",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114201"
+    },
+    {
+      "entity_type": "person",
+      "family_name": "O'Connor",
+      "given_name": "John",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114283"
+    },
+    {
+      "entity_type": "person",
+      "family_name": "O'Connor",
+      "given_name": "John",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114982"
+    },
+    {
+      "entity_type": "person",
+      "family_name": "O'Brien",
+      "given_name": "Gregory",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115060"
+    },
+    {
+      "entity_type": "person",
+      "family_name": "O'Connor",
+      "given_name": "John",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115126"
+    },
+    {
+      "entity_type": "person",
+      "family_name": "O'Hara",
+      "given_name": "F. M.",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115250"
+    },
+    {
+      "entity_type": "person",
+      "family_name": "O'Connor",
+      "given_name": "John",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115270"
+    },
+    {
+      "entity_type": "person",
+      "family_name": "O'Haver",
+      "given_name": "Thomas C.",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115304"
+    }
+  ],
+  "cf.search.given_name:Silvio,cf.search.family_name:Peroni": [
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06028914347",
+      "family_name": "Peroni",
+      "given_name": "Silvio",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
+      "name": "Peroni Silvio",
+      "family_name": "Peroni",
+      "given_name": "Silvio",
+      "identifiers": [
+        {
+          "value": "0000-0003-0530-4305",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621012370564",
+      "family_name": "Peroni",
+      "given_name": "Silvio",
+      "identifiers": [
+        {
+          "value": "0000-0003-0530-4305",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/062901363346",
+      "family_name": "Peroni",
+      "given_name": "Silvio",
+      "identifiers": [
+        {
+          "value": "0000-0003-0530-4305",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06609658687",
+      "family_name": "Peroni",
+      "given_name": "Silvio",
+      "entity_type": "person"
+    }
   ]
 }

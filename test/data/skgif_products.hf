@@ -1490,7 +1490,7 @@ WHERE {
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT ?local_identifier ?name ?family_name ?given_name ?identifier ?identifier_scheme ?identifier_value 
+SELECT ?local_identifier ?name ?family_name ?given_name ?identifier_scheme ?identifier_value 
 WHERE {
   BIND(<[[local_identifier]]> AS ?local_identifier)
   ?local_identifier a foaf:Agent.
@@ -1572,7 +1572,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT ?local_identifier ?name ?family_name ?given_name ?identifier ?identifier_scheme ?identifier_value 
+SELECT ?local_identifier ?name ?family_name ?given_name ?identifier_scheme ?identifier_value 
 WHERE {
   ?local_identifier a foaf:Agent.
   OPTIONAL { 
@@ -1582,8 +1582,9 @@ WHERE {
   OPTIONAL { ?local_identifier foaf:name ?name. }
   OPTIONAL {
     ?local_identifier datacite:hasIdentifier ?identifier .
-    ?identifier datacite:usesIdentifierScheme ?identifier_scheme;
+    ?identifier datacite:usesIdentifierScheme ?identifier_scheme_uri;
       literal:hasLiteralValue ?identifier_value.
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
   }
   [[filter]]
 }

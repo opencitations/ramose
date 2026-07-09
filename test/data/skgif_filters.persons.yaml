@@ -8,11 +8,11 @@ identifiers.id:
 identifiers.scheme:
   filter: "?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{{value}} ] ."
 given_name:
-  filter: "?local_identifier foaf:givenName '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> . "
+  filter: "?local_identifier foaf:givenName '{{value}}' . "
 family_name:
-  filter: "?local_identifier foaf:familyName '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> . "
+  filter: "?local_identifier foaf:familyName '{{value}}'. "
 name:
-  filter: "?local_identifier foaf:name '{{value}}'^^<http://www.w3.org/2001/XMLSchema#string> . "
+  filter: "?local_identifier foaf:name '{{value}}'. "
 affiliations.affiliation.local_identifier:
   filter: "FILTER(false)"
 affiliations.affiliation.name:
