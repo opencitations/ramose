@@ -1,0 +1,120 @@
+#url /organisations/{local_identifier}
+#type operation
+#method get
+#description Returns a single organisation agent identified by its OpenCitations Meta identifier (OMID). The response includes agent metadata from OpenCitations Meta.
+#call /organisations/https://w3id.org/oc/meta/ra/0670114921
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json {
+  "@context": [
+    "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+    "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+    {
+      "@base": "https://w3id.org/skg-if/sandbox/oc/"
+    }
+  ],
+  "@graph": [
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0670114921",
+      "entity_type": "organisation",
+      "identifiers": [
+        {
+          "scheme": "crossref",
+          "value": "4099"
+        }
+      ],
+      "name": "Korean Council Of Science Editors"
+    }
+  ]
+}
+#sparql PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT ?local_identifier ?name ?identifier_scheme ?identifier_value
+WHERE {
+  BIND(<[[local_identifier]]> AS ?local_identifier)
+  ?local_identifier a foaf:Agent ;
+                    foaf:name ?name .
+  FILTER NOT EXISTS { ?local_identifier foaf:givenName ?givenName . }
+  FILTER NOT EXISTS { ?local_identifier foaf:familyName ?familyName . }
+  
+  OPTIONAL {
+    ?local_identifier datacite:hasIdentifier ?identifier .
+    ?identifier datacite:usesIdentifierScheme ?identifier_scheme_uri ;
+                literal:hasLiteralValue ?identifier_value .
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
+  }
+}
+
+#url /organisations
+#type operation
+#method get
+#description Returns a list of organisations matching the given filters when implemented.
+#custom_params filter,skgif_filters.organisations.yaml,Search filter.
+Format: comma-separated `filter_name:filter_value` pairs (AND logic).
+Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+**Attribute filters:**
+
+- `identifiers.id`
+- `identifiers.scheme`
+- `name`
+- `short_name`
+- `website`
+- `country`
+
+**Convenience filters (`cf.*`):**
+
+- `cf.search.name`
+
+#call /organisations?filter=cf.search.name:Mit Press
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json {
+    "@context": [
+        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+            "@base": "https://w3id.org/skg-if/sandbox/oc/"
+        }
+    ],
+    "meta": {
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/organisations?filter=cf.search.name:Mit Press&page=1&page_size=1",
+        "entity_type": "search_result_page",
+        "part_of": {
+            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/organisations?filter=cf.search.name:Mit Press",
+            "entity_type": "search_result",
+            "total_items": 0
+        }
+    },
+    "@graph": [
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116105",
+      "entity_type": "organisation",
+      "identifiers": [
+        {
+          "scheme": "crossref",
+          "value": "281"
+        }
+      ],
+      "name": "Mit Press"
+    }
+  ]
+}
+#sparql PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT ?local_identifier ?name ?identifier_scheme ?identifier_value
+WHERE {
+  ?local_identifier a foaf:Agent ;
+                    foaf:name ?name .
+  FILTER NOT EXISTS { ?local_identifier foaf:givenName ?givenName . }
+  FILTER NOT EXISTS { ?local_identifier foaf:familyName ?familyName . }
+  
+  OPTIONAL {
+    ?local_identifier datacite:hasIdentifier ?identifier .
+    ?identifier datacite:usesIdentifierScheme ?identifier_scheme_uri ;
+                literal:hasLiteralValue ?identifier_value .
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
+  }
+  [[filter]]
+}

@@ -1,0 +1,139 @@
+#url /venues/{local_identifier}
+#type operation
+#method get
+#description Returns a single venue identified by its OpenCitations Meta identifier (OMID). The response includes venue metadata from OpenCitations Meta.
+#call /venues/https://w3id.org/oc/meta/br/062501778099
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json {
+  "@context": [
+    "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+    "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+    {
+      "@base": "https://w3id.org/skg-if/sandbox/oc/"
+    }
+  ],
+  "@graph": [
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/062501778099",
+      "entity_type": "venue",
+      "identifiers": [
+        {
+          "scheme": "issn",
+          "value": "2641-3337"
+        },
+        {
+          "scheme": "openalex",
+          "value": "S4210195326"
+        }
+      ],
+      "name": "Quantitative Science Studies",
+      "type": "Journal"
+    }
+  ]
+}
+#sparql PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+
+SELECT ?local_identifier ?name ?identifier_scheme ?identifier_value ?type
+WHERE {
+  BIND(<[[local_identifier]]> AS ?local_identifier)
+  ?br frbr:partOf+ ?local_identifier .
+  FILTER NOT EXISTS { ?local_identifier frbr:partOf ?parent. }
+  ?local_identifier a ?type_uri .
+  FILTER(?type_uri != <http://purl.org/spar/fabio/Expression>)
+  BIND(STRAFTER(STR(?type_uri), "/spar/fabio/") AS ?type)
+  OPTIONAL {
+    ?local_identifier dcterms:title ?name .
+  }
+  OPTIONAL {
+    ?local_identifier datacite:hasIdentifier ?identifier .
+    ?identifier datacite:usesIdentifierScheme ?identifier_scheme_uri ;
+                literal:hasLiteralValue ?identifier_value .
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
+  }
+} 
+
+#url /venues
+#type operation
+#method get
+#description Returns a list of venues matching the given filters when implemented.
+#custom_params filter,skgif_filters.venues.yaml,Search filter.
+Format: comma-separated `filter_name:filter_value` pairs (AND logic).
+Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+**Attribute filters:**
+
+- `acronym`
+- `type`
+- `identifiers.scheme`
+- `identifiers.value`
+- `name`
+
+**Convenience filters (`cf.*`):**
+
+- `cf.search.name`
+
+#call /venues?filter=cf.search.name:Quantitative Science Studies
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json {
+    "@context": [
+        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+            "@base": "https://w3id.org/skg-if/sandbox/oc/"
+        }
+    ],
+    "meta": {
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Quantitative Science Studies&page=1&page_size=1",
+        "entity_type": "search_result_page",
+        "part_of": {
+            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/venues?filter=cf.search.name:Quantitative Science Studies",
+            "entity_type": "search_result",
+            "total_items": 0
+        }
+    },
+    "@graph": [
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/062501778099",
+      "entity_type": "venue",
+      "identifiers": [
+        {
+          "scheme": "issn",
+          "value": "2641-3337"
+        },
+        {
+          "scheme": "openalex",
+          "value": "S4210195326"
+        }
+      ],
+      "name": "Quantitative Science Studies",
+      "type": "Journal"
+    }
+  ]
+}
+#sparql PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+
+SELECT ?local_identifier ?name ?identifier_scheme ?identifier_value ?type
+WHERE {
+  ?br frbr:partOf+ ?local_identifier .
+  FILTER NOT EXISTS { ?local_identifier frbr:partOf ?parent. }
+  ?local_identifier a ?type_uri .
+  FILTER(?type_uri != <http://purl.org/spar/fabio/Expression>)
+  BIND(STRAFTER(STR(?type_uri), "/spar/fabio/") AS ?type)
+  OPTIONAL {
+    ?local_identifier dcterms:title ?name .
+  }
+  OPTIONAL {
+    ?local_identifier datacite:hasIdentifier ?identifier .
+    ?identifier datacite:usesIdentifierScheme ?identifier_scheme_uri ;
+                literal:hasLiteralValue ?identifier_value .
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
+  }
+  [[filter]]
+}

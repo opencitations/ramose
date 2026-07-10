@@ -3,10 +3,18 @@
 # SPDX-License-Identifier: ISC
 
 # Validate-only filter vocabulary: every key is accepted and produces no constraint; unknown keys are rejected.
-identifiers.id: {}
-identifiers.scheme: {}
-name: {}
-short_name: {}
-website: {}
-country: {}
-cf.search.name: {}
+identifiers.id:
+  filter: '?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> ] .'
+identifiers.scheme:
+  filter: "?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{{value}} ] ."
+name:
+  filter: "?local_identifier foaf:name '{{value}}'. "
+short_name:
+  filter: "FILTER(false)"
+website:
+  filter: "FILTER(false)"
+country:
+  filter: "FILTER(false)"
+cf.search.name:
+  filter: |-
+    FILTER(CONTAINS(LCASE(?name), LCASE("{{value}}")))
