@@ -1,0 +1,133 @@
+#url /persons/{local_identifier}
+#type operation
+#method get
+#description Returns a single person agent identified by their OpenCitations Meta identifier (OMID). The response includes agent metadata from OpenCitations Meta.
+#call /persons/https://w3id.org/oc/meta/ra/0614010840729
+#output_json {
+  "@context": [
+    "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+    "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+    {
+      "@base": "https://w3id.org/skg-if/sandbox/oc/"
+    }
+  ],
+  "@graph": [
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
+      "entity_type": "person",
+      "identifiers": [
+        {
+          "scheme": "orcid",
+          "value": "0000-0003-0530-4305"
+        }
+      ],
+      "given_name": "Silvio",
+      "family_name": "Peroni",
+      "name": "Peroni Silvio"
+    }
+  ]
+}
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#sparql PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?local_identifier ?name ?family_name ?given_name ?identifier_scheme ?identifier_value 
+WHERE {
+  BIND(<[[local_identifier]]> AS ?local_identifier)
+  ?local_identifier a foaf:Agent.
+  OPTIONAL { 
+    ?local_identifier foaf:familyName ?family_name;
+      foaf:givenName ?given_name .
+  }
+  OPTIONAL { ?local_identifier foaf:name ?name. }
+  OPTIONAL {
+    ?local_identifier datacite:hasIdentifier ?identifier .
+    ?identifier datacite:usesIdentifierScheme ?identifier_scheme_uri;
+      literal:hasLiteralValue ?identifier_value.
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
+  }
+}
+
+#url /persons
+#type operation
+#method get
+#description Returns a list of persons matching the given filters when implemented.
+#custom_params filter,skgif_filters.persons.yaml,Search filter.
+Format: comma-separated `filter_name:filter_value` pairs (AND logic).
+Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
+**Attribute filters:**
+
+- `identifiers.id`
+- `identifiers.scheme`
+- `given_name`
+- `family_name`
+- `name`
+- `affiliations.affiliation.local_identifier` (currently empty)
+- `affiliations.affiliation.name` (currently empty)
+- `affiliations.affiliation.short_name` (currently empty)
+- `affiliations.role` (currently empty)
+
+**Convenience filters (`cf.*`):**
+
+- `cf.search.family_name`
+- `cf.search.given_name`
+- `cf.search.name`
+
+#call /persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni
+#format skg_if,to_skg_if,application/ld+json
+#default_format skg_if
+#output_json {
+    "@context": [
+        "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
+        "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
+        {
+          "@base": "https://w3id.org/skg-if/sandbox/oc/"
+        }
+    ],
+    "meta": {
+        "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni&page=1&page_size=1",
+        "entity_type": "search_result_page",
+        "part_of": {
+            "local_identifier": "https://w3id.org/skg-if/sandbox/opencitations/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni",
+            "entity_type": "search_result",
+            "total_items": 1
+        }
+    },
+    "@graph": [
+      {
+        "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
+        "entity_type": "person",
+        "identifiers": [
+          {
+            "scheme": "orcid",
+            "value": "0000-0003-0530-4305"
+          }
+        ],
+        "given_name": "Silvio",
+        "family_name": "Peroni",
+        "name": "Peroni Silvio"
+      }
+  ]
+}
+#sparql PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?local_identifier ?name ?family_name ?given_name ?identifier_scheme ?identifier_value 
+WHERE {
+  ?local_identifier a foaf:Agent.
+  OPTIONAL { 
+    ?local_identifier foaf:familyName ?family_name;
+      foaf:givenName ?given_name .
+  }
+  OPTIONAL { ?local_identifier foaf:name ?name. }
+  OPTIONAL {
+    ?local_identifier datacite:hasIdentifier ?identifier .
+    ?identifier datacite:usesIdentifierScheme ?identifier_scheme_uri;
+      literal:hasLiteralValue ?identifier_value.
+    BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
+  }
+  [[filter]]
+}
