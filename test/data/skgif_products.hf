@@ -1748,6 +1748,7 @@ WHERE {
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+PREFIX fabio: <http://purl.org/spar/fabio/>
 
 SELECT ?local_identifier ?name ?identifier_scheme ?identifier_value ?type
 WHERE {
@@ -1755,7 +1756,7 @@ WHERE {
   ?br frbr:partOf+ ?local_identifier .
   FILTER NOT EXISTS { ?local_identifier frbr:partOf ?parent. }
   ?local_identifier a ?type_uri .
-  FILTER(?type_uri != <http://purl.org/spar/fabio/Expression>)
+  FILTER(?type_uri != fabio:Expression)
   BIND(STRAFTER(STR(?type_uri), "/spar/fabio/") AS ?type)
   OPTIONAL {
     ?local_identifier dcterms:title ?name .
@@ -1830,13 +1831,14 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+PREFIX fabio: <http://purl.org/spar/fabio/>
 
 SELECT ?local_identifier ?name ?identifier_scheme ?identifier_value ?type
 WHERE {
   ?br frbr:partOf+ ?local_identifier .
   FILTER NOT EXISTS { ?local_identifier frbr:partOf ?parent. }
   ?local_identifier a ?type_uri .
-  FILTER(?type_uri != <http://purl.org/spar/fabio/Expression>)
+  FILTER(?type_uri != fabio:Expression)
   BIND(STRAFTER(STR(?type_uri), "/spar/fabio/") AS ?type)
   OPTIONAL {
     ?local_identifier dcterms:title ?name .

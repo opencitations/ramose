@@ -330,11 +330,11 @@ class TestSkgifVenue:
         venue = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/062501778099", "venues")["@graph"][0]
         assert venue["identifiers"] == [
         {
-          "scheme": "issn",
-          "value": "2641-3337"
-        },
-        {
           "scheme": "openalex",
           "value": "S4210195326"
+        },
+        {
+          "scheme": "issn",
+          "value": "2641-3337"
         }
       ]

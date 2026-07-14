@@ -16,9 +16,9 @@ with (Path(__file__).parent / "data" / "expected_search_products.json").open(enc
     EXPECTED_SEARCH: dict[str, list[dict]] = json.load(expected_search_file)
 
 SKGIF_PUBLIC_BASE_URL = "https://w3id.org/skg-if/sandbox/opencitations"
-COMING_SOON_MOCK_ENDPOINTS = ("organisations", "venues")
+# COMING_SOON_MOCK_ENDPOINTS = ("venues")
 EMPTY_DATA_MOCK_ENDPOINTS = ("grants", "datasources", "topics")
-MOCK_ENDPOINTS = (*COMING_SOON_MOCK_ENDPOINTS, *EMPTY_DATA_MOCK_ENDPOINTS)
+MOCK_ENDPOINTS = (EMPTY_DATA_MOCK_ENDPOINTS)
 MOCK_FILTER_EXAMPLES = {
     # "persons": "cf.search.given_name:Silvio,cf.search.family_name:Peroni",
     "organisations": "cf.search.name:Mit Press",
@@ -525,35 +525,35 @@ class TestCustomParamsInDocumentation:
             description = _filter_param_description(spec, entity)
             assert _filter_keys_from_description(description) == list(expected_order)
 
-    def test_coming_soon_mock_endpoints_are_labelled(self, skgif_api_manager: APIManager) -> None:
-        handler = OpenAPIDocumentationHandler(skgif_api_manager)
-        _, yml = handler.get_documentation()
-        spec = yaml.safe_load(yml)
-        for entity in COMING_SOON_MOCK_ENDPOINTS:
-            assert spec["paths"][f"/{entity}"]["get"]["summary"].startswith("Coming soon")
-            assert spec["paths"][f"/{entity}/{{local_identifier}}"]["get"]["summary"].startswith("Coming soon")
+    # def test_coming_soon_mock_endpoints_are_labelled(self, skgif_api_manager: APIManager) -> None:
+    #     handler = OpenAPIDocumentationHandler(skgif_api_manager)
+    #     _, yml = handler.get_documentation()
+    #     spec = yaml.safe_load(yml)
+    #     for entity in COMING_SOON_MOCK_ENDPOINTS:
+    #         assert spec["paths"][f"/{entity}"]["get"]["summary"].startswith("Coming soon")
+    #         assert spec["paths"][f"/{entity}/{{local_identifier}}"]["get"]["summary"].startswith("Coming soon")
 
 
-class TestComingSoonMockEndpoints:
-    def test_list_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        for entity in COMING_SOON_MOCK_ENDPOINTS:
-            results = _exec(skgif_api_manager, f"/skgif/v1/{entity}")
-            assert results == []
+# class TestComingSoonMockEndpoints:
+#     def test_list_returns_empty(self, skgif_api_manager: APIManager) -> None:
+#         for entity in COMING_SOON_MOCK_ENDPOINTS:
+#             results = _exec(skgif_api_manager, f"/skgif/v1/{entity}")
+#             assert results == []
 
-    def test_list_with_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        for entity in COMING_SOON_MOCK_ENDPOINTS:
-            results = _exec(skgif_api_manager, f"/skgif/v1/{entity}?filter={MOCK_FILTER_EXAMPLES[entity]}")
-            assert results == []
+#     def test_list_with_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
+#         for entity in COMING_SOON_MOCK_ENDPOINTS:
+#             results = _exec(skgif_api_manager, f"/skgif/v1/{entity}?filter={MOCK_FILTER_EXAMPLES[entity]}")
+#             assert results == []
 
-    def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
-        for entity in COMING_SOON_MOCK_ENDPOINTS:
-            status, _ = _exec_raw(skgif_api_manager, f"/skgif/v1/{entity}?filter=invalid_field:value")
-            assert status == 400
+#     def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
+#         for entity in COMING_SOON_MOCK_ENDPOINTS:
+#             status, _ = _exec_raw(skgif_api_manager, f"/skgif/v1/{entity}?filter=invalid_field:value")
+#             assert status == 400
 
-    def test_single_returns_404(self, skgif_api_manager: APIManager) -> None:
-        for entity in COMING_SOON_MOCK_ENDPOINTS:
-            status, _ = _exec_raw(skgif_api_manager, f"/skgif/v1/{entity}/example-id")
-            assert status == 404
+#     def test_single_returns_404(self, skgif_api_manager: APIManager) -> None:
+#         for entity in COMING_SOON_MOCK_ENDPOINTS:
+#             status, _ = _exec_raw(skgif_api_manager, f"/skgif/v1/{entity}/example-id")
+#             assert status == 404
 
 
 class TestGrantsEndpoints:
@@ -609,6 +609,7 @@ class TestDatasourcesEndpoints:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/datasources/example-id")
         assert status == 404
 
+
 class TestPersonsEndpoint:
     def test_returns_all_persons(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/persons")
@@ -633,6 +634,39 @@ class TestPersonsEndpoint:
     def test_filter_by_combined_name(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni")
         assert results == EXPECTED_SEARCH["cf.search.given_name:Silvio,cf.search.family_name:Peroni"]
+
+
+class TestOrganisationEndpoint:
+    def test_returns_all_orgs(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/organisations")
+        assert len(results) == 32
+    def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/organisations?filter=identifiers.scheme:crossref")
+        assert len(results) == 21
+        assert results == EXPECTED_SEARCH["identifiers.scheme:crossref"]
+    def test_filter_by_identifier_value(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/organisations?filter=identifiers.id:140")
+        assert results == EXPECTED_SEARCH["identifiers.id:140"]
+    def test_filter_by_name(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/organisations?filter=cf.search.name:Mit Press")
+        assert results == EXPECTED_SEARCH["cf.search.name:Mit Press"]
+
+class TestVenueEndpoint:
+    def test_returns_all_venues(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/venues")
+        assert len(results) == 46
+    def test_filter_by_type(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=type:AcademicProceedings")
+        assert results == EXPECTED_SEARCH["type:AcademicProceedings"]
+    def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=identifiers.scheme:issn")
+        assert results == EXPECTED_SEARCH["identifiers.scheme:issn"]
+    def test_filter_by_identifier_value(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=identifiers.id:2059-481X")
+        assert results == EXPECTED_SEARCH["identifiers.id:2059-481X"]
+    def test_filter_by_name(self, skgif_api_manager: APIManager) -> None:
+        results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=cf.search.name:Digital Libraries")
+        assert results == EXPECTED_SEARCH["cf.search.name:Digital Libraries"]
 
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",

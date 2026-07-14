@@ -6,8 +6,7 @@
 acronym:
   filter: "FILTER(false)"
 type:
-  filter: BIND(IRI(CONCAT("http://purl.org/spar/fabio/", "{{value}}")) AS ?t)
-          ?local_identifier a ?t .
+  filter: "?local_identifier a fabio:{{value}} ."
 identifiers.id:
   filter: '?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> ] .'
 identifiers.scheme:
