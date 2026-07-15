@@ -52,17 +52,16 @@ def _load_product_response_schema() -> dict:
     ]["schema"]
     return _resolve_refs(copy.deepcopy(response_schema), components)
 
-# def _load_response_schema(endpoint:str) -> dict:
-#     response = requests.get(SKGIF_OPENAPI_URL, timeout=30)
-#     response.raise_for_status()
-#     openapi_spec = yaml.safe_load(response.text)
-#     components = openapi_spec["components"]["schemas"]
-#     response_schema = openapi_spec["paths"]["/{endpoint}/{local_identifier}"]["get"]["responses"]["200"]["content"][
-#         "application/json"
-#     ]["schema"]
-#     resolved_schema = _resolve_refs(copy.deepcopy(response_schema), components)
-#     resolved_schema["properties"]["@context"]["minItems"] = 2
-#     return resolved_schema
+def _load_response_schema(endpoint:str) -> dict:
+    endpoint_path = f"/{endpoint}/{{local_identifier}}"
+    response = requests.get(SKGIF_OPENAPI_URL, timeout=30)
+    response.raise_for_status()
+    openapi_spec = yaml.safe_load(response.text)
+    components = openapi_spec["components"]["schemas"]
+    response_schema = openapi_spec["paths"][endpoint_path]["get"]["responses"]["200"]["content"][
+        "application/json"
+    ]["schema"]
+    return _resolve_refs(copy.deepcopy(response_schema), components)
 
 
 SKGIF_PRODUCT_RESPONSE_SCHEMA = _load_product_response_schema()
@@ -93,8 +92,12 @@ def _execute_skgif(skgif_api_manager: APIManager, local_identifier: str, endpoin
     return json.loads(result)
 
 
-def _validate_skgif_response(response: dict) -> None:
-    validate(instance=response, schema=SKGIF_PRODUCT_RESPONSE_SCHEMA)
+# def _validate_skgif_response(response: dict) -> None:
+#     validate(instance=response, schema=SKGIF_PRODUCT_RESPONSE_SCHEMA)
+
+def _validate_skgif_response(response: dict, endpoint: str) -> None:
+    schema = _load_response_schema(endpoint)
+    validate(instance=response, schema=schema)
 
 
 def _validate_skgif_shacl(response: dict) -> None:
@@ -258,11 +261,23 @@ class TestSkgifSchemaConformance:
 
     def test_journal_article_conforms(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601","products")
-        _validate_skgif_response(response)
+        _validate_skgif_response(response, "products")
 
     def test_book_conforms(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700","products")
-        _validate_skgif_response(response)
+        _validate_skgif_response(response, "products")
+
+    def test_person_conforms(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0614010840729","persons")
+        _validate_skgif_response(response, "persons")
+
+    def test_org_conforms(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0670114921","organisations")
+        _validate_skgif_response(response, "organisations")
+
+    def test_venue_conforms(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/062501778099","venues")
+        _validate_skgif_response(response, "venues")
 
     def test_journal_article_shacl(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601","products")
@@ -270,6 +285,18 @@ class TestSkgifSchemaConformance:
 
     def test_book_shacl(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700","products")
+        _validate_skgif_shacl(response)
+
+    def test_person_shacl(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0614010840729","persons")
+        _validate_skgif_shacl(response)
+
+    def test_org_shacl(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0670114921","organisations")
+        _validate_skgif_shacl(response)
+    
+    def test_venue_shacl(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/062501778099","venues")
         _validate_skgif_shacl(response)
 
 class TestSkgifPerson:
