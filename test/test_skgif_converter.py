@@ -351,7 +351,7 @@ class TestSkgifVenue:
         assert venue["local_identifier"] == "https://w3id.org/oc/meta/br/062501778099"
         assert venue["entity_type"] == "venue"
         assert venue["name"] == "Quantitative Science Studies"
-        assert venue["type"] == "Journal"
+        assert venue["type"] == "journal"
 
     def test_identifiers(self, skgif_api_manager: APIManager) -> None:
         venue = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/062501778099", "venues")["@graph"][0]

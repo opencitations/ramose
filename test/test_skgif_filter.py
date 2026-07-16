@@ -656,8 +656,8 @@ class TestVenueEndpoint:
         results = _exec(skgif_api_manager, "/skgif/v1/venues")
         assert len(results) == 46
     def test_filter_by_type(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=type:AcademicProceedings")
-        assert results == EXPECTED_SEARCH["type:AcademicProceedings"]
+        results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=type:conference")
+        assert results == EXPECTED_SEARCH["type:conference"]
     def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=identifiers.scheme:issn")
         assert results == EXPECTED_SEARCH["identifiers.scheme:issn"]

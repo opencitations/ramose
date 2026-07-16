@@ -7,6 +7,18 @@ acronym:
   filter: "FILTER(false)"
 type:
   filter: "?local_identifier a fabio:{{value}} ."
+type:
+  filter:
+    journal: |-
+      FILTER(?type = "journal")
+    book: |-
+      FILTER(?type = "book")
+    conference: |-
+      FILTER(?type = "conference")
+    other: |-
+      FILTER(?type = "other")
+    unknown: |-
+      FILTER(?type = "unknown")
 identifiers.id:
   filter: '?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> ] .'
 identifiers.scheme:

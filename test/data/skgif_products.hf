@@ -1757,7 +1757,7 @@ WHERE {
   FILTER NOT EXISTS { ?local_identifier frbr:partOf ?parent. }
   ?local_identifier a ?type_uri .
   FILTER(?type_uri != fabio:Expression)
-  BIND(STRAFTER(STR(?type_uri), "/spar/fabio/") AS ?type)
+  BIND(STRAFTER(STR(?type_uri), "/spar/fabio/") AS ?oc_type)
   OPTIONAL {
     ?local_identifier dcterms:title ?name .
   }
@@ -1767,6 +1767,13 @@ WHERE {
                 literal:hasLiteralValue ?identifier_value .
     BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
   }
+  BIND(
+  IF(!BOUND(?oc_type), "unknown",
+    IF(REGEX(?oc_type, "AcademicProceedings"), "conference",
+      IF(REGEX(?oc_type, "BookSeries"), "other",
+        IF(REGEX(?oc_type, "Book"), "book",
+          IF(REGEX(?oc_type, "Journal"), "journal", "other"))))
+  ) AS ?type)
 } 
 
 #url /venues
@@ -1839,7 +1846,7 @@ WHERE {
   FILTER NOT EXISTS { ?local_identifier frbr:partOf ?parent. }
   ?local_identifier a ?type_uri .
   FILTER(?type_uri != fabio:Expression)
-  BIND(STRAFTER(STR(?type_uri), "/spar/fabio/") AS ?type)
+  BIND(STRAFTER(STR(?type_uri), "/spar/fabio/") AS ?oc_type)
   OPTIONAL {
     ?local_identifier dcterms:title ?name .
   }
@@ -1849,6 +1856,13 @@ WHERE {
                 literal:hasLiteralValue ?identifier_value .
     BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
   }
+  BIND(
+  IF(!BOUND(?oc_type), "unknown",
+    IF(REGEX(?oc_type, "AcademicProceedings"), "conference",
+      IF(REGEX(?oc_type, "BookSeries"), "other",
+        IF(REGEX(?oc_type, "Book"), "book",
+          IF(REGEX(?oc_type, "Journal"), "journal", "other"))))
+  ) AS ?type)
   [[filter]]
 }
 
