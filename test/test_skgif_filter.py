@@ -613,7 +613,7 @@ class TestDatasourcesEndpoints:
 class TestPersonsEndpoint:
     def test_returns_all_persons(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/persons")
-        assert len(results) == 1901
+        assert len(results) == 1869
     def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/persons?filter=identifiers.scheme:orcid")
         assert len(results) == 135

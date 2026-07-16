@@ -1505,6 +1505,7 @@ WHERE {
       literal:hasLiteralValue ?identifier_value.
     BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
   }
+  FILTER(BOUND(?family_name) && BOUND(?given_name))
 }
 
 #url /persons
@@ -1586,6 +1587,7 @@ WHERE {
       literal:hasLiteralValue ?identifier_value.
     BIND(STRAFTER(STR(?identifier_scheme_uri), "http://purl.org/spar/datacite/") AS ?identifier_scheme)
   }
+  FILTER(BOUND(?family_name) && BOUND(?given_name))
   [[filter]]
 }
 
