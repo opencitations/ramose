@@ -5439,5 +5439,1060 @@
       "given_name": "Silvio",
       "entity_type": "person"
     }
+  ],
+  "identifiers.id:140":[
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116002",
+      "entity_type": "organisation",
+      "identifiers": [
+        {
+          "scheme": "crossref",
+          "value": "140"
+        }
+      ],
+      "name": "Emerald"
+    }
+  ],
+  "identifiers.scheme:crossref":[
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116001",
+      "name": "Wiley",
+      "identifiers": [
+        {
+          "value": "311",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116002",
+      "name": "Emerald",
+      "identifiers": [
+        {
+          "value": "140",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116005",
+      "name": "Informa Uk Limited",
+      "identifiers": [
+        {
+          "value": "301",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116006",
+      "name": "Springer Science And Business Media Llc",
+      "identifiers": [
+        {
+          "value": "297",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116009",
+      "name": "Elsevier Bv",
+      "identifiers": [
+        {
+          "value": "78",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116010",
+      "name": "Ubiquity Press, Ltd.",
+      "identifiers": [
+        {
+          "value": "3285",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116027",
+      "name": "Oxford University Press (Oup)",
+      "identifiers": [
+        {
+          "value": "286",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116035",
+      "name": "Association For Computing Machinery (Acm)",
+      "identifiers": [
+        {
+          "value": "320",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116052",
+      "name": "Institute Of Electrical And Electronics Engineers (Ieee)",
+      "identifiers": [
+        {
+          "value": "263",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116054",
+      "name": "Walter De Gruyter GmbH",
+      "identifiers": [
+        {
+          "value": "374",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116076",
+      "name": "Ios Press",
+      "identifiers": [
+        {
+          "value": "7437",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116105",
+      "name": "Mit Press",
+      "identifiers": [
+        {
+          "value": "281",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116121",
+      "name": "University Library System, University Of Pittsburgh",
+      "identifiers": [
+        {
+          "value": "3176",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116165",
+      "name": "Mdpi Ag",
+      "identifiers": [
+        {
+          "value": "1968",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116167",
+      "name": "Organisation For Economic Co-Operation And Development (Oecd)",
+      "identifiers": [
+        {
+          "value": "1963",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0630115130",
+      "name": "PeerJ",
+      "identifiers": [
+        {
+          "value": "4443",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0640115400",
+      "name": "Association For Computational Linguistics (Acl)",
+      "identifiers": [
+        {
+          "value": "1643",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0640115413",
+      "name": "Qeios Ltd",
+      "identifiers": [
+        {
+          "value": "17262",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0640115418",
+      "name": "World Wide Journals",
+      "identifiers": [
+        {
+          "value": "21849",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0640115745",
+      "name": "The Charleston Co.",
+      "identifiers": [
+        {
+          "value": "3214",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0670114921",
+      "name": "Korean Council Of Science Editors",
+      "identifiers": [
+        {
+          "value": "4099",
+          "scheme": "crossref"
+        }
+      ],
+      "entity_type": "organisation"
+    }
+  ],
+  "cf.search.name:Mit Press":[
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0610116105",
+      "entity_type": "organisation",
+      "identifiers": [
+        {
+          "scheme": "crossref",
+          "value": "281"
+        }
+      ],
+      "name": "Mit Press"
+    }
+  ],
+  "type:conference":[
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/0607163623",
+      "entity_type": "venue",
+      "name": "Proceedings Of The 24Th ACM/IEEE Joint Conference On Digital Libraries",
+      "type": "conference"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/061703214020",
+      "entity_type": "venue",
+      "name": "2009 Fourth International Conference On Cooperation And Promotion Of Information Resources In Science And Technology",
+      "type": "conference"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/061703368436",
+      "entity_type": "venue",
+      "name": "Proceedings Of The 14Th International Conference On World Wide Web - WWW '05",
+      "type": "conference"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/06401936298",
+      "entity_type": "venue",
+      "name": "Proceedings Of The 25Th International Conference On World Wide Web",
+      "type": "conference"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/06603395157",
+      "entity_type": "venue",
+      "name": "Proceedings Of The 8Th International Conference On Semantic Systems - I-SEMANTICS '12",
+      "type": "conference"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/06902363257",
+      "entity_type": "venue",
+      "name": "2021 ACM/IEEE Joint Conference On Digital Libraries (JCDL)",
+      "type": "conference"
+    }
+  ],
+  "identifiers.id:2059-481X":[
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/06160186133",
+      "entity_type": "venue",
+      "identifiers": [
+        {
+          "scheme": "issn",
+          "value": "2059-481X"
+        },
+        {
+          "scheme": "openalex",
+          "value": "S4210240912"
+        }
+      ],
+      "name": "Journal Of Open Humanities Data",
+      "type": "journal"
+    }
+  ],
+  "identifiers.scheme:issn":[
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/062502076212",
+    "name": "Data Technologies And Applications",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "S4210171756",
+        "scheme": "openalex"
+      },
+      {
+        "value": "2514-9318",
+        "scheme": "issn"
+      },
+      {
+        "value": "2514-9288",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/06101018",
+    "name": "Teratology",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1096-9926",
+        "scheme": "issn"
+      },
+      {
+        "value": "0040-3709",
+        "scheme": "issn"
+      },
+      {
+        "value": "10.1002/(issn)1096-9926",
+        "scheme": "doi"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/06103007707",
+    "name": "Semantic Web",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1570-0844",
+        "scheme": "issn"
+      },
+      {
+        "value": "2210-4968",
+        "scheme": "issn"
+      },
+      {
+        "value": "S4210177235",
+        "scheme": "openalex"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/0610868684",
+    "name": "Data Science And Engineering",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "2364-1185",
+        "scheme": "issn"
+      },
+      {
+        "value": "2364-1541",
+        "scheme": "issn"
+      },
+      {
+        "value": "S2486411021",
+        "scheme": "openalex"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/061102016000",
+    "name": "Journal Of The Medical Library Association",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "S146304353",
+        "scheme": "openalex"
+      },
+      {
+        "value": "1536-5050",
+        "scheme": "issn"
+      },
+      {
+        "value": "1558-9439",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/061102460211",
+    "name": "Advances In Intelligent Systems And Computing",
+    "type": "other",
+    "identifiers": [
+      {
+        "value": "2194-5365",
+        "scheme": "issn"
+      },
+      {
+        "value": "2194-5357",
+        "scheme": "issn"
+      },
+      {
+        "value": "S2764905038",
+        "scheme": "openalex"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/0611033431",
+    "name": "Angewandte Chemie",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1521-3757",
+        "scheme": "issn"
+      },
+      {
+        "value": "0044-8249",
+        "scheme": "issn"
+      },
+      {
+        "value": "10.1002/(issn)1521-3757",
+        "scheme": "doi"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/0612012086",
+    "name": "Scientific Data",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "S2607323502",
+        "scheme": "openalex"
+      },
+      {
+        "value": "2052-4463",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/061205167",
+    "name": "SSRN Electronic Journal",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "S4210172589",
+        "scheme": "openalex"
+      },
+      {
+        "value": "1556-5068",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/061402215286",
+    "name": "OECD Economic Surveys: China",
+    "type": "other",
+    "identifiers": [
+      {
+        "value": "2072-5027",
+        "scheme": "issn"
+      },
+      {
+        "value": "S4210223649",
+        "scheme": "openalex"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/061501742707",
+    "name": "Publications",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "S2738007992",
+        "scheme": "openalex"
+      },
+      {
+        "value": "2304-6775",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/0615019585",
+    "name": "Journal Of Computational Chemistry",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1096-987X",
+        "scheme": "issn"
+      },
+      {
+        "value": "10.1002/(issn)1096-987x",
+        "scheme": "doi"
+      },
+      {
+        "value": "0192-8651",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/061503030632",
+    "name": "The Australian Library Journal",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "0004-9670",
+        "scheme": "issn"
+      },
+      {
+        "value": "2201-4276",
+        "scheme": "issn"
+      },
+      {
+        "value": "S165931258",
+        "scheme": "openalex"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/061502934",
+    "name": "Nucleic Acids Research",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "S134668137",
+        "scheme": "openalex"
+      },
+      {
+        "value": "0305-1048",
+        "scheme": "issn"
+      },
+      {
+        "value": "1362-4962",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/06150879644",
+    "name": "The Charleston Advisor",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1525-4011",
+        "scheme": "issn"
+      },
+      {
+        "value": "S82568730",
+        "scheme": "openalex"
+      },
+      {
+        "value": "1525-4003",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/06160186133",
+    "name": "Journal Of Open Humanities Data",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "2059-481X",
+        "scheme": "issn"
+      },
+      {
+        "value": "S4210240912",
+        "scheme": "openalex"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/06160781188",
+    "name": "International Journal On Digital Libraries",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1432-1300",
+        "scheme": "issn"
+      },
+      {
+        "value": "1432-5012",
+        "scheme": "issn"
+      },
+      {
+        "value": "S110615584",
+        "scheme": "openalex"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/0617032151",
+    "name": "Learned Publishing",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "S29676049",
+        "scheme": "openalex"
+      },
+      {
+        "value": "0953-1513",
+        "scheme": "issn"
+      },
+      {
+        "value": "1741-4857",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/061801987429",
+    "name": "Science Editing",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "2288-7474",
+        "scheme": "issn"
+      },
+      {
+        "value": "S2739153651",
+        "scheme": "openalex"
+      },
+      {
+        "value": "2288-8063",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/06201057",
+    "name": "Journal Of The American Society For Information Science",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1097-4571",
+        "scheme": "issn"
+      },
+      {
+        "value": "0002-8231",
+        "scheme": "issn"
+      },
+      {
+        "value": "10.1002/(issn)1097-4571",
+        "scheme": "doi"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/062013183",
+    "name": "Journal Of Informetrics",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1875-5879",
+        "scheme": "issn"
+      },
+      {
+        "value": "S205292342",
+        "scheme": "openalex"
+      },
+      {
+        "value": "1751-1577",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/0621013884",
+    "name": "Journal Of Clinical Anesthesia",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "S155967237",
+        "scheme": "openalex"
+      },
+      {
+        "value": "0952-8180",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/0622015443",
+    "name": "International Journal Of Cancer",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1097-0215",
+        "scheme": "issn"
+      },
+      {
+        "value": "0020-7136",
+        "scheme": "issn"
+      },
+      {
+        "value": "10.1002/(issn)1097-0215",
+        "scheme": "doi"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/062301757535",
+    "name": "Humanities And Social Sciences Communications",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "S4210206302",
+        "scheme": "openalex"
+      },
+      {
+        "value": "2662-9992",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/0624039326",
+    "name": "Synapse",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "10.1002/(issn)1098-2396",
+        "scheme": "doi"
+      },
+      {
+        "value": "0887-4476",
+        "scheme": "issn"
+      },
+      {
+        "value": "1098-2396",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/062501778099",
+    "name": "Quantitative Science Studies",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "S4210195326",
+        "scheme": "openalex"
+      },
+      {
+        "value": "2641-3337",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/062602031939",
+    "name": "Nature Precedings",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1756-0357",
+        "scheme": "issn"
+      },
+      {
+        "value": "S48744551",
+        "scheme": "openalex"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/0626055628",
+    "name": "Scientometrics",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "0138-9130",
+        "scheme": "issn"
+      },
+      {
+        "value": "1588-2861",
+        "scheme": "issn"
+      },
+      {
+        "value": "S148561398",
+        "scheme": "openalex"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/06401335757",
+    "name": "Bibliothek Forschung Und Praxis",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1865-7648",
+        "scheme": "issn"
+      },
+      {
+        "value": "0341-4183",
+        "scheme": "issn"
+      },
+      {
+        "value": "S89564548",
+        "scheme": "openalex"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/064048324",
+    "name": "PeerJ",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "S1983995261",
+        "scheme": "openalex"
+      },
+      {
+        "value": "2167-8359",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/066016153",
+    "name": "Cancer",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1097-0142",
+        "scheme": "issn"
+      },
+      {
+        "value": "10.1002/(issn)1097-0142",
+        "scheme": "doi"
+      },
+      {
+        "value": "0008-543X",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/066049775",
+    "name": "Communications Of The ACM",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1557-7317",
+        "scheme": "issn"
+      },
+      {
+        "value": "0001-0782",
+        "scheme": "issn"
+      },
+      {
+        "value": "S103482838",
+        "scheme": "openalex"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/068023823",
+    "name": "Journal Of Applied Polymer Science",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "0021-8995",
+        "scheme": "issn"
+      },
+      {
+        "value": "10.1002/(issn)1097-4628",
+        "scheme": "doi"
+      },
+      {
+        "value": "1097-4628",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/068056179",
+    "name": "Advanced Materials",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1521-4095",
+        "scheme": "issn"
+      },
+      {
+        "value": "0935-9648",
+        "scheme": "issn"
+      },
+      {
+        "value": "10.1002/(issn)1521-4095",
+        "scheme": "doi"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/069066063",
+    "name": "Journal On Data Semantics",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "1861-2032",
+        "scheme": "issn"
+      },
+      {
+        "value": "1861-2067",
+        "scheme": "issn"
+      },
+      {
+        "value": "1867-7754",
+        "scheme": "issn"
+      },
+      {
+        "value": "1864-3035",
+        "scheme": "issn"
+      },
+      {
+        "value": "1861-2059",
+        "scheme": "issn"
+      },
+      {
+        "value": "0302-9743",
+        "scheme": "issn"
+      },
+      {
+        "value": "1611-3349",
+        "scheme": "issn"
+      },
+      {
+        "value": "1861-2040",
+        "scheme": "issn"
+      }
+    ],
+    "entity_type": "venue"
+  },
+  {
+    "local_identifier": "https://w3id.org/oc/meta/br/069039310",
+    "name": "Feddes Repertorium",
+    "type": "journal",
+    "identifiers": [
+      {
+        "value": "0014-8962",
+        "scheme": "issn"
+      },
+      {
+        "value": "1522-239X",
+        "scheme": "issn"
+      },
+      {
+        "value": "0374-6577",
+        "scheme": "issn"
+      },
+      {
+        "value": "10.1002/(issn)1522-239x",
+        "scheme": "doi"
+      }
+    ],
+    "entity_type": "venue"
+  }
+  ],
+  "cf.search.name:Digital Libraries":[
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/0607163623",
+      "entity_type": "venue",
+      "name": "Proceedings Of The 24Th ACM/IEEE Joint Conference On Digital Libraries",
+      "type": "conference"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/06160781188",
+      "entity_type": "venue",
+      "identifiers": [
+        {
+          "scheme": "issn",
+          "value": "1432-1300"
+        },
+        {
+          "scheme": "issn",
+          "value": "1432-5012"
+        },
+        {
+          "scheme": "openalex",
+          "value": "S110615584"
+        }
+      ],
+      "name": "International Journal On Digital Libraries",
+      "type": "journal"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/06902363257",
+      "entity_type": "venue",
+      "name": "2021 ACM/IEEE Joint Conference On Digital Libraries (JCDL)",
+      "type": "conference"
+    }
   ]
 }
