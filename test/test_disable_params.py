@@ -173,7 +173,7 @@ class TestConvJsonDisabled:
 class TestApiManagerDisableParams:
     def test_api_level_disable_propagates(self) -> None:
         mgr = APIManager(
-            [str(DATA_DIR / "skgif_products.hf")],
+            [str(DATA_DIR / "skgif.hf")],
             endpoint_override="http://localhost:9999/sparql",
         )
         for conf in mgr.all_conf.values():
@@ -181,7 +181,7 @@ class TestApiManagerDisableParams:
 
     def test_operation_gets_disabled_params(self) -> None:
         mgr = APIManager(
-            [str(DATA_DIR / "skgif_products.hf")],
+            [str(DATA_DIR / "skgif.hf")],
             endpoint_override="http://localhost:9999/sparql",
         )
         op = mgr.get_op("/skgif/v1/products/https://w3id.org/oc/meta/br/0612058700")
@@ -200,7 +200,7 @@ class TestApiManagerDisableParams:
 class TestHtmlDocumentationDisableParams:
     def test_all_params_hidden_when_disabled(self) -> None:
         mgr = APIManager(
-            [str(DATA_DIR / "skgif_products.hf")],
+            [str(DATA_DIR / "skgif.hf")],
             endpoint_override="http://localhost:9999/sparql",
         )
         handler = HTMLDocumentationHandler(mgr)
@@ -228,7 +228,7 @@ class TestOpenApiDocumentationDisableParams:
     @pytest.fixture
     def skgif_spec(self) -> dict[str, object]:
         mgr = APIManager(
-            [str(DATA_DIR / "skgif_products.hf")],
+            [str(DATA_DIR / "skgif.hf")],
             endpoint_override="http://localhost:9999/sparql",
         )
         handler = OpenAPIDocumentationHandler(mgr)
