@@ -15,7 +15,7 @@
 
 #url /products/{local_identifier}
 #type operation
-#local_identifier str(https://w3id\.org/oc/meta/.+)
+#local_identifier str(https://w3id\.org/oc/meta/br/.+)
 #method get
 #description Returns a single research product identified by its OpenCitations Meta identifier (OMID). The response includes bibliographic metadata from OpenCitations Meta and citation data from OpenCitations Index.
 #call /products/https://w3id.org/oc/meta/br/062104388184
@@ -1457,6 +1457,7 @@ WHERE {
 
 #url /persons/{local_identifier}
 #type operation
+#local_identifier str(https://w3id\.org/oc/meta/ra/.+)
 #method get
 #description Returns a single person agent identified by their OpenCitations Meta identifier (OMID). The response includes agent metadata from OpenCitations Meta.
 #call /persons/https://w3id.org/oc/meta/ra/0614010840729
@@ -1593,6 +1594,7 @@ WHERE {
 
 #url /organisations/{local_identifier}
 #type operation
+#local_identifier str(https://w3id\.org/oc/meta/ra/.+)
 #method get
 #description Returns a single organisation agent identified by its OpenCitations Meta identifier (OMID). The response includes agent metadata from OpenCitations Meta.
 #call /organisations/https://w3id.org/oc/meta/ra/0670114921
@@ -1714,6 +1716,7 @@ WHERE {
 
 #url /venues/{local_identifier}
 #type operation
+#local_identifier str(https://w3id\.org/oc/meta/br/.+)
 #method get
 #description Returns a single venue identified by its OpenCitations Meta identifier (OMID). The response includes venue metadata from OpenCitations Meta.
 #call /venues/https://w3id.org/oc/meta/br/062501778099
