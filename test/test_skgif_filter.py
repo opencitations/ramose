@@ -574,23 +574,28 @@ class TestPersonsEndpoint:
     def test_returns_all_persons(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/persons")
         assert len(results) == 1869
+
     def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/persons?filter=identifiers.scheme:orcid")
         assert len(results) == 135
         assert results == EXPECTED_SEARCH["identifiers.scheme:orcid"]
+
     def test_filter_by_identifier_value(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/persons?filter=identifiers.id:0000-0002-7562-5203")
         assert results == EXPECTED_SEARCH["identifiers.id:0000-0002-7562-5203"]
+
     def test_filter_by_given_name(self, skgif_api_manager: APIManager) -> None:
         results_1 = _exec(skgif_api_manager, "/skgif/v1/persons?filter=given_name:Greg")
         assert results_1 == EXPECTED_SEARCH["given_name:Greg"]
         results_2 = _exec(skgif_api_manager, "/skgif/v1/persons?filter=cf.search.given_name:Greg")
         assert results_2 == EXPECTED_SEARCH["cf.search.given_name:Greg"]
+
     def test_filter_by_family_name(self, skgif_api_manager: APIManager) -> None:
         results_1 = _exec(skgif_api_manager, "/skgif/v1/persons?filter=family_name:Nakamura")
         assert results_1 == EXPECTED_SEARCH["family_name:Nakamura"]
         results_2 = _exec(skgif_api_manager, "/skgif/v1/persons?filter=cf.search.family_name:o'")
         assert results_2 == EXPECTED_SEARCH["cf.search.family_name:o'"]
+
     def test_filter_by_combined_name(self, skgif_api_manager: APIManager) -> None:
         results = _exec(
             skgif_api_manager,
@@ -603,33 +608,42 @@ class TestOrganisationEndpoint:
     def test_returns_all_orgs(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/organisations")
         assert len(results) == 32
+
     def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/organisations?filter=identifiers.scheme:crossref")
         assert len(results) == 21
         assert results == EXPECTED_SEARCH["identifiers.scheme:crossref"]
+
     def test_filter_by_identifier_value(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/organisations?filter=identifiers.id:140")
         assert results == EXPECTED_SEARCH["identifiers.id:140"]
+
     def test_filter_by_name(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/organisations?filter=cf.search.name:Mit Press")
         assert results == EXPECTED_SEARCH["cf.search.name:Mit Press"]
+
 
 class TestVenueEndpoint:
     def test_returns_all_venues(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/venues")
         assert len(results) == 46
+
     def test_filter_by_type(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=type:conference")
         assert results == EXPECTED_SEARCH["type:conference"]
+
     def test_filter_by_identifier_scheme(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=identifiers.scheme:issn")
         assert results == EXPECTED_SEARCH["identifiers.scheme:issn"]
+
     def test_filter_by_identifier_value(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=identifiers.value:2059-481X")
         assert results == EXPECTED_SEARCH["identifiers.value:2059-481X"]
+
     def test_filter_by_name(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=cf.search.name:Digital Libraries")
         assert results == EXPECTED_SEARCH["cf.search.name:Digital Libraries"]
+
 
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
