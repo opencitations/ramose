@@ -662,8 +662,8 @@ class TestVenueEndpoint:
         results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=identifiers.scheme:issn")
         assert results == EXPECTED_SEARCH["identifiers.scheme:issn"]
     def test_filter_by_identifier_value(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=identifiers.id:2059-481X")
-        assert results == EXPECTED_SEARCH["identifiers.id:2059-481X"]
+        results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=identifiers.value:2059-481X")
+        assert results == EXPECTED_SEARCH["identifiers.value:2059-481X"]
     def test_filter_by_name(self, skgif_api_manager: APIManager) -> None:
         results = _exec(skgif_api_manager, "/skgif/v1/venues?filter=cf.search.name:Digital Libraries")
         assert results == EXPECTED_SEARCH["cf.search.name:Digital Libraries"]

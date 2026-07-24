@@ -19,7 +19,7 @@ type:
       FILTER(?type = "other")
     unknown: |-
       FILTER(?type = "unknown")
-identifiers.id:
+identifiers.value:
   filter: '?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> ] .'
 identifiers.scheme:
   filter: "?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{{value}} ] ."

@@ -5737,7 +5737,7 @@
       "type": "conference"
     }
   ],
-  "identifiers.id:2059-481X":[
+  "identifiers.value:2059-481X":[
     {
       "local_identifier": "https://w3id.org/oc/meta/br/06160186133",
       "entity_type": "venue",
