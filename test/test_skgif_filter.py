@@ -16,17 +16,7 @@ with (Path(__file__).parent / "data" / "expected_search_products.json").open(enc
     EXPECTED_SEARCH: dict[str, list[dict]] = json.load(expected_search_file)
 
 SKGIF_PUBLIC_BASE_URL = "https://w3id.org/skg-if/sandbox/opencitations"
-# COMING_SOON_MOCK_ENDPOINTS = ("venues")
 EMPTY_DATA_MOCK_ENDPOINTS = ("grants", "datasources", "topics")
-MOCK_ENDPOINTS = (EMPTY_DATA_MOCK_ENDPOINTS)
-MOCK_FILTER_EXAMPLES = {
-    # "persons": "cf.search.given_name:Silvio,cf.search.family_name:Peroni",
-    "organisations": "cf.search.name:Mit Press",
-    "venues": "cf.search.name:Quantitative Science Studies",
-    "grants": "grant_number:12345",
-    "datasources": "research_product_type:literature",
-    "topics": "cf.search.labels:biology",
-}
 OPERATION_PATH_ORDER = [
     "/products/{local_identifier}",
     "/products",
@@ -504,7 +494,7 @@ class TestCustomParamsInDocumentation:
         handler = OpenAPIDocumentationHandler(skgif_api_manager)
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
-        for entity in MOCK_ENDPOINTS:
+        for entity in EMPTY_DATA_MOCK_ENDPOINTS:
             assert f"/{entity}" in spec["paths"]
             assert f"/{entity}/{{local_identifier}}" in spec["paths"]
 
@@ -512,7 +502,7 @@ class TestCustomParamsInDocumentation:
         handler = OpenAPIDocumentationHandler(skgif_api_manager)
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
-        for entity in MOCK_ENDPOINTS:
+        for entity in EMPTY_DATA_MOCK_ENDPOINTS:
             op_spec = spec["paths"][f"/{entity}"]["get"]
             inline_params = [p for p in op_spec["parameters"] if isinstance(p, dict) and p.get("name") == "filter"]
             assert len(inline_params) == 1
@@ -524,36 +514,6 @@ class TestCustomParamsInDocumentation:
         for entity, expected_order in FILTER_DESCRIPTION_ORDER.items():
             description = _filter_param_description(spec, entity)
             assert _filter_keys_from_description(description) == list(expected_order)
-
-    # def test_coming_soon_mock_endpoints_are_labelled(self, skgif_api_manager: APIManager) -> None:
-    #     handler = OpenAPIDocumentationHandler(skgif_api_manager)
-    #     _, yml = handler.get_documentation()
-    #     spec = yaml.safe_load(yml)
-    #     for entity in COMING_SOON_MOCK_ENDPOINTS:
-    #         assert spec["paths"][f"/{entity}"]["get"]["summary"].startswith("Coming soon")
-    #         assert spec["paths"][f"/{entity}/{{local_identifier}}"]["get"]["summary"].startswith("Coming soon")
-
-
-# class TestComingSoonMockEndpoints:
-#     def test_list_returns_empty(self, skgif_api_manager: APIManager) -> None:
-#         for entity in COMING_SOON_MOCK_ENDPOINTS:
-#             results = _exec(skgif_api_manager, f"/skgif/v1/{entity}")
-#             assert results == []
-
-#     def test_list_with_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
-#         for entity in COMING_SOON_MOCK_ENDPOINTS:
-#             results = _exec(skgif_api_manager, f"/skgif/v1/{entity}?filter={MOCK_FILTER_EXAMPLES[entity]}")
-#             assert results == []
-
-#     def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
-#         for entity in COMING_SOON_MOCK_ENDPOINTS:
-#             status, _ = _exec_raw(skgif_api_manager, f"/skgif/v1/{entity}?filter=invalid_field:value")
-#             assert status == 400
-
-#     def test_single_returns_404(self, skgif_api_manager: APIManager) -> None:
-#         for entity in COMING_SOON_MOCK_ENDPOINTS:
-#             status, _ = _exec_raw(skgif_api_manager, f"/skgif/v1/{entity}/example-id")
-#             assert status == 404
 
 
 class TestGrantsEndpoints:
