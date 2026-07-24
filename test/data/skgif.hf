@@ -1745,7 +1745,7 @@ WHERE {
         }
       ],
       "name": "Quantitative Science Studies",
-      "type": "Journal"
+      "type": "journal"
     }
   ]
 }
@@ -1833,7 +1833,7 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
         }
       ],
       "name": "Quantitative Science Studies",
-      "type": "Journal"
+      "type": "journal"
     }
   ]
 }
