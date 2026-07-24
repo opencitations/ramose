@@ -59,7 +59,7 @@ def api_manager(qlever_endpoint: str) -> APIManager:
 @pytest.fixture(scope="session")
 def skgif_api_manager(qlever_endpoint: str) -> APIManager:
     manager = APIManager(
-        [str(DATA_DIR / "skgif_products.hf")],
+        [str(DATA_DIR / "skgif.hf")],
         endpoint_override=qlever_endpoint,
     )
     for config in manager.all_conf.values():
