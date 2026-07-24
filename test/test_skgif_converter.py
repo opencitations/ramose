@@ -290,7 +290,7 @@ class TestSkgifSchemaConformance:
     def test_org_shacl(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0670114921","organisations")
         _validate_skgif_shacl(response)
-    
+
     def test_venue_shacl(self, skgif_api_manager: APIManager) -> None:
         response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/062501778099","venues")
         _validate_skgif_shacl(response)
@@ -316,7 +316,7 @@ class TestSkgifPerson:
           "value": "0000-0003-0530-4305"
         }
       ]
-        
+
 class TestSkgifOrganisation:
     def test_context(self, skgif_api_manager: APIManager) -> None:
         result = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0670114921", "organisations")
@@ -336,7 +336,7 @@ class TestSkgifOrganisation:
           "value": "4099"
         }
       ]
-        
+
 class TestSkgifVenue:
     def test_context(self, skgif_api_manager: APIManager) -> None:
         result = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/062501778099", "venues")

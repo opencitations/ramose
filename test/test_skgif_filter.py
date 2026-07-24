@@ -592,7 +592,10 @@ class TestPersonsEndpoint:
         results_2 = _exec(skgif_api_manager, "/skgif/v1/persons?filter=cf.search.family_name:o'")
         assert results_2 == EXPECTED_SEARCH["cf.search.family_name:o'"]
     def test_filter_by_combined_name(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni")
+        results = _exec(
+            skgif_api_manager,
+            "/skgif/v1/persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni",
+        )
         assert results == EXPECTED_SEARCH["cf.search.given_name:Silvio,cf.search.family_name:Peroni"]
 
 
