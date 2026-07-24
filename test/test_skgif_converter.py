@@ -42,29 +42,28 @@ def _resolve_refs(node: dict | list | object, components: dict) -> dict | list |
     return node
 
 
-def _load_product_response_schema() -> dict:
+def _load_openapi_spec() -> dict:
     response = requests.get(SKGIF_OPENAPI_URL, timeout=30)
     response.raise_for_status()
-    openapi_spec = yaml.safe_load(response.text)
-    components = openapi_spec["components"]["schemas"]
-    response_schema = openapi_spec["paths"]["/products/{local_identifier}"]["get"]["responses"]["200"]["content"][
+    return yaml.safe_load(response.text)
+
+
+_OPENAPI_SPEC = _load_openapi_spec()
+_OPENAPI_COMPONENTS = _OPENAPI_SPEC["components"]["schemas"]
+
+
+def _response_schema(endpoint_path: str) -> dict:
+    response_schema = _OPENAPI_SPEC["paths"][endpoint_path]["get"]["responses"]["200"]["content"][
         "application/json"
     ]["schema"]
-    return _resolve_refs(copy.deepcopy(response_schema), components)
-
-def _load_response_schema(endpoint:str) -> dict:
-    endpoint_path = f"/{endpoint}/{{local_identifier}}"
-    response = requests.get(SKGIF_OPENAPI_URL, timeout=30)
-    response.raise_for_status()
-    openapi_spec = yaml.safe_load(response.text)
-    components = openapi_spec["components"]["schemas"]
-    response_schema = openapi_spec["paths"][endpoint_path]["get"]["responses"]["200"]["content"][
-        "application/json"
-    ]["schema"]
-    return _resolve_refs(copy.deepcopy(response_schema), components)
+    return _resolve_refs(copy.deepcopy(response_schema), _OPENAPI_COMPONENTS)
 
 
-SKGIF_PRODUCT_RESPONSE_SCHEMA = _load_product_response_schema()
+SKGIF_PRODUCT_RESPONSE_SCHEMA = _response_schema("/products/{local_identifier}")
+
+
+def _load_response_schema(endpoint: str) -> dict:
+    return _response_schema(f"/{endpoint}/{{local_identifier}}")
 
 SKGIF_SHACL_URL = "https://raw.githubusercontent.com/skg-if/shacl-extractor/main/shapes.ttl"
 
@@ -91,9 +90,6 @@ def _execute_skgif(skgif_api_manager: APIManager, local_identifier: str, endpoin
         raise RuntimeError(msg)
     return json.loads(result)
 
-
-# def _validate_skgif_response(response: dict) -> None:
-#     validate(instance=response, schema=SKGIF_PRODUCT_RESPONSE_SCHEMA)
 
 def _validate_skgif_response(response: dict, endpoint: str) -> None:
     schema = _load_response_schema(endpoint)
