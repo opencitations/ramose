@@ -9,6 +9,7 @@ authors = [
     { name = "marilena", email = "marilena.daquino2@unibo.it" },
     { name = "Ivan Heibi", email = "ivan.heibi2@unibo.it" },
     { name = "Sergei Slinkin" },
+    { name = "Regina Wanjiru Kemunto Manyara" },
 ]
 license = { text = "ISC" }
 requires-python = ">=3.10"

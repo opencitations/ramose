@@ -42,18 +42,29 @@ def _resolve_refs(node: dict | list | object, components: dict) -> dict | list |
     return node
 
 
-def _load_product_response_schema() -> dict:
+def _load_openapi_spec() -> dict:
     response = requests.get(SKGIF_OPENAPI_URL, timeout=30)
     response.raise_for_status()
-    openapi_spec = yaml.safe_load(response.text)
-    components = openapi_spec["components"]["schemas"]
-    response_schema = openapi_spec["paths"]["/products/{local_identifier}"]["get"]["responses"]["200"]["content"][
-        "application/json"
-    ]["schema"]
-    return _resolve_refs(copy.deepcopy(response_schema), components)
+    return yaml.safe_load(response.text)
 
 
-SKGIF_PRODUCT_RESPONSE_SCHEMA = _load_product_response_schema()
+_OPENAPI_SPEC = _load_openapi_spec()
+_OPENAPI_COMPONENTS = _OPENAPI_SPEC["components"]["schemas"]
+
+
+def _response_schema(endpoint_path: str) -> dict:
+    response_schema = _OPENAPI_SPEC["paths"][endpoint_path]["get"]["responses"]["200"]["content"]["application/json"][
+        "schema"
+    ]
+    return _resolve_refs(copy.deepcopy(response_schema), _OPENAPI_COMPONENTS)
+
+
+SKGIF_PRODUCT_RESPONSE_SCHEMA = _response_schema("/products/{local_identifier}")
+
+
+def _load_response_schema(endpoint: str) -> dict:
+    return _response_schema(f"/{endpoint}/{{local_identifier}}")
+
 
 SKGIF_SHACL_URL = "https://raw.githubusercontent.com/skg-if/shacl-extractor/main/shapes.ttl"
 
@@ -69,8 +80,8 @@ def _load_shacl_shapes() -> Graph:
 SKGIF_SHACL_SHAPES = _load_shacl_shapes()
 
 
-def _execute_skgif(skgif_api_manager: APIManager, local_identifier: str) -> dict:
-    operation = skgif_api_manager.get_op(f"/skgif/v1/products/{local_identifier}")
+def _execute_skgif(skgif_api_manager: APIManager, local_identifier: str, endpoint: str) -> dict:
+    operation = skgif_api_manager.get_op(f"/skgif/v1/{endpoint}/{local_identifier}")
     if isinstance(operation, tuple):
         msg = f"Operation not found: {local_identifier}"
         raise TypeError(msg)
@@ -81,8 +92,9 @@ def _execute_skgif(skgif_api_manager: APIManager, local_identifier: str) -> dict
     return json.loads(result)
 
 
-def _validate_skgif_response(response: dict) -> None:
-    validate(instance=response, schema=SKGIF_PRODUCT_RESPONSE_SCHEMA)
+def _validate_skgif_response(response: dict, endpoint: str) -> None:
+    schema = _load_response_schema(endpoint)
+    validate(instance=response, schema=schema)
 
 
 def _validate_skgif_shacl(response: dict) -> None:
@@ -106,11 +118,11 @@ def test_direct_converter_uses_skgif_placeholder_base() -> None:
 
 class TestSkgifJournalArticle:
     def test_context(self, skgif_api_manager: APIManager) -> None:
-        result = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")
+        result = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")
         assert result["@context"] == SKGIF_CONTEXT
 
     def test_product_metadata(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")["@graph"][0]
         assert product["local_identifier"] == "https://w3id.org/oc/meta/br/0601"
         assert product["entity_type"] == "product"
         assert product["product_type"] == "literature"
@@ -126,13 +138,13 @@ class TestSkgifJournalArticle:
         assert "relevant_organisations" not in product
 
     def test_identifiers(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")["@graph"][0]
         assert product["identifiers"] == [
             {"value": "10.1002/(sici)1096-9926(199910)60:4<177::aid-tera1>3.0.co;2-z", "scheme": "doi"},
         ]
 
     def test_author_contributions(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")["@graph"][0]
         authors = [contribution for contribution in product["contributions"] if contribution["role"] == "author"]
         assert len(authors) == 2
 
@@ -149,7 +161,7 @@ class TestSkgifJournalArticle:
         assert authors[1]["by"]["given_name"] == "James E."
 
     def test_publisher_contribution(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")["@graph"][0]
         publishers = [contribution for contribution in product["contributions"] if contribution["role"] == "publisher"]
         assert len(publishers) == 1
         assert publishers[0]["rank"] == 1
@@ -160,7 +172,7 @@ class TestSkgifJournalArticle:
         assert "given_name" not in publishers[0]["by"]
 
     def test_manifestation_type(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")["@graph"][0]
         manifestation_type = product["manifestations"][0]["type"]
         assert manifestation_type == {
             "class": "http://purl.org/spar/fabio/JournalArticle",
@@ -169,14 +181,14 @@ class TestSkgifJournalArticle:
         }
 
     def test_biblio_volume_issue_pages(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")["@graph"][0]
         biblio = product["manifestations"][0]["biblio"]
         assert biblio["volume"] == "60"
         assert biblio["issue"] == "4"
         assert biblio["pages"] == {"first": "177", "last": "178"}
 
     def test_venue(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")["@graph"][0]
         venue = product["manifestations"][0]["biblio"]["in"]
         assert venue["name"] == "Teratology"
         assert venue["entity_type"] == "venue"
@@ -189,17 +201,17 @@ class TestSkgifJournalArticle:
         }
 
     def test_publication_date(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")["@graph"][0]
         assert product["manifestations"][0]["dates"]["publication"] == ["1999-10-01T00:00:00"]
 
     def test_citations(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")["@graph"][0]
         assert product["related_products"] == {"cites": ["https://w3id.org/oc/meta/br/06035"]}
 
 
 class TestSkgifBook:
     def test_product_metadata(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700", "products")["@graph"][0]
         assert product["local_identifier"] == "https://w3id.org/oc/meta/br/0612058700"
         assert product["product_type"] == "literature"
         assert product["titles"] == {"none": ["Adaptive Environmental Management"]}
@@ -208,7 +220,7 @@ class TestSkgifBook:
         assert "relevant_organisations" not in product
 
     def test_multiple_identifiers(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700", "products")["@graph"][0]
         identifier_pairs = {(identifier["scheme"], identifier["value"]) for identifier in product["identifiers"]}
         assert identifier_pairs == {
             ("isbn", "9789048127108"),
@@ -218,7 +230,7 @@ class TestSkgifBook:
         }
 
     def test_editor_ordering(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700", "products")["@graph"][0]
         editors = [contribution for contribution in product["contributions"] if contribution["role"] == "editor"]
         assert len(editors) == 2
         assert editors[0]["rank"] == 1
@@ -231,7 +243,7 @@ class TestSkgifBook:
         assert "identifiers" not in editors[1]["by"]
 
     def test_no_venue_no_pages(self, skgif_api_manager: APIManager) -> None:
-        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")["@graph"][0]
+        product = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700", "products")["@graph"][0]
         manifestation = product["manifestations"][0]
         assert manifestation["type"] == {
             "class": "http://purl.org/spar/fabio/Book",
@@ -247,17 +259,95 @@ class TestSkgifSchemaConformance:
         assert SKGIF_PRODUCT_RESPONSE_SCHEMA["properties"]["@context"]["minItems"] == 3
 
     def test_journal_article_conforms(self, skgif_api_manager: APIManager) -> None:
-        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")
-        _validate_skgif_response(response)
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")
+        _validate_skgif_response(response, "products")
 
     def test_book_conforms(self, skgif_api_manager: APIManager) -> None:
-        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")
-        _validate_skgif_response(response)
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700", "products")
+        _validate_skgif_response(response, "products")
+
+    def test_person_conforms(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0614010840729", "persons")
+        _validate_skgif_response(response, "persons")
+
+    def test_org_conforms(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0670114921", "organisations")
+        _validate_skgif_response(response, "organisations")
+
+    def test_venue_conforms(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/062501778099", "venues")
+        _validate_skgif_response(response, "venues")
 
     def test_journal_article_shacl(self, skgif_api_manager: APIManager) -> None:
-        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601")
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0601", "products")
         _validate_skgif_shacl(response)
 
     def test_book_shacl(self, skgif_api_manager: APIManager) -> None:
-        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700")
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/0612058700", "products")
         _validate_skgif_shacl(response)
+
+    def test_person_shacl(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0614010840729", "persons")
+        _validate_skgif_shacl(response)
+
+    def test_org_shacl(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0670114921", "organisations")
+        _validate_skgif_shacl(response)
+
+    def test_venue_shacl(self, skgif_api_manager: APIManager) -> None:
+        response = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/062501778099", "venues")
+        _validate_skgif_shacl(response)
+
+
+class TestSkgifPerson:
+    def test_context(self, skgif_api_manager: APIManager) -> None:
+        result = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0614010840729", "persons")
+        assert result["@context"] == SKGIF_CONTEXT
+
+    def test_person_metadata(self, skgif_api_manager: APIManager) -> None:
+        person = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0614010840729", "persons")["@graph"][0]
+        assert person["local_identifier"] == "https://w3id.org/oc/meta/ra/0614010840729"
+        assert person["entity_type"] == "person"
+        assert person["given_name"] == "Silvio"
+        assert person["family_name"] == "Peroni"
+        assert person["name"] == "Peroni Silvio"
+
+    def test_identifiers(self, skgif_api_manager: APIManager) -> None:
+        person = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0614010840729", "persons")["@graph"][0]
+        assert person["identifiers"] == [{"scheme": "orcid", "value": "0000-0003-0530-4305"}]
+
+
+class TestSkgifOrganisation:
+    def test_context(self, skgif_api_manager: APIManager) -> None:
+        result = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0670114921", "organisations")
+        assert result["@context"] == SKGIF_CONTEXT
+
+    def test_org_metadata(self, skgif_api_manager: APIManager) -> None:
+        org = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0670114921", "organisations")["@graph"][0]
+        assert org["local_identifier"] == "https://w3id.org/oc/meta/ra/0670114921"
+        assert org["entity_type"] == "organisation"
+        assert org["name"] == "Korean Council Of Science Editors"
+
+    def test_identifiers(self, skgif_api_manager: APIManager) -> None:
+        org = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/ra/0670114921", "organisations")["@graph"][0]
+        assert org["identifiers"] == [{"scheme": "crossref", "value": "4099"}]
+
+
+class TestSkgifVenue:
+    def test_context(self, skgif_api_manager: APIManager) -> None:
+        result = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/062501778099", "venues")
+        assert result["@context"] == SKGIF_CONTEXT
+
+    def test_venue_metadata(self, skgif_api_manager: APIManager) -> None:
+        venue = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/062501778099", "venues")["@graph"][0]
+        assert venue["local_identifier"] == "https://w3id.org/oc/meta/br/062501778099"
+        assert venue["entity_type"] == "venue"
+        assert venue["name"] == "Quantitative Science Studies"
+        assert venue["type"] == "journal"
+
+    def test_identifiers(self, skgif_api_manager: APIManager) -> None:
+        venue = _execute_skgif(skgif_api_manager, "https://w3id.org/oc/meta/br/062501778099", "venues")["@graph"][0]
+        assert venue["identifiers"] == [
+            {"scheme": "openalex", "value": "S4210195326"},
+            {"scheme": "issn", "value": "2641-3337"},
+        ]

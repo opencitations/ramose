@@ -1,11 +1,28 @@
 # SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+# SPDX-FileCopyrightText: 2026 Regina Wanjiru Kemunto Manyara
 #
 # SPDX-License-Identifier: ISC
 
-# Validate-only filter vocabulary: every key is accepted and produces no constraint; unknown keys are rejected.
-acronym: {}
-type: {}
-identifiers.scheme: {}
-identifiers.value: {}
-name: {}
-cf.search.name: {}
+acronym:
+  filter: "FILTER(false)"
+type:
+  filter:
+    journal: |-
+      FILTER(?type = "journal")
+    conference: |-
+      FILTER(?type = "conference")
+    book: |-
+      FILTER(?type = "book")
+    repository: "FILTER(false)"
+    other: |-
+      FILTER(?type = "other")
+    unknown: "FILTER(false)"
+identifiers.value:
+  filter: '?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> ] .'
+identifiers.scheme:
+  filter: "?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{{value}} ] ."
+name:
+  filter: "?local_identifier dcterms:title '{{value}}'. "
+cf.search.name:
+  filter: |-
+    FILTER(CONTAINS(LCASE(?name), LCASE("{{value}}")))
