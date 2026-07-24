@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: ISC
 
-# Validate-only filter vocabulary: every key is accepted and produces no constraint; unknown keys are rejected.
 identifiers.id:
   filter: '?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> ] .'
 identifiers.scheme:
