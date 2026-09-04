@@ -104,27 +104,3 @@ cf.cited_by_doi:
     }
     @@remove ?_target
     @@join ?local_identifier ?local_identifier type=inner
-cf.contributions_aff_country:
-  filter: "FILTER(false)"
-cf.contributions_aff_ror:
-  filter: "FILTER(false)"
-cf.search.title_abstract:
-  filter: "FILTER(false)"
-contributions.declared_affiliations.identifiers.id:
-  filter: "FILTER(false)"
-contributions.declared_affiliations.identifiers.scheme:
-  filter: "FILTER(false)"
-contributions.declared_affiliations.local_identifier:
-  filter: "FILTER(false)"
-contributions.declared_affiliations.name:
-  filter: "FILTER(false)"
-contributions.declared_affiliations.short_name:
-  filter: "FILTER(false)"
-funding.grant_number:
-  filter: "FILTER(false)"
-funding.identifiers.id:
-  filter: "FILTER(false)"
-funding.identifiers.scheme:
-  filter: "FILTER(false)"
-funding.local_identifier:
-  filter: "FILTER(false)"

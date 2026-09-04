@@ -18,8 +18,18 @@ parts:
     - file: 05-addons
     - file: 06-multi-source
     - file: 07-openapi
-    - file: 08-skgif
-    - file: 09-demo-skgif
+  - caption: SKG-IF
+    numbered: false
+    chapters:
+    - file: skgif/intro
+    - file: skgif/product
+    - file: skgif/person
+    - file: skgif/organisation
+    - file: skgif/venue
+    - file: skgif/grant
+    - file: skgif/topic
+    - file: skgif/data-source
+    - file: skgif/demo
   - caption: Comparison
     numbered: false
     chapters:

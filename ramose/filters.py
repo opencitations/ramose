@@ -63,5 +63,5 @@ def apply_filters(config: FiltersConfig, values: list[str]) -> dict[str, str]:
     return result
 
 
-def load_filters_config(path: str) -> FiltersConfig:
+def load_yaml_config(path: str) -> FiltersConfig:
     return yaml.safe_load(Path(path).read_text(encoding="utf-8"))

@@ -1129,7 +1129,7 @@ class TestCacheKeyPaging:
     def test_page_directive_cache_hit_restores_converter_request_url(self) -> None:
         class FakeAddon:
             @staticmethod
-            def to_url(_csv_str: str, request_url: str = "") -> str:
+            def to_url(_csv_str: str, request_url: str = "", base_url: str = "") -> str:
                 return request_url
 
         q = {"page": ["2"], "page_size": ["2"]}

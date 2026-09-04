@@ -4,104 +4,19 @@ SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
 SPDX-License-Identifier: CC-BY-4.0
 -->
 
-# SKG-IF integration
+(product-csv-columns)=
+# Product CSV columns
 
-RAMOSE can expose any SPARQL triplestore as a [SKG-IF](https://skg-if.github.io/interoperability-framework/) compliant REST API.
+To convert SPARQL results into SKG-IF research products, write the operation's query so that its result variables match the column names listed below.
 
-## Getting started
-
-### 1. Create the spec file
-
-RAMOSE specs are split into one API section and one operation section for each route. For an SKG-IF product API, define the API section first, then add one operation for the single-product route and one operation for the product search route.
-
-In the API section, set `#addon` to `ramose.skg_if`. This loads the SKG-IF JSON-LD converter. Disable RAMOSE query parameters that are not part of the SKG-IF interface with `#disable_params`.
-
-In each product operation, register the SKG-IF output with `#format skg_if,to_skg_if,application/ld+json` and make it the default with `#default_format skg_if`.
-
-The search operation also defines the SKG-IF `filter` query parameter:
-
-```
-/products?filter=cf.search.title:OpenCitations,product_type:literature
-```
-
-In RAMOSE, this is a config-driven custom parameter. The `#custom_params` line points `filter` to a YAML file. The YAML file maps each accepted SKG-IF filter name to the SPARQL fragments injected into placeholders such as `[[filter]]`.
-
-The SPARQL queries must return the columns documented in [Product CSV columns](#product-csv-columns). Multiple rows per product are expected (one per combination of identifier, contributor, topic, etc.); the converter deduplicates and aggregates them.
-
-```
-#url /skg-if/v1
-#type api
-#base https://w3id.org/skg-if/sandbox/my-source
-#title SKG-IF API for My Source
-#description SKG-IF compliant API for My Source.
-#version 1.0.0
-#endpoint https://my-triplestore.example.org/sparql
-#method get
-#addon ramose.skg_if
-#disable_params require,filter,sort,format,json
-
-#url /products/{local_identifier}
-#type operation
-#method get
-#description Returns a single research product.
-#call /products/https://example.org/product/1
-#format skg_if,to_skg_if,application/ld+json
-#default_format skg_if
-#sparql PREFIX dcterm: <http://purl.org/dc/terms/>
-
-SELECT ?local_identifier ?product_type ?title ?title_lang
-WHERE {
-  BIND(<[[local_identifier]]> AS ?local_identifier)
-  ?local_identifier dcterm:title ?title .
-  # ... your triplestore-specific patterns here
-}
-
-#url /products
-#type operation
-#method get
-#description Returns a list of research products matching the given filters.
-#custom_params filter,skgif_filters.ocdm.yaml,Search filter.
-#format skg_if,to_skg_if,application/ld+json
-#default_format skg_if
-#call /products?filter=cf.search.title:OpenCitations
-#sparql [[filter_preamble]]
-PREFIX dcterm: <http://purl.org/dc/terms/>
-
-SELECT ?local_identifier ?product_type ?title ?title_lang
-WHERE {
-  ?local_identifier dcterm:title ?title .
-  [[filter]]
-  # ... your triplestore-specific patterns here
-}
-```
-
-In this example, `skgif_filters.ocdm.yaml` decides what each search filter injects into the query. See [config-driven parameters](05-addons.md#config-driven-parameters) for the YAML syntax.
-
-For a complete example, see the [OpenCitations spec](https://github.com/opencitations/ramose/blob/master/test/data/skgif_products.hf).
-
-### 2. Run
-
-Start the built-in dev server:
-
-```bash
-ramose -s my_source.hf -w 127.0.0.1:8080
-```
-
-The API is served at `http://127.0.0.1:8080/skg-if/v1`.
-
-For a runnable example querying ORKG and Wikidata, see the [live demo notebook](09-demo-skgif.ipynb).
-
-## Product CSV columns
-
-Product operations use the columns listed below. Every SPARQL source must produce rows conforming to this schema. Multiple rows per product are expected (one per combination of identifier, contributor, citation, topic); the converter deduplicates and aggregates them.
-
-Column names mirror JSON-LD output paths with dots replaced by underscores (SPARQL variable constraint). Columns prefixed with `_` are internal to the converter and do not appear in the output.
+Multiple rows per product are expected because identifiers, contributors, manifestations, citations, topics, as well as titles and abstracts in different languages, may produce different combinations. The converter groups and deduplicates their values.
 
 Optional fields with no data are omitted from the output.
 
 Only `local_identifier` and `product_type` are required at the product level.
 
-### Core metadata
+(core-metadata)=
+## Core metadata
 
 Official reference: [Research product properties](https://skg-if.github.io/interoperability-framework/docs/research-product.html#properties).
 
@@ -114,7 +29,8 @@ Official reference: [Research product properties](https://skg-if.github.io/inter
 | `abstract` | Product abstract | `OpenCitations Meta is a new database for open bibliographic metadata...` |
 | `abstract_lang` | ISO 639-1 language code for the abstract. Falls back to `"none"` if empty | `en` |
 
-### Product identifiers
+(product-identifiers)=
+## Product identifiers
 
 Official reference: [identifiers](https://skg-if.github.io/interoperability-framework/docs/research-product.html#identifiers).
 
@@ -125,7 +41,8 @@ Both `identifier_scheme` and `identifier_value` must be non-empty for an identif
 | `identifier_scheme` | Identifier scheme for research products: `arxiv`, `bibcode`, `crossref`, `doi`, `handle`, `isbn`, `ivoid`, `omid`, `openalex`, `pmcid`, `pmid`, `spase`, `url`, `urn`, `w3id` | `doi` |
 | `identifier_value` | The external identifier | `10.1162/qss_a_00292` |
 
-### Contributions
+(contributions)=
+## Contributions
 
 Official reference: [contributions](https://skg-if.github.io/interoperability-framework/docs/research-product.html#contributions).
 
@@ -133,6 +50,7 @@ A contributor row is processed only when both `contribution_role` and `_contribu
 
 | Column | Description | Example |
 |---|---|---|
+| `contribution_by_local_identifier` | Contributor local identifier | `https://w3id.org/oc/meta/ra/06250110138` |
 | `contribution_role` | The role of the contributing agent: `"author"`, `"editor"`, or `"publisher"` | `author` |
 | `contribution_type` | CRediT contribution type: `"conceptualization"`, `"data curation"`, `"formal analysis"`, `"funding acquisition"`, `"investigation"`, `"methodology"`, `"project administration"`, `"resources"`, `"software"`, `"supervision"`, `"validation"`, `"visualization"`, `"writing – original draft"`, `"writing – review & editing"` | `writing – original draft` |
 | `contribution_by_family_name` | Family name. Its presence marks the contributor as a person | `Massari` |
@@ -140,12 +58,11 @@ A contributor row is processed only when both `contribution_role` and `_contribu
 | `contribution_by_name` | Full name (for organisations or agents without split names) | `Arcangelo Massari` |
 | `contribution_by_identifier_scheme` | Identifier scheme for the contributor: `crossref`, `openalex`, `orcid`, `ror`, `url`, `urn`, `viaf`, `w3id` | `orcid` |
 | `contribution_by_identifier_value` | The external identifier of the contributor | `0000-0002-8420-0696` |
-| `contribution_by_local_identifier` | Contributor local identifier | `https://w3id.org/oc/meta/ra/06250110138` |
+| `contribution_declared_affiliation_local_identifier` | Affiliation local identifier | `https://example.org/organisations/unibo` |
 | `contribution_declared_affiliation_name` | Name of the declared affiliation organisation | `University of Bologna` |
 | `contribution_declared_affiliation_short_name` | Short name or acronym of the affiliation | `UNIBO` |
 | `contribution_declared_affiliation_country` | ISO 3166-1 alpha-2 country code of the affiliation (e.g., IT) | `IT` |
-| `contribution_declared_affiliation_local_identifier` | Affiliation local identifier | `https://example.org/organisations/unibo` |
-| `contribution_declared_affiliation_identifier_scheme` | Identifier scheme for the affiliation: `ror`, `url`, `urn`, `w3id` | `ror` |
+| `contribution_declared_affiliation_identifier_scheme` | Identifier scheme for the affiliation | `ror` |
 | `contribution_declared_affiliation_identifier_value` | The external identifier of the affiliation | `01111rn36` |
 | `contribution_declared_affiliation_type` | Organisation type: `"archive"`, `"company"`, `"education"`, `"facility"`, `"government"`, `"healthcare"`, `"nonprofit"`, `"funder"`, `"research"`, `"unspecified"` | `education` |
 | `contribution_declared_affiliation_website` | Website URL of the affiliation | `https://www.unibo.it` |
@@ -154,7 +71,7 @@ A contributor row is processed only when both `contribution_role` and `_contribu
 See also [Internal columns](#internal) for contributor deduplication and ordering.
 
 (internal)=
-#### Internal
+### Internal
 
 These columns are consumed by the converter for deduplication and ordering. They do not appear in the JSON-LD output.
 
@@ -165,7 +82,8 @@ These columns are consumed by the converter for deduplication and ordering. They
 
 Contributors are ordered by role (author, then editor, then publisher) and within each role by the linked list formed by `_contribution_key` / `_contribution_next_key`.
 
-### Topics
+(topics)=
+## Topics
 
 Official reference: [topics](https://skg-if.github.io/interoperability-framework/docs/research-product.html#topics).
 
@@ -181,17 +99,22 @@ Official reference: [topics](https://skg-if.github.io/interoperability-framework
 | `topic_provenance_associated_with` | `local_identifier` of the Agent responsible for the topic relation | `openalex-infra` |
 | `topic_provenance_trust` | Trust value for the relation, normalized to [0,1]. Provenance entries without trust are skipped | `1` |
 
-### Manifestations
+(manifestations)=
+## Manifestations
 
 Official reference: [manifestations](https://skg-if.github.io/interoperability-framework/docs/research-product.html#manifestations).
 
-All fields are individually optional. Co-dependent pairs: `manifestation_identifier_scheme`/`manifestation_identifier_value`, `manifestation_dates_type`/`manifestation_dates_value`, `manifestation_biblio_pages_first`/`manifestation_biblio_pages_last`. Venue and hosting data source identifier pairs follow the same pattern.
+The converter creates a manifestation only when at least one complete value can be mapped to the output. The following pairs must be populated together when used: `manifestation_identifier_scheme`/`manifestation_identifier_value`, `manifestation_dates_type`/`manifestation_dates_value`, `manifestation_biblio_pages_first`/`manifestation_biblio_pages_last`, `manifestation_biblio_in_name`/`manifestation_biblio_in_local_identifier`, `manifestation_biblio_in_identifier_scheme`/`manifestation_biblio_in_identifier_value`, and `manifestation_biblio_hosting_data_source_identifier_scheme`/`manifestation_biblio_hosting_data_source_identifier_value`.
+
+Use `_manifestation_key` to group rows belonging to the same manifestation. Distinct keys create distinct objects in the `manifestations` list. When the column is empty, all manifestation values for the product belong to one object.
 
 | Column | Description | Example |
 |---|---|---|
 | `manifestation_type_class` | The URL of the class identifying the manifestation type (e.g. `http://purl.org/spar/fabio/JournalArticle`) | `http://purl.org/spar/fabio/JournalArticle` |
 | `manifestation_type_label` | Label describing the manifestation type (e.g. `"journal article"`) | `journal article` |
 | `manifestation_type_label_lang` | ISO 639-1 language code for the type label. Falls back to `"none"` if empty | `en` |
+| `manifestation_type_defined_in` | URL of the schema that defines the manifestation type | `http://purl.org/spar/fabio` |
+| `_manifestation_key` | Internal key used to group and deduplicate manifestation rows; omitted from the JSON-LD output | `published_version` |
 | `manifestation_identifier_scheme` | Identifier scheme for the manifestation (distinct from product-level identifiers): `arxiv`, `bibcode`, `crossref`, `doi`, `handle`, `isbn`, `ivoid`, `omid`, `openalex`, `pmcid`, `pmid`, `spase`, `url`, `urn`, `w3id` | `doi` |
 | `manifestation_identifier_value` | The external identifier of the manifestation | `10.1162/qss_a_00292` |
 | `manifestation_dates_type` | The type of date: `"acceptance"`, `"access"`, `"collected"`, `"copyright"`, `"correction"`, `"creation"`, `"decision"`, `"deposit"`, `"distribution"`, `"embargo"`, `"modified"`, `"publication"`, `"received"`, `"request"`, `"retraction"`, `"validity"` | `publication` |
@@ -208,8 +131,8 @@ All fields are individually optional. Co-dependent pairs: `manifestation_identif
 | `manifestation_biblio_number` | Manifestation number within the venue (e.g., chapter number) | `3` |
 | `manifestation_biblio_pages_first` | The starting page. Both `manifestation_biblio_pages_first` and `manifestation_biblio_pages_last` must be present; if there is only one page, use the same value for both | `50` |
 | `manifestation_biblio_pages_last` | The ending page | `75` |
-| `manifestation_biblio_in_name` | Venue name. Its presence triggers the venue sub-object | `Quantitative Science Studies` |
 | `manifestation_biblio_in_local_identifier` | Venue local identifier | `https://w3id.org/oc/meta/br/062501778099` |
+| `manifestation_biblio_in_name` | Venue name. Both this field and `manifestation_biblio_in_local_identifier` are required to create the venue sub-object | `Quantitative Science Studies` |
 | `manifestation_biblio_in_identifier_scheme` | Identifier scheme for the venue: `doi`, `eissn`, `isbn`, `issn`, `lissn`, `openalex`, `opendoar`, `url`, `urn`, `w3id` | `issn` |
 | `manifestation_biblio_in_identifier_value` | Venue identifier value | `2641-3337` |
 | `manifestation_biblio_in_acronym` | Venue acronym or short name | `QSS` |
@@ -218,7 +141,7 @@ All fields are individually optional. Co-dependent pairs: `manifestation_identif
 | `manifestation_biblio_hosting_data_source_identifier_scheme` | Identifier scheme for the hosting data source | `crossref` |
 | `manifestation_biblio_hosting_data_source_identifier_value` | Identifier value for the hosting data source | `281` |
 
-### Related products
+## Related products
 
 Official reference: [related_products](https://skg-if.github.io/interoperability-framework/docs/research-product.html#related_products).
 
@@ -230,11 +153,12 @@ Official reference: [related_products](https://skg-if.github.io/interoperability
 | `related_products_is_new_version_of` | Identifier of a Research product that is an older version of the given product | `https://example.org/products/3` |
 | `related_products_is_part_of` | Identifier of a Research product that contains the given product | `https://example.org/products/4` |
 
-### Funding
+(funding)=
+## Funding
 
 Official reference: [funding](https://skg-if.github.io/interoperability-framework/docs/research-product.html#funding).
 
-`funding_local_identifier` anchors each grant entry; rows without it are skipped. `funding_agency_name` must be non-empty for the agency sub-object to be built. Identifier pairs (`funding_identifier_scheme`/`funding_identifier_value` and `funding_agency_identifier_scheme`/`funding_agency_identifier_value`) are co-dependent.
+`funding_local_identifier` anchors each grant entry; rows without it are skipped. Both `funding_agency_name` and `funding_agency_local_identifier` must be non-empty for the agency sub-object to be built. Identifier pairs (`funding_identifier_scheme`/`funding_identifier_value` and `funding_agency_identifier_scheme`/`funding_agency_identifier_value`) are co-dependent.
 
 | Column | Description | Example |
 |---|---|---|
@@ -248,27 +172,28 @@ Official reference: [funding](https://skg-if.github.io/interoperability-framewor
 | `funding_identifier_scheme` | Identifier scheme for the grant | `doi` |
 | `funding_identifier_value` | The external identifier of the grant | `10.3030/101017452` |
 | `funding_stream` | Funding stream (e.g. "Horizon Europe") | `Horizon 2020` |
+| `funding_agency_local_identifier` | Funding agency local identifier | `https://example.org/organisations/789` |
 | `funding_agency_name` | Name of the funding agency | `European Commission` |
 | `funding_agency_short_name` | Short name of the funding agency | `EC` |
 | `funding_agency_country` | ISO 3166-1 alpha-2 country code of the funding agency | `BE` |
-| `funding_agency_local_identifier` | Funding agency local identifier | `https://example.org/organisations/789` |
 | `funding_agency_identifier_scheme` | Identifier scheme for the funding agency | `ror` |
 | `funding_agency_identifier_value` | The external identifier of the funding agency | `00k4n6c32` |
 | `funding_agency_type` | Organisation type of the funding agency: `"archive"`, `"company"`, `"education"`, `"facility"`, `"government"`, `"healthcare"`, `"nonprofit"`, `"funder"`, `"research"`, `"unspecified"` | `funder` |
 | `funding_agency_website` | Website URL of the funding agency | `https://ec.europa.eu` |
 
-### Relevant organisations
+(relevant-organisations)=
+## Relevant organisations
 
 Official reference: [relevant_organisations](https://skg-if.github.io/interoperability-framework/docs/research-product.html#relevant_organisations).
 
-A row is included when it has at least a `relevant_organisation_name` or `relevant_organisation_local_identifier`. Identifier `scheme`/`value` pairs are co-dependent.
+A row is included only when `relevant_organisation_local_identifier` has a value. The name is optional, while identifier `scheme`/`value` pairs are co-dependent.
 
 | Column | Description | Example |
 |---|---|---|
+| `relevant_organisation_local_identifier` | Organisation local identifier | `https://example.org/organisations/unibo` |
 | `relevant_organisation_name` | Organisation name | `University of Bologna` |
 | `relevant_organisation_short_name` | Short name or acronym | `UNIBO` |
 | `relevant_organisation_country` | ISO 3166-1 alpha-2 country code | `IT` |
-| `relevant_organisation_local_identifier` | Organisation local identifier | `https://example.org/organisations/unibo` |
 | `relevant_organisation_identifier_scheme` | Identifier scheme for the organisation | `ror` |
 | `relevant_organisation_identifier_value` | The external identifier of the organisation | `01111rn36` |
 | `relevant_organisation_type` | Organisation type: `"archive"`, `"company"`, `"education"`, `"facility"`, `"government"`, `"healthcare"`, `"nonprofit"`, `"funder"`, `"research"`, `"unspecified"` | `education` |

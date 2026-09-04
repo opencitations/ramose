@@ -18,7 +18,7 @@
 #method get
 #description Returns a single research product from Wikidata identified by its entity URI.
 #call /products/http://www.wikidata.org/entity/Q139571902
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #sparql PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>

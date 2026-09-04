@@ -13,14 +13,6 @@ family_name:
   filter: "?local_identifier foaf:familyName '{{value}}'. "
 name:
   filter: "?local_identifier foaf:name '{{value}}'. "
-affiliations.affiliation.local_identifier:
-  filter: "FILTER(false)"
-affiliations.affiliation.name:
-  filter: "FILTER(false)"
-affiliations.affiliation.short_name:
-  filter: "FILTER(false)"
-affiliations.role:
-  filter: "FILTER(false)" 
 cf.search.family_name:
   filter: |-
     ?local_identifier foaf:familyName ?familyName .

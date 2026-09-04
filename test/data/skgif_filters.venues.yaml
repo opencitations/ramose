@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: ISC
 
-acronym:
-  filter: "FILTER(false)"
 type:
   filter:
     journal: |-

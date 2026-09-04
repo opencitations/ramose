@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ramose.filters import apply_filters, load_filters_config, render
+from ramose.filters import apply_filters, load_yaml_config, render
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -154,10 +154,10 @@ def test_apply_filters_value_dispatch_rejects_invalid_value() -> None:
         apply_filters(CONFIG_VALUE_DISPATCH, ["product_type:nonexistent"])
 
 
-def test_load_filters_config_reads_yaml(tmp_path: Path) -> None:
+def test_load_yaml_config_reads_yaml(tmp_path: Path) -> None:
     config_file = tmp_path / "filters.yaml"
     config_file.write_text(
         "identifiers.id:\n  constraints: '?product ex:doi \"{{value}}\" .'\n",
         encoding="utf-8",
     )
-    assert load_filters_config(str(config_file)) == {"identifiers.id": {"constraints": '?product ex:doi "{{value}}" .'}}
+    assert load_yaml_config(str(config_file)) == {"identifiers.id": {"constraints": '?product ex:doi "{{value}}" .'}}

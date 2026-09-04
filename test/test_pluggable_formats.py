@@ -79,7 +79,7 @@ class TestDefaultFormat:
 
         class FakeAddon:
             @staticmethod
-            def to_upper(csv_str: str, request_url: str = "") -> str:
+            def to_upper(csv_str: str, request_url: str = "", base_url: str = "") -> str:
                 return csv_str.upper()
 
         op = Operation(
@@ -109,11 +109,11 @@ class TestDefaultFormat:
 
         class FakeAddon:
             @staticmethod
-            def to_upper(csv_str: str, request_url: str = "") -> str:
+            def to_upper(csv_str: str, request_url: str = "", base_url: str = "") -> str:
                 return csv_str.upper()
 
             @staticmethod
-            def to_dummyxml(csv_str: str, request_url: str = "") -> str:
+            def to_dummyxml(csv_str: str, request_url: str = "", base_url: str = "") -> str:
                 return f"<xml>\n{csv_str}\n</xml>"
 
         op = Operation(
@@ -144,7 +144,7 @@ class TestDefaultFormat:
 
         class FakeAddon:
             @staticmethod
-            def to_url(_csv_str: str, request_url: str = "") -> str:
+            def to_url(_csv_str: str, request_url: str = "", base_url: str = "") -> str:
                 return request_url
 
         op = Operation(
@@ -193,7 +193,7 @@ class TestDefaultFormat:
 
         class FakeAddon:
             @staticmethod
-            def to_skg_if(csv_str: str, request_url: str = "") -> str:
+            def to_skg_if(csv_str: str, request_url: str = "", base_url: str = "") -> str:
                 return '{"@context": []}'
 
         op = Operation(

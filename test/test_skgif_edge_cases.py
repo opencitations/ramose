@@ -93,7 +93,7 @@ class TestMissingLocalIdentifier:
             "contribution_role": "author",
         }
         with pytest.raises(ValueError, match="Missing required local_identifier for person 'Doe, Jane'"):
-            _base._build_agent(row)
+            _base._build_agent(row, "agent")
 
     def test_organisation_without_local_identifier_raises(self) -> None:
         row = {
@@ -127,7 +127,7 @@ def test_build_agent_returns_person() -> None:
         "contribution_by_local_identifier": "person/1",
         "contribution_role": "author",
     }
-    assert _base._build_agent(row) == {
+    assert _base._build_agent(row, "agent") == {
         "name": "Doe, Jane",
         "entity_type": "person",
         "family_name": "Doe",

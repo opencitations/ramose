@@ -265,7 +265,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         if err_schema_ref:
             err_content: OrderedDict[str, dict[str, object]] = OrderedDict()
-            err_content["application/json"] = {"schema": {"$ref": err_schema_ref}}
+            err_content["application/problem+json"] = {"schema": {"$ref": err_schema_ref}}
             err_content["text/csv"] = {"schema": {"type": "string"}}
             return content, err_content
 
@@ -282,7 +282,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             [(media_type, self._content_entry(media_type, ok_schema, ok_example))],
         )
         err_content: OrderedDict[str, dict[str, object]] = OrderedDict(
-            [("application/json", {"schema": {"$ref": "#/components/schemas/Error"}})],
+            [("application/problem+json", {"schema": {"$ref": "#/components/schemas/Error"}})],
         )
         return ok_content, err_content
 
@@ -553,9 +553,22 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             "schemas": {
                 "Error": {
                     "type": "object",
-                    "properties": {"error": {"type": "integer"}, "message": {"type": "string"}},
-                    "required": ["error", "message"],
-                    "example": {"error": 404, "message": "HTTP status code 404: resource not found"},
+                    "description": "Problem details, as defined by RFC 9457.",
+                    "properties": {
+                        "type": {"type": "string"},
+                        "title": {"type": "string"},
+                        "status": {"type": "integer"},
+                        "detail": {"type": "string"},
+                        "instance": {"type": "string"},
+                    },
+                    "required": ["type", "title", "status", "detail"],
+                    "example": {
+                        "type": "about:blank",
+                        "title": "Not Found",
+                        "status": 404,
+                        "detail": "resource not found",
+                        "instance": "/api/v1/resource",
+                    },
                 },
             },
             "securitySchemes": {

@@ -228,19 +228,19 @@ class Operation:
 
         return content_type
 
+    def _convert(self, s: str, fmt: str) -> str:
+        converter_func = getattr(self.addon, self.format[fmt])
+        return converter_func(s, request_url=self._converter_request_url(), base_url=self.public_base_url)
+
     def _resolve_format(self, s: str, query_string: dict[str, list[str]]) -> tuple[str, str] | None:
         if "format" in query_string and self._is_builtin_param_active("format"):
             for req_format in query_string["format"]:
                 if req_format in self.format:
-                    request_url = self._converter_request_url()
-                    converter_func = getattr(self.addon, self.format[req_format])
-                    return converter_func(s, request_url=request_url), self._media_type_for_format(req_format)
+                    return self._convert(s, req_format), self._media_type_for_format(req_format)
         elif "default_format" in self.i:
             default_fmt = self.i["default_format"].strip()
             if default_fmt in self.format:
-                request_url = self._converter_request_url()
-                converter_func = getattr(self.addon, self.format[default_fmt])
-                return converter_func(s, request_url=request_url), self._media_type_for_format(default_fmt)
+                return self._convert(s, default_fmt), self._media_type_for_format(default_fmt)
         return None
 
     def _media_type_for_format(self, fmt: str) -> str:
@@ -1344,10 +1344,17 @@ class Operation:
             par_dict.update(body_params)
         return par_dict
 
+    @staticmethod
+    def _apply_config_filters(config: FiltersConfig, values: list[str]) -> dict[str, str]:
+        try:
+            return apply_filters(config, values)
+        except ValueError as exc:
+            Operation._raise_unprocessable(str(exc))
+
     def _resolve_preprocess_handler(self, param_name: str, handler: str) -> Callable[[list[str]], dict[str, str]]:
         if param_name in self.custom_param_configs:
             config = self.custom_param_configs[param_name]
-            return lambda values: apply_filters(config, values)
+            return lambda values: Operation._apply_config_filters(config, values)
         return getattr(self.addon, handler)
 
     def _apply_custom_preprocess_params(self, par_dict: dict[str, object]) -> None:

@@ -9,12 +9,6 @@ identifiers.scheme:
   filter: "?local_identifier datacite:hasIdentifier [ datacite:usesIdentifierScheme datacite:{{value}} ] ."
 name:
   filter: "?local_identifier foaf:name '{{value}}'. "
-short_name:
-  filter: "FILTER(false)"
-website:
-  filter: "FILTER(false)"
-country:
-  filter: "FILTER(false)"
 cf.search.name:
   filter: |-
     FILTER(CONTAINS(LCASE(?name), LCASE("{{value}}")))

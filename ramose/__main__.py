@@ -17,6 +17,7 @@ from http import HTTPStatus
 from io import StringIO
 from json import dumps
 from pathlib import Path
+from re import compile as compile_re
 from urllib.parse import unquote
 
 from flask import Flask, Response, make_response, request
@@ -232,6 +233,20 @@ def _handle_openapi_export(  # pragma: no cover
     return fallback_page, 404
 
 
+_STATUS_PREFIX = compile_re(r"^HTTP status code \d+:\s*")
+PROBLEM_MEDIA_TYPE = "application/problem+json"
+
+
+def problem_document(status_code: int, error_message: str, instance: str) -> dict[str, object]:
+    return {
+        "type": "about:blank",
+        "title": HTTPStatus(status_code).phrase,
+        "status": status_code,
+        "detail": _STATUS_PREFIX.sub("", error_message),
+        "instance": instance,
+    }
+
+
 def _build_error_response(status_code: int, error_message: str, content_type: str) -> Response:  # pragma: no cover
     if content_type == "text/csv":
         csv_buffer = StringIO()
@@ -239,9 +254,11 @@ def _build_error_response(status_code: int, error_message: str, content_type: st
         csv_writer.writerows([["error", "message"], [str(status_code), str(error_message)]])
         response = make_response(csv_buffer.getvalue(), status_code)
         response.headers.set("Content-Disposition", "attachment", filename="error.csv")
-    else:
-        response = make_response(dumps({"error": status_code, "message": error_message}), status_code)
-    response.headers.set("Content-Type", content_type)
+        response.headers.set("Content-Type", content_type)
+        return response
+    problem = problem_document(status_code, error_message, request.full_path.rstrip("?"))
+    response = make_response(dumps(problem), status_code)
+    response.headers.set("Content-Type", PROBLEM_MEDIA_TYPE)
     return response
 
 

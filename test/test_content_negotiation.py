@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -122,3 +123,26 @@ class TestContentNegotiationWeb:
         assert status == 200
         assert content_type == "application/json"
         assert body.lstrip().startswith("[")
+
+    def test_error_is_rfc9457_problem_document(self, tmp_path: Path) -> None:
+        status, content_type, body = self._get(tmp_path, "/api/v1/nonexistent", {"Accept": "application/json"})
+        assert status == 404
+        assert content_type == "application/problem+json"
+        assert json.loads(body) == {
+            "type": "about:blank",
+            "title": "Not Found",
+            "status": 404,
+            "detail": "the operation requested does not exist",
+            "instance": "/api/v1/nonexistent",
+        }
+
+    def test_error_keeps_csv_representation(self, tmp_path: Path) -> None:
+        sparql_response = SimpleNamespace(status_code=500, text="", reason="Internal Server Error", encoding=None)
+        with patch("ramose.operation._http_session") as mock_session:
+            mock_session.post.return_value = sparql_response
+            response = self._client(tmp_path).get(f"{OP_URL}?format=csv")
+        assert response.status_code == 500
+        assert response.headers["Content-Type"] == "text/csv"
+        assert response.get_data(as_text=True) == (
+            "error,message\r\n500,HTTP status code 500: Internal Server Error\r\n"
+        )

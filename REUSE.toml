@@ -26,8 +26,8 @@ path = [
     "test/data/meta_v1_doc.html",
     "test/data/meta_v1_doc_css.html",
     "test/data/meta_v1_index.html",
-    "docs/orkg_skgif.hf",
-    "docs/wikidata_skgif.hf",
+    "docs/skgif/orkg_skgif.hf",
+    "docs/skgif/wikidata_skgif.hf",
     "docs/comparison/**",
 ]
 SPDX-FileCopyrightText = "2026 Arcangelo Massari <arcangelo.massari@unibo.it>"
@@ -47,7 +47,7 @@ SPDX-License-Identifier = "ISC"
 
 [[annotations]]
 path = [
-    "docs/09-demo-skgif.ipynb",
+    "docs/skgif/demo.ipynb",
     "docs/comparison/intro.md",
     "docs/comparison/*.ipynb",
 ]

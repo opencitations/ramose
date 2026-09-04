@@ -98,7 +98,7 @@ SELECT DISTINCT ?id ?title ?author ?pub_date ... WHERE {
 | `#preprocess` | no | Preprocessing chain: `func1(param) --> func2(param)`. See [addon modules](05-addons.md). |
 | `#postprocess` | no | Postprocessing chain: `func1() --> func2("arg")`. See [addon modules](05-addons.md). |
 | `#sparql` | yes | SPARQL query. Parameters injected via `[[param_name]]` placeholders. |
-| `#format` | no | Custom output format converters: `name,function;...`. See [addon modules](format-converters). |
+| `#format` | no | Custom output format converters: `name,function[,media_type];...`. See [addon modules](format-converters). |
 | `#default_format` | no | Default output format when neither a `?format=` query parameter nor an `Accept` header selects one. Must match a name registered in `#format` or a built-in format (`csv`, `json`). Without this field, the default is JSON. When set to a custom format, the "Result fields type" section is hidden from the HTML documentation since the output structure does not match the tabular columns declared in `#field_type`. |
 | `#custom_params` | no | Custom query parameters with addon handlers (`name,function,phase,description;...`) or YAML handlers (`name,file.yaml,description;...`). See [addon modules](custom-parameters). |
 | `#disable_params` | no | Comma-separated list of built-in query parameters to suppress for this operation. Use `*` to disable all. Merged with any API-level `#disable_params`. |
@@ -179,7 +179,7 @@ In `#sparql` blocks, `[[param_name]]` placeholders are replaced with the URL par
 (write-operations)=
 ## Write operations
 
-An operation whose `#method` is `post`, `put`, or `delete` runs a SPARQL 1.1 Update (`INSERT`/`DELETE`/`UPDATE`) instead of a read query. The update is sent to `#update_endpoint` (or `#endpoint` if that is not set) and the response is a small JSON confirmation rather than a result set.
+An operation whose `#method` is `post`, `put`, or `delete` runs a SPARQL 1.1 Update (`INSERT`/`DELETE`/`UPDATE`) instead of a read query. The update is sent to `#update_endpoint` (or `#endpoint` if that is not set), and the response contains a small JSON confirmation.
 
 Here is an example:
 
@@ -240,4 +240,4 @@ curl -X POST "http://127.0.0.1:8080/bibliography/v1/resources?resource=https://w
 
 If any `[[placeholder]]` is left unfilled after substitution, the request is rejected with HTTP 400 and nothing is sent to the endpoint.
 
-Protect write operations with `#auth required`; see [authentication](02-cli.md#authentication).
+Protect write operations with `#auth required`; see {ref}`authentication`.

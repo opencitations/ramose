@@ -178,6 +178,7 @@ def handle_limit(table: list[list], values: list[str]) -> list[list]:
     return [table[0], *table[1:limit + 1]]
 ```
 
+(config-driven-parameters)=
 ### Config-driven parameters
 
 A preprocessing parameter can be backed by a config file instead of a Python function. Give the parameter a handler that ends in `.yaml` or `.yml`: the handler is read as a path to a config file, resolved relative to the spec file. YAML handlers are always preprocessing handlers, so they omit the phase. No addon is required.
@@ -232,14 +233,16 @@ The third field declares the media type for that format. It is reported in the O
 
 Without the third field a custom format is still reachable through `?format=` and `-f`, but it has no media type, so it is not Accept-negotiable and does not appear in the OpenAPI response content.
 
-The function receives the result as a CSV string and a `request_url` keyword argument:
+The function receives the result as a CSV string, plus `request_url` and `base_url` keyword arguments:
 
 ```python
-def to_xml(csv_string, request_url=""):
+def to_xml(csv_string, request_url="", base_url=""):
     return xml_output
 ```
 
 `request_url` is the absolute request URL, built from the API's `#base` and the request path with its query string. When `page` and `page_size` are present, the URL includes them as-is (e.g., `https://example.org/products?page=1&page_size=10`).
+
+`base_url` is the API's `#base` value.
 
 Custom formats can change the number of entities in the output, for example by collapsing multiple CSV rows into a single object. Because of this, RAMOSE cannot determine the correct total item count or page boundaries in advance. When a custom format is configured, RAMOSE passes the full result set to the converter without slicing. The converter is responsible for counting entities, validating page bounds, slicing to the requested page, and embedding pagination metadata in the output.
 

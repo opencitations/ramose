@@ -20,7 +20,7 @@ from urllib.parse import urlsplit
 
 from ramose._constants import FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME
 from ramose.cache import ResultCache
-from ramose.filters import load_filters_config
+from ramose.filters import load_yaml_config
 from ramose.hash_format import parse_auth, parse_custom_params, parse_disable_params, read_spec_file
 from ramose.operation import Operation, OperationConfig
 
@@ -246,6 +246,12 @@ class APIManager:
         retry_backoff = float(op_conf["retry_backoff"]) if "retry_backoff" in op_conf else self._retry_backoff
         return retry_attempts, retry_wait, retry_backoff
 
+    def _load_config(self, conf: APIConfig, handler: str) -> FiltersConfig:
+        resolved = str((Path(conf["conf_file"]).parent / handler).resolve())
+        if resolved not in self._config_cache:
+            self._config_cache[resolved] = load_yaml_config(resolved)
+        return self._config_cache[resolved]
+
     def _resolve_custom_param_configs(
         self, conf: APIConfig, custom_params_map: dict[str, dict[str, str]]
     ) -> dict[str, FiltersConfig]:
@@ -254,10 +260,7 @@ class APIManager:
             handler = param_conf["handler"]
             if param_conf["phase"] != "preprocess" or not handler.endswith((".yaml", ".yml")):
                 continue
-            resolved = str((Path(conf["conf_file"]).parent / handler).resolve())
-            if resolved not in self._config_cache:
-                self._config_cache[resolved] = load_filters_config(resolved)
-            result[name] = self._config_cache[resolved]
+            result[name] = self._load_config(conf, handler)
         return result
 
     def get_op(self, op_complete_url: str, method: str = "get") -> Operation | tuple[int, str, str]:

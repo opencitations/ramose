@@ -138,6 +138,7 @@ python -m ramose -s meta_v1.hf -w 127.0.0.1:8080 --retry-attempts 4 --retry-wait
 
 The retry policy covers network errors, timeouts, and backend status codes `408 Request Timeout`, `429 Too Many Requests`, `500 Internal Server Error`, `502 Bad Gateway`, `503 Service Unavailable`, and `504 Gateway Timeout`. Status codes such as `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`, and `422 Unprocessable Content` return without retrying. For SPARQL Anything, RAMOSE classifies failures from Java exception messages because PySPARQL-Anything does not expose HTTP status codes. Per-operation overrides are available through `#retry_attempts`, `#retry_wait`, and `#retry_backoff` in the [spec file](01-spec-file.md).
 
+(authentication)=
 ## Authentication
 
 Operations marked `#auth required` in the [spec file](01-spec-file.md) need a bearer token. Tokens are kept in a local SQLite store (default `.auth/`, configurable with `--auth-db`); RAMOSE stores only their SHA-256 hash, never the token itself. Write operations (`POST`/`PUT`/`DELETE`) should always be protected this way.

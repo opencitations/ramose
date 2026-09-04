@@ -29,7 +29,7 @@
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/oc/"
+            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
         }
     ],
     "meta": {
@@ -239,7 +239,7 @@
         }
     ]
 }
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #sparql PREFIX fabio: <http://purl.org/spar/fabio/>
 PREFIX dcterm: <http://purl.org/dc/terms/>
@@ -251,6 +251,7 @@ PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 SELECT ?local_identifier ?identifier_scheme ?identifier_value
        ?title ?product_type
        ?manifestation_type_class ?manifestation_type_label ?manifestation_type_label_lang
+       ?manifestation_type_defined_in
        ?manifestation_dates_type ?manifestation_dates_value
        ?manifestation_biblio_volume ?manifestation_biblio_issue
        ?manifestation_biblio_pages_first ?manifestation_biblio_pages_last
@@ -264,6 +265,7 @@ WHERE {
   BIND(IF(!BOUND(?manifestation_type_class), "literature", IF(?manifestation_type_class IN (<http://purl.org/spar/fabio/DataFile>, <http://purl.org/spar/fabio/DataManagementPlan>), "research data", IF(?manifestation_type_class = <http://purl.org/spar/fabio/ComputerProgram>, "research software", "literature"))) AS ?product_type)
   BIND(IF(BOUND(?manifestation_type_class), LCASE(REPLACE(REPLACE(STR(?manifestation_type_class), "^.*[/#]", ""), "([a-z])([A-Z])", "$1 $2")), "") AS ?manifestation_type_label)
   BIND(IF(BOUND(?manifestation_type_class), "en", "") AS ?manifestation_type_label_lang)
+  BIND(IF(BOUND(?manifestation_type_class), REPLACE(STR(?manifestation_type_class), "[/#][^/#]+$", ""), "") AS ?manifestation_type_defined_in)
   OPTIONAL {
     ?local_identifier prism:publicationDate ?manifestation_dates_value .
     BIND("publication" AS ?manifestation_dates_type)
@@ -365,7 +367,6 @@ WHERE {
 #custom_params filter,skgif_filters.ocdm.yaml,Search filter.
 Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
-Filters marked as currently empty are accepted but return no matches in OpenCitations at the moment.
 
 **Attribute filters:**
 
@@ -378,28 +379,16 @@ Filters marked as currently empty are accepted but return no matches in OpenCita
 - `contributions.by.family_name`
 - `contributions.by.given_name`
 - `contributions.by.name`
-- `contributions.declared_affiliations.local_identifier` (currently empty)
-- `contributions.declared_affiliations.identifiers.id` (currently empty)
-- `contributions.declared_affiliations.identifiers.scheme` (currently empty)
-- `contributions.declared_affiliations.name` (currently empty)
-- `contributions.declared_affiliations.short_name` (currently empty)
-- `funding.local_identifier` (currently empty)
-- `funding.grant_number` (currently empty)
-- `funding.identifiers.id` (currently empty)
-- `funding.identifiers.scheme` (currently empty)
 
 **Convenience filters (`cf.*`):**
 
 - `cf.search.title`
-- `cf.search.title_abstract` (currently empty)
 - `cf.contributions_orcid`
-- `cf.contributions_aff_ror` (currently empty)
-- `cf.contributions_aff_country` (currently empty)
 - `cf.cites`
 - `cf.cited_by`
 - `cf.cites_doi`
 - `cf.cited_by_doi`
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #call /products?filter=cf.search.title:OpenCitations
 #output_json {
@@ -407,7 +396,7 @@ Filters marked as currently empty are accepted but return no matches in OpenCita
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/oc/"
+            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
         }
     ],
     "meta": {
@@ -1355,6 +1344,7 @@ PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 SELECT ?local_identifier ?title ?identifier_scheme ?identifier_value
        ?product_type
        ?manifestation_type_class ?manifestation_type_label ?manifestation_type_label_lang
+       ?manifestation_type_defined_in
        ?manifestation_dates_type ?manifestation_dates_value
        ?manifestation_biblio_volume ?manifestation_biblio_issue
        ?manifestation_biblio_pages_first ?manifestation_biblio_pages_last
@@ -1367,6 +1357,7 @@ WHERE {
   BIND(IF(!BOUND(?manifestation_type_class), "literature", IF(?manifestation_type_class IN (<http://purl.org/spar/fabio/DataFile>, <http://purl.org/spar/fabio/DataManagementPlan>), "research data", IF(?manifestation_type_class = <http://purl.org/spar/fabio/ComputerProgram>, "research software", "literature"))) AS ?product_type)
   BIND(IF(BOUND(?manifestation_type_class), LCASE(REPLACE(REPLACE(STR(?manifestation_type_class), "^.*[/#]", ""), "([a-z])([A-Z])", "$1 $2")), "") AS ?manifestation_type_label)
   BIND(IF(BOUND(?manifestation_type_class), "en", "") AS ?manifestation_type_label_lang)
+  BIND(IF(BOUND(?manifestation_type_class), REPLACE(STR(?manifestation_type_class), "[/#][^/#]+$", ""), "") AS ?manifestation_type_defined_in)
   OPTIONAL {
     ?local_identifier prism:publicationDate ?manifestation_dates_value .
     BIND("publication" AS ?manifestation_dates_type)
@@ -1471,7 +1462,7 @@ WHERE {
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
     {
-      "@base": "https://w3id.org/skg-if/sandbox/oc/"
+      "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
     }
   ],
   "@graph": [
@@ -1490,7 +1481,7 @@ WHERE {
     }
   ]
 }
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #sparql PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
@@ -1528,10 +1519,6 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 - `given_name`
 - `family_name`
 - `name`
-- `affiliations.affiliation.local_identifier` (currently empty)
-- `affiliations.affiliation.name` (currently empty)
-- `affiliations.affiliation.short_name` (currently empty)
-- `affiliations.role` (currently empty)
 
 **Convenience filters (`cf.*`):**
 
@@ -1540,14 +1527,14 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 - `cf.search.name`
 
 #call /persons?filter=cf.search.given_name:Silvio,cf.search.family_name:Peroni
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-          "@base": "https://w3id.org/skg-if/sandbox/oc/"
+          "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
         }
     ],
     "meta": {
@@ -1603,14 +1590,14 @@ WHERE {
 #method get
 #description Returns a single organisation agent identified by its OpenCitations Meta identifier (OMID). The response includes agent metadata from OpenCitations Meta.
 #call /organisations/https://w3id.org/oc/meta/ra/0670114921
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #output_json {
   "@context": [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
     {
-      "@base": "https://w3id.org/skg-if/sandbox/oc/"
+      "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
     }
   ],
   "@graph": [
@@ -1658,23 +1645,20 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 - `identifiers.id`
 - `identifiers.scheme`
 - `name`
-- `short_name`
-- `website`
-- `country`
 
 **Convenience filters (`cf.*`):**
 
 - `cf.search.name`
 
 #call /organisations?filter=cf.search.name:Mit Press
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/oc/"
+            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
         }
     ],
     "meta": {
@@ -1725,14 +1709,14 @@ WHERE {
 #method get
 #description Returns a single venue identified by its OpenCitations Meta identifier (OMID). The response includes venue metadata from OpenCitations Meta.
 #call /venues/https://w3id.org/oc/meta/br/062501778099
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #output_json {
   "@context": [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
     {
-      "@base": "https://w3id.org/skg-if/sandbox/oc/"
+      "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
     }
   ],
   "@graph": [
@@ -1793,7 +1777,6 @@ Format: comma-separated `filter_name:filter_value` pairs (AND logic).
 Filters in the first group use exact matching. For `cf.search.*`, matching is text contains.
 **Attribute filters:**
 
-- `acronym`
 - `type`
 - `identifiers.scheme`
 - `identifiers.value`
@@ -1804,14 +1787,14 @@ Filters in the first group use exact matching. For `cf.search.*`, matching is te
 - `cf.search.name`
 
 #call /venues?filter=cf.search.name:Quantitative Science Studies
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/oc/"
+            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
         }
     ],
     "meta": {
@@ -1877,7 +1860,7 @@ WHERE {
 #method get
 #description Returns a single grant. Note: OpenCitations does not currently hold grant data; this endpoint always returns 404.
 #call /grants/example-grant-id
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #output_json HTTP status code 404: entity not found
 #sparql SELECT ?dummy WHERE { FILTER(false) }
@@ -1938,14 +1921,14 @@ All filters below are accepted but currently return no matches because OpenCitat
 - `cf.duration.end.from`
 
 #call /grants?filter=grant_number:12345
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/oc/"
+            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
         }
     ],
     "meta": {
@@ -1974,7 +1957,7 @@ All filters below are accepted but currently return no matches because OpenCitat
 #method get
 #description Returns a single data source. Note: OpenCitations does not currently hold data source records; this endpoint always returns 404.
 #call /datasources/example-datasource-id
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #output_json HTTP status code 404: entity not found
 #sparql SELECT ?dummy WHERE { FILTER(false) }
@@ -2000,14 +1983,14 @@ All filters below are accepted but currently return no matches because OpenCitat
 - `cf.search.name`
 
 #call /datasources?filter=research_product_type:literature
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/oc/"
+            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
         }
     ],
     "meta": {
@@ -2036,7 +2019,7 @@ All filters below are accepted but currently return no matches because OpenCitat
 #method get
 #description Returns a single topic. Note: OpenCitations does not currently hold topic data; this endpoint always returns 404.
 #call /topics/example-topic-id
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #output_json HTTP status code 404: entity not found
 #sparql SELECT ?dummy WHERE { FILTER(false) }
@@ -2061,14 +2044,14 @@ All filters below are accepted but currently return no matches because OpenCitat
 - `cf.search.language`
 
 #call /topics?filter=cf.search.labels:biology
-#format skg_if,to_skg_if,application/ld+json
+#format skg_if,to_skg_if,application/json
 #default_format skg_if
 #output_json {
     "@context": [
         "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
         "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
         {
-            "@base": "https://w3id.org/skg-if/sandbox/oc/"
+            "@base": "https://w3id.org/skg-if/sandbox/opencitations/"
         }
     ],
     "meta": {

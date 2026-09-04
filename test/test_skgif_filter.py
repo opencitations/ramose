@@ -44,20 +44,8 @@ FILTER_DESCRIPTION_ORDER = {
         "contributions.by.family_name",
         "contributions.by.given_name",
         "contributions.by.name",
-        "contributions.declared_affiliations.local_identifier",
-        "contributions.declared_affiliations.identifiers.id",
-        "contributions.declared_affiliations.identifiers.scheme",
-        "contributions.declared_affiliations.name",
-        "contributions.declared_affiliations.short_name",
-        "funding.local_identifier",
-        "funding.grant_number",
-        "funding.identifiers.id",
-        "funding.identifiers.scheme",
         "cf.search.title",
-        "cf.search.title_abstract",
         "cf.contributions_orcid",
-        "cf.contributions_aff_ror",
-        "cf.contributions_aff_country",
         "cf.cites",
         "cf.cited_by",
         "cf.cites_doi",
@@ -69,10 +57,6 @@ FILTER_DESCRIPTION_ORDER = {
         "given_name",
         "family_name",
         "name",
-        "affiliations.affiliation.local_identifier",
-        "affiliations.affiliation.name",
-        "affiliations.affiliation.short_name",
-        "affiliations.role",
         "cf.search.family_name",
         "cf.search.given_name",
         "cf.search.name",
@@ -81,13 +65,9 @@ FILTER_DESCRIPTION_ORDER = {
         "identifiers.id",
         "identifiers.scheme",
         "name",
-        "short_name",
-        "website",
-        "country",
         "cf.search.name",
     ),
     "venues": (
-        "acronym",
         "type",
         "identifiers.scheme",
         "identifiers.value",
@@ -254,7 +234,7 @@ class TestProductTypeFilter:
 
     def test_invalid_type_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, result = _exec_raw(skgif_api_manager, "/skgif/v1/products?filter=product_type:nonexistent")
-        assert status == 400
+        assert status == 422
         assert "The value 'nonexistent' is not valid for filter 'product_type'" in result
 
 
@@ -317,64 +297,91 @@ class TestUnsupportedFilter:
             skgif_api_manager,
             "/skgif/v1/products?filter=unsupported_field:value",
         )
-        assert status == 400
-        expected_prefix = (
-            "HTTP status code 400: parameter in the request not compliant with the type specified - ValueError: "
+        assert status == 422
+        expected = (
+            "HTTP status code 422: "
             "The filter 'unsupported_field' is not configured, "
             "configured filters are "
             "cf.cited_by, cf.cited_by_doi, cf.cites, cf.cites_doi, "
-            "cf.contributions_aff_country, cf.contributions_aff_ror, cf.contributions_orcid, "
-            "cf.search.title, cf.search.title_abstract, "
+            "cf.contributions_orcid, cf.search.title, "
             "contributions.by.family_name, contributions.by.given_name, "
             "contributions.by.identifiers.id, contributions.by.identifiers.scheme, "
             "contributions.by.local_identifier, contributions.by.name, "
-            "contributions.declared_affiliations.identifiers.id, "
-            "contributions.declared_affiliations.identifiers.scheme, "
-            "contributions.declared_affiliations.local_identifier, "
-            "contributions.declared_affiliations.name, "
-            "contributions.declared_affiliations.short_name, "
-            "funding.grant_number, funding.identifiers.id, "
-            "funding.identifiers.scheme, funding.local_identifier, "
-            "identifiers.id, identifiers.scheme, product_type (line "
+            "identifiers.id, identifiers.scheme, product_type"
         )
-        assert result.startswith(expected_prefix)
+        assert result == expected
 
-    def test_unsupported_affiliation_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(
+    def test_unsupported_affiliation_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
+        status, _ = _exec_raw(
             skgif_api_manager,
             "/skgif/v1/products?filter=contributions.declared_affiliations.name:MIT",
         )
-        assert results == []
+        assert status == 422
 
-    def test_unsupported_title_abstract_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(
+    def test_unsupported_person_affiliation_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
+        status, result = _exec_raw(
+            skgif_api_manager,
+            "/skgif/v1/persons?filter=affiliations.affiliation.name:MIT",
+        )
+        assert status == 422
+        assert result == (
+            "HTTP status code 422: "
+            "The filter 'affiliations.affiliation.name' is not configured, "
+            "configured filters are cf.search.family_name, cf.search.given_name, "
+            "cf.search.name, family_name, given_name, identifiers.id, identifiers.scheme, name"
+        )
+
+    def test_unsupported_organisation_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
+        status, result = _exec_raw(
+            skgif_api_manager,
+            "/skgif/v1/organisations?filter=website:https://www.unibo.it",
+        )
+        assert status == 422
+        assert result == (
+            "HTTP status code 422: "
+            "The filter 'website' is not configured, "
+            "configured filters are cf.search.name, identifiers.id, identifiers.scheme, name"
+        )
+
+    def test_unsupported_venue_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
+        status, result = _exec_raw(
+            skgif_api_manager,
+            "/skgif/v1/venues?filter=acronym:QSS",
+        )
+        assert status == 422
+        assert result == (
+            "HTTP status code 422: "
+            "The filter 'acronym' is not configured, "
+            "configured filters are cf.search.name, identifiers.scheme, identifiers.value, name, type"
+        )
+
+    def test_unsupported_title_abstract_returns_error(self, skgif_api_manager: APIManager) -> None:
+        status, _ = _exec_raw(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.search.title_abstract:OpenCitations",
         )
-        assert results == []
+        assert status == 422
 
-    def test_unsupported_combined_with_supported_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(
+    def test_unsupported_combined_with_supported_returns_error(self, skgif_api_manager: APIManager) -> None:
+        status, _ = _exec_raw(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.search.title:OpenCitations,cf.search.title_abstract:test",
         )
-        assert results == []
+        assert status == 422
 
-    def test_unsupported_combined_with_federated_filter_skips_preamble(self, skgif_api_manager: APIManager) -> None:
-        op = skgif_api_manager.get_op(
-            "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035,funding.local_identifier:grant"
+    def test_unsupported_combined_with_federated_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
+        status, _ = _exec_raw(
+            skgif_api_manager,
+            "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035,funding.local_identifier:grant",
         )
-        assert isinstance(op, Operation)
-        params = op._prepare_params()
-        assert params["filter_preamble"] == ""
-        assert params["filter"] == "FILTER(false)"
+        assert status == 422
 
-    def test_unsupported_funding_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(
+    def test_unsupported_funding_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
+        status, _ = _exec_raw(
             skgif_api_manager,
             "/skgif/v1/products?filter=funding.local_identifier:some-grant",
         )
-        assert results == []
+        assert status == 422
 
 
 class TestCitesFilter:
@@ -527,7 +534,7 @@ class TestGrantsEndpoints:
 
     def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/grants?filter=invalid_field:value")
-        assert status == 400
+        assert status == 422
 
     def test_single_returns_404(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/grants/example-id")
@@ -545,7 +552,7 @@ class TestTopicsEndpoints:
 
     def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/topics?filter=invalid_field:value")
-        assert status == 400
+        assert status == 422
 
     def test_single_returns_404(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/topics/example-id")
@@ -563,7 +570,7 @@ class TestDatasourcesEndpoints:
 
     def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/datasources?filter=invalid_field:value")
-        assert status == 400
+        assert status == 422
 
     def test_single_returns_404(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/datasources/example-id")
@@ -648,7 +655,7 @@ class TestVenueEndpoint:
 SKGIF_CONTEXT = [
     "https://w3id.org/skg-if/context/1.1.0/skg-if.json",
     "https://w3id.org/skg-if/context/1.0.0/skg-if-api.json",
-    {"@base": "https://w3id.org/skg-if/sandbox/oc/"},
+    {"@base": "https://w3id.org/skg-if/sandbox/opencitations/"},
 ]
 
 TOTAL_PRODUCTS = 1349

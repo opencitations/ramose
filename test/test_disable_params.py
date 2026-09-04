@@ -133,7 +133,7 @@ class TestConvFormatDisabled:
     def test_default_format_still_works_when_format_disabled(self) -> None:
         class FakeAddon:
             @staticmethod
-            def to_custom(s: str, request_url: str = "") -> str:
+            def to_custom(s: str, request_url: str = "", base_url: str = "") -> str:
                 return '{"custom": true}'
 
         op = _make_op(
