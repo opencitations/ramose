@@ -127,7 +127,7 @@ class TestContentNegotiationWeb:
     def test_error_is_rfc9457_problem_document(self, tmp_path: Path) -> None:
         status, content_type, body = self._get(tmp_path, "/api/v1/nonexistent", {"Accept": "application/json"})
         assert status == 404
-        assert content_type == "application/problem+json"
+        assert content_type == "application/json"
         assert json.loads(body) == {
             "type": "about:blank",
             "title": "Not Found",

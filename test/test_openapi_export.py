@@ -259,7 +259,7 @@ class TestBuildResponseContent:
         )
         assert isinstance(ok_and_err, tuple)
         assert set(ok_and_err[0].keys()) == {"application/json", "text/csv"}
-        assert set(ok_and_err[1].keys()) == {"application/problem+json", "text/csv"}
+        assert set(ok_and_err[1].keys()) == {"application/json", "text/csv"}
 
     def test_declared_json_format_reuses_inferred_schema(self) -> None:
         handler = _build_handler("test_scholarly.hf")
@@ -274,7 +274,7 @@ class TestBuildResponseContent:
         assert set(ok_content.keys()) == {"application/json", "text/csv", "application/ld+json"}
         assert ok_content["application/ld+json"]["schema"] == ok_schema
         assert ok_content["text/csv"]["schema"] == {"type": "string"}
-        assert set(err_content.keys()) == {"application/problem+json", "text/csv"}
+        assert set(err_content.keys()) == {"application/json", "text/csv"}
 
 
 class TestExtractParamExamples:
@@ -372,8 +372,8 @@ class TestSingleFormatResponseWhenFormatDisabled:
         _, yml = handler.get_documentation()
         spec = yaml.safe_load(yml)
         error_content = spec["paths"]["/products/{local_id}"]["get"]["responses"]["default"]["content"]
-        assert set(error_content.keys()) == {"application/problem+json"}
-        assert error_content["application/problem+json"]["schema"] == {"$ref": "#/components/schemas/Error"}
+        assert set(error_content.keys()) == {"application/json"}
+        assert error_content["application/json"]["schema"] == {"$ref": "#/components/schemas/Error"}
 
     def test_jsonld_example_attached(self) -> None:
         handler = _build_handler("test_openapi_skgif_like.hf")

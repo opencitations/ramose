@@ -265,7 +265,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
 
         if err_schema_ref:
             err_content: OrderedDict[str, dict[str, object]] = OrderedDict()
-            err_content["application/problem+json"] = {"schema": {"$ref": err_schema_ref}}
+            err_content["application/json"] = {"schema": {"$ref": err_schema_ref}}
             err_content["text/csv"] = {"schema": {"type": "string"}}
             return content, err_content
 
@@ -282,7 +282,7 @@ class OpenAPIDocumentationHandler(DocumentationHandler):
             [(media_type, self._content_entry(media_type, ok_schema, ok_example))],
         )
         err_content: OrderedDict[str, dict[str, object]] = OrderedDict(
-            [("application/problem+json", {"schema": {"$ref": "#/components/schemas/Error"}})],
+            [("application/json", {"schema": {"$ref": "#/components/schemas/Error"}})],
         )
         return ok_content, err_content
 

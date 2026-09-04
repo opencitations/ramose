@@ -234,7 +234,7 @@ def _handle_openapi_export(  # pragma: no cover
 
 
 _STATUS_PREFIX = compile_re(r"^HTTP status code \d+:\s*")
-PROBLEM_MEDIA_TYPE = "application/problem+json"
+PROBLEM_MEDIA_TYPE = "application/json"
 
 
 def problem_document(status_code: int, error_message: str, instance: str) -> dict[str, object]:
