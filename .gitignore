@@ -18,3 +18,4 @@ slide_csv_to_skgif.puml
 /orkg_skgif.hf
 docs/comparison/*/state/
 .DS_Store
+benchmarks/federation/data/

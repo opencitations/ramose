@@ -1,0 +1,40 @@
+#url /benchmark
+#type api
+#base http://localhost:8081
+#method get
+#title RAMOSE federation benchmark
+#description Verify the SERVICE operation with RAMOSE v1.0.6.
+#version 1.0.0
+#contacts contact@opencitations.net
+#license ISC
+#endpoint http://meta:8890/sparql
+#addon federation
+
+#url /service/{doi}
+#type operation
+#doi str(.+)
+#method get
+#field_type str(doi) str(title) str(omid) str(references) str(reference_count)
+#postprocess aggregate_references()
+#sparql PREFIX cito: <http://purl.org/spar/cito/>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?doi ?title ?omid ?references ?reference_count
+FROM <https://w3id.org/oc/meta/>
+WHERE {
+  ?identifier datacite:usesIdentifierScheme datacite:doi ;
+              literal:hasLiteralValue ?doi .
+  ?omid datacite:hasIdentifier ?identifier ;
+        dcterms:title ?title .
+  FILTER(STR(?doi) = "[[doi]]")
+  OPTIONAL {
+    SERVICE <http://index:7001> {
+      ?citation a cito:Citation ;
+                cito:hasCitingEntity ?omid ;
+                cito:hasCitedEntity ?references .
+    }
+  }
+}

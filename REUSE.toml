@@ -29,6 +29,7 @@ path = [
     "docs/skgif/orkg_skgif.hf",
     "docs/skgif/wikidata_skgif.hf",
     "docs/comparison/**",
+    "benchmarks/federation/**",
 ]
 SPDX-FileCopyrightText = "2026 Arcangelo Massari <arcangelo.massari@unibo.it>"
 SPDX-License-Identifier = "ISC"

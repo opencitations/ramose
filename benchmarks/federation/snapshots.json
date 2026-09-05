@@ -1,0 +1,32 @@
+{
+  "datasets": [
+    {
+      "name": "OpenCitations Index",
+      "record": "https://doi.org/10.6084/m9.figshare.31306081.v2",
+      "metadata": "https://api.figshare.com/v2/articles/31306081/versions/2",
+      "directory": "index",
+      "ready_file": "oc_index.meta-data.json",
+      "parts": [
+        {"name": "oc-index-ts-2027-07.7z.001", "url": "https://ndownloader.figshare.com/files/67057613", "size": 10737418240, "md5": "4f4b51ffdf3b60d33d3795913736d52e"},
+        {"name": "oc-index-ts-2027-07.7z.002", "url": "https://ndownloader.figshare.com/files/67057772", "size": 10737418240, "md5": "8f4d0d6cd205fd9a033b7534f6f2fe1c"},
+        {"name": "oc-index-ts-2027-07.7z.003", "url": "https://ndownloader.figshare.com/files/67057832", "size": 10737418240, "md5": "79c6b3f9bba1f3df9232b0f6698a7930"},
+        {"name": "oc-index-ts-2027-07.7z.004", "url": "https://ndownloader.figshare.com/files/67057880", "size": 10737418240, "md5": "3cb92f7eaf41a9be6324606a452ad9a5"},
+        {"name": "oc-index-ts-2027-07.7z.005", "url": "https://ndownloader.figshare.com/files/67057967", "size": 10737418240, "md5": "33959f67cf819997461945f74a806d4c"},
+        {"name": "oc-index-ts-2027-07.7z.006", "url": "https://ndownloader.figshare.com/files/67058306", "size": 10737418240, "md5": "268b1924a7716684bc08ea96c603cfcf"},
+        {"name": "oc-index-ts-2027-07.7z.007", "url": "https://ndownloader.figshare.com/files/67058405", "size": 9527988025, "md5": "0c37d46565e59c97c6e42d2e49fa21a8"}
+      ]
+    },
+    {
+      "name": "OpenCitations Meta",
+      "record": "https://doi.org/10.5281/zenodo.21001553",
+      "metadata": "https://zenodo.org/api/records/21001553",
+      "directory": "meta",
+      "ready_file": "database/virtuoso.db",
+      "parts": [
+        {"name": "oc_meta_data_2026_06_27.7z.001", "url": "https://zenodo.org/api/records/21001553/files/oc_meta_data_2026_06_27.7z.001/content", "size": 10737418240, "md5": "be20115673273e896667af7c98aa54e8"},
+        {"name": "oc_meta_data_2026_06_27.7z.002", "url": "https://zenodo.org/api/records/21001553/files/oc_meta_data_2026_06_27.7z.002/content", "size": 10737418240, "md5": "332bcc49fbd68b7c9e63895a06bdd7c2"},
+        {"name": "oc_meta_data_2026_06_27.7z.003", "url": "https://zenodo.org/api/records/21001553/files/oc_meta_data_2026_06_27.7z.003/content", "size": 9690569456, "md5": "a36b931721e80f8b3655bd925a0a77ff"}
+      ]
+    }
+  ]
+}

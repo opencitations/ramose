@@ -1,0 +1,117 @@
+# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
+#
+# SPDX-License-Identifier: ISC
+
+name: ramose-federation
+
+services:
+  index:
+    image: adfreiburg/qlever@sha256:31de1e6f027eb429abcfc49b6aa4da352d6621b6ec14b768da46b91e25b08075
+    platform: linux/amd64
+    environment:
+      INDEX_PREFIX: oc_index
+      MEMORY_FOR_QUERIES: 4 GB
+      CACHE_MAX_SIZE_GB: 0 B
+      CACHE_MAX_SIZE_GB_SINGLE_ENTRY: 0 B
+      CACHE_MAX_NUM_ENTRIES: 0
+    command: ["-s", "320s"]
+    volumes:
+      - ./data/index:/index:ro
+    mem_limit: 6g
+    cpus: 4
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/7001'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  meta:
+    image: openlink/virtuoso-opensource-7@sha256:44828bb88f0a55f21873b7c6b034436be33c58e74427a98e5de095fd0d4f4cc9
+    platform: linux/amd64
+    environment:
+      DBA_PASSWORD: benchmark
+    volumes:
+      - ./data/meta/database:/database
+    mem_limit: 6g
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8890'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  ramose:
+    image: ramose-federation-v2:local
+    build:
+      context: ../..
+      dockerfile: benchmarks/federation/Dockerfile
+    command:
+      - python
+      - -m
+      - ramose
+      - -s
+      - /benchmark/operations.hf
+      - -w
+      - 0.0.0.0:8080
+      - --no-cache
+      - --retry-attempts
+      - "1"
+    volumes:
+      - .:/benchmark:ro
+    environment:
+      PYTHONPATH: /benchmark
+    mem_limit: 1g
+    depends_on:
+      index:
+        condition: service_healthy
+      meta:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  ramose-v1:
+    image: ramose-federation-v1:local
+    build:
+      context: .
+      dockerfile: Dockerfile.v1
+    command:
+      - python
+      - -m
+      - ramose
+      - -s
+      - /benchmark/service-v1.hf
+      - -w
+      - 0.0.0.0:8081
+    volumes:
+      - .:/benchmark:ro
+    environment:
+      PYTHONPATH: /benchmark
+    mem_limit: 1g
+    depends_on:
+      index:
+        condition: service_healthy
+      meta:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  runner:
+    image: ramose-federation-v2:local
+    profiles: [tools]
+    entrypoint: ["python", "/benchmark/benchmark.py"]
+    volumes:
+      - .:/benchmark:ro
+      - ./results:/results
+      - ./data:/data
+    environment:
+      RAMOSE_BENCHMARK_COMMIT: ${RAMOSE_BENCHMARK_COMMIT:-}
+      RAMOSE_BENCHMARK_HOST: ${RAMOSE_BENCHMARK_HOST:-}
+      RAMOSE_BENCHMARK_IMAGES: ${RAMOSE_BENCHMARK_IMAGES:-}
+    mem_limit: 1g
