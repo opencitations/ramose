@@ -1,3 +1,23 @@
+# [2.9.0](https://github.com/opencitations/ramose/compare/v2.8.3...v2.9.0) (2026-09-05)
+
+
+### Bug Fixes
+
+* **skg-if:** add local_identifier regex (ra/br) ([2d28507](https://github.com/opencitations/ramose/commit/2d2850726bf1cfbbaae59bcd8b6a0c3d7aa4fc5d))
+* **skg-if:** correct venues type filter (drop duplicate, align enum to spec, short-circuit unreachable values) ([dcd521d](https://github.com/opencitations/ramose/commit/dcd521d8e02cb86c40ee30876dfea902881f5e8d))
+* **skg-if:** identifiers.id must be identifiers.value ([f640970](https://github.com/opencitations/ramose/commit/f640970302ac18740a217f75284b921e6d83c046))
+* **skg-if:** serve problem details as JSON ([c632f77](https://github.com/opencitations/ramose/commit/c632f775b7f09be6e69bfe82fb6a78ff353d957d))
+
+
+### Features
+
+* **skg-if:** complete the contract exposure ([2228ca3](https://github.com/opencitations/ramose/commit/2228ca3f8a8a8d3142a5229cf0921022c0d52e60))
+
+
+### Performance Improvements
+
+* **test:** cache SKG-IF OpenAPI schema instead of fetching per test ([e1a1e54](https://github.com/opencitations/ramose/commit/e1a1e546c184ebfd21033c689dbc05b4b966c5ee))
+
 ## [2.8.3](https://github.com/opencitations/ramose/compare/v2.8.2...v2.8.3) (2026-07-06)
 
 
