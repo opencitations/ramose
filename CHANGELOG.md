@@ -1,3 +1,12 @@
+## [2.9.1](https://github.com/opencitations/ramose/compare/v2.9.0...v2.9.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* **benchmarks:** make federation runs reproducible ([d37bbc2](https://github.com/opencitations/ramose/commit/d37bbc2a15fb2b9dd2ed36cda20d29ba1282f4db))
+* preserve empty SKG-IF response bodies [release] ([da4259b](https://github.com/opencitations/ramose/commit/da4259b094916aa0edbcd7d8689484e2504ed5f2))
+* support Python 3.14 ([cdfa255](https://github.com/opencitations/ramose/commit/cdfa25546fc2bbb8b4240ec81aaaa12fc90e87c7))
+
 # [2.9.0](https://github.com/opencitations/ramose/compare/v2.8.3...v2.9.0) (2026-09-05)
 
 
