@@ -1,9 +1,0 @@
-# syntax=docker/dockerfile:1
-# SPDX-FileCopyrightText: 2026 Arcangelo Massari <arcangelo.massari@unibo.it>
-#
-# SPDX-License-Identifier: ISC
-
-FROM python:3.9.23-slim@sha256:2b996eb2d217c690516e4d91987aec72cb28ab11111d92c1020ca34edaaff96f
-
-RUN pip install --no-cache-dir \
-    https://github.com/opencitations/ramose/archive/6a0b7976dc6e9b928cc637c62c8308b79c9fca7f.tar.gz

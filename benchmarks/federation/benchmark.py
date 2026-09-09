@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import argparse
 import csv
 import hashlib
 import io
@@ -12,6 +11,7 @@ import json
 import math
 import os
 import platform
+import random
 import shutil
 import statistics
 import subprocess
@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import cast
 from urllib.parse import quote
 
+import queries
 import requests
 from scipy.stats import bootstrap
 
@@ -30,14 +31,8 @@ BENCHMARK_DIR = Path(__file__).resolve().parent
 SNAPSHOT_MANIFEST = BENCHMARK_DIR / "snapshots.json"
 HOST_DATA_DIR = BENCHMARK_DIR / "data"
 CONTAINER_DATA_DIR = Path("/data")
-SAMPLE_RELATIVE_PATH = Path("benchmark/sample.csv")
-SAMPLE_PATH = CONTAINER_DATA_DIR / SAMPLE_RELATIVE_PATH
-SAMPLE_PROGRESS_PATH = SAMPLE_PATH.with_suffix(".progress.json")
-RAW_RESULTS_PATH = Path("/results/raw.csv")
-ENVIRONMENT_PATH = Path("/results/environment.json")
-SUMMARY_PATH = Path("/results/summary.csv")
+ORDER_SEED = 20260905
 BASE_URL = "http://ramose:8080/benchmark"
-V1_BASE_URL = "http://ramose-v1:8081/benchmark"
 INDEX_ENDPOINT = "http://index:7001"
 META_ENDPOINT = "http://meta:8890/sparql"
 MINIMUM_FREE_BYTES = 380_000_000_000
@@ -49,8 +44,8 @@ REPETITIONS = 10
 BOOTSTRAP_RESAMPLES = 10_000
 HTTP_OK = 200
 SAMPLES_PER_BAND = 20
-REFERENCE_BAND_BOUNDS = (10, 50, 100)
-SAMPLE_QUERY_PAGE_SIZE = 100000
+WORK_BAND_BOUNDS = (10, 50, 100)
+SAMPLE_QUERY_PAGE_SIZE = 1000
 BANDS = ("0", "1-9", "10-49", "50-99", "100+")
 
 
@@ -74,16 +69,7 @@ class Dataset:
 class Sample:
     doi: str
     omid: str
-    expected_reference_count: int
-
-
-@dataclass(frozen=True)
-class NormalizedResponse:
-    doi: str
-    title: str
-    omid: str
-    references: tuple[str, ...]
-    reference_count: int
+    expected_work_count: int
 
 
 @dataclass(frozen=True)
@@ -96,6 +82,8 @@ class Measurement:
     response_bytes: int
     started_ns: int
     finished_ns: int
+    enriched_work_count: int
+    equivalent: bool
 
 
 @dataclass(frozen=True)
@@ -104,7 +92,7 @@ class Batch:
     repetition: int
     concurrency: int
     base_url: str
-    expected: dict[tuple[str, str], NormalizedResponse]
+    expected: dict[tuple[str, str], queries.Response]
 
 
 def read_manifest(path: Path) -> tuple[Dataset, ...]:
@@ -133,14 +121,14 @@ def read_manifest(path: Path) -> tuple[Dataset, ...]:
     return tuple(datasets)
 
 
-def reference_band(count: int) -> str:
+def work_band(count: int) -> str:
     if count == 0:
         return "0"
-    if count < REFERENCE_BAND_BOUNDS[0]:
+    if count < WORK_BAND_BOUNDS[0]:
         return "1-9"
-    if count < REFERENCE_BAND_BOUNDS[1]:
+    if count < WORK_BAND_BOUNDS[1]:
         return "10-49"
-    if count < REFERENCE_BAND_BOUNDS[2]:
+    if count < WORK_BAND_BOUNDS[2]:
         return "50-99"
     return "100+"
 
@@ -151,7 +139,7 @@ def read_samples(path: Path) -> tuple[Sample, ...]:
             Sample(
                 doi=row["doi"],
                 omid=row["omid"],
-                expected_reference_count=int(row["expected_reference_count"]),
+                expected_work_count=int(row["expected_work_count"]),
             )
             for row in csv.DictReader(file)
         )
@@ -165,66 +153,64 @@ def sparql_rows(endpoint: str, query: str) -> list[dict[str, str]]:
         timeout=SAMPLING_TIMEOUT_SECONDS,
     )
     response.raise_for_status()
-    return list(csv.DictReader(io.StringIO(response.text)))
+    if response.status_code != HTTP_OK or (
+        "X-SQL-State" in response.headers and response.headers["X-SQL-State"] != "00000"
+    ):
+        message = f"Incomplete SPARQL response from {endpoint}: {response.status_code}"
+        raise RuntimeError(message)
+    return list(csv.DictReader(io.StringIO(response.content.decode("utf-8-sig"))))
 
 
-def meta_candidates(limit: int, after: tuple[str, str] | None) -> list[tuple[str, str]]:
-    cursor_filter = ""
-    if after is not None:
-        doi, omid = (json.dumps(value) for value in after)
-        cursor_filter = f"FILTER(STR(?doi) > {doi} || (STR(?doi) = {doi} && STR(?omid) > {omid}))"
-    query = f"""PREFIX datacite: <http://purl.org/spar/datacite/>
-PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
-
+def meta_candidates(limit: int, after: str | None) -> list[tuple[str, str]]:
+    cursor_filter = f"FILTER(STR(?doi) > {json.dumps(after)})" if after else ""
+    query = f"""{queries.PREFIXES}
+SELECT ?doi
+FROM <https://w3id.org/oc/meta/id/>
+WHERE {{
+  ?identifier datacite:usesIdentifierScheme datacite:doi ; literal:hasLiteralValue ?doi .
+  {cursor_filter}
+}}
+ORDER BY STR(?doi)
+LIMIT {limit}
+"""  # noqa: S608
+    dois = sorted({row["doi"] for row in sparql_rows(META_ENDPOINT, query)})
+    if not dois:
+        return []
+    values = " ".join(f"{json.dumps(doi)} {json.dumps(doi)}^^<http://www.w3.org/2001/XMLSchema#string>" for doi in dois)
+    query = f"""{queries.PREFIXES}
 SELECT DISTINCT ?doi ?omid
 FROM <https://w3id.org/oc/meta/id/>
 FROM <https://w3id.org/oc/meta/br/>
 WHERE {{
-  ?identifier datacite:usesIdentifierScheme datacite:doi ;
-              literal:hasLiteralValue ?doi .
-  ?omid datacite:hasIdentifier ?identifier ;
-        dcterms:title ?title .
-  {cursor_filter}
+  VALUES ?doi_value {{ {values} }}
+  ?identifier datacite:usesIdentifierScheme datacite:doi ; literal:hasLiteralValue ?doi_value .
+  ?omid datacite:hasIdentifier ?identifier .
+  BIND(STR(?doi_value) AS ?doi)
 }}
-ORDER BY STR(?doi) STR(?omid)
-LIMIT {limit}
 """  # noqa: S608
-    return [(row["doi"], row["omid"]) for row in sparql_rows(META_ENDPOINT, query)]
+    works: dict[str, set[str]] = {doi: set() for doi in dois}
+    for row in sparql_rows(META_ENDPOINT, query):
+        works[row["doi"]].add(row["omid"])
+    return [(doi, "|".join(sorted(works[doi]))) for doi in dois]
 
 
-def reference_counts(omids: list[str]) -> dict[str, int]:
-    values = " ".join(f"<{omid}>" for omid in omids)
-    query = f"""PREFIX cito: <http://purl.org/spar/cito/>
-
-SELECT ?omid (COUNT(DISTINCT ?reference) AS ?reference_count)
-WHERE {{
-  VALUES ?omid {{ {values} }}
-  ?citation a cito:Citation ;
-              cito:hasCitingEntity ?omid ;
-              cito:hasCitedEntity ?reference .
-}}
-GROUP BY ?omid
+def incoming_counts(candidates: list[tuple[str, str]]) -> dict[str, int]:
+    values = " ".join(f"({json.dumps(doi)} <{omid}>)" for doi, omids in candidates for omid in omids.split("|") if omid)
+    query = f"""{queries.PREFIXES}
+SELECT ?doi (COUNT(DISTINCT ?citing) AS ?count)
+WHERE {{ VALUES (?doi ?omid) {{ {values} }} {queries.RELATIONS} }}
+GROUP BY ?doi
 """
-    counts = dict.fromkeys(omids, 0)
-    counts.update({row["omid"]: int(row["reference_count"]) for row in sparql_rows(INDEX_ENDPOINT, query)})
+    counts = dict.fromkeys((doi for doi, _ in candidates), 0)
+    counts.update({row["doi"]: int(row["count"]) for row in sparql_rows(INDEX_ENDPOINT, query)})
     return counts
 
 
-def select_samples() -> tuple[Sample, ...]:
+def select_samples(progress_path: Path) -> tuple[Sample, ...]:
     selected: dict[str, list[Sample]] = {band: [] for band in BANDS}
     offset = 0
     after = None
-    if SAMPLE_PROGRESS_PATH.is_file():
-        progress = json.loads(SAMPLE_PROGRESS_PATH.read_text(encoding="utf-8"))
-        offset = cast("int", progress["offset"])
-        after = (cast("str", progress["after"][0]), cast("str", progress["after"][1]))
-        for row in progress["samples"]:
-            restored = Sample(
-                cast("str", row["doi"]), cast("str", row["omid"]), cast("int", row["expected_reference_count"])
-            )
-            selected[reference_band(restored.expected_reference_count)].append(restored)
-    seen_dois = {sample.doi for samples in selected.values() for sample in samples}
+    seen_dois: set[str] = set()
     while any(len(samples) < SAMPLES_PER_BAND for samples in selected.values()):
         print(f"Sampling DOI candidates at offset {offset}...", flush=True)  # noqa: T201
         candidates = meta_candidates(SAMPLE_QUERY_PAGE_SIZE, after)
@@ -236,17 +222,18 @@ def select_samples() -> tuple[Sample, ...]:
             }
             message = f"The fixed snapshots do not contain enough samples: {missing}"
             raise RuntimeError(message)
-        counts = reference_counts([omid for _, omid in candidates])
+        counts = incoming_counts(candidates)
         for doi, omid in candidates:
-            band = reference_band(counts[omid])
-            if doi in seen_dois or len(selected[band]) >= SAMPLES_PER_BAND:
+            count = counts[doi]
+            band = work_band(count)
+            if not omid or doi in seen_dois or len(selected[band]) >= SAMPLES_PER_BAND:
                 continue
-            selected[band].append(Sample(doi, omid, counts[omid]))
+            selected[band].append(Sample(doi, omid, count))
             seen_dois.add(doi)
         offset += len(candidates)
-        after = candidates[-1]
-        SAMPLE_PROGRESS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        SAMPLE_PROGRESS_PATH.write_text(
+        after = candidates[-1][0]
+        progress_path.parent.mkdir(parents=True, exist_ok=True)
+        progress_path.write_text(
             json.dumps(
                 {
                     "offset": offset,
@@ -260,16 +247,15 @@ def select_samples() -> tuple[Sample, ...]:
     return tuple(sample for band in BANDS for sample in selected[band])
 
 
-def sample() -> None:
-    if SAMPLE_PATH.is_file():
-        return
-    samples = select_samples()
-    SAMPLE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with SAMPLE_PATH.open("w", newline="", encoding="utf-8") as file:
+def sample(sample_path: Path) -> None:
+    progress_path = sample_path.with_suffix(".progress.json")
+    samples = select_samples(progress_path)
+    sample_path.parent.mkdir(parents=True, exist_ok=True)
+    with sample_path.open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=list(Sample.__dataclass_fields__))
         writer.writeheader()
         writer.writerows(asdict(selected_sample) for selected_sample in samples)
-    SAMPLE_PROGRESS_PATH.unlink()
+    progress_path.unlink()
 
 
 def file_md5(path: Path) -> str:
@@ -326,6 +312,9 @@ def dataset_is_ready(dataset: Dataset, data_dir: Path) -> bool:
 
 
 def prepare() -> None:
+    spec_path = HOST_DATA_DIR / "benchmark/operations.hf"
+    spec_path.parent.mkdir(parents=True, exist_ok=True)
+    spec_path.write_text(queries.specification(), encoding="utf-8")
     datasets = read_manifest(SNAPSHOT_MANIFEST)
     pending = [dataset for dataset in datasets if not dataset_is_ready(dataset, HOST_DATA_DIR)]
     if pending:
@@ -338,70 +327,35 @@ def prepare() -> None:
 
 
 def request_strategy(base_url: str, strategy: str, doi: str) -> tuple[int, bytes, float, int, int]:
-    url = f"{base_url.rstrip('/')}/{strategy}/{quote(doi, safe='')}"
+    url = f"{base_url.rstrip('/')}/{strategy}/{quote(quote(doi, safe=''), safe='')}"
     started_ns = time.perf_counter_ns()
     response = requests.get(url, headers={"Accept": "application/json"}, timeout=REQUEST_TIMEOUT_SECONDS)
     finished_ns = time.perf_counter_ns()
     return response.status_code, response.content, (finished_ns - started_ns) / 1_000_000, started_ns, finished_ns
 
 
-def normalize_response(content: bytes) -> NormalizedResponse:
-    value = json.loads(content)
-    if not isinstance(value, list) or not value or any(not isinstance(row, dict) for row in value):
-        message = "The response must be a non-empty JSON array of objects"
-        raise ValueError(message)
-    rows = cast("list[dict[str, object]]", value)
-    doi_values = {str(row["doi"]) for row in rows}
-    title_values = {str(row["title"]) for row in rows}
-    omid_values = {str(row["omid"]) for row in rows}
-    count_values = {int(cast("int | str", row["reference_count"])) for row in rows}
-    if any(len(values) != 1 for values in (doi_values, title_values, omid_values, count_values)):
-        message = "Identity, title, and count must be constant across response rows"
-        raise ValueError(message)
-    reference_values = {str(row["references"]) for row in rows}
-    if len(reference_values) != 1:
-        message = "References must be constant across response rows"
-        raise ValueError(message)
-    serialized_references = reference_values.pop()
-    references = tuple(sorted(reference for reference in serialized_references.split("|") if reference))
-    return NormalizedResponse(
-        doi=doi_values.pop(),
-        title=title_values.pop(),
-        omid=omid_values.pop(),
-        references=references,
-        reference_count=count_values.pop(),
-    )
-
-
-def validated_responses(
-    samples: tuple[Sample, ...], base_url: str, v1_base_url: str
-) -> dict[tuple[str, str], NormalizedResponse]:
-    responses = {}
-    for sample in samples:
-        current = {}
+def validated_responses(samples: tuple[Sample, ...], base_url: str) -> dict[tuple[str, str], queries.Response]:
+    responses: dict[tuple[str, str], queries.Response] = {}
+    for position, sample in enumerate(samples, 1):
+        print(  # noqa: T201
+            f"Validating {position}/{len(samples)}: {sample.doi}, citing works={sample.expected_work_count}", flush=True
+        )
         for strategy in STRATEGIES:
             status, content, _, _, _ = request_strategy(base_url, strategy, sample.doi)
             if status != HTTP_OK:
                 message = f"{strategy} returned HTTP {status} for {sample.doi}"
                 raise RuntimeError(message)
-            current[strategy] = normalize_response(content)
-        status, content, _, _, _ = request_strategy(v1_base_url, "service", sample.doi)
-        if status != HTTP_OK:
-            message = f"RAMOSE v1 returned HTTP {status} for {sample.doi}"
-            raise RuntimeError(message)
-        v1_response = normalize_response(content)
-        if current["service"] != current["orchestration"] or current["service"] != v1_response:
+            normalized = queries.normalize(content)
+            if normalized.omids != tuple(sorted(sample.omid.split("|"))):
+                message = f"DOI resolution diverges for {sample.doi}"
+                raise RuntimeError(message)
+            if len(normalized.works) != sample.expected_work_count:
+                message = f"Distinct citing work count diverges for {sample.doi}"
+                raise RuntimeError(message)
+            responses[(sample.doi, strategy)] = normalized
+        if responses[(sample.doi, "service")] != responses[(sample.doi, "orchestration")]:
             message = f"Strategies diverge for {sample.doi}"
             raise RuntimeError(message)
-        response = current["service"]
-        if response.doi != sample.doi or response.omid != sample.omid:
-            message = f"DOI or OMID diverges for {sample.doi}"
-            raise RuntimeError(message)
-        if response.reference_count != sample.expected_reference_count:
-            message = f"Reference count diverges for {sample.doi}"
-            raise RuntimeError(message)
-        for strategy in STRATEGIES:
-            responses[(sample.doi, strategy)] = current[strategy]
     return responses
 
 
@@ -410,7 +364,8 @@ def measure(sample: Sample, batch: Batch) -> Measurement:
     if status != HTTP_OK:
         message = f"{batch.strategy} returned HTTP {status} for {sample.doi}"
         raise RuntimeError(message)
-    if normalize_response(content) != batch.expected[(sample.doi, batch.strategy)]:
+    normalized = queries.normalize(content)
+    if normalized != batch.expected[(sample.doi, batch.strategy)]:
         message = f"{batch.strategy} diverged during measurement for {sample.doi}"
         raise RuntimeError(message)
     return Measurement(
@@ -422,6 +377,8 @@ def measure(sample: Sample, batch: Batch) -> Measurement:
         response_bytes=len(content),
         started_ns=started_ns,
         finished_ns=finished_ns,
+        enriched_work_count=normalized.enriched_work_count,
+        equivalent=True,
     )
 
 
@@ -449,27 +406,50 @@ def environment_description() -> dict[str, object]:
         "platform": platform.platform(),
         "python": platform.python_version(),
         "ramose_commit": os.environ["RAMOSE_BENCHMARK_COMMIT"],
+        "snapshots": json.loads(SNAPSHOT_MANIFEST.read_text(encoding="utf-8")),
     }
 
 
-def run() -> None:
-    samples = read_samples(SAMPLE_PATH)
-    print(f"Validating {len(samples)} samples across both strategies and RAMOSE v1...", flush=True)  # noqa: T201
-    expected = validated_responses(samples, BASE_URL, V1_BASE_URL)
+def run(sample_path: Path, result_dir: Path) -> None:
+    result_dir.mkdir(parents=True, exist_ok=False)
+    samples = read_samples(sample_path)
+    print(f"Validating {len(samples)} samples...", flush=True)  # noqa: T201
+    expected = validated_responses(samples, BASE_URL)
+    (result_dir / "expected.json").write_text(
+        json.dumps({sample.doi: asdict(expected[(sample.doi, "service")]) for sample in samples}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    shutil.copyfile(sample_path, result_dir / "sample.csv")
+    spec = queries.specification()
+    (result_dir / "operations.hf").write_text(spec, encoding="utf-8")
+    shutil.copyfile(BENCHMARK_DIR / "compose.yaml", result_dir / "compose.yaml")
     print("Warming up both strategies...", flush=True)  # noqa: T201
     for strategy in STRATEGIES:
-        execute_batch(samples, Batch(strategy, 0, 1, BASE_URL, expected))
+        execute_batch(samples, Batch(strategy, 0, max(CONCURRENCY_LEVELS), BASE_URL, expected))
     measurements: list[Measurement] = []
-    write_measurements(RAW_RESULTS_PATH, measurements)
-    ENVIRONMENT_PATH.write_text(
-        json.dumps(environment_description(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    write_measurements(result_dir / "raw.csv", measurements)
+    (result_dir / "environment.json").write_text(
+        json.dumps(
+            {
+                **environment_description(),
+                "order_seed": ORDER_SEED,
+                "repetitions": REPETITIONS,
+                "concurrency_levels": CONCURRENCY_LEVELS,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
     )
     for concurrency in CONCURRENCY_LEVELS:
         for repetition in range(1, REPETITIONS + 1):
+            ordered = list(samples)
+            random.Random(ORDER_SEED + repetition).shuffle(ordered)  # noqa: S311
             for strategy in STRATEGIES if repetition % 2 else reversed(STRATEGIES):
                 batch = Batch(strategy, repetition, concurrency, BASE_URL, expected)
-                measurements.extend(execute_batch(samples, batch))
-                write_measurements(RAW_RESULTS_PATH, measurements)
+                measurements.extend(execute_batch(tuple(ordered), batch))
+                write_measurements(result_dir / "raw.csv", measurements)
                 print(  # noqa: T201
                     f"Measured {strategy}: concurrency={concurrency}, repetition={repetition}; "
                     f"{len(measurements)} measurements saved.",
@@ -517,7 +497,7 @@ def summarize_group(
     ).confidence_interval
     result: dict[str, int | float | str] = {
         "concurrency": concurrency,
-        "reference_band": band,
+        "work_band": band,
         "requests_per_strategy": len(service_latencies),
         "service_median_ms": statistics.median(service_latencies),
         "service_p95_ms": quantile(service_latencies, 0.95),
@@ -530,6 +510,11 @@ def summarize_group(
         "service_throughput_rps": "",
         "orchestration_throughput_rps": "",
     }
+    for strategy in STRATEGIES:
+        result[f"{strategy}_mean_response_bytes"] = statistics.mean(row.response_bytes for row in by_strategy[strategy])
+        result[f"{strategy}_mean_enriched_works"] = statistics.mean(
+            row.enriched_work_count for row in by_strategy[strategy]
+        )
     if band == "all":
         for strategy in STRATEGIES:
             batches: dict[int, list[Measurement]] = {}
@@ -541,10 +526,10 @@ def summarize_group(
     return result
 
 
-def summarize() -> None:
-    samples = read_samples(SAMPLE_PATH)
+def summarize(sample_path: Path, result_dir: Path) -> None:
+    samples = read_samples(sample_path)
     sample_by_doi = {sample.doi: sample for sample in samples}
-    with RAW_RESULTS_PATH.open(newline="", encoding="utf-8") as file:
+    with (result_dir / "raw.csv").open(newline="", encoding="utf-8") as file:
         rows = [
             Measurement(
                 doi=row["doi"],
@@ -555,6 +540,8 @@ def summarize() -> None:
                 response_bytes=int(row["response_bytes"]),
                 started_ns=int(row["started_ns"]),
                 finished_ns=int(row["finished_ns"]),
+                enriched_work_count=int(row["enriched_work_count"]),
+                equivalent=row["equivalent"] == "True",
             )
             for row in csv.DictReader(file)
         ]
@@ -564,31 +551,24 @@ def summarize() -> None:
         summary.append(summarize_group(concurrency, "all", concurrency_rows))
         for band in BANDS:
             band_rows = [
-                row
-                for row in concurrency_rows
-                if reference_band(sample_by_doi[row.doi].expected_reference_count) == band
+                row for row in concurrency_rows if work_band(sample_by_doi[row.doi].expected_work_count) == band
             ]
             summary.append(summarize_group(concurrency, band, band_rows))
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with SUMMARY_PATH.open("w", newline="", encoding="utf-8") as file:
+    (result_dir / "summary.csv").parent.mkdir(parents=True, exist_ok=True)
+    with (result_dir / "summary.csv").open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=list(summary[0]))
         writer.writeheader()
         writer.writerows(summary)
 
 
-def parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="RAMOSE federation benchmark")
-    commands = parser.add_subparsers(dest="command", required=True)
-    for command, function in (
-        ("prepare", prepare),
-        ("sample", sample),
-        ("run", run),
-        ("summarize", summarize),
-    ):
-        commands.add_parser(command).set_defaults(function=function)
-    return parser.parse_args()
+def main() -> None:  # pragma: no cover
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    sample_path = CONTAINER_DATA_DIR / "benchmark" / run_id / "sample.csv"
+    result_dir = Path("/results") / run_id
+    sample(sample_path)
+    run(sample_path, result_dir)
+    summarize(sample_path, result_dir)
 
 
 if __name__ == "__main__":  # pragma: no cover
-    arguments = parse_arguments()
-    arguments.function()
+    main()

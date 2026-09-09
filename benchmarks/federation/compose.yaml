@@ -12,7 +12,8 @@ services:
     command: ["-i", "/index/oc_index", "-j", "8", "-p", "7001", "-m", "4G", "-c", "0G", "-e", "0G", "-k", "0", "-s", "320s", "--no-metrics-log", "--no-resource-usage-log"]
     volumes:
       - ./data/index/db:/index:ro
-    mem_limit: 6g
+    mem_limit: 16g
+    memswap_limit: 16g
     cpus: 4
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/7001'"]
@@ -27,14 +28,18 @@ services:
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
-        "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section Parameters +key NumberOfBuffers +value 340000
-        "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section Parameters +key MaxDirtyBuffers +value 250000
+        "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section Parameters +key NumberOfBuffers +value 1000000
+        "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section Parameters +key MaxDirtyBuffers +value 750000
         "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section Parameters +key MaxQueryMem +value 1073741824
         "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section Parameters +key MaxSortedTopRows +value 100000
+        "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section SPARQL +key ResultSetMaxRows +value 0
+        "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section SPARQL +key MaxQueryExecutionTime +value 0
+        "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section SPARQL +key HTTPAnytimeStatus +value 500
         exec /virtuoso-entrypoint.sh start
     volumes:
       - ./data/meta/database:/database
-    mem_limit: 6g
+    mem_limit: 16g
+    memswap_limit: 16g
     healthcheck:
       test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8890'"]
       interval: 10s
@@ -52,7 +57,7 @@ services:
       - -m
       - ramose
       - -s
-      - /benchmark/operations.hf
+      - /data/benchmark/operations.hf
       - -w
       - 0.0.0.0:8080
       - --no-cache
@@ -60,6 +65,7 @@ services:
       - "1"
     volumes:
       - .:/benchmark:ro
+      - ./data/benchmark:/data/benchmark:ro
     environment:
       PYTHONPATH: /benchmark
     mem_limit: 1g
@@ -70,35 +76,6 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/', timeout=2)"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-
-  ramose-v1:
-    image: ramose-federation-v1:local
-    build:
-      context: .
-      dockerfile: Dockerfile.v1
-    command:
-      - python
-      - -m
-      - ramose
-      - -s
-      - /benchmark/service-v1.hf
-      - -w
-      - 0.0.0.0:8081
-    volumes:
-      - .:/benchmark:ro
-    environment:
-      PYTHONPATH: /benchmark
-    mem_limit: 1g
-    depends_on:
-      index:
-        condition: service_healthy
-      meta:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/', timeout=2)"]
       interval: 5s
       timeout: 3s
       retries: 20

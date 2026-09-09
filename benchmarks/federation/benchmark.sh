@@ -9,7 +9,11 @@ cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
 stack_started=false
 stop_stack() {
+    status=$?
     if [ "$stack_started" = true ]; then
+        if [ "$status" -ne 0 ]; then
+            docker compose logs --no-color >&2 || true
+        fi
         docker compose down || true
     fi
 }
@@ -18,12 +22,8 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-rm -f \
-    results/raw.csv \
-    results/environment.json \
-    results/summary.csv
-
-uv run --extra benchmark python benchmark.py prepare
+mkdir -p results
+uv run --extra benchmark python -c 'import benchmark; benchmark.prepare()'
 stack_started=true
 docker compose up --build --wait || {
     status=$?
@@ -46,6 +46,4 @@ RAMOSE_BENCHMARK_HOST=$(uname -a)
 RAMOSE_BENCHMARK_IMAGES=$(docker compose images --format json | python -c 'import json, sys; print(json.dumps([json.loads(line) for line in sys.stdin if line.strip()]))')
 export RAMOSE_BENCHMARK_COMMIT RAMOSE_BENCHMARK_HOST RAMOSE_BENCHMARK_IMAGES
 
-docker compose run --rm --no-deps runner sample
-docker compose run --rm --no-deps runner run
-docker compose run --rm --no-deps runner summarize
+docker compose run --rm --no-deps --user "$(id -u):$(id -g)" runner
