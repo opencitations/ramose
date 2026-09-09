@@ -32,6 +32,7 @@ HOST_DATA_DIR = BENCHMARK_DIR / "data"
 CONTAINER_DATA_DIR = Path("/data")
 SAMPLE_RELATIVE_PATH = Path("benchmark/sample.csv")
 SAMPLE_PATH = CONTAINER_DATA_DIR / SAMPLE_RELATIVE_PATH
+SAMPLE_PROGRESS_PATH = SAMPLE_PATH.with_suffix(".progress.json")
 RAW_RESULTS_PATH = Path("/results/raw.csv")
 ENVIRONMENT_PATH = Path("/results/environment.json")
 SUMMARY_PATH = Path("/results/summary.csv")
@@ -41,6 +42,7 @@ INDEX_ENDPOINT = "http://index:7001"
 META_ENDPOINT = "http://meta:8890/sparql"
 MINIMUM_FREE_BYTES = 380_000_000_000
 REQUEST_TIMEOUT_SECONDS = 320
+SAMPLING_TIMEOUT_SECONDS = 900
 STRATEGIES = ("service", "orchestration")
 CONCURRENCY_LEVELS = (1, 4, 16)
 REPETITIONS = 10
@@ -48,7 +50,7 @@ BOOTSTRAP_RESAMPLES = 10_000
 HTTP_OK = 200
 SAMPLES_PER_BAND = 20
 REFERENCE_BAND_BOUNDS = (10, 50, 100)
-SAMPLE_QUERY_PAGE_SIZE = 200
+SAMPLE_QUERY_PAGE_SIZE = 100000
 BANDS = ("0", "1-9", "10-49", "50-99", "100+")
 
 
@@ -64,7 +66,7 @@ class ArchivePart:
 class Dataset:
     name: str
     directory: str
-    ready_file: str
+    ready_files: dict[str, int]
     parts: tuple[ArchivePart, ...]
 
 
@@ -124,7 +126,7 @@ def read_manifest(path: Path) -> tuple[Dataset, ...]:
             Dataset(
                 name=cast("str", dataset["name"]),
                 directory=cast("str", dataset["directory"]),
-                ready_file=cast("str", dataset["ready_file"]),
+                ready_files=cast("dict[str, int]", dataset["ready_files"]),
                 parts=parts,
             )
         )
@@ -156,30 +158,37 @@ def read_samples(path: Path) -> tuple[Sample, ...]:
 
 
 def sparql_rows(endpoint: str, query: str) -> list[dict[str, str]]:
-    response = requests.get(
+    response = requests.post(
         endpoint,
-        params={"query": query},
+        data={"query": query},
         headers={"Accept": "text/csv"},
-        timeout=REQUEST_TIMEOUT_SECONDS,
+        timeout=SAMPLING_TIMEOUT_SECONDS,
     )
     response.raise_for_status()
     return list(csv.DictReader(io.StringIO(response.text)))
 
 
-def meta_candidates(limit: int, offset: int) -> list[tuple[str, str]]:
+def meta_candidates(limit: int, after: tuple[str, str] | None) -> list[tuple[str, str]]:
+    cursor_filter = ""
+    if after is not None:
+        doi, omid = (json.dumps(value) for value in after)
+        cursor_filter = f"FILTER(STR(?doi) > {doi} || (STR(?doi) = {doi} && STR(?omid) > {omid}))"
     query = f"""PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 
 SELECT DISTINCT ?doi ?omid
-FROM <https://w3id.org/oc/meta/>
+FROM <https://w3id.org/oc/meta/id/>
+FROM <https://w3id.org/oc/meta/br/>
 WHERE {{
   ?identifier datacite:usesIdentifierScheme datacite:doi ;
               literal:hasLiteralValue ?doi .
-  ?omid datacite:hasIdentifier ?identifier .
+  ?omid datacite:hasIdentifier ?identifier ;
+        dcterms:title ?title .
+  {cursor_filter}
 }}
 ORDER BY STR(?doi) STR(?omid)
 LIMIT {limit}
-OFFSET {offset}
 """  # noqa: S608
     return [(row["doi"], row["omid"]) for row in sparql_rows(META_ENDPOINT, query)]
 
@@ -191,23 +200,34 @@ def reference_counts(omids: list[str]) -> dict[str, int]:
 SELECT ?omid (COUNT(DISTINCT ?reference) AS ?reference_count)
 WHERE {{
   VALUES ?omid {{ {values} }}
-  OPTIONAL {{
-    ?citation a cito:Citation ;
+  ?citation a cito:Citation ;
               cito:hasCitingEntity ?omid ;
               cito:hasCitedEntity ?reference .
-  }}
 }}
 GROUP BY ?omid
 """
-    return {row["omid"]: int(row["reference_count"]) for row in sparql_rows(INDEX_ENDPOINT, query)}
+    counts = dict.fromkeys(omids, 0)
+    counts.update({row["omid"]: int(row["reference_count"]) for row in sparql_rows(INDEX_ENDPOINT, query)})
+    return counts
 
 
 def select_samples() -> tuple[Sample, ...]:
     selected: dict[str, list[Sample]] = {band: [] for band in BANDS}
-    seen_dois: set[str] = set()
     offset = 0
+    after = None
+    if SAMPLE_PROGRESS_PATH.is_file():
+        progress = json.loads(SAMPLE_PROGRESS_PATH.read_text(encoding="utf-8"))
+        offset = cast("int", progress["offset"])
+        after = (cast("str", progress["after"][0]), cast("str", progress["after"][1]))
+        for row in progress["samples"]:
+            restored = Sample(
+                cast("str", row["doi"]), cast("str", row["omid"]), cast("int", row["expected_reference_count"])
+            )
+            selected[reference_band(restored.expected_reference_count)].append(restored)
+    seen_dois = {sample.doi for samples in selected.values() for sample in samples}
     while any(len(samples) < SAMPLES_PER_BAND for samples in selected.values()):
-        candidates = meta_candidates(SAMPLE_QUERY_PAGE_SIZE, offset)
+        print(f"Sampling DOI candidates at offset {offset}...", flush=True)  # noqa: T201
+        candidates = meta_candidates(SAMPLE_QUERY_PAGE_SIZE, after)
         if not candidates:
             missing = {
                 band: SAMPLES_PER_BAND - len(samples)
@@ -224,6 +244,19 @@ def select_samples() -> tuple[Sample, ...]:
             selected[band].append(Sample(doi, omid, counts[omid]))
             seen_dois.add(doi)
         offset += len(candidates)
+        after = candidates[-1]
+        SAMPLE_PROGRESS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SAMPLE_PROGRESS_PATH.write_text(
+            json.dumps(
+                {
+                    "offset": offset,
+                    "after": after,
+                    "samples": [asdict(row) for rows in selected.values() for row in rows],
+                }
+            ),
+            encoding="utf-8",
+        )
+        print(f"Selected samples per band: { {band: len(rows) for band, rows in selected.items()} }", flush=True)  # noqa: T201
     return tuple(sample for band in BANDS for sample in selected[band])
 
 
@@ -236,6 +269,7 @@ def sample() -> None:
         writer = csv.DictWriter(file, fieldnames=list(Sample.__dataclass_fields__))
         writer.writeheader()
         writer.writerows(asdict(selected_sample) for selected_sample in samples)
+    SAMPLE_PROGRESS_PATH.unlink()
 
 
 def file_md5(path: Path) -> str:
@@ -283,11 +317,17 @@ def prepare_dataset(dataset: Dataset, data_dir: Path) -> None:
         (dataset_dir / part.name).unlink()
 
 
+def dataset_is_ready(dataset: Dataset, data_dir: Path) -> bool:
+    for name, minimum_size in dataset.ready_files.items():
+        path = data_dir / dataset.directory / name
+        if not path.is_file() or path.stat().st_size < minimum_size:
+            return False
+    return True
+
+
 def prepare() -> None:
     datasets = read_manifest(SNAPSHOT_MANIFEST)
-    pending = [
-        dataset for dataset in datasets if not (HOST_DATA_DIR / dataset.directory / dataset.ready_file).is_file()
-    ]
+    pending = [dataset for dataset in datasets if not dataset_is_ready(dataset, HOST_DATA_DIR)]
     if pending:
         free_bytes = shutil.disk_usage(HOST_DATA_DIR.parent).free
         if free_bytes < MINIMUM_FREE_BYTES:
@@ -414,7 +454,9 @@ def environment_description() -> dict[str, object]:
 
 def run() -> None:
     samples = read_samples(SAMPLE_PATH)
+    print(f"Validating {len(samples)} samples across both strategies and RAMOSE v1...", flush=True)  # noqa: T201
     expected = validated_responses(samples, BASE_URL, V1_BASE_URL)
+    print("Warming up both strategies...", flush=True)  # noqa: T201
     for strategy in STRATEGIES:
         execute_batch(samples, Batch(strategy, 0, 1, BASE_URL, expected))
     measurements: list[Measurement] = []
@@ -428,6 +470,11 @@ def run() -> None:
                 batch = Batch(strategy, repetition, concurrency, BASE_URL, expected)
                 measurements.extend(execute_batch(samples, batch))
                 write_measurements(RAW_RESULTS_PATH, measurements)
+                print(  # noqa: T201
+                    f"Measured {strategy}: concurrency={concurrency}, repetition={repetition}; "
+                    f"{len(measurements)} measurements saved.",
+                    flush=True,
+                )
 
 
 def quantile(values: list[float], probability: float) -> float:

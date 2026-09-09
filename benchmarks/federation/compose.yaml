@@ -6,17 +6,12 @@ name: ramose-federation
 
 services:
   index:
-    image: adfreiburg/qlever@sha256:31de1e6f027eb429abcfc49b6aa4da352d6621b6ec14b768da46b91e25b08075
+    image: adfreiburg/qlever@sha256:3d3959f9cd97ca70a5b878ba647c4671a059597db2472bc1850f3ada99124bf5
     platform: linux/amd64
-    environment:
-      INDEX_PREFIX: oc_index
-      MEMORY_FOR_QUERIES: 4 GB
-      CACHE_MAX_SIZE_GB: 0 B
-      CACHE_MAX_SIZE_GB_SINGLE_ENTRY: 0 B
-      CACHE_MAX_NUM_ENTRIES: 0
-    command: ["-s", "320s"]
+    entrypoint: ["qlever-server"]
+    command: ["-i", "/index/oc_index", "-j", "8", "-p", "7001", "-m", "4G", "-c", "0G", "-e", "0G", "-k", "0", "-s", "320s", "--no-metrics-log", "--no-resource-usage-log"]
     volumes:
-      - ./data/index:/index:ro
+      - ./data/index/db:/index:ro
     mem_limit: 6g
     cpus: 4
     healthcheck:
@@ -29,8 +24,14 @@ services:
   meta:
     image: openlink/virtuoso-opensource-7@sha256:44828bb88f0a55f21873b7c6b034436be33c58e74427a98e5de095fd0d4f4cc9
     platform: linux/amd64
-    environment:
-      DBA_PASSWORD: benchmark
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section Parameters +key NumberOfBuffers +value 340000
+        "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section Parameters +key MaxDirtyBuffers +value 250000
+        "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section Parameters +key MaxQueryMem +value 1073741824
+        "$$VIRTUOSO_HOME/bin/inifile" +inifile virtuoso.ini +section Parameters +key MaxSortedTopRows +value 100000
+        exec /virtuoso-entrypoint.sh start
     volumes:
       - ./data/meta/database:/database
     mem_limit: 6g

@@ -25,15 +25,16 @@ PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?doi ?title ?omid ?references ?reference_count
-FROM <https://w3id.org/oc/meta/>
+FROM <https://w3id.org/oc/meta/id/>
+FROM <https://w3id.org/oc/meta/br/>
 WHERE {
   ?identifier datacite:usesIdentifierScheme datacite:doi ;
-              literal:hasLiteralValue ?doi .
+              literal:hasLiteralValue "[[doi]]"^^xsd:string .
   ?omid datacite:hasIdentifier ?identifier ;
         dcterms:title ?title .
-  FILTER(STR(?doi) = "[[doi]]")
-  OPTIONAL {
-    SERVICE <http://index:7001> {
+  BIND("[[doi]]" AS ?doi)
+  SERVICE <http://index:7001/> {
+    OPTIONAL {
       ?citation a cito:Citation ;
                 cito:hasCitingEntity ?omid ;
                 cito:hasCitedEntity ?references .
@@ -47,19 +48,21 @@ WHERE {
 #method get
 #cache_disable true
 #field_type str(doi) str(title) str(omid) str(references) str(reference_count)
+#postprocess fill_reference_counts()
 #sparql PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT ?doi ?title ?omid WHERE {
-  GRAPH <https://w3id.org/oc/meta/> {
+SELECT ?doi ?title ?omid
+FROM <https://w3id.org/oc/meta/id/>
+FROM <https://w3id.org/oc/meta/br/>
+WHERE {
   VALUES ?doi_value { "[[doi]]" "[[doi]]"^^xsd:string }
   ?identifier datacite:usesIdentifierScheme datacite:doi ;
               literal:hasLiteralValue ?doi_value .
   ?omid datacite:hasIdentifier ?identifier ;
         dcterms:title ?title .
-  }
   BIND("[[doi]]" AS ?doi)
 }
 
@@ -72,10 +75,8 @@ SELECT ?omid
        (GROUP_CONCAT(DISTINCT STR(?reference); SEPARATOR="|") AS ?references)
        (COUNT(DISTINCT ?reference) AS ?reference_count)
 WHERE {
-  OPTIONAL {
-    ?citation a cito:Citation ;
+  ?citation a cito:Citation ;
               cito:hasCitingEntity ?omid ;
               cito:hasCitedEntity ?reference .
-  }
 }
 GROUP BY ?omid

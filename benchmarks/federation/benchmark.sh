@@ -25,7 +25,21 @@ rm -f \
 
 uv run --extra benchmark python benchmark.py prepare
 stack_started=true
-docker compose up --build --wait
+docker compose up --build --wait || {
+    status=$?
+    docker compose logs --no-color >&2 || true
+    exit "$status"
+}
+
+for grant in \
+    'GRANT SELECT ON DB.DBA.SPARQL_SINV_2 TO "SPARQL"' \
+    'GRANT EXECUTE ON DB.DBA.SPARQL_SINV_IMP TO "SPARQL"'
+do
+    docker compose exec -T meta /bin/sh -c '"$VIRTUOSO_HOME/bin/isql" 1111 dba dba VERBOSE=OFF' <<SQL
+$grant;
+EXIT \$IF \$EQU \$STATE OK 0 1;
+SQL
+done
 
 RAMOSE_BENCHMARK_COMMIT=$(git -C ../.. rev-parse HEAD)
 RAMOSE_BENCHMARK_HOST=$(uname -a)

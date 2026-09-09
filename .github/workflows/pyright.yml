@@ -23,6 +23,6 @@ jobs:
         with:
           enable-cache: true
       - name: Install dependencies
-        run: uv sync --locked --dev
+        run: uv sync --locked --dev --extra benchmark
       - name: Pyright
         run: uv run pyright
