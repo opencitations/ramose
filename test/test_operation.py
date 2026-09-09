@@ -46,27 +46,35 @@ class TestConv:
 
     def test_csv_output(self, op: Operation) -> None:
         csv_str = "name,age\nJohn,30\n"
-        result, ct = op.conv(csv_str, {}, "text/csv")
+        _response = op.conv(csv_str, {}, "text/csv")
+        result = _response.body
+        ct = _response.content_type
         assert result == csv_str
         assert ct == "text/csv"
 
     def test_json_output(self, op: Operation) -> None:
         csv_str = "name,age\nJohn,30\n"
-        result, ct = op.conv(csv_str, {}, "application/json")
+        _response = op.conv(csv_str, {}, "application/json")
+        result = _response.body
+        ct = _response.content_type
         parsed = json.loads(result)
         assert parsed == [{"name": "John", "age": "30"}]
         assert ct == "application/json"
 
     def test_format_override_via_query_string(self, op: Operation) -> None:
         csv_str = "name,age\nJohn,30\n"
-        result, ct = op.conv(csv_str, {"format": ["json"]}, "text/csv")
+        _response = op.conv(csv_str, {"format": ["json"]}, "text/csv")
+        result = _response.body
+        ct = _response.content_type
         parsed = json.loads(result)
         assert parsed == [{"name": "John", "age": "30"}]
         assert ct == "application/json"
 
     def test_format_override_csv(self, op: Operation) -> None:
         csv_str = "name,age\nJohn,30\n"
-        result, ct = op.conv(csv_str, {"format": ["csv"]}, "application/json")
+        _response = op.conv(csv_str, {"format": ["csv"]}, "application/json")
+        result = _response.body
+        ct = _response.content_type
         assert result == csv_str
         assert ct == "text/csv"
 

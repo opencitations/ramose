@@ -17,6 +17,7 @@ import yaml
 from jsonschema import validate
 from rdflib import Graph
 
+from ramose import ConversionResult, Operation
 from ramose.skg_if import to_skg_if
 
 if TYPE_CHECKING:
@@ -85,10 +86,12 @@ SKGIF_SHACL_SHAPES = _load_shacl_shapes()
 
 def _execute_skgif(skgif_api_manager: APIManager, local_identifier: str, endpoint: str) -> dict:
     operation = skgif_api_manager.get_op(f"/skgif/v1/{endpoint}/{local_identifier}")
-    if isinstance(operation, tuple):
+    if not isinstance(operation, Operation):
         msg = f"Operation not found: {local_identifier}"
         raise TypeError(msg)
-    status, result, _, _ = operation.exec(method="get", content_type="application/json")
+    _response = operation.exec(method="get", content_type="application/json")
+    status = _response.status_code
+    result = _response.body
     if status != 200:
         msg = f"API returned status {status}: {result}"
         raise RuntimeError(msg)
@@ -115,7 +118,9 @@ SKGIF_CONTEXT = [
 
 
 def test_converter_context_uses_specification_base() -> None:
-    result = json.loads(to_skg_if("local_identifier\n", base_url="https://example.org/skg"))
+    response = to_skg_if("local_identifier\n", base_url="https://example.org/skg")
+    assert isinstance(response, ConversionResult)
+    result = json.loads(response.body)
     assert result["@context"] == [*SKGIF_CONTEXT[:2], {"@base": "https://example.org/skg/"}]
 
 
@@ -493,7 +498,9 @@ def _convert(rows: list[dict[str, str]], endpoint: str, local_identifier: str) -
     dict_writer.writeheader()
     dict_writer.writerows(rows)
     request_url = f"{API_ROOT}/{endpoint}/{local_identifier}"
-    return json.loads(to_skg_if(buffer.getvalue(), request_url=request_url, base_url=CONVERTER_BASE_URL))
+    response = to_skg_if(buffer.getvalue(), request_url=request_url, base_url=CONVERTER_BASE_URL)
+    assert isinstance(response, str)
+    return json.loads(response)
 
 
 class TestProductRowsConversion:

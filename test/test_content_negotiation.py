@@ -11,6 +11,8 @@ from types import ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from ramose import APIManager, Operation, OperationConfig
 from ramose.__main__ import _build_app
 from ramose.auth import TokenStore
@@ -146,3 +148,55 @@ class TestContentNegotiationWeb:
         assert response.get_data(as_text=True) == (
             "error,message\r\n500,HTTP status code 500: Internal Server Error\r\n"
         )
+
+
+def _skgif_client(tmp_path: Path) -> FlaskClient:
+    api_manager = APIManager(
+        [str(Path(__file__).parent / "data" / "skgif.hf")],
+        endpoint_override="http://mock/sparql",
+    )
+    app = _build_app(
+        api_manager,
+        HTMLDocumentationHandler(api_manager),
+        OpenAPIDocumentationHandler(api_manager),
+        None,
+        TokenStore(str(tmp_path)),
+    )
+    return app.test_client()
+
+
+def test_formatted_non_200_keeps_converter_body_and_media_type(tmp_path: Path) -> None:
+    sparql_response = SimpleNamespace(status_code=200, text="local_identifier\n", reason="OK", encoding=None)
+
+    with patch("ramose.operation._http_session") as mock_session:
+        mock_session.post.return_value = sparql_response
+        response = _skgif_client(tmp_path).get("/skgif/v1/grants")
+
+    assert response.status_code == 404
+    assert response.headers["Content-Type"] == "application/json"
+    result = response.get_json()
+    assert result["meta"]["entity_type"] == "search_result_page"
+    assert result["@graph"] == []
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/skgif/v1/grants?filter=invalid_field:value",
+        "/skgif/v1/grants?page=1",
+    ],
+)
+def test_skgif_invalid_request_returns_problem_details(tmp_path: Path, path: str) -> None:
+    sparql_response = SimpleNamespace(status_code=200, text="local_identifier\n", reason="OK", encoding=None)
+
+    with patch("ramose.operation._http_session") as mock_session:
+        mock_session.post.return_value = sparql_response
+        response = _skgif_client(tmp_path).get(path)
+
+    assert response.status_code == 422
+    assert response.headers["Content-Type"] == "application/json"
+    problem = response.get_json()
+    assert problem["type"] == "about:blank"
+    assert problem["title"] == "Unprocessable Entity"
+    assert problem["status"] == 422
+    assert problem["instance"] == path

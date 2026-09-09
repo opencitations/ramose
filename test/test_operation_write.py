@@ -41,11 +41,14 @@ class TestWriteRequest:
     def test_post_sends_update_form_param(self, mock_session: object) -> None:
         mock_session.post.return_value = _mock_response()  # type: ignore[attr-defined]
         op = _make_write_op()
-        status, body, content_type, _ = op.exec(
+        _response = op.exec(
             method="post",
             content_type="application/json",
             body_params={"resource": RESOURCE_IRI, "title": "OpenCitations Meta"},
         )
+        status = _response.status_code
+        body = _response.body
+        content_type = _response.content_type
         assert status == 200
         assert body == SUCCESS_BODY
         assert content_type == "application/json"
@@ -59,11 +62,14 @@ class TestWriteRequest:
     def test_csv_success_body(self, mock_session: object) -> None:
         mock_session.post.return_value = _mock_response()  # type: ignore[attr-defined]
         op = _make_write_op()
-        status, body, content_type, _ = op.exec(
+        _response = op.exec(
             method="post",
             content_type="text/csv",
             body_params={"resource": RESOURCE_IRI, "title": "OpenCitations Meta"},
         )
+        status = _response.status_code
+        body = _response.body
+        content_type = _response.content_type
         assert status == 200
         assert body == "status,message\r\n200,operation completed\r\n"
         assert content_type == "text/csv"
@@ -83,10 +89,13 @@ class TestWriteRequest:
     def test_non_2xx_from_store_propagates(self, mock_session: object) -> None:
         mock_session.post.return_value = _mock_response(status_code=400, reason="Bad Request")  # type: ignore[attr-defined]
         op = _make_write_op()
-        status, body, content_type, _ = op.exec(
+        _response = op.exec(
             method="post",
             body_params={"resource": RESOURCE_IRI, "title": "OpenCitations Meta"},
         )
+        status = _response.status_code
+        body = _response.body
+        content_type = _response.content_type
         assert status == 400
         assert body == "HTTP status code 400: Bad Request"
         assert content_type == "text/plain"
@@ -95,7 +104,10 @@ class TestWriteRequest:
 class TestWriteMethodNotAllowed:
     def test_get_on_write_only_op_returns_405(self) -> None:
         op = _make_write_op()
-        status, message, content_type, _ = op.exec(method="get")
+        _response = op.exec(method="get")
+        status = _response.status_code
+        message = _response.body
+        content_type = _response.content_type
         assert status == 405
         assert message == "HTTP status code 405: 'get' method not allowed"
         assert content_type == "text/plain"
@@ -105,7 +117,8 @@ class TestWriteMethodNotAllowed:
         mock_session.post.return_value = _mock_response()  # type: ignore[attr-defined]
         for method in ("put", "delete"):
             op = _make_write_op(method=method, sparql="DELETE WHERE { <[[resource]]> ?p ?o }")
-            status, _, _, _ = op.exec(method=method, body_params={"resource": RESOURCE_IRI})
+            _response = op.exec(method=method, body_params={"resource": RESOURCE_IRI})
+            status = _response.status_code
             assert status == 200
 
 
@@ -122,7 +135,10 @@ class TestWriteValueBinding:
     @patch("ramose.operation._http_session")
     def test_missing_param_rejected_with_400(self, mock_session: object) -> None:
         op = _make_write_op()
-        status, body, content_type, _ = op.exec(method="post", body_params={"resource": RESOURCE_IRI})
+        _response = op.exec(method="post", body_params={"resource": RESOURCE_IRI})
+        status = _response.status_code
+        body = _response.body
+        content_type = _response.content_type
         assert status == 400
         assert body == "HTTP status code 400: missing required parameter(s): title"
         assert content_type == "text/plain"
@@ -131,10 +147,12 @@ class TestWriteValueBinding:
     @patch("ramose.operation._http_session")
     def test_iri_injection_rejected_with_400(self, mock_session: object) -> None:
         op = _make_write_op()
-        status, _, content_type, _ = op.exec(
+        _response = op.exec(
             method="post",
             body_params={"resource": "http://x/} ; DROP ALL ; INSERT DATA {", "title": "Title"},
         )
+        status = _response.status_code
+        content_type = _response.content_type
         assert status == 400
         assert content_type == "text/plain"
         mock_session.post.assert_not_called()  # type: ignore[attr-defined]

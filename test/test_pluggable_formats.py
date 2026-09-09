@@ -38,7 +38,9 @@ class TestCustomFormatConversion:
     def test_xml_format_via_query_string(self) -> None:
         op = self._make_op_with_formats()
         csv_str = "qid,doi\nQ24260641,10.1108/JD-12-2013-0166\n"
-        result, ct = op.conv(csv_str, {"format": ["xml"]})
+        _response = op.conv(csv_str, {"format": ["xml"]})
+        result = _response.body
+        ct = _response.content_type
         assert ct == "xml"
         assert '<?xml version="1.0"' in result
         assert "<records>" in result
@@ -47,13 +49,15 @@ class TestCustomFormatConversion:
     def test_upper_format_via_query_string(self) -> None:
         op = self._make_op_with_formats()
         csv_str = "name,age\nvergine,30\n"
-        result, _ = op.conv(csv_str, {"format": ["upper"]})
+        _response = op.conv(csv_str, {"format": ["upper"]})
+        result = _response.body
         assert result == "NAME,AGE\nVERGINE,30\n"
 
     def test_dummyxml_format_via_query_string(self) -> None:
         op = self._make_op_with_formats()
         csv_str = "name,age\nvergine,30\n"
-        result, _ = op.conv(csv_str, {"format": ["dummyxml"]})
+        _response = op.conv(csv_str, {"format": ["dummyxml"]})
+        result = _response.body
         assert "<xml>" in result
         assert "vergine" in result
 
@@ -94,7 +98,8 @@ class TestDefaultFormat:
             ),
         )
         csv_str = "name,age\narcangelo,30\n"
-        result, _ = op.conv(csv_str, {})
+        _response = op.conv(csv_str, {})
+        result = _response.body
         assert result == "NAME,AGE\nARCANGELO,30\n"
 
     def test_explicit_format_overrides_default(self) -> None:
@@ -128,7 +133,8 @@ class TestDefaultFormat:
             ),
         )
         csv_str = "name,age\narcangelo,30\n"
-        result, _ = op.conv(csv_str, {"format": ["dummyxml"]})
+        _response = op.conv(csv_str, {"format": ["dummyxml"]})
+        result = _response.body
         assert "<xml>" in result
         assert "arcangelo" in result
 
@@ -158,7 +164,8 @@ class TestDefaultFormat:
                 public_base_url="https://example.org/base",
             ),
         )
-        result, _ = op.conv("name\narcangelo\n", {})
+        _response = op.conv("name\narcangelo\n", {})
+        result = _response.body
         assert result == "https://example.org/base/api/test/hello?page=2"
 
     def test_default_format_json(self) -> None:
@@ -177,7 +184,9 @@ class TestDefaultFormat:
             OperationConfig(sparql_endpoint="http://unused/sparql"),
         )
         csv_str = "name\narcangelo\n"
-        result, ct = op.conv(csv_str, {})
+        _response = op.conv(csv_str, {})
+        result = _response.body
+        ct = _response.content_type
         assert ct == "application/json"
         assert json.loads(result) == [{"name": "arcangelo"}]
 
@@ -208,7 +217,9 @@ class TestDefaultFormat:
                 public_base_url="https://example.org/base",
             ),
         )
-        result, ct = op.conv("name\narcangelo\n", {})
+        _response = op.conv("name\narcangelo\n", {})
+        result = _response.body
+        ct = _response.content_type
         assert ct == "application/ld+json"
         assert result == '{"@context": []}'
 
@@ -227,7 +238,9 @@ class TestDefaultFormat:
             OperationConfig(sparql_endpoint="http://unused/sparql"),
         )
         csv_str = "name\narcangelo\n"
-        result, ct = op.conv(csv_str, {})
+        _response = op.conv(csv_str, {})
+        result = _response.body
+        ct = _response.content_type
         assert ct == "text/csv"
         assert result == csv_str
 
@@ -252,7 +265,10 @@ class TestCustomFormatThroughExec:
         )
         with patch("ramose.operation._http_session") as mock_session:
             mock_session.post.return_value = resp
-            sc, body, ctype, _ = op.exec(method="get", content_type="text/csv")
+            _response = op.exec(method="get", content_type="text/csv")
+            sc = _response.status_code
+            body = _response.body
+            ctype = _response.content_type
 
         assert sc == 200
         assert ctype == "xml"
@@ -308,7 +324,10 @@ class TestSparqlAnythingSingleQueryExec:
         )
 
         with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"title": "Test Paper"}]):
-            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            body = _response.body
+            ctype = _response.content_type
 
         assert sc == 200
         assert ctype == "application/json"
@@ -587,7 +606,10 @@ class TestSparqlAnythingSingleQueryWithAddon:
         )
 
         with patch.object(op, "_run_sparql_anything_dicts", return_value=[{"title": "Test"}]):
-            sc, _body, _ctype, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            _body = _response.body
+            _ctype = _response.content_type
 
         assert sc == 200
 

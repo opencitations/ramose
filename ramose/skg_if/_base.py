@@ -13,7 +13,7 @@ from re import sub
 from typing import NoReturn
 from urllib.parse import parse_qs, urlencode, urlsplit
 
-from ramose import HttpError
+from ramose import ConversionResult, HttpError
 
 _YEAR_MONTH_PART_COUNT = 2
 _UNPROCESSABLE_CONTENT = 422
@@ -1168,12 +1168,9 @@ def _fill_missing_columns(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     return [missing | row for row in rows]
 
 
-def to_skg_if(csv_str: str, request_url: str = "", base_url: str = "") -> str:
+def to_skg_if(csv_str: str, request_url: str = "", base_url: str = "") -> str | ConversionResult:
     context = _build_context(base_url)
     rows = _fill_missing_columns(list(csv.DictReader(StringIO(csv_str))))
-    if not rows and _is_single_entity_request(request_url):
-        msg = "HTTP status code 404: entity not found"
-        raise HttpError(404, msg)
     entity_type = _extract_entity_type(request_url)
     graph = _build_entities(rows, entity_type)
 
@@ -1196,4 +1193,7 @@ def to_skg_if(csv_str: str, request_url: str = "", base_url: str = "") -> str:
         "meta": _build_meta(request_url, total_entities),
         "@graph": graph,
     }
-    return json.dumps(result, ensure_ascii=False, indent=4)
+    body = json.dumps(result, ensure_ascii=False, indent=4)
+    if not graph:
+        return ConversionResult(status_code=404, body=body)
+    return body

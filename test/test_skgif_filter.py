@@ -143,10 +143,12 @@ def _exec(skgif_api_manager: APIManager, url: str) -> list[dict]:
     page = 1
     while True:
         op = skgif_api_manager.get_op(f"{url}{sep}page={page}&page_size=100")
-        if isinstance(op, tuple):
+        if not isinstance(op, Operation):
             msg = f"Operation not found: {url}"
             raise TypeError(msg)
-        status, result, _, _ = op.exec(method="get", content_type="application/json")
+        _response = op.exec(method="get", content_type="application/json")
+        status = _response.status_code
+        result = _response.body
         if status != 200:
             msg = f"API returned status {status}: {result}"
             raise RuntimeError(msg)
@@ -162,11 +164,19 @@ def _exec(skgif_api_manager: APIManager, url: str) -> list[dict]:
 
 def _exec_raw(skgif_api_manager: APIManager, url: str) -> tuple[int, str]:
     op = skgif_api_manager.get_op(url)
-    if isinstance(op, tuple):
+    if not isinstance(op, Operation):
         msg = f"Operation not found: {url}"
         raise TypeError(msg)
-    status, result, _, _ = op.exec(method="get", content_type="application/json")
+    _response = op.exec(method="get", content_type="application/json")
+    status = _response.status_code
+    result = _response.body
     return status, result
+
+
+def _exec_empty(skgif_api_manager: APIManager, url: str) -> list[dict]:
+    status, body = _exec_raw(skgif_api_manager, url)
+    assert status == 404
+    return json.loads(body)["@graph"]
 
 
 def _filter_param_description(spec: dict, entity: str) -> str:
@@ -192,7 +202,7 @@ class TestTitleFilter:
         assert results == EXPECTED_SEARCH["cf.search.title:OpenCitations"]
 
     def test_title_search_no_match(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:xyznonexistent999")
+        results = _exec_empty(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:xyznonexistent999")
         assert results == []
 
 
@@ -221,15 +231,15 @@ class TestProductTypeFilter:
         assert len(results) == 1349
 
     def test_research_data_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:research data")
+        results = _exec_empty(skgif_api_manager, "/skgif/v1/products?filter=product_type:research data")
         assert results == []
 
     def test_research_software_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:research software")
+        results = _exec_empty(skgif_api_manager, "/skgif/v1/products?filter=product_type:research software")
         assert results == []
 
     def test_other_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=product_type:other")
+        results = _exec_empty(skgif_api_manager, "/skgif/v1/products?filter=product_type:other")
         assert results == []
 
     def test_invalid_type_returns_error(self, skgif_api_manager: APIManager) -> None:
@@ -391,7 +401,9 @@ class TestCitesFilter:
         assert local_identifiers == ["https://w3id.org/oc/meta/br/0601"]
 
     def test_cites_no_match(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/9999999")
+        results = _exec_empty(
+            skgif_api_manager, "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/9999999"
+        )
         assert results == []
 
 
@@ -402,7 +414,9 @@ class TestCitedByFilter:
         assert local_identifiers == ["https://w3id.org/oc/meta/br/06035"]
 
     def test_cited_by_no_match(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by:https://w3id.org/oc/meta/br/9999999")
+        results = _exec_empty(
+            skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by:https://w3id.org/oc/meta/br/9999999"
+        )
         assert results == []
 
 
@@ -416,7 +430,7 @@ class TestCitesDoiFilter:
         assert local_identifiers == ["https://w3id.org/oc/meta/br/0601"]
 
     def test_cites_doi_no_match(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cites_doi:10.9999/nonexistent")
+        results = _exec_empty(skgif_api_manager, "/skgif/v1/products?filter=cf.cites_doi:10.9999/nonexistent")
         assert results == []
 
 
@@ -430,7 +444,7 @@ class TestCitedByDoiFilter:
         assert local_identifiers == ["https://w3id.org/oc/meta/br/06035"]
 
     def test_cited_by_doi_no_match(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by_doi:10.9999/nonexistent")
+        results = _exec_empty(skgif_api_manager, "/skgif/v1/products?filter=cf.cited_by_doi:10.9999/nonexistent")
         assert results == []
 
 
@@ -444,7 +458,7 @@ class TestMixedCitationAndRegularFilter:
         assert local_identifiers == ["https://w3id.org/oc/meta/br/0601"]
 
     def test_cites_with_nonmatching_title(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(
+        results = _exec_empty(
             skgif_api_manager,
             "/skgif/v1/products?filter=cf.cites:https://w3id.org/oc/meta/br/06035,cf.search.title:xyznonexistent",
         )
@@ -525,30 +539,39 @@ class TestCustomParamsInDocumentation:
 
 class TestGrantsEndpoints:
     def test_list_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/grants")
-        assert results == []
+        status, body = _exec_raw(skgif_api_manager, "/skgif/v1/grants")
+        assert status == 404
+        result = json.loads(body)
+        assert result["meta"]["entity_type"] == "search_result_page"
+        assert result["@graph"] == []
 
     def test_list_with_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/grants?filter=grant_number:12345")
-        assert results == []
+        status, body = _exec_raw(skgif_api_manager, "/skgif/v1/grants?filter=grant_number:12345")
+        assert status == 404
+        assert json.loads(body)["@graph"] == []
 
     def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/grants?filter=invalid_field:value")
         assert status == 422
 
     def test_single_returns_404(self, skgif_api_manager: APIManager) -> None:
-        status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/grants/example-id")
+        status, body = _exec_raw(skgif_api_manager, "/skgif/v1/grants/example-id")
         assert status == 404
+        result = json.loads(body)
+        assert result["meta"]["entity_type"] == "single_entity"
+        assert result["@graph"] == []
 
 
 class TestTopicsEndpoints:
     def test_list_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/topics")
-        assert results == []
+        status, body = _exec_raw(skgif_api_manager, "/skgif/v1/topics")
+        assert status == 404
+        assert json.loads(body)["@graph"] == []
 
     def test_list_with_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/topics?filter=cf.search.labels:biology")
-        assert results == []
+        status, body = _exec_raw(skgif_api_manager, "/skgif/v1/topics?filter=cf.search.labels:biology")
+        assert status == 404
+        assert json.loads(body)["@graph"] == []
 
     def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/topics?filter=invalid_field:value")
@@ -561,12 +584,14 @@ class TestTopicsEndpoints:
 
 class TestDatasourcesEndpoints:
     def test_list_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/datasources")
-        assert results == []
+        status, body = _exec_raw(skgif_api_manager, "/skgif/v1/datasources")
+        assert status == 404
+        assert json.loads(body)["@graph"] == []
 
     def test_list_with_filter_returns_empty(self, skgif_api_manager: APIManager) -> None:
-        results = _exec(skgif_api_manager, "/skgif/v1/datasources?filter=research_product_type:literature")
-        assert results == []
+        status, body = _exec_raw(skgif_api_manager, "/skgif/v1/datasources?filter=research_product_type:literature")
+        assert status == 404
+        assert json.loads(body)["@graph"] == []
 
     def test_list_invalid_filter_returns_error(self, skgif_api_manager: APIManager) -> None:
         status, _ = _exec_raw(skgif_api_manager, "/skgif/v1/datasources?filter=invalid_field:value")
@@ -664,7 +689,9 @@ TOTAL_PRODUCTS = 1349
 def _envelope(skgif_api_manager: APIManager, url: str) -> dict:
     op = skgif_api_manager.get_op(url)
     assert isinstance(op, Operation)
-    status, result, _, _ = op.exec(method="get", content_type="application/json")
+    _response = op.exec(method="get", content_type="application/json")
+    status = _response.status_code
+    result = _response.body
     assert status == 200
     return json.loads(result)
 
@@ -756,7 +783,10 @@ class TestSkgifEnvelope:
     def test_envelope_page_beyond_total_returns_422(self, skgif_api_manager: APIManager) -> None:
         op = skgif_api_manager.get_op("/skgif/v1/products?page=9999&page_size=10")
         assert isinstance(op, Operation)
-        status, result, ctype, _ = op.exec(method="get", content_type="application/json")
+        _response = op.exec(method="get", content_type="application/json")
+        status = _response.status_code
+        result = _response.body
+        ctype = _response.content_type
         assert status == 422
         assert result == "HTTP status code 422: page 9999 exceeds total pages 135"
         assert ctype == "text/plain"
@@ -825,13 +855,18 @@ class TestSkgifEnvelope:
     def test_explicit_page_size_above_max_returns_422(self, skgif_api_manager: APIManager) -> None:
         op = skgif_api_manager.get_op("/skgif/v1/products?page_size=100000")
         assert isinstance(op, Operation)
-        status, result, ctype, _ = op.exec(method="get", content_type="application/json")
+        _response = op.exec(method="get", content_type="application/json")
+        status = _response.status_code
+        result = _response.body
+        ctype = _response.content_type
         assert status == 422
         assert result == "HTTP status code 422: page_size must be <= 100, got 100000"
         assert ctype == "text/plain"
 
     def test_empty_result_set_is_paginated_with_zero_total(self, skgif_api_manager: APIManager) -> None:
-        result = _envelope(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:xyznonexistent999")
+        status, body = _exec_raw(skgif_api_manager, "/skgif/v1/products?filter=cf.search.title:xyznonexistent999")
+        assert status == 404
+        result = json.loads(body)
         assert result["@graph"] == []
         meta = result["meta"]
         assert meta == {

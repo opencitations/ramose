@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ramose import APIManager, Operation
+from ramose import APIManager, Operation, OperationResponse
 from ramose.hash_format import parse_custom_params
 
 if TYPE_CHECKING:
@@ -108,31 +108,47 @@ class TestGetOp:
 
     def test_invalid_operation_returns_404(self, api_mgr: APIManager) -> None:
         result = api_mgr.get_op("/nonexistent/operation")
-        assert result == (404, "HTTP status code 404: the operation requested does not exist", "text/plain")
+        assert result == OperationResponse(
+            404,
+            "HTTP status code 404: the operation requested does not exist",
+            "text/plain",
+            {},
+            is_error_message=True,
+        )
 
 
 class TestGetOpInvalidParam:
     def test_invalid_param_value_returns_400(self, api_mgr: APIManager) -> None:
         result = api_mgr.get_op(api_mgr.base_url[0] + "/author/orcid:10.1162/qss_a_00292")
-        assert result == (
+        assert result == OperationResponse(
             400,
             "HTTP status code 400: the value 'orcid:10.1162/qss_a_00292' is not valid for parameter 'id'"
             " in operation '/v1/author/{id}'. Example: /v1/author/orcid:0000-0002-8420-0696",
             "text/plain",
+            {},
+            is_error_message=True,
         )
 
     def test_empty_param_returns_400(self, api_mgr: APIManager) -> None:
         result = api_mgr.get_op(api_mgr.base_url[0] + "/author/")
-        assert result == (
+        assert result == OperationResponse(
             400,
             "HTTP status code 400: the operation '/v1/author/{id}' requires a value for parameter 'id'"
             ". Example: /v1/author/orcid:0000-0002-8420-0696",
             "text/plain",
+            {},
+            is_error_message=True,
         )
 
     def test_nonexistent_operation_still_404(self, api_mgr: APIManager) -> None:
         result = api_mgr.get_op(api_mgr.base_url[0] + "/nonexistent/something")
-        assert result == (404, "HTTP status code 404: the operation requested does not exist", "text/plain")
+        assert result == OperationResponse(
+            404,
+            "HTTP status code 404: the operation requested does not exist",
+            "text/plain",
+            {},
+            is_error_message=True,
+        )
 
 
 class TestSourcesParsing:

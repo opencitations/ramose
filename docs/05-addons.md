@@ -240,6 +240,9 @@ def to_xml(csv_string, request_url="", base_url=""):
     return xml_output
 ```
 
+A converter returns either the converted body as a string or a `ConversionResult` with a `status_code` and `body`.
+RAMOSE normalizes string results as `ConversionResult` objects with HTTP 200. It then builds one `OperationResponse` with the status, body, format media type, headers, and an explicit marker for unformatted error messages.
+
 `request_url` is the absolute request URL, built from the API's `#base` and the request path with its query string. When `page` and `page_size` are present, the URL includes them as-is (e.g., `https://example.org/products?page=1&page_size=10`).
 
 `base_url` is the API's `#base` value.

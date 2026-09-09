@@ -92,6 +92,25 @@ ResultRow = list[str]
 ResultTable = list[ResultRow]
 
 
+@dataclass(frozen=True)
+class ConversionResult:
+    status_code: int
+    body: str
+
+
+@dataclass(frozen=True)
+class OperationResponse:
+    status_code: int
+    body: str
+    content_type: str
+    headers: dict[str, str]
+    is_error_message: bool = False
+
+    @classmethod
+    def error(cls, status_code: int, body: str) -> OperationResponse:
+        return cls(status_code, body, "text/plain", {}, is_error_message=True)
+
+
 class CachedPagination(TypedDict):
     page: int
     page_size: int
@@ -228,11 +247,14 @@ class Operation:
 
         return content_type
 
-    def _convert(self, s: str, fmt: str) -> str:
+    def _convert(self, s: str, fmt: str) -> ConversionResult:
         converter_func = getattr(self.addon, self.format[fmt])
-        return converter_func(s, request_url=self._converter_request_url(), base_url=self.public_base_url)
+        converted = converter_func(s, request_url=self._converter_request_url(), base_url=self.public_base_url)
+        if isinstance(converted, ConversionResult):
+            return converted
+        return ConversionResult(status_code=HTTPStatus.OK, body=converted)
 
-    def _resolve_format(self, s: str, query_string: dict[str, list[str]]) -> tuple[str, str] | None:
+    def _resolve_format(self, s: str, query_string: dict[str, list[str]]) -> tuple[ConversionResult, str] | None:
         if "format" in query_string and self._is_builtin_param_active("format"):
             for req_format in query_string["format"]:
                 if req_format in self.format:
@@ -268,10 +290,9 @@ class Operation:
                 media_type_to_token.setdefault(media_type, token)
         return media_type_to_token
 
-    def conv(self, s: str, query_string: dict[str, list[str]], c_type: str = "text/csv") -> tuple[str, str]:
-        """This method takes a string representing a CSV document and converts it in the requested format according
-        to what content type is specified as input."""
-
+    def _format_response(
+        self, s: str, query_string: dict[str, list[str]], c_type: str = "text/csv"
+    ) -> tuple[ConversionResult, str]:
         content_type = Operation.get_content_type(c_type)
 
         if "format" in query_string and self._is_builtin_param_active("format"):
@@ -297,9 +318,15 @@ class Operation:
                 if self._is_builtin_param_active("json"):
                     r = Operation.structured(query_string, r)  # type: ignore[arg-type]
 
-                return dumps(r, ensure_ascii=False, indent=4), content_type
+                return ConversionResult(HTTPStatus.OK, dumps(r, ensure_ascii=False, indent=4)), content_type
         else:
-            return s, content_type
+            return ConversionResult(HTTPStatus.OK, s), content_type
+
+    def conv(self, s: str, query_string: dict[str, list[str]], c_type: str = "text/csv") -> OperationResponse:
+        """This method takes a string representing a CSV document and converts it in the requested format according
+        to what content type is specified as input."""
+        formatted, content_type = self._format_response(s, query_string, c_type)
+        return OperationResponse(formatted.status_code, formatted.body, content_type, {})
 
     @staticmethod
     def pv(i: int | tuple[object, str], r: list[tuple[object, str]] | None = None) -> str:
@@ -1237,7 +1264,7 @@ class Operation:
         table: ResultTable,
         q_string: dict[str, list[str]],
         content_type: str,
-    ) -> tuple[int, str, str]:
+    ) -> OperationResponse:
         has_page_directive = "@@page" in self.i["sparql"]
         if self._has_custom_converter(q_string) and not has_page_directive:
             self.pagination_info = None
@@ -1258,9 +1285,8 @@ class Operation:
 
         s_res = StringIO()
         writer(s_res).writerows(table)
-        body, ctype = self.conv(s_res.getvalue(), q_string, content_type)
-
-        return 200, body, ctype
+        formatted, ctype = self._format_response(s_res.getvalue(), q_string, content_type)
+        return OperationResponse(formatted.status_code, formatted.body, ctype, {})
 
     def _cache_value(self, rows: ResultTable) -> CachedResult:
         pagination: CachedPagination | None = None
@@ -1277,7 +1303,7 @@ class Operation:
         cached_value: object,
         q_string: dict[str, list[str]],
         content_type: str,
-    ) -> tuple[int, str, str]:
+    ) -> OperationResponse:
         entry = cast("CachedResult", cached_value)
         if entry["pagination"] is not None:
             pagination = entry["pagination"]
@@ -1292,7 +1318,7 @@ class Operation:
 
     def _finalize_result(
         self, csv_rows: list[list[str]] | list[list[str | object]], content_type: str
-    ) -> tuple[int, str, str]:
+    ) -> OperationResponse:
         """Run the shared pipeline: type fields, postprocess, filter, remove types, cache, paginate, format."""
         q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
         res = self.type_fields(csv_rows, self.i)  # type: ignore[arg-type]
@@ -1371,7 +1397,7 @@ class Operation:
             if placeholder not in par_dict:
                 par_dict[placeholder] = ""
 
-    def _exec_standard_sparql(self, par_dict: dict[str, object], content_type: str) -> tuple[int, str, str]:
+    def _exec_standard_sparql(self, par_dict: dict[str, object], content_type: str) -> OperationResponse:
         """Execute standard SPARQL queries, handling parameter combinations via cartesian product."""
         # Wrap scalar values in lists for cartesian product
         par_dict = {k: v if isinstance(v, list) else [v] for k, v in par_dict.items()}
@@ -1393,7 +1419,7 @@ class Operation:
             r = self._request_sparql_csv(self.tp, query)
 
             if r.status_code != HTTPStatus.OK:
-                return r.status_code, f"HTTP status code {r.status_code}: {r.reason}", "text/plain"
+                return OperationResponse.error(r.status_code, f"HTTP status code {r.status_code}: {r.reason}")
 
             # Re-encode to handle non-UTF8 characters in splitlines
             list_of_lines = [line.decode("utf-8") for line in r.text.encode("utf-8").splitlines()]
@@ -1503,7 +1529,7 @@ class Operation:
         state["acc"] = [row for row in rows if row.get(column) in keep]
         self.pagination_info = build_pagination_info(self.op_url, q_string, page, page_size, total_items)
 
-    def _exec_multi_source(self, par_dict: dict[str, object], content_type: str) -> tuple[int, str, str]:
+    def _exec_multi_source(self, par_dict: dict[str, object], content_type: str) -> OperationResponse:
         """Execute a multi-source query pipeline with @@ directives."""
         steps = self._parse_steps(self.i["sparql"], self.tp, par_dict)
 
@@ -1538,19 +1564,19 @@ class Operation:
         return self._finalize_result(csv_rows, content_type)
 
     @staticmethod
-    def _format_error(sc: int, e: Exception, prefix: str = "") -> tuple[int, str, str]:
-        """Format an error response tuple with traceback line info."""
+    def _format_error(sc: int, e: Exception, prefix: str = "") -> OperationResponse:
+        """Format an error response with traceback line info."""
         tb = e.__traceback__
         line = tb.tb_lineno if tb else "?"
         msg = f"HTTP status code {sc}: {prefix}{type(e).__name__}: {e} (line {line})"
-        return sc, msg, "text/plain"
+        return OperationResponse.error(sc, msg)
 
     def exec(
         self,
         method: str = "get",
         content_type: str = "application/json",
         body_params: Mapping[str, object] | None = None,
-    ) -> tuple[int, str, str, dict[str, str]]:
+    ) -> OperationResponse:
         """This method takes in input the HTTP method to use for the call
         and the content type to return, and execute the operation as indicated
         in the specification file, by running (in the following order):
@@ -1564,28 +1590,34 @@ class Operation:
         7. the conversion in the format requested by the user."""
         str_method = method.lower()
         if str_method not in self.i["method"].split():
-            return 405, f"HTTP status code 405: '{str_method}' method not allowed", "text/plain", {}
+            return OperationResponse.error(405, f"HTTP status code 405: '{str_method}' method not allowed")
 
         try:
             if self._is_write(str_method):
-                status, body, ctype = self._exec_update(self._prepare_params(body_params), content_type)
+                response = self._exec_update(self._prepare_params(body_params), content_type)
             else:
-                status, body, ctype = self._dispatch_exec(content_type, body_params)
+                response = self._dispatch_exec(content_type, body_params)
         except HttpError as err:
-            return err.status_code, str(err), "text/plain", {}
+            return OperationResponse.error(err.status_code, str(err))
         except TimeoutError as e:
-            return *self._format_error(408, e, "request timeout - "), {}
+            return self._format_error(408, e, "request timeout - ")
         except (TypeError, ValueError) as e:
-            return *self._format_error(400, e, "parameter in the request not compliant with the type specified - "), {}
+            return self._format_error(400, e, "parameter in the request not compliant with the type specified - ")
         except Exception as e:  # noqa: BLE001
-            return *self._format_error(500, e, "something unexpected happened - "), {}
+            return self._format_error(500, e, "something unexpected happened - ")
 
-        headers = {}
+        headers = dict(response.headers)
         if self.pagination_info is not None:
             link_header = build_link_header(self.pagination_info)
             if link_header:
                 headers["Link"] = link_header
-        return status, body, ctype, headers
+        return OperationResponse(
+            response.status_code,
+            response.body,
+            response.content_type,
+            headers,
+            response.is_error_message,
+        )
 
     def _prepare_params(self, body_params: Mapping[str, object] | None = None) -> dict[str, object]:
         par_dict = self._extract_params(body_params)
@@ -1599,7 +1631,7 @@ class Operation:
         self,
         content_type: str,
         body_params: Mapping[str, object] | None = None,
-    ) -> tuple[int, str, str]:
+    ) -> OperationResponse:
         """Dispatch to the appropriate read execution path based on the SPARQL text content."""
         par_dict = self._prepare_params(body_params)
 
@@ -1620,9 +1652,9 @@ class Operation:
         try:
             return self._exec_multi_source(par_dict, content_type)
         except ValueError as ve:
-            return 400, f"HTTP status code 400: {ve}", "text/plain"
+            return OperationResponse.error(400, f"HTTP status code 400: {ve}")
         except RuntimeError as re_err:
-            return 502, f"HTTP status code 502: {re_err}", "text/plain"
+            return OperationResponse.error(502, f"HTTP status code 502: {re_err}")
 
     @staticmethod
     def _is_write(method: str) -> bool:
@@ -1649,12 +1681,17 @@ class Operation:
             return str(self.dt.get_func(kind)(text))
         return Operation._escape_literal(text)
 
-    def _format_write_success(self, content_type: str) -> tuple[int, str, str]:
+    def _format_write_success(self, content_type: str) -> OperationResponse:
         if content_type == "text/csv":
-            return HTTPStatus.OK, "status,message\r\n200,operation completed\r\n", "text/csv"
-        return HTTPStatus.OK, dumps({"status": 200, "message": "operation completed"}), "application/json"
+            return OperationResponse(HTTPStatus.OK, "status,message\r\n200,operation completed\r\n", "text/csv", {})
+        return OperationResponse(
+            HTTPStatus.OK,
+            dumps({"status": 200, "message": "operation completed"}),
+            "application/json",
+            {},
+        )
 
-    def _exec_update(self, par_dict: dict[str, object], content_type: str) -> tuple[int, str, str]:
+    def _exec_update(self, par_dict: dict[str, object], content_type: str) -> OperationResponse:
         """Send a SPARQL 1.1 Update to the update endpoint and return a confirmation with no result set."""
         update_text = self.i["sparql"]
         for param, val in par_dict.items():
@@ -1664,7 +1701,7 @@ class Operation:
         if unresolved:
             missing = ", ".join(dict.fromkeys(unresolved))
             message = f"HTTP status code 400: missing required parameter(s): {missing}"
-            return HTTPStatus.BAD_REQUEST, message, "text/plain"
+            return OperationResponse.error(HTTPStatus.BAD_REQUEST, message)
 
         endpoint = self.update_endpoint or self.tp
         try:
@@ -1679,7 +1716,9 @@ class Operation:
             raise RuntimeError(msg) from exc
 
         if response.status_code not in (HTTPStatus.OK, HTTPStatus.CREATED, HTTPStatus.NO_CONTENT):
-            return response.status_code, f"HTTP status code {response.status_code}: {response.reason}", "text/plain"
+            return OperationResponse.error(
+                response.status_code, f"HTTP status code {response.status_code}: {response.reason}"
+            )
 
         if self._cache is not None:
             self._cache.clear()

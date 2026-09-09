@@ -22,7 +22,7 @@ from ramose._constants import FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME
 from ramose.cache import ResultCache
 from ramose.filters import load_yaml_config
 from ramose.hash_format import parse_auth, parse_custom_params, parse_disable_params, read_spec_file
-from ramose.operation import Operation, OperationConfig
+from ramose.operation import Operation, OperationConfig, OperationResponse
 
 if TYPE_CHECKING:
     import types
@@ -263,11 +263,10 @@ class APIManager:
             result[name] = self._load_config(conf, handler)
         return result
 
-    def get_op(self, op_complete_url: str, method: str = "get") -> Operation | tuple[int, str, str]:
+    def get_op(self, op_complete_url: str, method: str = "get") -> Operation | OperationResponse:
         """This method returns a new object of type Operation which represent the operation specified by
-        the input URL (parameter 'op_complete_url)' and the HTTP method. In case no operation can be found
-        according by checking the configuration files available in the APIManager, a tuple with an HTTP error
-        code and a message is returned instead."""
+        the input URL (parameter 'op_complete_url)' and the HTTP method. If no operation matches,
+        it returns an error OperationResponse."""
         url_parsed = urlsplit(op_complete_url)
         op_url = url_parsed.path
 
@@ -322,6 +321,6 @@ class APIManager:
                     )
                 if "call" in item:
                     msg += f". Example: {base_url}{item['call']}"
-                return 400, msg, "text/plain"
+                return OperationResponse.error(400, msg)
 
-        return 404, "HTTP status code 404: the operation requested does not exist", "text/plain"
+        return OperationResponse.error(404, "HTTP status code 404: the operation requested does not exist")

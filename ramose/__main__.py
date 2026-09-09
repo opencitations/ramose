@@ -307,22 +307,21 @@ def _handle_api_call(api_url: str, api_manager: APIManager, token_store: TokenSt
                 )
                 if isinstance(negotiated, Operation):
                     operation = negotiated
-        status_code, body, response_content_type, headers = operation.exec(
+        operation_response = operation.exec(
             method=method,
             content_type=content_type,
             body_params=body_params,
         )
     else:
-        status_code, body, response_content_type = operation
-        headers = {}
+        operation_response = operation
 
-    if status_code == HTTPStatus.OK:
-        response = make_response(body, status_code)
-        response.headers.set("Content-Type", response_content_type)
-        for header_name, header_value in headers.items():
-            response.headers.set(header_name, header_value)
+    if operation_response.is_error_message:
+        response = _build_error_response(operation_response.status_code, operation_response.body, content_type)
     else:
-        response = _build_error_response(status_code, body, content_type)
+        response = make_response(operation_response.body, operation_response.status_code)
+        response.headers.set("Content-Type", operation_response.content_type)
+        for header_name, header_value in operation_response.headers.items():
+            response.headers.set(header_name, header_value)
 
     response.headers.set("Access-Control-Allow-Origin", "*")
     response.headers.set("Access-Control-Allow-Credentials", "true")
@@ -404,9 +403,10 @@ def _run_cli(  # pragma: no cover
     else:
         operation = api_manager.get_op(args.call, args.method)
         if isinstance(operation, Operation):
-            status, body, content_type, _ = operation.exec(args.method, args.format)
-        else:
-            status, body, content_type = operation
+            operation = operation.exec(args.method, args.format)
+        status = operation.status_code
+        body = operation.body
+        content_type = operation.content_type
 
     if args.output is None:
         print(f"# Response HTTP code: {status}\n# Body:\n{body}\n# Content-type: {content_type}")

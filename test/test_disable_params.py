@@ -111,21 +111,27 @@ class TestConvFormatDisabled:
     def test_format_param_ignored_when_disabled(self) -> None:
         op = _make_op(disabled_params={"format"})
         csv_str = "name,age\nJohn,30\n"
-        result, ct = op.conv(csv_str, {"format": ["json"]}, "text/csv")
+        _response = op.conv(csv_str, {"format": ["json"]}, "text/csv")
+        result = _response.body
+        ct = _response.content_type
         assert ct == "text/csv"
         assert result == csv_str
 
     def test_invalid_format_param_ignored_when_disabled(self) -> None:
         op = _make_op(disabled_params={"format"})
         csv_str = "name,age\nJohn,30\n"
-        result, ct = op.conv(csv_str, {"format": ["xml"]}, "text/csv")
+        _response = op.conv(csv_str, {"format": ["xml"]}, "text/csv")
+        result = _response.body
+        ct = _response.content_type
         assert ct == "text/csv"
         assert result == csv_str
 
     def test_format_param_works_when_not_disabled(self) -> None:
         op = _make_op()
         csv_str = "name,age\nJohn,30\n"
-        result, ct = op.conv(csv_str, {"format": ["json"]}, "text/csv")
+        _response = op.conv(csv_str, {"format": ["json"]}, "text/csv")
+        result = _response.body
+        ct = _response.content_type
         assert ct == "application/json"
         parsed = json.loads(result)
         assert parsed == [{"name": "John", "age": "30"}]
@@ -143,7 +149,9 @@ class TestConvFormatDisabled:
             op_item_extra={"default_format": "custom"},
         )
         csv_str = "name,age\nJohn,30\n"
-        result, _ct = op.conv(csv_str, {}, "text/csv")
+        _response = op.conv(csv_str, {}, "text/csv")
+        result = _response.body
+        _ct = _response.content_type
         assert result == '{"custom": true}'
 
 
@@ -151,21 +159,27 @@ class TestConvJsonDisabled:
     def test_json_structuring_ignored_when_disabled(self) -> None:
         op = _make_op(disabled_params={"json"})
         csv_str = "name,age\nDoe; John,30\n"
-        result, _ct = op.conv(csv_str, {"json": ['array("; ",name)']}, "application/json")
+        _response = op.conv(csv_str, {"json": ['array("; ",name)']}, "application/json")
+        result = _response.body
+        _ct = _response.content_type
         parsed = json.loads(result)
         assert parsed == [{"name": "Doe; John", "age": "30"}]
 
     def test_invalid_json_structuring_ignored_when_disabled(self) -> None:
         op = _make_op(disabled_params={"json"})
         csv_str = "name,age\nDoe; John,30\n"
-        result, _ct = op.conv(csv_str, {"json": ["bad(name)"]}, "application/json")
+        _response = op.conv(csv_str, {"json": ["bad(name)"]}, "application/json")
+        result = _response.body
+        _ct = _response.content_type
         parsed = json.loads(result)
         assert parsed == [{"name": "Doe; John", "age": "30"}]
 
     def test_json_structuring_works_when_not_disabled(self) -> None:
         op = _make_op()
         csv_str = "name,age\nDoe; John,30\n"
-        result, _ct = op.conv(csv_str, {"json": ['array("; ",name)']}, "application/json")
+        _response = op.conv(csv_str, {"json": ['array("; ",name)']}, "application/json")
+        result = _response.body
+        _ct = _response.content_type
         parsed = json.loads(result)
         assert parsed == [{"name": ["Doe", "John"], "age": "30"}]
 

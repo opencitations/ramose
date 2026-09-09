@@ -45,7 +45,9 @@ def _exec(
 ) -> tuple[int, str]:
     operation = api_manager.get_op(url, method)
     assert isinstance(operation, Operation)
-    status, body, _, _ = operation.exec(method=method, content_type="application/json", body_params=body_params)
+    _response = operation.exec(method=method, content_type="application/json", body_params=body_params)
+    status = _response.status_code
+    body = _response.body
     return status, body
 
 

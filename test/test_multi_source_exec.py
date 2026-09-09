@@ -127,7 +127,10 @@ class TestMultiSourceJoinEndpointForeachRemove:
             return []
 
         with patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
-            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            body = _response.body
+            ctype = _response.content_type
 
         assert sc == 200
         assert ctype == "application/json"
@@ -176,7 +179,10 @@ class TestMultiSourceWithSparqlAnything:
             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
             patch.object(op, "_run_sparql_anything_dicts", side_effect=mock_run_sa),
         ):
-            sc, body, _ctype, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            body = _response.body
+            _ctype = _response.content_type
 
         assert sc == 200
         rows = json.loads(body)
@@ -204,7 +210,10 @@ class TestMultiSourceErrorHandling:
             raise RuntimeError(msg)
 
         with patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
-            sc, msg, ct, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            msg = _response.body
+            ct = _response.content_type
 
         assert sc == 502
         assert msg == "HTTP status code 502: SPARQL 500: Internal Server Error"
@@ -220,7 +229,10 @@ class TestMultiSourceUnknownStepTag:
             return [("BOGUS_TAG",)]
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
-            sc, msg, ct, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            msg = _response.body
+            ct = _response.content_type
 
         assert sc == 502
         assert msg == "HTTP status code 502: Unknown step tag BOGUS_TAG"
@@ -237,7 +249,10 @@ class TestMultiSourceValueError:
             raise ValueError(msg)
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
-            sc, msg, ct, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            msg = _response.body
+            ct = _response.content_type
 
         assert sc == 400
         assert msg == "HTTP status code 400: bad config"
@@ -269,7 +284,10 @@ class TestMultiSourceValuesInject:
             patch.object(op, "_parse_steps", side_effect=mock_parse_steps),
             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
         ):
-            sc, _body, _ctype, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            _body = _response.body
+            _ctype = _response.content_type
 
         assert sc == 200
 
@@ -304,7 +322,10 @@ class TestMultiSourceRetry:
             ]
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
-            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            body = _response.body
+            ctype = _response.content_type
 
         assert sc == 200
         assert json.loads(body) == [{"id": "A", "extra": "B"}]
@@ -342,7 +363,10 @@ class TestMultiSourceRetry:
             ]
 
         with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
-            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            body = _response.body
+            ctype = _response.content_type
 
         assert sc == 200
         assert json.loads(body) == [{"id": "A", "value": "one"}, {"id": "B", "value": "two"}]
@@ -376,7 +400,10 @@ class TestMultiSourceRetry:
             mock_session.get.return_value = _csv_response(text="id\nA\n")
             select = mock_sa.return_value.select
             select.side_effect = [error, [{"id": "A", "extra": "B"}]]
-            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            body = _response.body
+            ctype = _response.content_type
 
         assert sc == 200
         assert json.loads(body) == [{"id": "A", "extra": "B"}]
@@ -416,7 +443,10 @@ class TestMultiSourceRetry:
                 error,
                 [{"id": "B", "value": "two"}],
             ]
-            sc, body, ctype, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            body = _response.body
+            ctype = _response.content_type
 
         assert sc == 200
         assert json.loads(body) == [{"id": "A", "value": "one"}, {"id": "B", "value": "two"}]
@@ -448,7 +478,10 @@ class TestMultiSourceMissingJoin:
             patch.object(op, "_parse_steps", side_effect=mock_parse_steps),
             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
         ):
-            sc, msg, _ct, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            msg = _response.body
+            _ct = _response.content_type
 
         assert sc == 400
         assert msg == "HTTP status code 400: Multiple QUERY steps without an explicit @@join directive"
@@ -474,7 +507,10 @@ class TestMultiSourceForeachNoMatchingColumn:
             patch.object(op, "_parse_steps", side_effect=mock_parse_steps),
             patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
         ):
-            sc, body, _ct, _ = op.exec(method="get", content_type="application/json")
+            _response = op.exec(method="get", content_type="application/json")
+            sc = _response.status_code
+            body = _response.body
+            _ct = _response.content_type
 
         assert sc == 200
         assert json.loads(body) == []
@@ -1153,7 +1189,10 @@ class TestCacheKeyPaging:
         cached_value = first_op._cache_value([["id"], ["c"], ["d"]])
 
         cached_op = Operation("/api/test/val?page=2&page_size=2", r"/api/test/(.+)", op_item, config)
-        status, body, ctype = cached_op._format_cached_result(cached_value, q, "text/csv")
+        _response = cached_op._format_cached_result(cached_value, q, "text/csv")
+        status = _response.status_code
+        body = _response.body
+        ctype = _response.content_type
 
         assert (status, body, ctype, cached_op.pagination_info) == (
             200,
@@ -1183,7 +1222,10 @@ class TestPaginateAndFormatPageDirective:
             ["c", "1"],
             ["c", "2"],
         ]
-        status, body, _ctype = op._paginate_and_format(table, {"page_size": ["2"]}, "text/csv")
+        _response = op._paginate_and_format(table, {"page_size": ["2"]}, "text/csv")
+        status = _response.status_code
+        body = _response.body
+        _ctype = _response.content_type
         assert status == 200
         assert body.strip().splitlines()[1:] == ["a,1", "a,2", "b,1", "b,2", "c,1", "c,2"]
 
@@ -1198,6 +1240,9 @@ class TestPaginateAndFormatPageDirective:
             ["c", "1"],
             ["c", "2"],
         ]
-        status, body, _ctype = op._paginate_and_format(table, {"page_size": ["2"]}, "text/csv")
+        _response = op._paginate_and_format(table, {"page_size": ["2"]}, "text/csv")
+        status = _response.status_code
+        body = _response.body
+        _ctype = _response.content_type
         assert status == 200
         assert body.strip().splitlines()[1:] == ["a,1", "a,2"]

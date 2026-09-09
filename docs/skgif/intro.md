@@ -86,7 +86,7 @@ For a runnable example querying ORKG and Wikidata, see the [live demo notebook](
 
 ### API responses
 
-The single-entity operation returns `404` when its query finds no entity. An unsupported or invalid filter returns `422`. A request also returns `422` when `page` has no `page_size`, a pagination value is not a positive integer, or the requested page exceeds the result range.
+An operation returns `404` with its JSON-LD envelope when the result graph is empty. An unsupported or invalid filter returns `422`. A request also returns `422` when `page` has no `page_size`, a pagination value is not a positive integer, or the requested page exceeds the result range.
 
 (entity-types)=
 ## Entity types

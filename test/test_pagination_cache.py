@@ -39,7 +39,9 @@ class TestPagination:
     def test_first_page(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page=1&page_size=3")
         assert isinstance(op, Operation)
-        status, body, _, _ = op.exec(content_type="application/json")
+        _response = op.exec(content_type="application/json")
+        status = _response.status_code
+        body = _response.body
         result = json.loads(body)
         assert status == 200
         assert len(result) == 3
@@ -55,7 +57,9 @@ class TestPagination:
     def test_middle_page(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page=2&page_size=3")
         assert isinstance(op, Operation)
-        status, body, _, _ = op.exec(content_type="application/json")
+        _response = op.exec(content_type="application/json")
+        status = _response.status_code
+        body = _response.body
         result = json.loads(body)
         assert status == 200
         assert len(result) == 3
@@ -68,7 +72,9 @@ class TestPagination:
     def test_last_page_partial(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page=3&page_size=3")
         assert isinstance(op, Operation)
-        status, body, _, _ = op.exec(content_type="application/json")
+        _response = op.exec(content_type="application/json")
+        status = _response.status_code
+        body = _response.body
         result = json.loads(body)
         assert status == 200
         assert len(result) == 1
@@ -81,7 +87,9 @@ class TestPagination:
     def test_no_pagination_returns_all(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(AUTHOR_ORCID)
         assert isinstance(op, Operation)
-        status, body, _, _ = op.exec(content_type="application/json")
+        _response = op.exec(content_type="application/json")
+        status = _response.status_code
+        body = _response.body
         result = json.loads(body)
         assert status == 200
         assert len(result) == TOTAL_AUTHOR_WORKS
@@ -90,7 +98,10 @@ class TestPagination:
     def test_page_beyond_total_returns_422(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page=10&page_size=3")
         assert isinstance(op, Operation)
-        status, body, ctype, _ = op.exec(content_type="application/json")
+        _response = op.exec(content_type="application/json")
+        status = _response.status_code
+        body = _response.body
+        ctype = _response.content_type
         assert status == 422
         assert body == "HTTP status code 422: page 10 exceeds total pages 3"
         assert ctype == "text/plain"
@@ -100,7 +111,9 @@ class TestPagination:
         for page_num in range(1, 4):
             op = api_manager.get_op(f"{AUTHOR_ORCID}?page={page_num}&page_size=3")
             assert isinstance(op, Operation)
-            status, body, _, _ = op.exec(content_type="application/json")
+            _response = op.exec(content_type="application/json")
+            status = _response.status_code
+            body = _response.body
             assert status == 200
             for item in json.loads(body):
                 all_ids.add(item["id"])
@@ -109,7 +122,10 @@ class TestPagination:
     def test_csv_pagination(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page=1&page_size=3")
         assert isinstance(op, Operation)
-        status, body, ctype, _ = op.exec(content_type="text/csv")
+        _response = op.exec(content_type="text/csv")
+        status = _response.status_code
+        body = _response.body
+        ctype = _response.content_type
         assert status == 200
         assert ctype == "text/csv"
         lines = [line for line in body.strip().split("\r\n") if line]
@@ -118,7 +134,10 @@ class TestPagination:
     def test_invalid_page_size_returns_422(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page_size=0")
         assert isinstance(op, Operation)
-        status, body, ctype, _ = op.exec(content_type="application/json")
+        _response = op.exec(content_type="application/json")
+        status = _response.status_code
+        body = _response.body
+        ctype = _response.content_type
         assert status == 422
         assert body == "HTTP status code 422: page_size must be >= 1, got 0"
         assert ctype == "text/plain"
@@ -126,7 +145,10 @@ class TestPagination:
     def test_negative_page_returns_422(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page=-1&page_size=3")
         assert isinstance(op, Operation)
-        status, body, ctype, _ = op.exec(content_type="application/json")
+        _response = op.exec(content_type="application/json")
+        status = _response.status_code
+        body = _response.body
+        ctype = _response.content_type
         assert status == 422
         assert body == "HTTP status code 422: page must be >= 1, got -1"
         assert ctype == "text/plain"
@@ -134,7 +156,10 @@ class TestPagination:
     def test_non_integer_page_size_returns_422(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page_size=abc")
         assert isinstance(op, Operation)
-        status, body, ctype, _ = op.exec(content_type="application/json")
+        _response = op.exec(content_type="application/json")
+        status = _response.status_code
+        body = _response.body
+        ctype = _response.content_type
         assert status == 422
         assert body == "HTTP status code 422: page_size must be an integer, got 'abc'"
         assert ctype == "text/plain"
@@ -142,7 +167,10 @@ class TestPagination:
     def test_page_without_page_size_returns_422(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page=2")
         assert isinstance(op, Operation)
-        status, body, ctype, _ = op.exec(content_type="application/json")
+        _response = op.exec(content_type="application/json")
+        status = _response.status_code
+        body = _response.body
+        ctype = _response.content_type
         assert status == 422
         assert body == "HTTP status code 422: page requires page_size"
         assert ctype == "text/plain"
@@ -150,7 +178,8 @@ class TestPagination:
     def test_link_header_middle_page(self, api_manager: APIManager) -> None:
         op = api_manager.get_op(f"{AUTHOR_ORCID}?page=2&page_size=3")
         assert isinstance(op, Operation)
-        _, _, _, headers = op.exec(content_type="application/json")
+        _response = op.exec(content_type="application/json")
+        headers = _response.headers
         assert headers["Link"] == (
             f'<{_page_url(3)}>; rel="next", '
             f'<{_page_url(1)}>; rel="prev", '
@@ -167,18 +196,21 @@ class TestCaching:
     def test_result_is_cached(self, cached_api_manager: APIManager) -> None:
         op = cached_api_manager.get_op(AUTHOR_ORCID)
         assert isinstance(op, Operation)
-        status, _, _, _ = op.exec(content_type="application/json")
+        _response = op.exec(content_type="application/json")
+        status = _response.status_code
         assert status == 200
         assert _cache_entry_count(cached_api_manager) == 1
 
     def test_cache_hit_returns_same_result(self, cached_api_manager: APIManager) -> None:
         op1 = cached_api_manager.get_op(AUTHOR_ORCID)
         assert isinstance(op1, Operation)
-        _, body1, _, _ = op1.exec(content_type="application/json")
+        _response = op1.exec(content_type="application/json")
+        body1 = _response.body
 
         op2 = cached_api_manager.get_op(AUTHOR_ORCID)
         assert isinstance(op2, Operation)
-        _, body2, _, _ = op2.exec(content_type="application/json")
+        _response = op2.exec(content_type="application/json")
+        body2 = _response.body
 
         assert json.loads(body1) == json.loads(body2)
         assert _cache_entry_count(cached_api_manager) == 1
@@ -208,11 +240,13 @@ class TestCaching:
     def test_pages_from_cache_dont_overlap(self, cached_api_manager: APIManager) -> None:
         op1 = cached_api_manager.get_op(f"{AUTHOR_ORCID}?page=1&page_size=3")
         assert isinstance(op1, Operation)
-        _, body1, _, _ = op1.exec(content_type="application/json")
+        _response = op1.exec(content_type="application/json")
+        body1 = _response.body
 
         op2 = cached_api_manager.get_op(f"{AUTHOR_ORCID}?page=2&page_size=3")
         assert isinstance(op2, Operation)
-        _, body2, _, _ = op2.exec(content_type="application/json")
+        _response = op2.exec(content_type="application/json")
+        body2 = _response.body
 
         ids1 = {item["id"] for item in json.loads(body1)}
         ids2 = {item["id"] for item in json.loads(body2)}

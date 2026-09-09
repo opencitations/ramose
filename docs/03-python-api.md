@@ -35,7 +35,7 @@ am = APIManager(["meta_v1.hf"], cache_dir=".cache", cache_ttl=86400)
 
 ### get_op(url)
 
-Returns an `Operation` for the given call URL, or a `(status_code, message, content_type)` tuple if no operation matches.
+Returns an `Operation` for the given call URL, or an error `OperationResponse` if no operation matches.
 
 ```python
 from ramose import Operation
@@ -43,9 +43,13 @@ from ramose import Operation
 op = am.get_op("/v1/metadata/doi:10.1162/qss_a_00292")
 
 if isinstance(op, Operation):
-    status, body, content_type, headers = op.exec()
+    response = op.exec()
 else:
-    status, message, content_type = op
+    response = op
+
+print(response.status_code)
+print(response.body)
+print(response.content_type)
 ```
 
 ## Operation
@@ -54,10 +58,10 @@ Represents a single API operation ready to execute.
 
 ### exec(method, content_type)
 
-Runs the full pipeline and returns `(http_status_code, response_body, content_type, headers)`.
+Runs the full pipeline and returns an `OperationResponse`. Its fields contain the HTTP status, body, media type, headers, and whether the body is an error message that the HTTP server must represent.
 
 ```python
-status, body, content_type, headers = op.exec(
+response = op.exec(
     method="get",
     content_type="text/csv",
 )
@@ -65,12 +69,12 @@ status, body, content_type, headers = op.exec(
 
 Both arguments are optional. Defaults: `method="get"`, `content_type="application/json"`.
 
-The `headers` dict contains HTTP headers that should be forwarded to the client. When pagination is active (the request URL includes `page` and `page_size` parameters), it includes a `Link` header with `rel="next"`, `rel="prev"`, `rel="first"`, and `rel="last"` URLs following [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288).
+The `headers` field contains HTTP headers that should be forwarded to the client. When pagination is active (the request URL includes `page` and `page_size` parameters), it includes a `Link` header with `rel="next"`, `rel="prev"`, `rel="first"`, and `rel="last"` URLs following [RFC 8288](https://www.rfc-editor.org/rfc/rfc8288).
 
 ```python
 op = am.get_op("/v1/author/orcid:0000-0002-8420-0696?page=2&page_size=10")
-status, body, content_type, headers = op.exec()
-print(headers.get("Link"))
+response = op.exec()
+print(response.headers.get("Link"))
 ```
 
 ### Pipeline

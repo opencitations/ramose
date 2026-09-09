@@ -44,10 +44,14 @@ def _make_op(
 class TestExecMethodNotAllowed:
     def test_returns_405_for_wrong_method(self) -> None:
         op = _make_op()
-        sc, msg, ct, _ = op.exec(method="delete")
+        _response = op.exec(method="delete")
+        sc = _response.status_code
+        msg = _response.body
+        ct = _response.content_type
         assert sc == 405
         assert msg == "HTTP status code 405: 'delete' method not allowed"
         assert ct == "text/plain"
+        assert _response.is_error_message is True
 
 
 class TestExecGetRequest:
@@ -56,15 +60,16 @@ class TestExecGetRequest:
         mock_session.get.return_value = _mock_response()  # type: ignore[attr-defined]
         op = _make_op()
         result = op.exec(method="get", content_type="text/csv")
-        assert result[0] == 200
-        assert result[1] == "name,age\r\nAlice,30\r\n"
+        assert result.status_code == 200
+        assert result.body == "name,age\r\nAlice,30\r\n"
+        assert result.is_error_message is False
 
     @patch("ramose.operation._http_session")
     def test_successful_post(self, mock_session: object) -> None:
         mock_session.post.return_value = _mock_response()  # type: ignore[attr-defined]
         op = _make_op(config=OperationConfig(sparql_endpoint="http://localhost/sparql", sparql_http_method="post"))
         result = op.exec(method="get", content_type="text/csv")
-        assert result[0] == 200
+        assert result.status_code == 200
         mock_session.post.assert_called_once()  # type: ignore[attr-defined]
 
 
@@ -73,10 +78,14 @@ class TestExecNon200:
     def test_sparql_endpoint_error(self, mock_session: object) -> None:
         mock_session.get.return_value = _mock_response(status_code=500, reason="Internal Server Error")  # type: ignore[attr-defined]
         op = _make_op()
-        sc, msg, ct, _ = op.exec(method="get")
+        _response = op.exec(method="get")
+        sc = _response.status_code
+        msg = _response.body
+        ct = _response.content_type
         assert sc == 500
         assert msg == "HTTP status code 500: Internal Server Error"
         assert ct == "text/plain"
+        assert _response.is_error_message is True
         assert mock_session.get.call_count == 3  # type: ignore[attr-defined]
 
     @patch("ramose.operation._http_session")
@@ -86,7 +95,10 @@ class TestExecNon200:
             _mock_response(),
         ]
         op = _make_op()
-        sc, body, ct, _ = op.exec(method="get", content_type="text/csv")
+        _response = op.exec(method="get", content_type="text/csv")
+        sc = _response.status_code
+        body = _response.body
+        ct = _response.content_type
         assert sc == 200
         assert body == "name,age\r\nAlice,30\r\n"
         assert ct == "text/csv"
@@ -96,7 +108,10 @@ class TestExecNon200:
     def test_non_retryable_error_is_not_retried(self, mock_session: object) -> None:
         mock_session.get.return_value = _mock_response(status_code=400, reason="Bad Request")  # type: ignore[attr-defined]
         op = _make_op()
-        sc, msg, ct, _ = op.exec(method="get")
+        _response = op.exec(method="get")
+        sc = _response.status_code
+        msg = _response.body
+        ct = _response.content_type
         assert sc == 400
         assert msg == "HTTP status code 400: Bad Request"
         assert ct == "text/plain"
@@ -106,7 +121,10 @@ class TestExecNon200:
     def test_retry_attempts_one_disables_retry(self, mock_session: object) -> None:
         mock_session.get.return_value = _mock_response(status_code=503, reason="Service Unavailable")  # type: ignore[attr-defined]
         op = _make_op(config=OperationConfig(sparql_endpoint="http://localhost/sparql", retry_attempts=1))
-        sc, msg, ct, _ = op.exec(method="get")
+        _response = op.exec(method="get")
+        sc = _response.status_code
+        msg = _response.body
+        ct = _response.content_type
         assert sc == 503
         assert msg == "HTTP status code 503: Service Unavailable"
         assert ct == "text/plain"
@@ -118,7 +136,10 @@ class TestExecTimeout:
     def test_timeout_returns_408(self, mock_session: object) -> None:
         mock_session.get.side_effect = TimeoutError("timed out")  # type: ignore[attr-defined]
         op = _make_op()
-        sc, msg, ct, _ = op.exec(method="get")
+        _response = op.exec(method="get")
+        sc = _response.status_code
+        msg = _response.body
+        ct = _response.content_type
         assert sc == 408
         assert msg == "HTTP status code 408: SPARQL request timeout: timed out"
         assert ct == "text/plain"
@@ -130,7 +151,10 @@ class TestExecConnectionError:
     def test_connection_error_returns_502(self, mock_session: object) -> None:
         mock_session.get.side_effect = RequestsConnectionError("refused")  # type: ignore[attr-defined]
         op = _make_op()
-        sc, msg, ct, _ = op.exec(method="get")
+        _response = op.exec(method="get")
+        sc = _response.status_code
+        msg = _response.body
+        ct = _response.content_type
         assert sc == 502
         assert msg == "HTTP status code 502: SPARQL request failed: refused"
         assert ct == "text/plain"
@@ -152,7 +176,10 @@ class TestExecCacheHit:
             retry_wait=0,
         )
         op = _make_op(config=config)
-        sc, body, ct, _ = op.exec(method="get", content_type="text/csv")
+        _response = op.exec(method="get", content_type="text/csv")
+        sc = _response.status_code
+        body = _response.body
+        ct = _response.content_type
         assert sc == 200
         assert body == "name,age\r\nAlice,30\r\n"
         assert ct == "text/csv"
@@ -164,7 +191,10 @@ class TestExecTypeError:
     def test_type_error_returns_400(self, mock_session: object) -> None:
         mock_session.get.side_effect = TypeError("bad type")  # type: ignore[attr-defined]
         op = _make_op()
-        sc, msg, ct, _ = op.exec(method="get")
+        _response = op.exec(method="get")
+        sc = _response.status_code
+        msg = _response.body
+        ct = _response.content_type
         assert sc == 400
         assert msg.startswith(
             "HTTP status code 400: parameter in the request not compliant with the type specified"
@@ -178,7 +208,10 @@ class TestExecGenericError:
     def test_generic_error_returns_500(self, mock_session: object) -> None:
         mock_session.get.side_effect = RuntimeError("unexpected")  # type: ignore[attr-defined]
         op = _make_op()
-        sc, msg, ct, _ = op.exec(method="get")
+        _response = op.exec(method="get")
+        sc = _response.status_code
+        msg = _response.body
+        ct = _response.content_type
         assert sc == 500
         assert msg.startswith("HTTP status code 500: something unexpected happened - RuntimeError: unexpected (line ")
         assert ct == "text/plain"
@@ -190,8 +223,8 @@ class TestExecJsonOutput:
         mock_session.get.return_value = _mock_response()  # type: ignore[attr-defined]
         op = _make_op()
         result = op.exec(method="get", content_type="application/json")
-        assert result[0] == 200
-        assert result[2] == "application/json"
+        assert result.status_code == 200
+        assert result.content_type == "application/json"
 
 
 class TestExecMultipleParameterCombinations:
@@ -220,7 +253,7 @@ class TestExecMultipleParameterCombinations:
         config = OperationConfig(sparql_endpoint="http://localhost/sparql", addon=FakeAddon)  # type: ignore[arg-type]
         op = _make_op(op_item=op_item, config=config)
         result = op.exec(method="get", content_type="text/csv")
-        assert result[0] == 200
+        assert result.status_code == 200
         assert mock_session.get.call_count == 2  # type: ignore[attr-defined]
 
 
@@ -237,7 +270,7 @@ class TestExecNonStrTypedParam:
         }
         op = _make_op(op_url="/api/v1/test/5", op_item=op_item)
         result = op.exec(method="get", content_type="text/csv")
-        assert result[0] == 200
+        assert result.status_code == 200
 
 
 class TestExecKeyErrorFallback:
@@ -256,4 +289,4 @@ class TestExecKeyErrorFallback:
         }
         op = _make_op(op_item=op_item)
         result = op.exec(method="get", content_type="text/csv")
-        assert result[0] == 200
+        assert result.status_code == 200

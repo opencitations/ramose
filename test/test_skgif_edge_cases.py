@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from ramose import Operation
 from ramose.skg_if import _base, normalize_local_identifier_url
 
 if TYPE_CHECKING:
@@ -19,10 +20,12 @@ SKGIF_EDGE_PUBLIC_BASE_URL = "https://w3id.org/skg-if/sandbox/test"
 
 def _execute(manager: APIManager, local_identifier: str) -> dict:
     operation = manager.get_op(f"/skgif-edge/v1/products/{local_identifier}")
-    if isinstance(operation, tuple):
+    if not isinstance(operation, Operation):
         msg = f"Operation not found: {local_identifier}"
         raise TypeError(msg)
-    status, result, _, _ = operation.exec(method="get", content_type="application/json")
+    _response = operation.exec(method="get", content_type="application/json")
+    status = _response.status_code
+    result = _response.body
     if status != 200:
         msg = f"API returned status {status}: {result}"
         raise RuntimeError(msg)

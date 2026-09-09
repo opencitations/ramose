@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ramose import APIManager
+from ramose import APIManager, Operation
 from test.start_qlever import DATA_DIR, start_qlever_server, stop_qlever_server
 
 if TYPE_CHECKING:
@@ -77,10 +77,12 @@ def skgif_edge_api_manager(qlever_endpoint: str) -> APIManager:
 
 def execute_operation(api_manager: APIManager, operation_url: str) -> str:
     op = api_manager.get_op(operation_url)
-    if isinstance(op, tuple):
+    if not isinstance(op, Operation):
         msg = f"Operation not found: {operation_url}"
         raise TypeError(msg)
-    status, result, _, _ = op.exec(method="get", content_type="application/json")
+    _response = op.exec(method="get", content_type="application/json")
+    status = _response.status_code
+    result = _response.body
     if status != HTTPStatus.OK:
         msg = f"API returned status {status}: {result}"
         raise RuntimeError(msg)
