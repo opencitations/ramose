@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import sys
+from http import HTTPStatus
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from typing import TYPE_CHECKING
@@ -197,6 +198,6 @@ def test_skgif_invalid_request_returns_problem_details(tmp_path: Path, path: str
     assert response.headers["Content-Type"] == "application/json"
     problem = response.get_json()
     assert problem["type"] == "about:blank"
-    assert problem["title"] == "Unprocessable Entity"
+    assert problem["title"] == HTTPStatus.UNPROCESSABLE_ENTITY.phrase
     assert problem["status"] == 422
     assert problem["instance"] == path
