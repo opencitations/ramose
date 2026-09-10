@@ -801,12 +801,21 @@ class Operation:
         return None, None, ("JOIN", args["left_var"], args["right_var"], args["type"].lower())
 
     @staticmethod
-    def _handle_directive_values(parts: list[str]) -> tuple[None, None, tuple[str, list[str]]]:
-        tokens = parts[1:]
-        if not tokens:
+    def _handle_directive_values(parts: list[str]) -> tuple[None, None, tuple[str, list[str], int | None]]:
+        variables = [token for token in parts[1:] if "=" not in token]
+        if not variables:
             msg = "@@values needs at least one variable"
             raise ValueError(msg)
-        return None, None, ("VALUES_INJECT", tokens)
+        keyword_tokens = [token for token in parts[1:] if "=" in token]
+        if len(keyword_tokens) > 1 or (keyword_tokens and not keyword_tokens[0].startswith("batch_size=")):
+            msg = f"Unexpected argument {keyword_tokens[-1]!r}"
+            raise ValueError(msg)
+        raw_batch_size = keyword_tokens[0].split("=", 1)[1] if keyword_tokens else ""
+        batch_size = int(raw_batch_size) if raw_batch_size else None
+        if batch_size is not None and batch_size < 1:
+            msg = f"batch_size must be >= 1, got {batch_size}"
+            raise ValueError(msg)
+        return None, None, ("VALUES_INJECT", variables, batch_size)
 
     @staticmethod
     def _handle_directive_foreach(parts: list[str]) -> tuple[None, None, tuple[str, str, str, float]]:
@@ -864,7 +873,7 @@ class Operation:
           - ("QUERY", endpoint_url, engine, query_text)
           - ("JOIN", left_var, right_var, how)       # how in {"inner","left"}
           - ("REMOVE", [vars])
-          - ("VALUES_INJECT", [vars])                # @@values ?var1 ?var2 ...
+          - ("VALUES_INJECT", [vars], batch_size)    # @@values ?var1 ... [batch_size=N]
           - ("FOREACH", var_name, placeholder, delay)  # @@foreach ?var placeholder [wait=N]
           - ("PAGE", var_name, default_size, max_size)  # @@page ?var [default_size=N] [max_size=M]
         """
@@ -1471,12 +1480,19 @@ class Operation:
         if state["pending_foreach"] is not None:
             rows = self._exec_foreach_query(endpoint_url, engine, qtxt, state["pending_foreach"], state["acc"])  # type: ignore[arg-type]
             state["pending_foreach"] = None
-            state["pending_values_vars"] = None
+            state["pending_values"] = None
         else:
-            if state["pending_values_vars"]:
-                qtxt = self._inject_values_clause(qtxt, state["pending_values_vars"], state["acc"])  # type: ignore[arg-type]
-                state["pending_values_vars"] = None
-            rows = self._run_query_dicts(endpoint_url, engine, qtxt)
+            pending_values = state["pending_values"]
+            if pending_values:
+                variables, batch_size = pending_values  # type: ignore[misc]
+                value_batches = self._values_batches(variables, state["acc"], batch_size)  # type: ignore[arg-type]
+                rows = []
+                for value_batch in value_batches:
+                    batch_query = self._inject_values_clause(qtxt, variables, value_batch)
+                    rows.extend(self._run_query_dicts(endpoint_url, engine, batch_query))
+                state["pending_values"] = None
+            else:
+                rows = self._run_query_dicts(endpoint_url, engine, qtxt)
 
         if state["acc"] is None:
             state["acc"] = rows
@@ -1487,6 +1503,24 @@ class Operation:
         else:
             msg = "Multiple QUERY steps without an explicit @@join directive"
             raise ValueError(msg)
+
+    @staticmethod
+    def _values_batches(
+        variables: list[str], acc: list[dict[str, object]] | None, batch_size: int | None
+    ) -> list[list[dict[str, object]] | None]:
+        if acc is None:
+            return [None]
+        columns = [variable.lstrip("?") for variable in variables]
+        distinct_rows: list[dict[str, object]] = []
+        seen: set[tuple[object, ...]] = set()
+        for row in acc:
+            values = tuple(row[column] for column in columns)
+            if all(values) and values not in seen:
+                seen.add(values)
+                distinct_rows.append(row)
+        if batch_size is None:
+            return [distinct_rows]
+        return [distinct_rows[start : start + batch_size] for start in range(0, len(distinct_rows), batch_size)] or [[]]
 
     def _exec_page_step(self, var: str, default_size: str, max_size: str, state: dict[str, object]) -> None:
         q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
@@ -1536,7 +1570,7 @@ class Operation:
         state: dict[str, object] = {
             "acc": None,
             "pending_join": None,
-            "pending_values_vars": None,
+            "pending_values": None,
             "pending_foreach": None,
         }
 
@@ -1550,7 +1584,7 @@ class Operation:
             elif tag == "REMOVE":
                 state["acc"] = self._drop_columns(state["acc"] or [], st[1])  # type: ignore[arg-type]
             elif tag == "VALUES_INJECT":
-                state["pending_values_vars"] = st[1]
+                state["pending_values"] = (st[1], st[2])
             elif tag == "FOREACH":
                 state["pending_foreach"] = (st[1], st[2], st[3])
             elif tag == "PAGE":

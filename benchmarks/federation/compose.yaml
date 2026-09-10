@@ -5,11 +5,11 @@
 name: ramose-federation
 
 services:
-  index:
+  qlever:
     image: adfreiburg/qlever@sha256:3d3959f9cd97ca70a5b878ba647c4671a059597db2472bc1850f3ada99124bf5
     platform: linux/amd64
     entrypoint: ["qlever-server"]
-    command: ["-i", "/index/oc_index", "-j", "8", "-p", "7001", "-m", "4G", "-c", "0G", "-e", "0G", "-k", "0", "-s", "320s", "--no-metrics-log", "--no-resource-usage-log"]
+    command: ["-i", "/index/oc_index", "-j", "8", "-p", "7001", "-m", "4G", "-c", "0G", "-e", "0G", "-k", "0", "-s", "60s", "--no-metrics-log", "--no-resource-usage-log"]
     volumes:
       - ./data/index/db:/index:ro
     mem_limit: 16g
@@ -22,7 +22,28 @@ services:
       retries: 30
       start_period: 60s
 
-  meta:
+  index:
+    image: ramose-federation-v2:local
+    build:
+      context: ../..
+      dockerfile: benchmarks/federation/Dockerfile
+    command: ["python", "/benchmark/proxy.py"]
+    volumes:
+      - .:/benchmark:ro
+    environment:
+      PROXY_UPSTREAM: http://qlever:7001
+      PROXY_BACKEND: index
+    mem_limit: 1g
+    depends_on:
+      qlever:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 7002), timeout=2).close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  virtuoso:
     image: openlink/virtuoso-opensource-7@sha256:44828bb88f0a55f21873b7c6b034436be33c58e74427a98e5de095fd0d4f4cc9
     platform: linux/amd64
     entrypoint: ["/bin/sh", "-ec"]
@@ -47,22 +68,47 @@ services:
       retries: 30
       start_period: 60s
 
+  meta:
+    image: ramose-federation-v2:local
+    build:
+      context: ../..
+      dockerfile: benchmarks/federation/Dockerfile
+    command: ["python", "/benchmark/proxy.py"]
+    volumes:
+      - .:/benchmark:ro
+    environment:
+      PROXY_UPSTREAM: http://virtuoso:8890
+      PROXY_BACKEND: meta
+    mem_limit: 1g
+    depends_on:
+      virtuoso:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 7002), timeout=2).close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   ramose:
     image: ramose-federation-v2:local
     build:
       context: ../..
       dockerfile: benchmarks/federation/Dockerfile
     command:
-      - python
-      - -m
-      - ramose
-      - -s
-      - /data/benchmark/operations.hf
-      - -w
+      - gunicorn
+      - --bind
       - 0.0.0.0:8080
-      - --no-cache
-      - --retry-attempts
-      - "1"
+      - --workers
+      - "5"
+      - --worker-class
+      - gevent
+      - --worker-connections
+      - "250"
+      - --timeout
+      - "180"
+      - --keep-alive
+      - "20"
+      - wsgi:app
     volumes:
       - .:/benchmark:ro
       - ./data/benchmark:/data/benchmark:ro

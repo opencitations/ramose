@@ -30,7 +30,11 @@ dependencies = [
 
 [project.optional-dependencies]
 sparql-anything = ["pysparql-anything>=1.0.0.0"]
-benchmark = ["scipy>=1.15.3"]
+benchmark = [
+    "gevent>=26.8.0",
+    "gunicorn>=26.2.0",
+    "packaging>=26.0",
+]
 
 [project.urls]
 Repository = "https://github.com/opencitations/ramose/"

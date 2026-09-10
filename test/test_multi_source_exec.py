@@ -275,7 +275,7 @@ class TestMultiSourceValuesInject:
         def mock_parse_steps(text: str, tp: str, par_dict: dict[str, object]) -> list[tuple[str, ...]]:
             return [
                 ("QUERY", "http://ep/sparql", "sparql", "SELECT ?doi ?qid WHERE { }"),
-                ("VALUES_INJECT", ["?doi"]),  # type: ignore[list-item]
+                ("VALUES_INJECT", ["?doi"], None),  # type: ignore[list-item]
                 ("JOIN", "?doi", "?doi", "inner"),
                 ("QUERY", "http://ep2/sparql", "sparql", "SELECT ?doi ?extra WHERE { }"),
             ]
@@ -290,6 +290,82 @@ class TestMultiSourceValuesInject:
             _ctype = _response.content_type
 
         assert sc == 200
+
+    def test_batched_values_pipeline_deduplicates_and_preserves_left_rows(self) -> None:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": (
+                "SELECT ?id WHERE { }\n"
+                "@@join ?id ?id type=left\n"
+                "@@values ?id batch_size=3\n"
+                "SELECT ?id ?metadata WHERE { }"
+            ),
+            "method": "get",
+            "field_type": "str(id) str(metadata)",
+        }
+        op = Operation(
+            "/api/test/value",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(sparql_endpoint="http://endpoint/sparql"),
+        )
+        initial_rows = [{"id": str(value)} for value in (1, 2, 2, 3, 4, 5, 6, 7)]
+        returned_batches = [
+            [{"id": "1", "metadata": "a"}, {"id": "2", "metadata": "b"}, {"id": "3", "metadata": "c"}],
+            [{"id": "4", "metadata": "d"}, {"id": "5", "metadata": "e"}],
+            [{"id": "7", "metadata": "g"}],
+        ]
+
+        with patch.object(op, "_run_sparql_dicts", side_effect=[initial_rows, *returned_batches]) as run_query:
+            response = op.exec(method="get", content_type="application/json")
+
+        assert response.status_code == 200
+        assert json.loads(response.body) == [
+            {"id": "1", "metadata": "a"},
+            {"id": "2", "metadata": "b"},
+            {"id": "2", "metadata": "b"},
+            {"id": "3", "metadata": "c"},
+            {"id": "4", "metadata": "d"},
+            {"id": "5", "metadata": "e"},
+            {"id": "6", "metadata": ""},
+            {"id": "7", "metadata": "g"},
+        ]
+        assert run_query.call_count == 4
+
+    def test_batched_values_failure_fails_operation(self) -> None:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?id WHERE { }\n@@join ?id ?id\n@@values ?id batch_size=2\nSELECT ?id WHERE { }",
+            "method": "get",
+            "field_type": "str(id)",
+        }
+        op = Operation(
+            "/api/test/value",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(sparql_endpoint="http://endpoint/sparql"),
+        )
+
+        with patch.object(
+            op,
+            "_run_sparql_dicts",
+            side_effect=[[{"id": "1"}, {"id": "2"}, {"id": "3"}], RuntimeError("batch failed")],
+        ):
+            response = op.exec(method="get", content_type="application/json")
+
+        assert response.status_code == 502
+        assert response.body == "HTTP status code 502: batch failed"
+
+    def test_batches_10178_distinct_values_exactly(self) -> None:
+        rows: list[dict[str, object]] = [{"id": str(value)} for value in range(10178)]
+        rows.extend(({"id": "0"}, {"id": "10177"}))
+
+        batches = Operation._values_batches(["?id"], rows, 3000)
+
+        assert [len(batch or []) for batch in batches] == [3000, 3000, 3000, 1178]
+        assert [row["id"] for batch in batches for row in (batch or [])] == [str(value) for value in range(10178)]
 
 
 class TestMultiSourceRetry:
@@ -573,7 +649,18 @@ class TestParseSteps:
         op = self._make_op()
         text = "SELECT ?a WHERE { }\n@@values ?a ?b\nSELECT ?a ?b WHERE { }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[1] == ("VALUES_INJECT", ["?a", "?b"])
+        assert steps[1] == ("VALUES_INJECT", ["?a", "?b"], None)
+
+    def test_values_batch_size(self) -> None:
+        op = self._make_op()
+        text = "SELECT ?a WHERE { }\n@@values ?a batch_size=3000\nSELECT ?a WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[1] == ("VALUES_INJECT", ["?a"], 3000)
+
+    def test_values_invalid_batch_size_raises(self) -> None:
+        op = self._make_op()
+        with pytest.raises(ValueError, match="batch_size must be >= 1, got 0"):
+            op._parse_steps("@@values ?a batch_size=0\nSELECT ?a WHERE { }", "http://ep/sparql", {})
 
     def test_foreach_directive(self) -> None:
         op = self._make_op()
@@ -701,7 +788,7 @@ class TestParseSteps:
         op = self._make_op()
         text = "@@values ?a:x\nSELECT ?a WHERE { }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[0] == ("VALUES_INJECT", ["?a:x"])
+        assert steps[0] == ("VALUES_INJECT", ["?a:x"], None)
 
     def test_foreach_missing_args_raises(self) -> None:
         op = self._make_op()

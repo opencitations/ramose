@@ -15,38 +15,51 @@ import random
 import shutil
 import statistics
 import subprocess
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import cast
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
-import queries
 import requests
-from scipy.stats import bootstrap
 
+csv.field_size_limit(sys.maxsize)
 BENCHMARK_DIR = Path(__file__).resolve().parent
 SNAPSHOT_MANIFEST = BENCHMARK_DIR / "snapshots.json"
+SPECIFICATION = BENCHMARK_DIR / "operations.hf"
 HOST_DATA_DIR = BENCHMARK_DIR / "data"
 CONTAINER_DATA_DIR = Path("/data")
 ORDER_SEED = 20260905
 BASE_URL = "http://ramose:8080/benchmark"
 INDEX_ENDPOINT = "http://index:7001"
-META_ENDPOINT = "http://meta:8890/sparql"
+INDEX_CONTROL = "http://index:7002"
+META_ENDPOINT = "http://meta:7001/sparql"
+META_CONTROL = "http://meta:7002"
+BACKEND_CONTROLS = (INDEX_CONTROL, META_CONTROL)
 MINIMUM_FREE_BYTES = 380_000_000_000
-REQUEST_TIMEOUT_SECONDS = 320
+REQUEST_TIMEOUT_SECONDS = 180
 SAMPLING_TIMEOUT_SECONDS = 900
 STRATEGIES = ("service", "orchestration")
-CONCURRENCY_LEVELS = (1, 4, 16)
-REPETITIONS = 10
-BOOTSTRAP_RESAMPLES = 10_000
+CONCURRENCY_LEVELS = (1, 16)
+REPETITIONS = 3
 HTTP_OK = 200
-SAMPLES_PER_BAND = 20
-WORK_BAND_BOUNDS = (10, 50, 100)
-SAMPLE_QUERY_PAGE_SIZE = 1000
-BANDS = ("0", "1-9", "10-49", "50-99", "100+")
+CLIENT_TIMEOUT_STATUS = 0
+BACKEND_IDLE_SECONDS = 15
+SAMPLES_PER_BAND = 5
+SAMPLE_QUERY_PAGE_SIZE = 100
+BAND_BOUNDS = (10, 100, 1000)
+BANDS = ("1-9", "10-99", "100-999", "1000-9999")
+MAX_VENUE_OMIDS = 10000
+MAX_VENUE_WORKS = 100_000
+PREFIXES = """PREFIX cito: <http://purl.org/spar/cito/>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+PREFIX fabio: <http://purl.org/spar/fabio/>
+"""
 
 
 @dataclass(frozen=True)
@@ -67,32 +80,59 @@ class Dataset:
 
 @dataclass(frozen=True)
 class Sample:
-    doi: str
-    omid: str
+    issn: str
+    omids: str
     expected_work_count: int
+
+    @property
+    def omid_count(self) -> int:
+        return len(self.omids.split("|"))
+
+    @property
+    def band(self) -> str:
+        for bound, band in zip(BAND_BOUNDS, BANDS[:-1], strict=True):
+            if self.omid_count < bound:
+                return band
+        return BANDS[-1]
+
+
+@dataclass(frozen=True)
+class Validation:
+    issn: str
+    strategy: str
+    status: int
+    latency_ms: float
+    response_bytes: int
+    equivalent: bool
+    backend_requests: int
+    backend_request_bytes: int
+    backend_response_bytes: int
+    backend_latency_ms: float
+    backend_errors: int
 
 
 @dataclass(frozen=True)
 class Measurement:
-    doi: str
+    concurrency: int
+    issn: str
     strategy: str
     repetition: int
-    concurrency: int
+    status: int
     latency_ms: float
     response_bytes: int
     started_ns: int
     finished_ns: int
-    enriched_work_count: int
     equivalent: bool
 
 
 @dataclass(frozen=True)
-class Batch:
-    strategy: str
-    repetition: int
-    concurrency: int
-    base_url: str
-    expected: dict[tuple[str, str], queries.Response]
+class Response:
+    omids: tuple[str, ...]
+    relations: tuple[tuple[str, str, str], ...]
+    works: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...]
+
+
+Expected = dict[str, Response | None]
 
 
 def read_manifest(path: Path) -> tuple[Dataset, ...]:
@@ -121,26 +161,10 @@ def read_manifest(path: Path) -> tuple[Dataset, ...]:
     return tuple(datasets)
 
 
-def work_band(count: int) -> str:
-    if count == 0:
-        return "0"
-    if count < WORK_BAND_BOUNDS[0]:
-        return "1-9"
-    if count < WORK_BAND_BOUNDS[1]:
-        return "10-49"
-    if count < WORK_BAND_BOUNDS[2]:
-        return "50-99"
-    return "100+"
-
-
 def read_samples(path: Path) -> tuple[Sample, ...]:
     with path.open(newline="", encoding="utf-8") as file:
         return tuple(
-            Sample(
-                doi=row["doi"],
-                omid=row["omid"],
-                expected_work_count=int(row["expected_work_count"]),
-            )
+            Sample(issn=row["issn"], omids=row["omids"], expected_work_count=int(row["expected_work_count"]))
             for row in csv.DictReader(file)
         )
 
@@ -161,48 +185,58 @@ def sparql_rows(endpoint: str, query: str) -> list[dict[str, str]]:
     return list(csv.DictReader(io.StringIO(response.content.decode("utf-8-sig"))))
 
 
-def meta_candidates(limit: int, after: str | None) -> list[tuple[str, str]]:
-    cursor_filter = f"FILTER(STR(?doi) > {json.dumps(after)})" if after else ""
-    query = f"""{queries.PREFIXES}
-SELECT ?doi
+def issn_page(limit: int, after: str | None) -> list[str]:
+    cursor_filter = f"FILTER(STR(?issn) > {json.dumps(after)})" if after else ""
+    query = f"""{PREFIXES}
+SELECT ?issn
 FROM <https://w3id.org/oc/meta/id/>
 WHERE {{
-  ?identifier datacite:usesIdentifierScheme datacite:doi ; literal:hasLiteralValue ?doi .
+  ?identifier datacite:usesIdentifierScheme datacite:issn ; literal:hasLiteralValue ?issn .
   {cursor_filter}
 }}
-ORDER BY STR(?doi)
+ORDER BY STR(?issn)
 LIMIT {limit}
 """  # noqa: S608
-    dois = sorted({row["doi"] for row in sparql_rows(META_ENDPOINT, query)})
-    if not dois:
-        return []
-    values = " ".join(f"{json.dumps(doi)} {json.dumps(doi)}^^<http://www.w3.org/2001/XMLSchema#string>" for doi in dois)
-    query = f"""{queries.PREFIXES}
-SELECT DISTINCT ?doi ?omid
-FROM <https://w3id.org/oc/meta/id/>
+    return sorted({row["issn"] for row in sparql_rows(META_ENDPOINT, query)})
+
+
+def resolved_omids(issns: list[str]) -> dict[str, set[str]]:
+    values = " ".join(
+        f"{json.dumps(issn)} {json.dumps(issn)}^^<http://www.w3.org/2001/XMLSchema#string>" for issn in issns
+    )
+    query = f"""{PREFIXES}
+SELECT DISTINCT (STR(?issn) AS ?value) ?omid
 FROM <https://w3id.org/oc/meta/br/>
+FROM <https://w3id.org/oc/meta/id/>
 WHERE {{
-  VALUES ?doi_value {{ {values} }}
-  ?identifier datacite:usesIdentifierScheme datacite:doi ; literal:hasLiteralValue ?doi_value .
-  ?omid datacite:hasIdentifier ?identifier .
-  BIND(STR(?doi_value) AS ?doi)
+  VALUES ?issn {{ {values} }}
+  ?venue_identifier datacite:usesIdentifierScheme datacite:issn ; literal:hasLiteralValue ?issn .
+  ?venue datacite:hasIdentifier ?venue_identifier .
+  {{ ?omid frbr:partOf ?venue . }}
+  UNION {{ ?omid frbr:partOf/frbr:partOf ?venue . }}
+  UNION {{ ?omid frbr:partOf/frbr:partOf/frbr:partOf ?venue . }}
+  UNION {{ ?omid frbr:partOf/frbr:partOf/frbr:partOf/frbr:partOf ?venue . }}
+  ?omid a fabio:JournalArticle .
 }}
 """  # noqa: S608
-    works: dict[str, set[str]] = {doi: set() for doi in dois}
+    omids: dict[str, set[str]] = {issn: set() for issn in issns}
     for row in sparql_rows(META_ENDPOINT, query):
-        works[row["doi"]].add(row["omid"])
-    return [(doi, "|".join(sorted(works[doi]))) for doi in dois]
+        omids[row["value"]].add(row["omid"])
+    return omids
 
 
-def incoming_counts(candidates: list[tuple[str, str]]) -> dict[str, int]:
-    values = " ".join(f"({json.dumps(doi)} <{omid}>)" for doi, omids in candidates for omid in omids.split("|") if omid)
-    query = f"""{queries.PREFIXES}
-SELECT ?doi (COUNT(DISTINCT ?citing) AS ?count)
-WHERE {{ VALUES (?doi ?omid) {{ {values} }} {queries.RELATIONS} }}
-GROUP BY ?doi
+def incoming_counts(candidates: dict[str, set[str]]) -> dict[str, int]:
+    values = " ".join(f"({json.dumps(issn)} <{omid}>)" for issn, omids in candidates.items() for omid in omids)
+    query = f"""{PREFIXES}
+SELECT ?issn (COUNT(DISTINCT ?citing) AS ?count)
+WHERE {{
+  VALUES (?issn ?omid) {{ {values} }}
+  ?citation a cito:Citation ; cito:hasCitedEntity ?omid ; cito:hasCitingEntity ?citing .
+}}
+GROUP BY ?issn
 """
-    counts = dict.fromkeys((doi for doi, _ in candidates), 0)
-    counts.update({row["doi"]: int(row["count"]) for row in sparql_rows(INDEX_ENDPOINT, query)})
+    counts = dict.fromkeys(candidates, 0)
+    counts.update({row["issn"]: int(row["count"]) for row in sparql_rows(INDEX_ENDPOINT, query)})
     return counts
 
 
@@ -210,28 +244,27 @@ def select_samples(progress_path: Path) -> tuple[Sample, ...]:
     selected: dict[str, list[Sample]] = {band: [] for band in BANDS}
     offset = 0
     after = None
-    seen_dois: set[str] = set()
     while any(len(samples) < SAMPLES_PER_BAND for samples in selected.values()):
-        print(f"Sampling DOI candidates at offset {offset}...", flush=True)  # noqa: T201
-        candidates = meta_candidates(SAMPLE_QUERY_PAGE_SIZE, after)
-        if not candidates:
+        print(f"Sampling venues at offset {offset}...", flush=True)  # noqa: T201
+        issns = issn_page(SAMPLE_QUERY_PAGE_SIZE, after)
+        if not issns:
             missing = {
                 band: SAMPLES_PER_BAND - len(samples)
                 for band, samples in selected.items()
                 if len(samples) < SAMPLES_PER_BAND
             }
-            message = f"The fixed snapshots do not contain enough samples: {missing}"
+            message = f"The fixed snapshots do not contain enough venue samples: {missing}"
             raise RuntimeError(message)
-        counts = incoming_counts(candidates)
-        for doi, omid in candidates:
-            count = counts[doi]
-            band = work_band(count)
-            if not omid or doi in seen_dois or len(selected[band]) >= SAMPLES_PER_BAND:
-                continue
-            selected[band].append(Sample(doi, omid, count))
-            seen_dois.add(doi)
-        offset += len(candidates)
-        after = candidates[-1][0]
+        candidates = {
+            issn: omids for issn, omids in resolved_omids(issns).items() if omids and len(omids) < MAX_VENUE_OMIDS
+        }
+        counts = incoming_counts(candidates) if candidates else {}
+        for issn, omids in candidates.items():
+            sample = Sample(issn, "|".join(sorted(omids)), counts[issn])
+            if len(selected[sample.band]) < SAMPLES_PER_BAND and sample.expected_work_count < MAX_VENUE_WORKS:
+                selected[sample.band].append(sample)
+        offset += len(issns)
+        after = issns[-1]
         progress_path.parent.mkdir(parents=True, exist_ok=True)
         progress_path.write_text(
             json.dumps(
@@ -243,7 +276,10 @@ def select_samples(progress_path: Path) -> tuple[Sample, ...]:
             ),
             encoding="utf-8",
         )
-        print(f"Selected samples per band: { {band: len(rows) for band, rows in selected.items()} }", flush=True)  # noqa: T201
+        print(  # noqa: T201
+            f"Selected venue samples per band: { {band: len(rows) for band, rows in selected.items()} }",
+            flush=True,
+        )
     return tuple(sample for band in BANDS for sample in selected[band])
 
 
@@ -314,7 +350,7 @@ def dataset_is_ready(dataset: Dataset, data_dir: Path) -> bool:
 def prepare() -> None:
     spec_path = HOST_DATA_DIR / "benchmark/operations.hf"
     spec_path.parent.mkdir(parents=True, exist_ok=True)
-    spec_path.write_text(queries.specification(), encoding="utf-8")
+    shutil.copyfile(SPECIFICATION, spec_path)
     datasets = read_manifest(SNAPSHOT_MANIFEST)
     pending = [dataset for dataset in datasets if not dataset_is_ready(dataset, HOST_DATA_DIR)]
     if pending:
@@ -326,76 +362,166 @@ def prepare() -> None:
         prepare_dataset(dataset, HOST_DATA_DIR)
 
 
-def request_strategy(base_url: str, strategy: str, doi: str) -> tuple[int, bytes, float, int, int]:
-    url = f"{base_url.rstrip('/')}/{strategy}/{quote(quote(doi, safe=''), safe='')}"
+def set_backend_label(label: str) -> None:
+    for control in BACKEND_CONTROLS:
+        requests.post(f"{control}/label", json={"label": label}, timeout=10).raise_for_status()
+
+
+def drain_backend_records() -> list[dict[str, object]]:
+    records = []
+    for control in BACKEND_CONTROLS:
+        response = requests.get(f"{control}/records", timeout=60)
+        response.raise_for_status()
+        records.extend(response.json())
+    return records
+
+
+def wait_backend_idle() -> None:
+    while True:
+        time.sleep(BACKEND_IDLE_SECONDS)
+        active = []
+        for control in BACKEND_CONTROLS:
+            response = requests.get(f"{control}/status", timeout=10)
+            response.raise_for_status()
+            active.append(response.json()["active"])
+        if active == [0, 0]:
+            return
+
+
+def backend_totals(records: list[dict[str, object]]) -> tuple[int, int, int, float, int]:
+    return (
+        len(records),
+        sum(cast("int", record["request_bytes"]) for record in records),
+        sum(cast("int", record["response_bytes"]) for record in records),
+        sum(cast("float", record["latency_ms"]) for record in records),
+        sum(cast("int", record["status"]) >= requests.codes.bad_request for record in records),
+    )
+
+
+def request_strategy(strategy: str, sample: Sample) -> tuple[int, bytes, float, int, int]:
+    url = f"{BASE_URL}/{strategy}/{quote(quote(sample.issn, safe=''), safe='')}"
     started_ns = time.perf_counter_ns()
-    response = requests.get(url, headers={"Accept": "application/json"}, timeout=REQUEST_TIMEOUT_SECONDS)
+    try:
+        response = requests.get(url, headers={"Accept": "application/json"}, timeout=REQUEST_TIMEOUT_SECONDS)
+    except requests.Timeout:
+        finished_ns = time.perf_counter_ns()
+        return CLIENT_TIMEOUT_STATUS, b"", (finished_ns - started_ns) / 1_000_000, started_ns, finished_ns
     finished_ns = time.perf_counter_ns()
     return response.status_code, response.content, (finished_ns - started_ns) / 1_000_000, started_ns, finished_ns
 
 
-def validated_responses(samples: tuple[Sample, ...], base_url: str) -> dict[tuple[str, str], queries.Response]:
-    responses: dict[tuple[str, str], queries.Response] = {}
+def normalize(content: bytes) -> Response:
+    rows = json.loads(content)
+    if not isinstance(rows, list) or not rows:
+        message = "Expected resolved article rows, including when no citations exist"
+        raise ValueError(message)
+    omids = set()
+    relations = set()
+    works: dict[str, set[tuple[str, ...]]] = {}
+    for row in rows:
+        if not row["omid"] or bool(row["citation"]) != bool(row["citing"]):
+            message = "Each citation must have both a cited and a citing resource"
+            raise ValueError(message)
+        if not row["citation"] and row["metadata"]:
+            message = "A row without a citation cannot contain citing work metadata"
+            raise ValueError(message)
+        omids.add(row["omid"])
+        if row["citation"]:
+            relations.add((row["citation"], row["omid"], row["citing"]))
+            facts = works.setdefault(row["citing"], set())
+            facts.update(
+                tuple(unquote(part) for part in fact.split(";")) for fact in row["metadata"].split("|") if fact
+            )
+    return Response(
+        tuple(sorted(omids)),
+        tuple(sorted(relations)),
+        tuple((work, tuple(sorted(facts))) for work, facts in sorted(works.items())),
+    )
+
+
+def normalized_response(status: int, content: bytes) -> Response | None:
+    if status != HTTP_OK:
+        return None
+    try:
+        return normalize(content)
+    except ValueError:
+        return None
+
+
+def matches_sample(normalized: Response, sample: Sample) -> bool:
+    return normalized.omids == tuple(sample.omids.split("|")) and len(normalized.works) == sample.expected_work_count
+
+
+def validate(samples: tuple[Sample, ...]) -> tuple[Expected, list[Validation], list[dict[str, object]]]:
+    expected: Expected = {}
+    validations: list[Validation] = []
+    backend_records: list[dict[str, object]] = []
     for position, sample in enumerate(samples, 1):
         print(  # noqa: T201
-            f"Validating {position}/{len(samples)}: {sample.doi}, citing works={sample.expected_work_count}", flush=True
+            f"Validating {position}/{len(samples)}: {sample.issn}, "
+            f"articles={sample.omid_count}, citing works={sample.expected_work_count}",
+            flush=True,
         )
+        expected[sample.issn] = None
         for strategy in STRATEGIES:
-            status, content, _, _, _ = request_strategy(base_url, strategy, sample.doi)
-            if status != HTTP_OK:
-                message = f"{strategy} returned HTTP {status} for {sample.doi}"
+            set_backend_label(f"validation:{strategy}:{sample.issn}")
+            status, content, latency_ms, _, _ = request_strategy(strategy, sample)
+            wait_backend_idle()
+            set_backend_label("")
+            request_records = drain_backend_records()
+            backend_records.extend(request_records)
+            backend = backend_totals(request_records)
+            normalized = normalized_response(status, content)
+            equivalent = normalized is not None and matches_sample(normalized, sample)
+            if equivalent and expected[sample.issn] is None:
+                expected[sample.issn] = normalized
+            elif equivalent and normalized != expected[sample.issn]:
+                message = f"Strategies diverge for {sample.issn}"
                 raise RuntimeError(message)
-            normalized = queries.normalize(content)
-            if normalized.omids != tuple(sorted(sample.omid.split("|"))):
-                message = f"DOI resolution diverges for {sample.doi}"
-                raise RuntimeError(message)
-            if len(normalized.works) != sample.expected_work_count:
-                message = f"Distinct citing work count diverges for {sample.doi}"
-                raise RuntimeError(message)
-            responses[(sample.doi, strategy)] = normalized
-        if responses[(sample.doi, "service")] != responses[(sample.doi, "orchestration")]:
-            message = f"Strategies diverge for {sample.doi}"
-            raise RuntimeError(message)
-    return responses
+            validations.append(
+                Validation(
+                    sample.issn,
+                    strategy,
+                    status,
+                    latency_ms,
+                    len(content),
+                    equivalent,
+                    *backend,
+                )
+            )
+    return expected, validations, backend_records
 
 
-def measure(sample: Sample, batch: Batch) -> Measurement:
-    status, content, latency_ms, started_ns, finished_ns = request_strategy(batch.base_url, batch.strategy, sample.doi)
-    if status != HTTP_OK:
-        message = f"{batch.strategy} returned HTTP {status} for {sample.doi}"
-        raise RuntimeError(message)
-    normalized = queries.normalize(content)
-    if normalized != batch.expected[(sample.doi, batch.strategy)]:
-        message = f"{batch.strategy} diverged during measurement for {sample.doi}"
-        raise RuntimeError(message)
+def measure(sample: Sample, strategy: str, concurrency: int, repetition: int, expected: Expected) -> Measurement:
+    status, content, latency_ms, started_ns, finished_ns = request_strategy(strategy, sample)
+    expected_response = expected[sample.issn]
     return Measurement(
-        doi=sample.doi,
-        strategy=batch.strategy,
-        repetition=batch.repetition,
-        concurrency=batch.concurrency,
+        concurrency=concurrency,
+        issn=sample.issn,
+        strategy=strategy,
+        repetition=repetition,
+        status=status,
         latency_ms=latency_ms,
         response_bytes=len(content),
         started_ns=started_ns,
         finished_ns=finished_ns,
-        enriched_work_count=normalized.enriched_work_count,
-        equivalent=True,
+        equivalent=expected_response is not None and normalized_response(status, content) == expected_response,
     )
 
 
 def execute_batch(
-    samples: tuple[Sample, ...],
-    batch: Batch,
+    samples: tuple[Sample, ...], strategy: str, concurrency: int, repetition: int, expected: Expected
 ) -> list[Measurement]:
-    with ThreadPoolExecutor(max_workers=batch.concurrency) as executor:
-        return list(executor.map(lambda sample: measure(sample, batch), samples))
+    with ThreadPoolExecutor(max_workers=concurrency) as executor:
+        return list(executor.map(lambda sample: measure(sample, strategy, concurrency, repetition, expected), samples))
 
 
-def write_measurements(path: Path, measurements: list[Measurement]) -> None:
+def write_rows(path: Path, rows: list[Validation] | list[Measurement]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=list(Measurement.__dataclass_fields__))
+        writer = csv.DictWriter(file, fieldnames=list(type(rows[0]).__dataclass_fields__))
         writer.writeheader()
-        writer.writerows(asdict(measurement) for measurement in measurements)
+        writer.writerows(asdict(row) for row in rows)
 
 
 def environment_description() -> dict[str, object]:
@@ -407,51 +533,87 @@ def environment_description() -> dict[str, object]:
         "python": platform.python_version(),
         "ramose_commit": os.environ["RAMOSE_BENCHMARK_COMMIT"],
         "snapshots": json.loads(SNAPSHOT_MANIFEST.read_text(encoding="utf-8")),
+        "order_seed": ORDER_SEED,
+        "repetitions": REPETITIONS,
+        "concurrency_levels": CONCURRENCY_LEVELS,
     }
+
+
+def shuffled(samples: tuple[Sample, ...], repetition: int) -> tuple[Sample, ...]:
+    ordered = list(samples)
+    random.Random(ORDER_SEED + repetition).shuffle(ordered)  # noqa: S311
+    return tuple(ordered)
+
+
+def strategies_for(repetition: int) -> tuple[str, ...]:
+    return STRATEGIES if repetition % 2 else tuple(reversed(STRATEGIES))
+
+
+def write_run_metadata(sample_path: Path, result_dir: Path, expected: Expected) -> None:
+    (result_dir / "expected.json").write_text(
+        json.dumps(
+            {issn: None if response is None else asdict(response) for issn, response in expected.items()}, indent=2
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    shutil.copyfile(sample_path, result_dir / "sample.csv")
+    shutil.copyfile(SPECIFICATION, result_dir / "operations.hf")
+    shutil.copyfile(BENCHMARK_DIR / "compose.yaml", result_dir / "compose.yaml")
+    (result_dir / "environment.json").write_text(
+        json.dumps(environment_description(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
+def write_backend_records(path: Path, records: list[dict[str, object]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fields = [
+        "backend",
+        "label",
+        "method",
+        "request_bytes",
+        "status",
+        "response_bytes",
+        "latency_ms",
+        "started_ns",
+        "error",
+    ]
+    with path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(records)
 
 
 def run(sample_path: Path, result_dir: Path) -> None:
     result_dir.mkdir(parents=True, exist_ok=False)
     samples = read_samples(sample_path)
     print(f"Validating {len(samples)} samples...", flush=True)  # noqa: T201
-    expected = validated_responses(samples, BASE_URL)
-    (result_dir / "expected.json").write_text(
-        json.dumps({sample.doi: asdict(expected[(sample.doi, "service")]) for sample in samples}, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    shutil.copyfile(sample_path, result_dir / "sample.csv")
-    spec = queries.specification()
-    (result_dir / "operations.hf").write_text(spec, encoding="utf-8")
-    shutil.copyfile(BENCHMARK_DIR / "compose.yaml", result_dir / "compose.yaml")
+    expected, validations, backend_records = validate(samples)
+    write_rows(result_dir / "validation.csv", validations)
+    write_run_metadata(sample_path, result_dir, expected)
     print("Warming up both strategies...", flush=True)  # noqa: T201
     for strategy in STRATEGIES:
-        execute_batch(samples, Batch(strategy, 0, max(CONCURRENCY_LEVELS), BASE_URL, expected))
+        wait_backend_idle()
+        set_backend_label(f"warmup:{strategy}")
+        execute_batch(samples, strategy, max(CONCURRENCY_LEVELS), 0, expected)
+        wait_backend_idle()
+        set_backend_label("")
+        backend_records.extend(drain_backend_records())
     measurements: list[Measurement] = []
-    write_measurements(result_dir / "raw.csv", measurements)
-    (result_dir / "environment.json").write_text(
-        json.dumps(
-            {
-                **environment_description(),
-                "order_seed": ORDER_SEED,
-                "repetitions": REPETITIONS,
-                "concurrency_levels": CONCURRENCY_LEVELS,
-            },
-            indent=2,
-            sort_keys=True,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
     for concurrency in CONCURRENCY_LEVELS:
         for repetition in range(1, REPETITIONS + 1):
-            ordered = list(samples)
-            random.Random(ORDER_SEED + repetition).shuffle(ordered)  # noqa: S311
-            for strategy in STRATEGIES if repetition % 2 else reversed(STRATEGIES):
-                batch = Batch(strategy, repetition, concurrency, BASE_URL, expected)
-                measurements.extend(execute_batch(tuple(ordered), batch))
-                write_measurements(result_dir / "raw.csv", measurements)
+            ordered = shuffled(samples, repetition)
+            for strategy in strategies_for(repetition):
+                wait_backend_idle()
+                set_backend_label(f"measurement:{concurrency}:{repetition}:{strategy}")
+                measurements.extend(execute_batch(ordered, strategy, concurrency, repetition, expected))
+                wait_backend_idle()
+                set_backend_label("")
+                backend_records.extend(drain_backend_records())
+                write_rows(result_dir / "raw.csv", measurements)
+                write_backend_records(result_dir / "backend.csv", backend_records)
                 print(  # noqa: T201
-                    f"Measured {strategy}: concurrency={concurrency}, repetition={repetition}; "
+                    f"Measured concurrency {concurrency}, {strategy}, repetition {repetition}; "
                     f"{len(measurements)} measurements saved.",
                     flush=True,
                 )
@@ -466,95 +628,77 @@ def quantile(values: list[float], probability: float) -> float:
     return ordered[lower] + (ordered[upper] - ordered[lower]) * fraction
 
 
-def batch_throughput(rows: list[Measurement]) -> float:
-    duration_seconds = (max(row.finished_ns for row in rows) - min(row.started_ns for row in rows)) / 1_000_000_000
-    return len(rows) / duration_seconds
-
-
-def summarize_group(
-    concurrency: int,
-    band: str,
-    rows: list[Measurement],
-) -> dict[str, int | float | str]:
-    by_strategy = {
-        strategy: sorted(
-            (row for row in rows if row.strategy == strategy),
-            key=lambda row: (row.repetition, row.doi),
-        )
-        for strategy in STRATEGIES
-    }
-    service_latencies = [row.latency_ms for row in by_strategy["service"]]
-    orchestration_latencies = [row.latency_ms for row in by_strategy["orchestration"]]
-    confidence_interval = bootstrap(
-        (service_latencies, orchestration_latencies),
-        lambda service, orchestration: statistics.median(orchestration) / statistics.median(service),
-        paired=True,
-        vectorized=False,
-        n_resamples=BOOTSTRAP_RESAMPLES,
-        confidence_level=0.95,
-        method="percentile",
-        rng=20260905,
-    ).confidence_interval
-    result: dict[str, int | float | str] = {
-        "concurrency": concurrency,
-        "work_band": band,
-        "requests_per_strategy": len(service_latencies),
-        "service_median_ms": statistics.median(service_latencies),
-        "service_p95_ms": quantile(service_latencies, 0.95),
-        "orchestration_median_ms": statistics.median(orchestration_latencies),
-        "orchestration_p95_ms": quantile(orchestration_latencies, 0.95),
-        "latency_ratio_v2_to_service": statistics.median(orchestration_latencies)
-        / statistics.median(service_latencies),
-        "latency_ratio_ci95_low": float(confidence_interval.low),
-        "latency_ratio_ci95_high": float(confidence_interval.high),
-        "service_throughput_rps": "",
-        "orchestration_throughput_rps": "",
-    }
-    for strategy in STRATEGIES:
-        result[f"{strategy}_mean_response_bytes"] = statistics.mean(row.response_bytes for row in by_strategy[strategy])
-        result[f"{strategy}_mean_enriched_works"] = statistics.mean(
-            row.enriched_work_count for row in by_strategy[strategy]
-        )
-    if band == "all":
-        for strategy in STRATEGIES:
-            batches: dict[int, list[Measurement]] = {}
-            for row in by_strategy[strategy]:
-                batches.setdefault(row.repetition, []).append(row)
-            result[f"{strategy}_throughput_rps"] = statistics.mean(
-                batch_throughput(batch) for batch in batches.values()
-            )
-    return result
-
-
-def summarize(sample_path: Path, result_dir: Path) -> None:
-    samples = read_samples(sample_path)
-    sample_by_doi = {sample.doi: sample for sample in samples}
-    with (result_dir / "raw.csv").open(newline="", encoding="utf-8") as file:
-        rows = [
+def read_measurements(path: Path) -> list[Measurement]:
+    with path.open(newline="", encoding="utf-8") as file:
+        return [
             Measurement(
-                doi=row["doi"],
+                concurrency=int(row["concurrency"]),
+                issn=row["issn"],
                 strategy=row["strategy"],
                 repetition=int(row["repetition"]),
-                concurrency=int(row["concurrency"]),
+                status=int(row["status"]),
                 latency_ms=float(row["latency_ms"]),
                 response_bytes=int(row["response_bytes"]),
                 started_ns=int(row["started_ns"]),
                 finished_ns=int(row["finished_ns"]),
-                enriched_work_count=int(row["enriched_work_count"]),
                 equivalent=row["equivalent"] == "True",
             )
             for row in csv.DictReader(file)
         ]
+
+
+def read_validations(path: Path) -> list[Validation]:
+    with path.open(newline="", encoding="utf-8") as file:
+        return [
+            Validation(
+                issn=row["issn"],
+                strategy=row["strategy"],
+                status=int(row["status"]),
+                latency_ms=float(row["latency_ms"]),
+                response_bytes=int(row["response_bytes"]),
+                equivalent=row["equivalent"] == "True",
+                backend_requests=int(row["backend_requests"]),
+                backend_request_bytes=int(row["backend_request_bytes"]),
+                backend_response_bytes=int(row["backend_response_bytes"]),
+                backend_latency_ms=float(row["backend_latency_ms"]),
+                backend_errors=int(row["backend_errors"]),
+            )
+            for row in csv.DictReader(file)
+        ]
+
+
+def summarize_group(
+    concurrency: int, band: str, rows: list[Measurement], validations: list[Validation]
+) -> dict[str, object]:
+    result: dict[str, object] = {
+        "concurrency": concurrency,
+        "band": band,
+        "requests_per_strategy": len([row for row in rows if row.strategy == STRATEGIES[0]]),
+    }
+    for strategy in STRATEGIES:
+        group = [row for row in rows if row.strategy == strategy]
+        latencies = [row.latency_ms for row in group if row.equivalent]
+        backend_requests = [row.backend_requests for row in validations if row.strategy == strategy]
+        result[f"{strategy}_success_rate"] = len(latencies) / len(group)
+        result[f"{strategy}_median_ms"] = statistics.median(latencies) if latencies else ""
+        result[f"{strategy}_p95_ms"] = quantile(latencies, 0.95) if latencies else ""
+        result[f"{strategy}_mean_backend_requests"] = statistics.mean(backend_requests)
+        result[f"{strategy}_max_backend_requests"] = max(backend_requests)
+    return result
+
+
+def summarize(sample_path: Path, result_dir: Path) -> None:
+    band_by_issn = {sample.issn: sample.band for sample in read_samples(sample_path)}
+    measurements = read_measurements(result_dir / "raw.csv")
+    validations = read_validations(result_dir / "validation.csv")
     summary = []
-    for concurrency in sorted({row.concurrency for row in rows}):
-        concurrency_rows = [row for row in rows if row.concurrency == concurrency]
-        summary.append(summarize_group(concurrency, "all", concurrency_rows))
-        for band in BANDS:
-            band_rows = [
-                row for row in concurrency_rows if work_band(sample_by_doi[row.doi].expected_work_count) == band
-            ]
-            summary.append(summarize_group(concurrency, band, band_rows))
-    (result_dir / "summary.csv").parent.mkdir(parents=True, exist_ok=True)
+    for concurrency in CONCURRENCY_LEVELS:
+        level_rows = [row for row in measurements if row.concurrency == concurrency]
+        for band in (*BANDS, "all"):
+            band_rows = [row for row in level_rows if band in ("all", band_by_issn[row.issn])]
+            band_validations = [row for row in validations if band in ("all", band_by_issn[row.issn])]
+            if band_rows:
+                summary.append(summarize_group(concurrency, band, band_rows, band_validations))
     with (result_dir / "summary.csv").open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=list(summary[0]))
         writer.writeheader()

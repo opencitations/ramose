@@ -8,10 +8,12 @@
 # SPDX-License-Identifier: ISC
 
 from requests import Session as _RequestsSession
+from requests.adapters import HTTPAdapter
 
 FIELD_TYPE_RE = r"([^\(\s]+)\(([^\)]+)\)"
 PARAM_NAME = r"{([^{}\(\)]+)}"
 DEFAULT_HTTP_TIMEOUT = 60
+HTTP_POOL_SIZE = 100
 FORMAT_PARTS_WITH_MEDIA_TYPE = 3
 
 FORMAT_MEDIA_TYPES = {
@@ -25,6 +27,8 @@ def media_type_for_format(fmt: str) -> str | None:
 
 
 _http_session = _RequestsSession()
+for _scheme in ("http://", "https://"):
+    _http_session.mount(_scheme, HTTPAdapter(pool_connections=HTTP_POOL_SIZE, pool_maxsize=HTTP_POOL_SIZE))
 
 _backend_auth: dict[str, str] = {}
 

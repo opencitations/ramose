@@ -1,0 +1,202 @@
+#url /benchmark
+#type api
+#base http://localhost:8080
+#method post
+#addon addon
+#title Enriched incoming citations of a venue
+#description Compare one federated SERVICE query with the RAMOSE orchestrator: resolve an ISSN to its articles on Meta, fetch their incoming citations from Index, and enrich each citing work with its Meta metadata.
+#version 1.0.0
+#contacts contact@opencitations.net
+#license ISC
+#endpoint http://meta:7001/sparql
+#sources meta=http://meta:7001/sparql; index=http://index:7001
+
+#url /service/{issn}
+#type operation
+#issn str(.+)
+#method get
+#preprocess decode_issn(issn)
+#cache_disable true
+#field_type str(omid) str(citation) str(citing) str(metadata)
+#sparql PREFIX cito: <http://purl.org/spar/cito/>
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
+PREFIX pro: <http://purl.org/spar/pro/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+PREFIX fabio: <http://purl.org/spar/fabio/>
+PREFIX oco: <https://w3id.org/oc/ontology/>
+
+SELECT ?omid ?citation ?citing (GROUP_CONCAT(DISTINCT ?fact; SEPARATOR="|") AS ?metadata)
+FROM <https://w3id.org/oc/meta/br/>
+FROM <https://w3id.org/oc/meta/id/>
+FROM <https://w3id.org/oc/meta/ar/>
+FROM <https://w3id.org/oc/meta/ra/>
+WHERE {
+  {
+    SELECT ?omid ?citation (COALESCE(?source_citing, "") AS ?citing)
+    WHERE {
+      {
+        SELECT DISTINCT ?omid
+        WHERE {
+          VALUES ?issn { "[[issn]]" "[[issn]]"^^<http://www.w3.org/2001/XMLSchema#string> }
+          ?venue_identifier datacite:usesIdentifierScheme datacite:issn ; literal:hasLiteralValue ?issn .
+          ?venue datacite:hasIdentifier ?venue_identifier .
+          { ?omid frbr:partOf ?venue . }
+          UNION { ?omid frbr:partOf/frbr:partOf ?venue . }
+          UNION { ?omid frbr:partOf/frbr:partOf/frbr:partOf ?venue . }
+          UNION { ?omid frbr:partOf/frbr:partOf/frbr:partOf/frbr:partOf ?venue . }
+          ?omid a fabio:JournalArticle .
+        }
+      }
+      SERVICE <http://index:7001/> {
+        OPTIONAL { ?citation a cito:Citation ; cito:hasCitedEntity ?omid ; cito:hasCitingEntity ?source_citing . }
+      }
+    }
+  }
+  OPTIONAL {
+    {
+      ?citing dcterms:title ?title .
+      BIND(IF(BOUND(?title), CONCAT("title", ";", ENCODE_FOR_URI(COALESCE(STR(?title), ""))), "") AS ?fact)
+    }
+    UNION
+    {
+      ?citing prism:publicationDate ?date .
+      BIND(IF(BOUND(?date), CONCAT("date", ";", ENCODE_FOR_URI(COALESCE(STR(?date), ""))), "") AS ?fact)
+    }
+    UNION
+    {
+      ?citing datacite:hasIdentifier ?id .
+      ?id datacite:usesIdentifierScheme ?scheme ; literal:hasLiteralValue ?identifier_value .
+      BIND(IF(BOUND(?scheme), CONCAT("identifier", ";", ENCODE_FOR_URI(COALESCE(STR(?scheme), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?identifier_value), ""))), "") AS ?fact)
+    }
+    UNION
+    {
+      ?citing pro:isDocumentContextFor ?role .
+      ?role pro:withRole pro:author ; pro:isHeldBy ?agent .
+      OPTIONAL { ?role oco:hasNext ?next }
+      OPTIONAL { ?agent foaf:givenName ?given }
+      OPTIONAL { ?agent foaf:familyName ?family }
+      OPTIONAL { ?agent foaf:name ?name }
+      BIND(IF(BOUND(?role), CONCAT("author", ";", ENCODE_FOR_URI(COALESCE(STR(?role), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?agent), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?given), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?family), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?name), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?next), ""))), "") AS ?fact)
+    }
+    UNION
+    {
+      { ?citing frbr:partOf ?venue }
+      UNION { ?citing frbr:partOf ?venue_start . ?venue_start frbr:partOf+ ?venue }
+      BIND(IRI(STR(?venue)) AS ?venue_resource)
+      OPTIONAL {
+        ?venue_resource a ?excluded_type .
+        FILTER(?excluded_type IN (fabio:JournalIssue, fabio:JournalVolume))
+      }
+      OPTIONAL { ?venue_resource dcterms:title ?venue_title }
+      OPTIONAL {
+        ?venue datacite:hasIdentifier ?venue_identifier .
+        ?venue_identifier datacite:usesIdentifierScheme ?venue_scheme ; literal:hasLiteralValue ?venue_id .
+      }
+      BIND(IF(BOUND(?venue) && !BOUND(?excluded_type), CONCAT("venue", ";", ENCODE_FOR_URI(COALESCE(STR(?venue), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?venue_title), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?venue_scheme), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?venue_id), ""))), "") AS ?fact)
+    }
+  }
+}
+GROUP BY ?omid ?citation ?citing
+
+#url /orchestration/{issn}
+#type operation
+#issn str(.+)
+#method get
+#preprocess decode_issn(issn)
+#cache_disable true
+#field_type str(omid) str(citation) str(citing) str(metadata)
+#sparql PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+PREFIX fabio: <http://purl.org/spar/fabio/>
+
+SELECT DISTINCT ?omid
+FROM <https://w3id.org/oc/meta/br/>
+FROM <https://w3id.org/oc/meta/id/>
+WHERE {
+  VALUES ?issn { "[[issn]]" "[[issn]]"^^<http://www.w3.org/2001/XMLSchema#string> }
+  ?venue_identifier datacite:usesIdentifierScheme datacite:issn ; literal:hasLiteralValue ?issn .
+  ?venue datacite:hasIdentifier ?venue_identifier .
+  { ?omid frbr:partOf ?venue . }
+  UNION { ?omid frbr:partOf/frbr:partOf ?venue . }
+  UNION { ?omid frbr:partOf/frbr:partOf/frbr:partOf ?venue . }
+  UNION { ?omid frbr:partOf/frbr:partOf/frbr:partOf/frbr:partOf ?venue . }
+  ?omid a fabio:JournalArticle .
+}
+
+@@with index
+@@join ?omid ?omid type=left
+@@values ?omid
+PREFIX cito: <http://purl.org/spar/cito/>
+
+SELECT DISTINCT ?omid ?citation ?citing
+WHERE { ?citation a cito:Citation ; cito:hasCitedEntity ?omid ; cito:hasCitingEntity ?citing . }
+
+@@with meta
+@@join ?citing ?citing type=left
+@@values ?citing batch_size=3000
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX prism: <http://prismstandard.org/namespaces/basic/2.0/>
+PREFIX pro: <http://purl.org/spar/pro/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX frbr: <http://purl.org/vocab/frbr/core#>
+PREFIX fabio: <http://purl.org/spar/fabio/>
+PREFIX oco: <https://w3id.org/oc/ontology/>
+
+SELECT DISTINCT ?citing (GROUP_CONCAT(DISTINCT ?fact; SEPARATOR="|") AS ?metadata)
+FROM <https://w3id.org/oc/meta/br/>
+FROM <https://w3id.org/oc/meta/id/>
+FROM <https://w3id.org/oc/meta/ar/>
+FROM <https://w3id.org/oc/meta/ra/>
+WHERE {
+  OPTIONAL {
+    {
+      ?citing dcterms:title ?title .
+      BIND(IF(BOUND(?title), CONCAT("title", ";", ENCODE_FOR_URI(COALESCE(STR(?title), ""))), "") AS ?fact)
+    }
+    UNION
+    {
+      ?citing prism:publicationDate ?date .
+      BIND(IF(BOUND(?date), CONCAT("date", ";", ENCODE_FOR_URI(COALESCE(STR(?date), ""))), "") AS ?fact)
+    }
+    UNION
+    {
+      ?citing datacite:hasIdentifier ?id .
+      ?id datacite:usesIdentifierScheme ?scheme ; literal:hasLiteralValue ?identifier_value .
+      BIND(IF(BOUND(?scheme), CONCAT("identifier", ";", ENCODE_FOR_URI(COALESCE(STR(?scheme), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?identifier_value), ""))), "") AS ?fact)
+    }
+    UNION
+    {
+      ?citing pro:isDocumentContextFor ?role .
+      ?role pro:withRole pro:author ; pro:isHeldBy ?agent .
+      OPTIONAL { ?role oco:hasNext ?next }
+      OPTIONAL { ?agent foaf:givenName ?given }
+      OPTIONAL { ?agent foaf:familyName ?family }
+      OPTIONAL { ?agent foaf:name ?name }
+      BIND(IF(BOUND(?role), CONCAT("author", ";", ENCODE_FOR_URI(COALESCE(STR(?role), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?agent), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?given), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?family), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?name), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?next), ""))), "") AS ?fact)
+    }
+    UNION
+    {
+      { ?citing frbr:partOf ?venue }
+      UNION { ?citing frbr:partOf ?venue_start . ?venue_start frbr:partOf+ ?venue }
+      BIND(IRI(STR(?venue)) AS ?venue_resource)
+      OPTIONAL {
+        ?venue_resource a ?excluded_type .
+        FILTER(?excluded_type IN (fabio:JournalIssue, fabio:JournalVolume))
+      }
+      OPTIONAL { ?venue_resource dcterms:title ?venue_title }
+      OPTIONAL {
+        ?venue datacite:hasIdentifier ?venue_identifier .
+        ?venue_identifier datacite:usesIdentifierScheme ?venue_scheme ; literal:hasLiteralValue ?venue_id .
+      }
+      BIND(IF(BOUND(?venue) && !BOUND(?excluded_type), CONCAT("venue", ";", ENCODE_FOR_URI(COALESCE(STR(?venue), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?venue_title), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?venue_scheme), "")), ";", ENCODE_FOR_URI(COALESCE(STR(?venue_id), ""))), "") AS ?fact)
+    }
+  }
+}
+GROUP BY ?citing

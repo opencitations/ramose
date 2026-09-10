@@ -35,7 +35,7 @@ for grant in \
     'GRANT SELECT ON DB.DBA.SPARQL_SINV_2 TO "SPARQL"' \
     'GRANT EXECUTE ON DB.DBA.SPARQL_SINV_IMP TO "SPARQL"'
 do
-    docker compose exec -T meta /bin/sh -c '"$VIRTUOSO_HOME/bin/isql" 1111 dba dba VERBOSE=OFF' <<SQL
+    docker compose exec -T virtuoso /bin/sh -c '"$VIRTUOSO_HOME/bin/isql" 1111 dba dba VERBOSE=OFF' <<SQL
 $grant;
 EXIT \$IF \$EQU \$STATE OK 0 1;
 SQL
