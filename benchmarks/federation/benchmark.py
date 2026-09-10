@@ -707,9 +707,10 @@ def summarize(sample_path: Path, result_dir: Path) -> None:
 
 def main() -> None:  # pragma: no cover
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    sample_path = CONTAINER_DATA_DIR / "benchmark" / run_id / "sample.csv"
+    sample_path = CONTAINER_DATA_DIR / "venue_sample.csv"
     result_dir = Path("/results") / run_id
-    sample(sample_path)
+    if not sample_path.exists():
+        sample(sample_path)
     run(sample_path, result_dir)
     summarize(sample_path, result_dir)
 
