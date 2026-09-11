@@ -324,8 +324,8 @@ The operations that this API implements are:
         }
 
         .sidebar_menu a:hover {
-            border-left: solid 5px rgba(154, 49, 252,.5);
-            font-weight: 400;
+            box-shadow: inset 5px 0 0 rgba(154, 49, 252,.5);
+            color: #9931FC;
         }
 
         .sidebar_submenu > li {
