@@ -41,6 +41,7 @@ META_CONTROL = "http://meta:7002"
 BACKEND_CONTROLS = (INDEX_CONTROL, META_CONTROL)
 MINIMUM_FREE_BYTES = 380_000_000_000
 REQUEST_TIMEOUT_SECONDS = 180
+VALIDATION_TIMEOUT_SECONDS = 900
 SAMPLING_TIMEOUT_SECONDS = 900
 STRATEGIES = ("service", "orchestration")
 CONCURRENCY_LEVELS = (1, 16)
@@ -132,7 +133,7 @@ class Response:
     works: tuple[tuple[str, tuple[tuple[str, ...], ...]], ...]
 
 
-Expected = dict[str, Response | None]
+Expected = dict[str, Response]
 
 
 def read_manifest(path: Path) -> tuple[Dataset, ...]:
@@ -283,14 +284,18 @@ def select_samples(progress_path: Path) -> tuple[Sample, ...]:
     return tuple(sample for band in BANDS for sample in selected[band])
 
 
-def sample(sample_path: Path) -> None:
-    progress_path = sample_path.with_suffix(".progress.json")
-    samples = select_samples(progress_path)
+def write_samples(sample_path: Path, samples: tuple[Sample, ...]) -> None:
     sample_path.parent.mkdir(parents=True, exist_ok=True)
     with sample_path.open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=list(Sample.__dataclass_fields__))
         writer.writeheader()
         writer.writerows(asdict(selected_sample) for selected_sample in samples)
+
+
+def sample(sample_path: Path) -> None:
+    progress_path = sample_path.with_suffix(".progress.json")
+    samples = select_samples(progress_path)
+    write_samples(sample_path, samples)
     progress_path.unlink()
 
 
@@ -398,11 +403,13 @@ def backend_totals(records: list[dict[str, object]]) -> tuple[int, int, int, flo
     )
 
 
-def request_strategy(strategy: str, sample: Sample) -> tuple[int, bytes, float, int, int]:
+def request_strategy(
+    strategy: str, sample: Sample, timeout: int = REQUEST_TIMEOUT_SECONDS
+) -> tuple[int, bytes, float, int, int]:
     url = f"{BASE_URL}/{strategy}/{quote(quote(sample.issn, safe=''), safe='')}"
     started_ns = time.perf_counter_ns()
     try:
-        response = requests.get(url, headers={"Accept": "application/json"}, timeout=REQUEST_TIMEOUT_SECONDS)
+        response = requests.get(url, headers={"Accept": "application/json"}, timeout=timeout)
     except requests.Timeout:
         finished_ns = time.perf_counter_ns()
         return CLIENT_TIMEOUT_STATUS, b"", (finished_ns - started_ns) / 1_000_000, started_ns, finished_ns
@@ -462,10 +469,10 @@ def validate(samples: tuple[Sample, ...]) -> tuple[Expected, list[Validation], l
             f"articles={sample.omid_count}, citing works={sample.expected_work_count}",
             flush=True,
         )
-        expected[sample.issn] = None
+        reference: Response | None = None
         for strategy in STRATEGIES:
             set_backend_label(f"validation:{strategy}:{sample.issn}")
-            status, content, latency_ms, _, _ = request_strategy(strategy, sample)
+            status, content, latency_ms, _, _ = request_strategy(strategy, sample, timeout=VALIDATION_TIMEOUT_SECONDS)
             wait_backend_idle()
             set_backend_label("")
             request_records = drain_backend_records()
@@ -473,9 +480,9 @@ def validate(samples: tuple[Sample, ...]) -> tuple[Expected, list[Validation], l
             backend = backend_totals(request_records)
             normalized = normalized_response(status, content)
             equivalent = normalized is not None and matches_sample(normalized, sample)
-            if equivalent and expected[sample.issn] is None:
-                expected[sample.issn] = normalized
-            elif equivalent and normalized != expected[sample.issn]:
+            if equivalent and reference is None:
+                reference = normalized
+            elif equivalent and normalized != reference:
                 message = f"Strategies diverge for {sample.issn}"
                 raise RuntimeError(message)
             validations.append(
@@ -489,12 +496,15 @@ def validate(samples: tuple[Sample, ...]) -> tuple[Expected, list[Validation], l
                     *backend,
                 )
             )
+        if reference is None:
+            message = f"No valid reference response for {sample.issn}"
+            raise RuntimeError(message)
+        expected[sample.issn] = reference
     return expected, validations, backend_records
 
 
 def measure(sample: Sample, strategy: str, concurrency: int, repetition: int, expected: Expected) -> Measurement:
     status, content, latency_ms, started_ns, finished_ns = request_strategy(strategy, sample)
-    expected_response = expected[sample.issn]
     return Measurement(
         concurrency=concurrency,
         issn=sample.issn,
@@ -505,7 +515,7 @@ def measure(sample: Sample, strategy: str, concurrency: int, repetition: int, ex
         response_bytes=len(content),
         started_ns=started_ns,
         finished_ns=finished_ns,
-        equivalent=expected_response is not None and normalized_response(status, content) == expected_response,
+        equivalent=normalized_response(status, content) == expected[sample.issn],
     )
 
 
@@ -536,6 +546,8 @@ def environment_description() -> dict[str, object]:
         "order_seed": ORDER_SEED,
         "repetitions": REPETITIONS,
         "concurrency_levels": CONCURRENCY_LEVELS,
+        "request_timeout_seconds": REQUEST_TIMEOUT_SECONDS,
+        "validation_timeout_seconds": VALIDATION_TIMEOUT_SECONDS,
     }
 
 
@@ -549,15 +561,55 @@ def strategies_for(repetition: int) -> tuple[str, ...]:
     return STRATEGIES if repetition % 2 else tuple(reversed(STRATEGIES))
 
 
-def write_run_metadata(sample_path: Path, result_dir: Path, expected: Expected) -> None:
-    (result_dir / "expected.json").write_text(
-        json.dumps(
-            {issn: None if response is None else asdict(response) for issn, response in expected.items()}, indent=2
-        )
-        + "\n",
+def validated_sample(
+    sample_path: Path, result_dir: Path
+) -> tuple[tuple[Sample, ...], Expected, list[Validation], list[dict[str, object]]]:
+    archive_path = sample_path.with_suffix(".validated.json")
+    reused = archive_path.exists()
+    if reused:
+        print(f"Reusing validation from {archive_path}", flush=True)  # noqa: T201
+        archive = json.loads(archive_path.read_text(encoding="utf-8"))
+        samples = tuple(Sample(**row) for row in archive["samples"])
+        expected = {
+            issn: Response(
+                tuple(response["omids"]),
+                tuple(tuple(relation) for relation in response["relations"]),
+                tuple((work, tuple(tuple(fact) for fact in facts)) for work, facts in response["works"]),
+            )
+            for issn, response in archive["expected"].items()
+        }
+        validations = [Validation(**row) for row in archive["validations"]]
+        backend_records = archive["backend_records"]
+    else:
+        if not sample_path.exists():
+            sample(sample_path)
+        samples = read_samples(sample_path)
+        print(f"Validating {len(samples)} samples...", flush=True)  # noqa: T201
+        expected, validations, backend_records = validate(samples)
+        archive = {
+            "samples": [asdict(row) for row in samples],
+            "expected": {issn: asdict(response) for issn, response in expected.items()},
+            "validations": [asdict(row) for row in validations],
+            "backend_records": backend_records,
+            "source": {
+                "result_dir": str(result_dir),
+                "environment": environment_description(),
+                "specification": SPECIFICATION.read_text(encoding="utf-8"),
+            },
+        }
+        temporary_path = archive_path.with_suffix(".tmp")
+        temporary_path.write_text(json.dumps(archive) + "\n", encoding="utf-8")
+        temporary_path.replace(archive_path)
+    (result_dir / "validation_source.json").write_text(
+        json.dumps({"archive": str(archive_path), "reused": reused, **archive["source"]}, indent=2) + "\n",
         encoding="utf-8",
     )
-    shutil.copyfile(sample_path, result_dir / "sample.csv")
+    (result_dir / "expected.json").write_text(json.dumps(archive["expected"], indent=2) + "\n", encoding="utf-8")
+    write_samples(result_dir / "sample.csv", samples)
+    return samples, expected, validations, backend_records
+
+
+def write_run_metadata(result_dir: Path) -> None:
     shutil.copyfile(SPECIFICATION, result_dir / "operations.hf")
     shutil.copyfile(BENCHMARK_DIR / "compose.yaml", result_dir / "compose.yaml")
     (result_dir / "environment.json").write_text(
@@ -586,11 +638,10 @@ def write_backend_records(path: Path, records: list[dict[str, object]]) -> None:
 
 def run(sample_path: Path, result_dir: Path) -> None:
     result_dir.mkdir(parents=True, exist_ok=False)
-    samples = read_samples(sample_path)
-    print(f"Validating {len(samples)} samples...", flush=True)  # noqa: T201
-    expected, validations, backend_records = validate(samples)
+    samples, expected, validations, backend_records = validated_sample(sample_path, result_dir)
     write_rows(result_dir / "validation.csv", validations)
-    write_run_metadata(sample_path, result_dir, expected)
+    write_backend_records(result_dir / "backend.csv", backend_records)
+    write_run_metadata(result_dir)
     print("Warming up both strategies...", flush=True)  # noqa: T201
     for strategy in STRATEGIES:
         wait_backend_idle()
@@ -709,10 +760,8 @@ def main() -> None:  # pragma: no cover
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     sample_path = CONTAINER_DATA_DIR / "venue_sample.csv"
     result_dir = Path("/results") / run_id
-    if not sample_path.exists():
-        sample(sample_path)
     run(sample_path, result_dir)
-    summarize(sample_path, result_dir)
+    summarize(result_dir / "sample.csv", result_dir)
 
 
 if __name__ == "__main__":  # pragma: no cover

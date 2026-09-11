@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pytest
 from requests.exceptions import ConnectionError as RequestsConnectionError
@@ -332,6 +332,55 @@ class TestMultiSourceValuesInject:
             {"id": "7", "metadata": "g"},
         ]
         assert run_query.call_count == 4
+
+    @pytest.mark.parametrize("batch_option", ["", " batch_size=1"])
+    def test_values_enrichment_preserves_articles_without_citations(self, batch_option: str) -> None:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": (
+                "SELECT ?article WHERE { }\n"
+                "@@with endpoint=http://index/sparql\n"
+                "@@join ?article ?cited type=left\n"
+                "SELECT ?cited ?citing WHERE { }\n"
+                "@@with endpoint=http://meta/sparql\n"
+                "@@join ?citing ?work type=left\n"
+                f"@@values ?citing{batch_option}\n"
+                "SELECT ?work ?title WHERE { }"
+            ),
+            "method": "get",
+            "field_type": "str(article) str(citing) str(title)",
+        }
+        op = Operation(
+            "/api/test/value",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(sparql_endpoint="http://meta/sparql"),
+        )
+        with patch.object(
+            op,
+            "_run_sparql_dicts",
+            side_effect=[
+                [{"article": "A"}, {"article": "B"}],
+                [{"cited": "A", "citing": "https://w3id.org/oc/meta/br/1"}],
+                [{"work": "https://w3id.org/oc/meta/br/1", "title": "Citing work"}],
+            ],
+        ) as run_query:
+            response = op.exec(method="get", content_type="application/json")
+
+        assert response.status_code == 200
+        assert json.loads(response.body) == [
+            {"article": "A", "citing": "https://w3id.org/oc/meta/br/1", "title": "Citing work"},
+            {"article": "B", "citing": "", "title": ""},
+        ]
+        assert run_query.call_args_list == [
+            call("http://meta/sparql", "SELECT ?article WHERE { }"),
+            call("http://index/sparql", "SELECT ?cited ?citing WHERE { }"),
+            call(
+                "http://meta/sparql",
+                "SELECT ?work ?title WHERE {\nVALUES (?citing) {\n  (<https://w3id.org/oc/meta/br/1>)\n}\n }",
+            ),
+        ]
 
     def test_batched_values_failure_fails_operation(self) -> None:
         op_item = {

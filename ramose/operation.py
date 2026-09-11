@@ -1514,6 +1514,8 @@ class Operation:
         distinct_rows: list[dict[str, object]] = []
         seen: set[tuple[object, ...]] = set()
         for row in acc:
+            if not all(column in row for column in columns):
+                continue
             values = tuple(row[column] for column in columns)
             if all(values) and values not in seen:
                 seen.add(values)

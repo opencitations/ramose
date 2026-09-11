@@ -114,7 +114,8 @@ services:
       - ./data/benchmark:/data/benchmark:ro
     environment:
       PYTHONPATH: /benchmark
-    mem_limit: 1g
+    mem_limit: 16g
+    memswap_limit: 16g
     depends_on:
       index:
         condition: service_healthy
@@ -138,4 +139,5 @@ services:
       RAMOSE_BENCHMARK_COMMIT: ${RAMOSE_BENCHMARK_COMMIT:-}
       RAMOSE_BENCHMARK_HOST: ${RAMOSE_BENCHMARK_HOST:-}
       RAMOSE_BENCHMARK_IMAGES: ${RAMOSE_BENCHMARK_IMAGES:-}
-    mem_limit: 1g
+    mem_limit: 16g
+    memswap_limit: 16g

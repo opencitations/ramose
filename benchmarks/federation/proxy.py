@@ -101,18 +101,18 @@ class DataHandler(QuietHandler):
         }
         error = upstream.text if upstream.status_code >= HTTPStatus.BAD_REQUEST else ""
         self.record(label, started, len(body), upstream.status_code, len(upstream.content), error)
-        try:
-            self.respond(upstream.status_code, response_headers, upstream.content)
-        except (BrokenPipeError, ConnectionResetError):
-            self.close_connection = True
+        self.respond(upstream.status_code, response_headers, upstream.content)
 
     def respond(self, status: int, headers: dict[str, str], body: bytes) -> None:
-        self.send_response(status)
-        for name, value in headers.items():
-            self.send_header(name, value)
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(status)
+            for name, value in headers.items():
+                self.send_header(name, value)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            self.close_connection = True
 
     def record(  # noqa: PLR0913
         self, label: str, started_ns: int, request_bytes: int, status: int, response_bytes: int, error: str

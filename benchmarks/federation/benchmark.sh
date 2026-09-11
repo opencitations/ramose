@@ -14,7 +14,7 @@ stop_stack() {
         if [ "$status" -ne 0 ]; then
             docker compose logs --no-color >&2 || true
         fi
-        docker compose down || true
+        docker compose down --remove-orphans || true
     fi
 }
 trap stop_stack EXIT
@@ -25,7 +25,7 @@ trap 'exit 143' TERM
 mkdir -p results
 uv run --extra benchmark python -c 'import benchmark; benchmark.prepare()'
 stack_started=true
-docker compose up --build --wait || {
+docker compose up --build --wait --remove-orphans || {
     status=$?
     docker compose logs --no-color >&2 || true
     exit "$status"
