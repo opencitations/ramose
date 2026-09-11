@@ -255,11 +255,72 @@ The operations that this API implements are:
         return (
             """
         @import url('https://fonts.googleapis.com/css2?family=Karla:wght@300;400&display=swap');
+        .menu-toggle { display: none; }
+
         @media screen and (max-width: 850px) {
               aside { display: none; }
+              .menu-toggle {
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  position: sticky;
+                  top: 12px;
+                  z-index: 2;
+                  margin-left: auto;
+                  width: fit-content;
+                  min-height: 44px;
+                  padding: 10px 16px;
+                  border: 1px solid #e4d6ef;
+                  border-radius: 14px;
+                  background: white;
+                  color: #6524a4;
+                  box-shadow: 0 4px 16px rgba(65, 30, 90, 0.14);
+                  font-size: 1rem;
+                  cursor: pointer;
+              }
+              .menu-toggle:hover {background: #f5effb;}
+              .menu-toggle:focus-visible {outline: 2px solid #6524a4; outline-offset: 3px;}
+              .menu-toggle svg {width: 18px; height: 18px;}
+              .menu-close-icon {display: none;}
+              .menu-toggle[aria-expanded="true"] .menu-open-icon {display: none;}
+              .menu-toggle[aria-expanded="true"] .menu-close-icon {display: block;}
+              #documentation-navigation.is-open {
+                  display: block;
+                  top: 72px;
+                  bottom: 16px;
+                  left: auto;
+                  right: 16px;
+                  width: min(360px, calc(100% - 32px));
+                  height: auto;
+                  overflow-y: auto;
+                  overscroll-behavior: contain;
+                  border-radius: 18px;
+                  box-shadow: 0 12px 40px rgba(65, 30, 90, 0.22);
+              }
+              #documentation-navigation h4 {
+                  padding: 24px 20px 20px;
+                  color: #6524a4;
+              }
+              #documentation-navigation .sidebar_menu {margin: 0; padding: 0 12px 12px !important;}
+              #documentation-navigation .sidebar_menu > li {border-color: #eee6f4;}
+              #documentation-navigation .sidebar_submenu {margin: 4px 0 8px;}
+              #documentation-navigation .sidebar_submenu > li {background: transparent;}
+              #documentation-navigation a {padding: 12px 8px; border-radius: 8px;}
+              #documentation-navigation a:hover,
+              #documentation-navigation a:focus-visible {
+                  background-color: #f5effb;
+                  color: #6524a4;
+                  box-shadow: none;
+              }
+              #documentation-navigation .sidebar_submenu a {font-family: monospace; font-size: 0.875rem;}
+              html {scroll-padding-top: 80px;}
               body {margin-right: 16px !important;}
               main, #operations, .dashboard, body>footer {margin-left: 16px !important;}
-              #operations > ul:nth-of-type(1) li { display:block !important; max-width: 100% !important; }
+              #operations > ul:nth-of-type(1) li {
+                  display: block !important;
+                  max-width: 100% !important;
+                  margin-right: 0 !important;
+              }
               h3 a[href] {display:block !important; float: none !important; font-size: 1rem !important;}
               a {overflow: hidden; text-overflow: ellipsis;}
               .info_api, .api_calls {display: block !important; max-width: 100% !important;}
@@ -765,14 +826,65 @@ The operations that this API implements are:
         {self.__htmlmetadescription(conf)}
         <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
         <meta name="viewport" content="width=device-width" />
-        <style>{self.__css()}</style>
+        <style id="documentation-styles">{self.__css()}</style>
         {self.__css_path(css_path)}
     </head>
     <body>
-        <aside>{self.__sidebar(conf)}</aside>
+        <button class="menu-toggle" type="button" aria-expanded="false"
+                aria-controls="documentation-navigation">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round">
+                <path class="menu-open-icon" d="M4 6h16M4 12h16M4 18h16"/>
+                <path class="menu-close-icon" d="m6 6 12 12M6 18 18 6"/>
+            </svg>
+            <span>Menu</span>
+        </button>
+        <aside id="documentation-navigation">{self.__sidebar(conf)}</aside>
         <main>{self.__header(conf)}</main>
         <section id="operations">{self.__operations(conf)}</section>
         <footer>{self.__footer()}</footer>
+        <script>
+            const menuButton = document.querySelector('.menu-toggle');
+            const navigation = document.getElementById('documentation-navigation');
+            const responsiveRules = [...document.getElementById('documentation-styles').sheet.cssRules]
+                .find(rule => rule instanceof CSSMediaRule);
+            function updateNavigationLayout() {{
+                responsiveRules.media.mediaText = 'not all';
+                const links = [...navigation.querySelectorAll('a')];
+                links.forEach(link => link.style.whiteSpace = 'nowrap');
+                const needsMenu = window.innerWidth <= 850 || links.some(link => {{
+                    const text = document.createRange();
+                    text.selectNodeContents(link);
+                    const style = getComputedStyle(link);
+                    const requiredWidth = text.getBoundingClientRect().width
+                        + parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+                    return requiredWidth > link.clientWidth;
+                }});
+                links.forEach(link => link.style.removeProperty('white-space'));
+                responsiveRules.media.mediaText = needsMenu ? 'screen' : 'screen and (max-width: 850px)';
+                if (!needsMenu) setMenuOpen(false);
+            }}
+            window.addEventListener('resize', updateNavigationLayout);
+            document.fonts.ready.then(updateNavigationLayout);
+            updateNavigationLayout();
+            function setMenuOpen(open) {{
+                navigation.classList.toggle('is-open', open);
+                menuButton.setAttribute('aria-expanded', String(open));
+                menuButton.querySelector('span').textContent = open ? 'Close menu' : 'Menu';
+            }}
+            menuButton.addEventListener('click', () => {{
+                setMenuOpen(menuButton.getAttribute('aria-expanded') === 'false');
+            }});
+            navigation.addEventListener('click', (event) => {{
+                if (event.target.closest('a')) setMenuOpen(false);
+            }});
+            document.addEventListener('keydown', (event) => {{
+                if (event.key === 'Escape' && menuButton.getAttribute('aria-expanded') === 'true') {{
+                    setMenuOpen(false);
+                    menuButton.focus();
+                }}
+            }});
+        </script>
     </body>
 </html>""",
         )
