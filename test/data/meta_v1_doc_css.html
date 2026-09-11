@@ -288,11 +288,107 @@
             font-family: monospace !important;
         }
 
-        p.ex {
-            background-color: #f0f0f5;
-            margin-bottom: 0px;
-            padding-top: 5px;
-            padding-bottom: 5px;
+        .json-expand, .json-close {
+            padding: 8px 12px;
+            min-height: 44px;
+            border: 1px solid #e4d6ef;
+            border-radius: 10px;
+            background: white;
+            color: #6524a4;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .json-expand:hover, .json-close:hover {
+            background: #f5effb;
+        }
+
+        .json-expand:focus-visible, .json-close:focus-visible {
+            outline: 2px solid #6524a4;
+            outline-offset: 3px;
+        }
+
+        body:has(#json-dialog[open]) {
+            overflow: hidden;
+        }
+
+        #json-dialog {
+            box-sizing: border-box;
+            width: 100vw;
+            height: 100dvh;
+            max-width: none;
+            max-height: none;
+            margin: 0;
+            padding: 16px;
+            border: 0;
+            background: #edf0f2;
+            color: #333;
+        }
+
+        #json-dialog[open] {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        #json-dialog header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        #json-dialog-title {
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .json-close {
+            flex-shrink: 0;
+        }
+
+        #json-dialog pre {
+            flex: 1;
+            min-height: 0;
+            padding: 16px;
+            overflow: auto;
+            white-space: pre;
+            text-align: left;
+            border-radius: 10px;
+        }
+
+        .json-output {
+            background: #f0f0f5;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .json-output-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px;
+            color: #595959;
+            text-align: left;
+        }
+
+        .json-expand {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .json-expand svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .json-output pre {
+            padding: 16px;
+            overflow: auto;
+            border-radius: 0;
         }
 
         h2:first-of-type {
@@ -583,8 +679,7 @@ get(API_CALL, headers=HTTP_HEADERS)
 <div class="attr params"><strong>Parameter(s)</strong><ul><li><em>ids</em>: type <code>str</code>, regular expression shape <code>(doi|issn|isbn|omid|openalex|pmid|pmcid):.+?(__(doi|issn|isbn|omid|openalex|pmid|pmcid):.+?)*$</code></li></ul></div>
 <p class="attr"><strong>Result fields type</strong><span class="attr_val">id <em>(str)</em>, title <em>(str)</em>, author <em>(str)</em>, pub_date <em>(datetime)</em>, issue <em>(str)</em>, volume <em>(str)</em>, venue <em>(str)</em>, page <em>(str)</em>, type <em>(str)</em>, publisher <em>(str)</em>, editor <em>(str)</em></span></p>
 <p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="/v1/metadata/doi:10.1007/978-1-4020-9632-7">/metadata/doi:10.1007/978-1-4020-9632-7</a></span></p>
-<p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
-<pre><code>[
+<div class="json-output"><header class="json-output-header"><span>Exemplar output (in JSON)</span><button class="json-expand" type="button" aria-label="Expand JSON" aria-haspopup="dialog" aria-controls="json-dialog"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5"/></svg><span>Expand</span></button></header><pre><code>[
     {
         "id": "doi:10.1007/978-1-4020-9632-7 isbn:9781402096327 isbn:9789048127108 openalex:W4249829199 omid:br/0612058700",
         "title": "Adaptive Environmental Management",
@@ -598,7 +693,7 @@ get(API_CALL, headers=HTTP_HEADERS)
         "publisher": "Springer Science And Business Media Llc [crossref:297 omid:ra/0610116006]",
         "editor": "Allan, Catherine [orcid:0000-0003-2098-4759 omid:ra/069012996]; Stankey, George H. [omid:ra/061808486861]"
     }
-]</code></pre></div><div id="/author/{id}">
+]</code></pre></div></div><div id="/author/{id}">
 <h3>/author/{id} <a href="#operations">back to operations</a></h3>
 
 <p>This operation retrieves the bibliographic metadata for each bibliographic entity authored by the person identified by the given ORCID or OpenCitations Meta Identifier.</p>
@@ -620,8 +715,7 @@ get(API_CALL, headers=HTTP_HEADERS)
 <div class="attr params"><strong>Parameter(s)</strong><ul><li><em>id</em>: type <code>str</code>, regular expression shape <code>((orcid:)?([0-9]{4}-){3}[0-9]{3}[0-9X])|(omid:ra\/06[1-9]*0\d+)</code></li></ul></div>
 <p class="attr"><strong>Result fields type</strong><span class="attr_val">id <em>(str)</em>, title <em>(str)</em>, author <em>(str)</em>, pub_date <em>(datetime)</em>, issue <em>(str)</em>, volume <em>(str)</em>, venue <em>(str)</em>, page <em>(str)</em>, type <em>(str)</em>, publisher <em>(str)</em>, editor <em>(str)</em></span></p>
 <p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="/v1/author/orcid:0000-0002-8420-0696">/author/orcid:0000-0002-8420-0696</a></span></p>
-<p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
-<pre><code>[
+<div class="json-output"><header class="json-output-header"><span>Exemplar output (in JSON)</span><button class="json-expand" type="button" aria-label="Expand JSON" aria-haspopup="dialog" aria-controls="json-dialog"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5"/></svg><span>Expand</span></button></header><pre><code>[
     {
         "id": "doi:10.1007/s11192-022-04367-w openalex:W3214893238 omid:br/061202127149",
         "title": "Identifying And Correcting Invalid Citations Due To DOI Errors In Crossref Data",
@@ -661,7 +755,7 @@ get(API_CALL, headers=HTTP_HEADERS)
         "publisher": "Springer Science And Business Media Llc [crossref:297 omid:ra/0610116006]",
         "editor": ""
     }
-]</code></pre></div><div id="/editor/{id}">
+]</code></pre></div></div><div id="/editor/{id}">
 <h3>/editor/{id} <a href="#operations">back to operations</a></h3>
 
 <p>This operation retrieves the bibliographic metadata for each bibliographic entity edited by the person identified by the given ORCID or OpenCitations Meta Identifier.</p>
@@ -683,8 +777,7 @@ get(API_CALL, headers=HTTP_HEADERS)
 <div class="attr params"><strong>Parameter(s)</strong><ul><li><em>id</em>: type <code>str</code>, regular expression shape <code>((orcid:)?([0-9]{4}-){3}[0-9]{3}[0-9X])|(omid:ra\/06[1-9]*0\d+)</code></li></ul></div>
 <p class="attr"><strong>Result fields type</strong><span class="attr_val">id <em>(str)</em>, title <em>(str)</em>, author <em>(str)</em>, pub_date <em>(datetime)</em>, issue <em>(str)</em>, volume <em>(str)</em>, venue <em>(str)</em>, page <em>(str)</em>, type <em>(str)</em>, publisher <em>(str)</em>, editor <em>(str)</em></span></p>
 <p class="attr"><strong>Example</strong><span class="attr_val"><a target="_blank" href="/v1/editor/orcid:0000-0003-2098-4759">/editor/orcid:0000-0003-2098-4759</a></span></p>
-<p class="ex attr"><strong>Exemplar output (in JSON)</strong></p>
-<pre><code>[
+<div class="json-output"><header class="json-output-header"><span>Exemplar output (in JSON)</span><button class="json-expand" type="button" aria-label="Expand JSON" aria-haspopup="dialog" aria-controls="json-dialog"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5"/></svg><span>Expand</span></button></header><pre><code>[
     {
         "id": "doi:10.1007/978-1-4020-9632-7 isbn:9781402096327 isbn:9789048127108 openalex:W4249829199 omid:br/0612058700",
         "title": "Adaptive Environmental Management",
@@ -698,9 +791,26 @@ get(API_CALL, headers=HTTP_HEADERS)
         "publisher": "Springer Science And Business Media Llc [crossref:297 omid:ra/0610116006]",
         "editor": "Allan, Catherine [orcid:0000-0003-2098-4759 omid:ra/069012996]; Stankey, George H. [omid:ra/061808486861]"
     }
-]</code></pre></div></section>
+]</code></pre></div></div></section>
         <footer><p>This API and the related documentation has been created with <a href="https://github.com/opencitations/ramose" target="_blank">RAMOSE</a>, the <em>Restful API Manager Over SPARQL Endpoints</em>, developed by <a href="https://orcid.org/0000-0003-0530-4305" target="_blank">Silvio Peroni</a>, <a href="https://orcid.org/0000-0002-1113-7550" target="_blank">Marilena Daquino</a> and <a href="https://orcid.org/0000-0002-8420-0696" target="_blank">Arcangelo Massari</a>.</p></footer>
+        <dialog id="json-dialog" aria-labelledby="json-dialog-title">
+            <header>
+                <h2 id="json-dialog-title">JSON output</h2>
+                <button class="json-close" type="button" autofocus>Close</button>
+            </header>
+            <pre tabindex="0" aria-label="JSON output"><code></code></pre>
+        </dialog>
         <script>
+            const jsonDialog = document.getElementById('json-dialog');
+            document.querySelectorAll('.json-expand').forEach(button => {
+                button.addEventListener('click', () => {
+                    jsonDialog.querySelector('code').textContent =
+                        button.closest('.json-output').querySelector('code').textContent;
+                    jsonDialog.showModal();
+                    jsonDialog.querySelector('pre').scrollTo(0, 0);
+                });
+            });
+            jsonDialog.querySelector('.json-close').addEventListener('click', () => jsonDialog.close());
             const menuButton = document.querySelector('.menu-toggle');
             const navigation = document.getElementById('documentation-navigation');
             const responsiveRules = [...document.getElementById('documentation-styles').sheet.cssRules]

@@ -288,11 +288,107 @@
             font-family: monospace !important;
         }
 
-        p.ex {
-            background-color: #f0f0f5;
-            margin-bottom: 0px;
-            padding-top: 5px;
-            padding-bottom: 5px;
+        .json-expand, .json-close {
+            padding: 8px 12px;
+            min-height: 44px;
+            border: 1px solid #e4d6ef;
+            border-radius: 10px;
+            background: white;
+            color: #6524a4;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .json-expand:hover, .json-close:hover {
+            background: #f5effb;
+        }
+
+        .json-expand:focus-visible, .json-close:focus-visible {
+            outline: 2px solid #6524a4;
+            outline-offset: 3px;
+        }
+
+        body:has(#json-dialog[open]) {
+            overflow: hidden;
+        }
+
+        #json-dialog {
+            box-sizing: border-box;
+            width: 100vw;
+            height: 100dvh;
+            max-width: none;
+            max-height: none;
+            margin: 0;
+            padding: 16px;
+            border: 0;
+            background: #edf0f2;
+            color: #333;
+        }
+
+        #json-dialog[open] {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        #json-dialog header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        #json-dialog-title {
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .json-close {
+            flex-shrink: 0;
+        }
+
+        #json-dialog pre {
+            flex: 1;
+            min-height: 0;
+            padding: 16px;
+            overflow: auto;
+            white-space: pre;
+            text-align: left;
+            border-radius: 10px;
+        }
+
+        .json-output {
+            background: #f0f0f5;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .json-output-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px;
+            color: #595959;
+            text-align: left;
+        }
+
+        .json-expand {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .json-expand svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .json-output pre {
+            padding: 16px;
+            overflow: auto;
+            border-radius: 0;
         }
 
         h2:first-of-type {

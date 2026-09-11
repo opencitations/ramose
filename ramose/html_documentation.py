@@ -215,8 +215,13 @@ The operations that this API implements are:
                 else ""
             )
             exemplar_html = (
-                '<p class="ex attr"><strong>Exemplar output (in JSON)'
-                "</strong></p>" + chr(10) + "<pre><code>" + op["output_json"] + "</code></pre>"
+                '<div class="json-output"><header class="json-output-header">'
+                '<span>Exemplar output (in JSON)</span><button class="json-expand" type="button" '
+                'aria-label="Expand JSON" aria-haspopup="dialog" aria-controls="json-dialog">'
+                '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+                'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+                '<path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5"/>'
+                "</svg><span>Expand</span></button></header><pre><code>" + op["output_json"] + "</code></pre></div>"
                 if "output_json" in op
                 else ""
             )
@@ -536,11 +541,107 @@ The operations that this API implements are:
             font-family: monospace !important;
         }
 
-        p.ex {
-            background-color: #f0f0f5;
-            margin-bottom: 0px;
-            padding-top: 5px;
-            padding-bottom: 5px;
+        .json-expand, .json-close {
+            padding: 8px 12px;
+            min-height: 44px;
+            border: 1px solid #e4d6ef;
+            border-radius: 10px;
+            background: white;
+            color: #6524a4;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .json-expand:hover, .json-close:hover {
+            background: #f5effb;
+        }
+
+        .json-expand:focus-visible, .json-close:focus-visible {
+            outline: 2px solid #6524a4;
+            outline-offset: 3px;
+        }
+
+        body:has(#json-dialog[open]) {
+            overflow: hidden;
+        }
+
+        #json-dialog {
+            box-sizing: border-box;
+            width: 100vw;
+            height: 100dvh;
+            max-width: none;
+            max-height: none;
+            margin: 0;
+            padding: 16px;
+            border: 0;
+            background: #edf0f2;
+            color: #333;
+        }
+
+        #json-dialog[open] {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        #json-dialog header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        #json-dialog-title {
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .json-close {
+            flex-shrink: 0;
+        }
+
+        #json-dialog pre {
+            flex: 1;
+            min-height: 0;
+            padding: 16px;
+            overflow: auto;
+            white-space: pre;
+            text-align: left;
+            border-radius: 10px;
+        }
+
+        .json-output {
+            background: #f0f0f5;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .json-output-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px;
+            color: #595959;
+            text-align: left;
+        }
+
+        .json-expand {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .json-expand svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .json-output pre {
+            padding: 16px;
+            overflow: auto;
+            border-radius: 0;
         }
 
         h2:first-of-type {
@@ -859,7 +960,24 @@ The operations that this API implements are:
         <main>{self.__header(conf)}</main>
         <section id="operations">{self.__operations(conf)}</section>
         <footer>{self.__footer()}</footer>
+        <dialog id="json-dialog" aria-labelledby="json-dialog-title">
+            <header>
+                <h2 id="json-dialog-title">JSON output</h2>
+                <button class="json-close" type="button" autofocus>Close</button>
+            </header>
+            <pre tabindex="0" aria-label="JSON output"><code></code></pre>
+        </dialog>
         <script>
+            const jsonDialog = document.getElementById('json-dialog');
+            document.querySelectorAll('.json-expand').forEach(button => {{
+                button.addEventListener('click', () => {{
+                    jsonDialog.querySelector('code').textContent =
+                        button.closest('.json-output').querySelector('code').textContent;
+                    jsonDialog.showModal();
+                    jsonDialog.querySelector('pre').scrollTo(0, 0);
+                }});
+            }});
+            jsonDialog.querySelector('.json-close').addEventListener('click', () => jsonDialog.close());
             const menuButton = document.querySelector('.menu-toggle');
             const navigation = document.getElementById('documentation-navigation');
             const responsiveRules = [...document.getElementById('documentation-styles').sheet.cssRules]
