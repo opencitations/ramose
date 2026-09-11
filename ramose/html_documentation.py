@@ -488,6 +488,10 @@ The operations that this API implements are:
         }
 
         @media screen and (max-width: 850px) {
+            #operations > div ul {
+                padding-left: 16px;
+            }
+
             .attr > strong {
                 display: block;
                 width: auto;
