@@ -487,6 +487,19 @@ The operations that this API implements are:
             word-break: break-word;
         }
 
+        @media screen and (max-width: 850px) {
+            .attr > strong {
+                display: block;
+                width: auto;
+            }
+
+            .attr_val {
+                display: block;
+                max-width: none;
+                margin-top: 8px;
+            }
+        }
+
         .method {
             text-transform: uppercase;
         }
