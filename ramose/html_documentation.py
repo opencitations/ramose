@@ -43,12 +43,15 @@ class HTMLDocumentationHandler(DocumentationHandler):
         ops_html = "".join(
             f"<li><a class='btn' href='#{op['url']}'>{op['url']}</a></li>" for op in conf["conf_json"][1:]
         )
+        params_html = (
+            '<li><a class="btn" href="#parameters">PARAMETERS</a></li>' if self.__builtin_param_docs(conf) else ""
+        )
         return f"""
 
         <h4>{i["title"]}</h4>
         <ul id="sidebar_menu" class="sidebar_menu">
             <li><a class="btn active" href="#description">DESCRIPTION</a></li>
-            <li><a class="btn" href="#parameters">PARAMETERS</a></li>
+            {params_html}
             <li><a class="btn" href="#operations">OPERATIONS</a>
                 <ul class="sidebar_submenu">{ops_html}</ul>
             </li>
@@ -125,7 +128,7 @@ class HTMLDocumentationHandler(DocumentationHandler):
         ),
     )
 
-    def __parameters(self, conf: APIConfig) -> str:
+    def __builtin_param_docs(self, conf: APIConfig) -> list[str]:
         overridden: set[str] = set()
         api_meta = conf["conf_json"][0]
         if "disable_params" in api_meta:
@@ -136,8 +139,10 @@ class HTMLDocumentationHandler(DocumentationHandler):
             if "disable_params" in op:
                 overridden.update(parse_disable_params(op["disable_params"]))
 
-        builtin_params = [text for param_name, text in self._BUILTIN_PARAM_DOCS if param_name not in overridden]
+        return [text for param_name, text in self._BUILTIN_PARAM_DOCS if param_name not in overridden]
 
+    def __parameters(self, conf: APIConfig) -> str:
+        builtin_params = self.__builtin_param_docs(conf)
         if not builtin_params:
             return ""
 

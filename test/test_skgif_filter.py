@@ -499,6 +499,7 @@ class TestCustomParamsInDocumentation:
         assert "require=" not in html
         assert "sort=" not in html
         assert 'id="parameters"' not in html
+        assert 'href="#parameters"' not in html
 
     def test_result_fields_type_hidden_with_custom_default_format(self, skgif_api_manager: APIManager) -> None:
         handler = HTMLDocumentationHandler(skgif_api_manager)
