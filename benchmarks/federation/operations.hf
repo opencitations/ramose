@@ -17,6 +17,7 @@
 #method get
 #preprocess decode_issn(issn)
 #cache_disable true
+#sparql_timeout 600
 #field_type str(omid) str(citation) str(citing) str(metadata)
 #sparql PREFIX cito: <http://purl.org/spar/cito/>
 PREFIX datacite: <http://purl.org/spar/datacite/>
@@ -108,6 +109,7 @@ GROUP BY ?omid ?citation ?citing
 #method get
 #preprocess decode_issn(issn)
 #cache_disable true
+#sparql_timeout 600
 #field_type str(omid) str(citation) str(citing) str(metadata)
 #sparql PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>

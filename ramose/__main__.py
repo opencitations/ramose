@@ -23,7 +23,7 @@ from urllib.parse import unquote
 from flask import Flask, Response, make_response, request
 from flask_swagger_ui import get_swaggerui_blueprint
 
-from ramose._constants import _backend_auth
+from ramose._constants import DEFAULT_HTTP_TIMEOUT, _backend_auth
 from ramose.api_manager import APIManager
 from ramose.auth import TokenStore
 from ramose.html_documentation import HTMLDocumentationHandler
@@ -148,6 +148,13 @@ def _parse_args() -> Namespace:  # pragma: no cover
         type=float,
         default=2.0,
         help="Multiplier applied between SPARQL read retry waits (default: 2.0).",
+    )
+    arg_parser.add_argument(
+        "--sparql-timeout",
+        dest="sparql_timeout",
+        type=float,
+        default=DEFAULT_HTTP_TIMEOUT,
+        help=f"Seconds to wait for each SPARQL request before the attempt fails (default: {DEFAULT_HTTP_TIMEOUT}).",
     )
     arg_parser.add_argument(
         "--auth-db",
@@ -448,6 +455,7 @@ def main() -> None:  # pragma: no cover
         retry_attempts=args.retry_attempts,
         retry_wait=args.retry_wait,
         retry_backoff=args.retry_backoff,
+        sparql_timeout=args.sparql_timeout,
     )
     html_handler = HTMLDocumentationHandler(api_manager)
     openapi_handler = OpenAPIDocumentationHandler(api_manager)

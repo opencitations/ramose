@@ -18,7 +18,7 @@ from sys import maxsize, path
 from typing import TYPE_CHECKING, TypedDict
 from urllib.parse import urlsplit
 
-from ramose._constants import FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME
+from ramose._constants import DEFAULT_HTTP_TIMEOUT, FORMAT_PARTS_WITH_MEDIA_TYPE, PARAM_NAME
 from ramose.cache import ResultCache
 from ramose.filters import load_yaml_config
 from ramose.hash_format import parse_auth, parse_custom_params, parse_disable_params, read_spec_file
@@ -123,6 +123,7 @@ class APIManager:
         retry_attempts: int = 3,
         retry_wait: float = 0.5,
         retry_backoff: float = 2.0,
+        sparql_timeout: float = DEFAULT_HTTP_TIMEOUT,
     ) -> None:
         """This is the constructor of the APIManager class. It takes in input a list of API configuration files, each
         defined according to the Hash Format or YAML mirror format, and stores all the operations defined within a
@@ -155,6 +156,7 @@ class APIManager:
         self._retry_attempts = retry_attempts
         self._retry_wait = retry_wait
         self._retry_backoff = retry_backoff
+        self._sparql_timeout = sparql_timeout
 
         self.all_conf: OrderedDict[str, APIConfig] = OrderedDict()
         self.base_url: list[str] = []
@@ -300,6 +302,9 @@ class APIManager:
                 retry_attempts=retry_attempts,
                 retry_wait=retry_wait,
                 retry_backoff=retry_backoff,
+                sparql_timeout=float(op_conf["sparql_timeout"])
+                if "sparql_timeout" in op_conf
+                else self._sparql_timeout,
             )
             return Operation(op_complete_url, op, op_conf, config)
 

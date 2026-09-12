@@ -89,7 +89,7 @@ When a right-side column name collides with an existing column, it gets a `_r` s
 
 Inject accumulated values into the next query as a SPARQL `VALUES` clause.
 
-Syntax: `@@values <var>... [batch_size=<positive integer>]`
+Syntax: `@@values <var>... [batch_size=<positive integer>] [workers=<positive integer>]`
 
 ```
 @@values ?doi
@@ -98,7 +98,7 @@ SELECT ?doi ?abstract WHERE { ... }
 
 Takes one or more `?variable` names. RAMOSE collects distinct values for the listed variables from the accumulator and inserts a `VALUES` block into the next query's `WHERE` clause. Literal values are quoted; IRIs (starting with `http://` or `https://`) are wrapped in angle brackets.
 
-When `batch_size` is present, RAMOSE splits the distinct tuples into blocks and runs the next query once per block, in sequence. It collects every block's rows before applying the following join. A failed block fails the operation. Each input value must be processable independently.
+When `batch_size` is present, RAMOSE splits the distinct tuples into blocks and runs the next query once per block. `workers` sets how many blocks run at the same time; the default is 1, so blocks run in sequence. RAMOSE collects every block's rows, in block order, before applying the following join. A failed block fails the operation. Each input value must be processable independently.
 
 ### @@foreach
 

@@ -107,6 +107,7 @@ SELECT DISTINCT ?id ?title ?author ?pub_date ... WHERE {
 | `#retry_attempts` | no | Total SPARQL read attempts for this operation, including the first one. Applies to standard SPARQL and SPARQL Anything reads. Overrides the `APIManager` or CLI value. Use `1` to disable retries. |
 | `#retry_wait` | no | Seconds to wait before the first SPARQL read retry for this operation. Applies to standard SPARQL and SPARQL Anything reads. Overrides the `APIManager` or CLI value. |
 | `#retry_backoff` | no | Multiplier applied between SPARQL read retry waits for this operation. Applies to standard SPARQL and SPARQL Anything reads. Overrides the `APIManager` or CLI value. |
+| `#sparql_timeout` | no | Seconds to wait for each SPARQL request of this operation, reads and updates alike, before the attempt fails. Overrides the `APIManager` or CLI value. |
 | `#auth` | no | Set to `required` to require a bearer token for this operation. Overrides the API-level `#auth`. |
 
 ## YAML format
@@ -139,6 +140,7 @@ operation. Field names match HF names without the leading `#`.
   retry_attempts: "3"
   retry_wait: "0.5"
   retry_backoff: "2.0"
+  sparql_timeout: "60"
   output_json: |
     [
       {

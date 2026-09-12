@@ -7,6 +7,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import pytest
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from ramose import Operation, OperationConfig
@@ -87,6 +88,17 @@ class TestExecNon200:
         assert ct == "text/plain"
         assert _response.is_error_message is True
         assert mock_session.get.call_count == 3  # type: ignore[attr-defined]
+
+    @patch("ramose.operation._http_session")
+    def test_sparql_timeout_is_passed_to_the_request(self, mock_session: object) -> None:
+        mock_session.get.return_value = _mock_response()  # type: ignore[attr-defined]
+        op = _make_op(config=OperationConfig(sparql_endpoint="http://localhost/sparql", sparql_timeout=600))
+        assert op.exec(method="get").status_code == 200
+        assert mock_session.get.call_args.kwargs["timeout"] == 600  # type: ignore[attr-defined]
+
+    def test_sparql_timeout_must_be_positive(self) -> None:
+        with pytest.raises(ValueError, match="sparql_timeout must be > 0"):
+            OperationConfig(sparql_endpoint="http://localhost/sparql", sparql_timeout=0)
 
     @patch("ramose.operation._http_session")
     def test_retryable_error_then_success(self, mock_session: object) -> None:

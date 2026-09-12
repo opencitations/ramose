@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import time
+from concurrent.futures import ThreadPoolExecutor
 from csv import DictReader, reader, writer
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
@@ -147,10 +148,14 @@ class OperationConfig:
     retry_attempts: int = 3
     retry_wait: float = 0.5
     retry_backoff: float = 2.0
+    sparql_timeout: float = DEFAULT_HTTP_TIMEOUT
 
     def __post_init__(self) -> None:
         if self.retry_attempts < 1:
             msg = "retry_attempts must be >= 1"
+            raise ValueError(msg)
+        if self.sparql_timeout <= 0:
+            msg = "sparql_timeout must be > 0"
             raise ValueError(msg)
         if self.retry_wait < 0:
             msg = "retry_wait must be >= 0"
@@ -192,6 +197,7 @@ class Operation:
         self.retry_attempts = config.retry_attempts
         self.retry_wait = config.retry_wait
         self.retry_backoff = config.retry_backoff
+        self.sparql_timeout = config.sparql_timeout
         self.pagination_info: PaginationInfo | None = None
 
         self.operation = {"=": eq, "<": lt, ">": gt}
@@ -801,21 +807,33 @@ class Operation:
         return None, None, ("JOIN", args["left_var"], args["right_var"], args["type"].lower())
 
     @staticmethod
-    def _handle_directive_values(parts: list[str]) -> tuple[None, None, tuple[str, list[str], int | None]]:
+    def _handle_directive_values(parts: list[str]) -> tuple[None, None, tuple[str, list[str], int | None, int]]:
         variables = [token for token in parts[1:] if "=" not in token]
         if not variables:
             msg = "@@values needs at least one variable"
             raise ValueError(msg)
-        keyword_tokens = [token for token in parts[1:] if "=" in token]
-        if len(keyword_tokens) > 1 or (keyword_tokens and not keyword_tokens[0].startswith("batch_size=")):
-            msg = f"Unexpected argument {keyword_tokens[-1]!r}"
-            raise ValueError(msg)
-        raw_batch_size = keyword_tokens[0].split("=", 1)[1] if keyword_tokens else ""
-        batch_size = int(raw_batch_size) if raw_batch_size else None
-        if batch_size is not None and batch_size < 1:
-            msg = f"batch_size must be >= 1, got {batch_size}"
-            raise ValueError(msg)
-        return None, None, ("VALUES_INJECT", variables, batch_size)
+        batch_size: int | None = None
+        workers = 1
+        seen_keys: set[str] = set()
+        for token in parts[1:]:
+            if "=" not in token:
+                continue
+            key, raw_value = token.split("=", 1)
+            if key not in ("batch_size", "workers") or key in seen_keys:
+                msg = f"Unexpected argument {token!r}"
+                raise ValueError(msg)
+            seen_keys.add(key)
+            if not raw_value:
+                continue
+            value = int(raw_value)
+            if value < 1:
+                msg = f"{key} must be >= 1, got {value}"
+                raise ValueError(msg)
+            if key == "batch_size":
+                batch_size = value
+            else:
+                workers = value
+        return None, None, ("VALUES_INJECT", variables, batch_size, workers)
 
     @staticmethod
     def _handle_directive_foreach(parts: list[str]) -> tuple[None, None, tuple[str, str, str, float]]:
@@ -873,7 +891,7 @@ class Operation:
           - ("QUERY", endpoint_url, engine, query_text)
           - ("JOIN", left_var, right_var, how)       # how in {"inner","left"}
           - ("REMOVE", [vars])
-          - ("VALUES_INJECT", [vars], batch_size)    # @@values ?var1 ... [batch_size=N]
+          - ("VALUES_INJECT", [vars], batch_size, workers)    # @@values ?var1 ... [batch_size=N] [workers=N]
           - ("FOREACH", var_name, placeholder, delay)  # @@foreach ?var placeholder [wait=N]
           - ("PAGE", var_name, default_size, max_size)  # @@page ?var [default_size=N] [max_size=M]
         """
@@ -935,7 +953,7 @@ class Operation:
             return _http_session.get(
                 endpoint_url + "?query=" + quote(query_text),
                 headers=headers,
-                timeout=DEFAULT_HTTP_TIMEOUT,
+                timeout=self.sparql_timeout,
             )
         return _http_session.post(
             endpoint_url,
@@ -944,7 +962,7 @@ class Operation:
                 **headers,
                 "Content-Type": "application/sparql-query",
             },
-            timeout=DEFAULT_HTTP_TIMEOUT,
+            timeout=self.sparql_timeout,
         )
 
     def _request_sparql_csv(self, endpoint_url: str, query_text: str) -> Response:
@@ -1484,12 +1502,17 @@ class Operation:
         else:
             pending_values = state["pending_values"]
             if pending_values:
-                variables, batch_size = pending_values  # type: ignore[misc]
+                variables, batch_size, workers = pending_values  # type: ignore[misc]
                 value_batches = self._values_batches(variables, state["acc"], batch_size)  # type: ignore[arg-type]
+                batch_queries = [
+                    self._inject_values_clause(qtxt, variables, value_batch) for value_batch in value_batches
+                ]
                 rows = []
-                for value_batch in value_batches:
-                    batch_query = self._inject_values_clause(qtxt, variables, value_batch)
-                    rows.extend(self._run_query_dicts(endpoint_url, engine, batch_query))
+                with ThreadPoolExecutor(max_workers=workers) as executor:
+                    for batch_rows in executor.map(
+                        lambda batch_query: self._run_query_dicts(endpoint_url, engine, batch_query), batch_queries
+                    ):
+                        rows.extend(batch_rows)
                 state["pending_values"] = None
             else:
                 rows = self._run_query_dicts(endpoint_url, engine, qtxt)
@@ -1586,7 +1609,7 @@ class Operation:
             elif tag == "REMOVE":
                 state["acc"] = self._drop_columns(state["acc"] or [], st[1])  # type: ignore[arg-type]
             elif tag == "VALUES_INJECT":
-                state["pending_values"] = (st[1], st[2])
+                state["pending_values"] = (st[1], st[2], st[3])
             elif tag == "FOREACH":
                 state["pending_foreach"] = (st[1], st[2], st[3])
             elif tag == "PAGE":
@@ -1745,7 +1768,7 @@ class Operation:
                 endpoint,
                 data={"update": update_text},
                 headers={"Accept": "application/json", **backend_auth_header(endpoint)},
-                timeout=DEFAULT_HTTP_TIMEOUT,
+                timeout=self.sparql_timeout,
             )
         except RequestException as exc:
             msg = f"SPARQL update request failed: {exc}"

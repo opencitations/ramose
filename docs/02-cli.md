@@ -31,6 +31,7 @@ python -m ramose -s <spec.hf|spec.yaml> [options]
 | `--retry-attempts` | Total SPARQL read attempts, including the first one. Applies to standard SPARQL and SPARQL Anything reads. Default: `3`; use `1` to disable retries. |
 | `--retry-wait` | Seconds to wait before the first SPARQL read retry. Applies to standard SPARQL and SPARQL Anything reads. Default: `0.5`. |
 | `--retry-backoff` | Multiplier applied between SPARQL read retry waits. Applies to standard SPARQL and SPARQL Anything reads. Default: `2.0`. |
+| `--sparql-timeout` | Seconds to wait for each SPARQL request, reads and updates alike, before the attempt fails. Default: `60`. |
 | `--auth-db` | Directory for the bearer token store. Default: `.auth`. |
 | `--token-create` | Create a bearer token with the given label, print it once, and exit. |
 | `--token-ttl` | Token lifetime in seconds for `--token-create`. Default: no expiry. |
@@ -137,6 +138,8 @@ python -m ramose -s meta_v1.hf -w 127.0.0.1:8080 --retry-attempts 4 --retry-wait
 ```
 
 The retry policy covers network errors, timeouts, and backend status codes `408 Request Timeout`, `429 Too Many Requests`, `500 Internal Server Error`, `502 Bad Gateway`, `503 Service Unavailable`, and `504 Gateway Timeout`. Status codes such as `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`, and `422 Unprocessable Content` return without retrying. For SPARQL Anything, RAMOSE classifies failures from Java exception messages because PySPARQL-Anything does not expose HTTP status codes. Per-operation overrides are available through `#retry_attempts`, `#retry_wait`, and `#retry_backoff` in the [spec file](01-spec-file.md).
+
+Each attempt waits at most `--sparql-timeout` seconds (default 60) for the backend; a slower response counts as a timeout and is retried like any other retryable failure. Raise the value for operations whose queries legitimately take longer, either globally or per operation through `#sparql_timeout`.
 
 (authentication)=
 ## Authentication

@@ -177,6 +177,7 @@ class TestRetryConfig:
         op = api_mgr.get_op(api_mgr.base_url[0] + "/metadata/doi:10.1234")
         assert isinstance(op, Operation)
         assert (op.retry_attempts, op.retry_wait, op.retry_backoff) == (3, 0.5, 2.0)
+        assert op.sparql_timeout == 60
 
     def test_api_manager_retry_config_override(self) -> None:
         am = APIManager(
@@ -185,10 +186,12 @@ class TestRetryConfig:
             retry_attempts=5,
             retry_wait=0.25,
             retry_backoff=1.5,
+            sparql_timeout=600,
         )
         op = am.get_op(am.base_url[0] + "/metadata/doi:10.1234")
         assert isinstance(op, Operation)
         assert (op.retry_attempts, op.retry_wait, op.retry_backoff) == (5, 0.25, 1.5)
+        assert op.sparql_timeout == 600
 
     @pytest.mark.parametrize("suffix", [".hf", ".yaml"])
     def test_operation_retry_config_override(self, tmp_path: Path, suffix: str) -> None:
@@ -212,6 +215,7 @@ class TestRetryConfig:
                 "#retry_attempts 4\n"
                 "#retry_wait 0.1\n"
                 "#retry_backoff 3.0\n"
+                "#sparql_timeout 120\n"
                 '#sparql SELECT ?id WHERE { BIND("[[id]]" AS ?id) }\n',
                 encoding="utf-8",
             )
@@ -234,16 +238,18 @@ class TestRetryConfig:
   retry_attempts: "4"
   retry_wait: "0.1"
   retry_backoff: "3.0"
+  sparql_timeout: "120"
   sparql: |
     SELECT ?id WHERE { BIND("[[id]]" AS ?id) }
 """,
                 encoding="utf-8",
             )
 
-        am = APIManager([str(spec)], retry_attempts=7, retry_wait=0.7, retry_backoff=1.7)
+        am = APIManager([str(spec)], retry_attempts=7, retry_wait=0.7, retry_backoff=1.7, sparql_timeout=700)
         op = am.get_op("/api/items/ABC")
         assert isinstance(op, Operation)
         assert (op.retry_attempts, op.retry_wait, op.retry_backoff) == (4, 0.1, 3.0)
+        assert op.sparql_timeout == 120
 
 
 class TestFormatParsingEmptyPart:

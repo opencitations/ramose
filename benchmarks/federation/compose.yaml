@@ -105,7 +105,7 @@ services:
       - --worker-connections
       - "250"
       - --timeout
-      - "180"
+      - "600"
       - --keep-alive
       - "20"
       - wsgi:app

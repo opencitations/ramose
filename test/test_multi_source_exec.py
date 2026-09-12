@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
@@ -275,7 +276,7 @@ class TestMultiSourceValuesInject:
         def mock_parse_steps(text: str, tp: str, par_dict: dict[str, object]) -> list[tuple[str, ...]]:
             return [
                 ("QUERY", "http://ep/sparql", "sparql", "SELECT ?doi ?qid WHERE { }"),
-                ("VALUES_INJECT", ["?doi"], None),  # type: ignore[list-item]
+                ("VALUES_INJECT", ["?doi"], None, 1),  # type: ignore[list-item]
                 ("JOIN", "?doi", "?doi", "inner"),
                 ("QUERY", "http://ep2/sparql", "sparql", "SELECT ?doi ?extra WHERE { }"),
             ]
@@ -332,6 +333,40 @@ class TestMultiSourceValuesInject:
             {"id": "7", "metadata": "g"},
         ]
         assert run_query.call_count == 4
+
+    def test_batched_values_run_concurrently_and_keep_block_order(self) -> None:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": (
+                "SELECT ?id WHERE { }\n"
+                "@@join ?id ?id type=left\n"
+                "@@values ?id batch_size=1 workers=2\n"
+                "SELECT ?id ?metadata WHERE { }"
+            ),
+            "method": "get",
+            "field_type": "str(id) str(metadata)",
+        }
+        op = Operation(
+            "/api/test/value",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(sparql_endpoint="http://endpoint/sparql"),
+        )
+        both_blocks_started = threading.Barrier(2, timeout=5)
+
+        def run_query(_endpoint: str, query: str) -> list[dict[str, object]]:
+            if "VALUES" not in query:
+                return [{"id": "1"}, {"id": "2"}]
+            both_blocks_started.wait()
+            value = query.split('"')[1]
+            return [{"id": value, "metadata": chr(ord("a") + int(value) - 1)}]
+
+        with patch.object(op, "_run_sparql_dicts", side_effect=run_query):
+            response = op.exec(method="get", content_type="application/json")
+
+        assert response.status_code == 200
+        assert json.loads(response.body) == [{"id": "1", "metadata": "a"}, {"id": "2", "metadata": "b"}]
 
     @pytest.mark.parametrize("batch_option", ["", " batch_size=1"])
     def test_values_enrichment_preserves_articles_without_citations(self, batch_option: str) -> None:
@@ -698,18 +733,34 @@ class TestParseSteps:
         op = self._make_op()
         text = "SELECT ?a WHERE { }\n@@values ?a ?b\nSELECT ?a ?b WHERE { }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[1] == ("VALUES_INJECT", ["?a", "?b"], None)
+        assert steps[1] == ("VALUES_INJECT", ["?a", "?b"], None, 1)
 
     def test_values_batch_size(self) -> None:
         op = self._make_op()
         text = "SELECT ?a WHERE { }\n@@values ?a batch_size=3000\nSELECT ?a WHERE { }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[1] == ("VALUES_INJECT", ["?a"], 3000)
+        assert steps[1] == ("VALUES_INJECT", ["?a"], 3000, 1)
+
+    def test_values_workers(self) -> None:
+        op = self._make_op()
+        text = "SELECT ?a WHERE { }\n@@values ?a batch_size=3000 workers=4\nSELECT ?a WHERE { }"
+        steps = op._parse_steps(text, "http://ep/sparql", {})
+        assert steps[1] == ("VALUES_INJECT", ["?a"], 3000, 4)
 
     def test_values_invalid_batch_size_raises(self) -> None:
         op = self._make_op()
         with pytest.raises(ValueError, match="batch_size must be >= 1, got 0"):
             op._parse_steps("@@values ?a batch_size=0\nSELECT ?a WHERE { }", "http://ep/sparql", {})
+
+    def test_values_invalid_workers_raises(self) -> None:
+        op = self._make_op()
+        with pytest.raises(ValueError, match="workers must be >= 1, got 0"):
+            op._parse_steps("@@values ?a workers=0\nSELECT ?a WHERE { }", "http://ep/sparql", {})
+
+    def test_values_unknown_option_raises(self) -> None:
+        op = self._make_op()
+        with pytest.raises(ValueError, match="Unexpected argument 'threads=2'"):
+            op._parse_steps("@@values ?a threads=2\nSELECT ?a WHERE { }", "http://ep/sparql", {})
 
     def test_foreach_directive(self) -> None:
         op = self._make_op()
@@ -837,7 +888,7 @@ class TestParseSteps:
         op = self._make_op()
         text = "@@values ?a:x\nSELECT ?a WHERE { }"
         steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[0] == ("VALUES_INJECT", ["?a:x"], None)
+        assert steps[0] == ("VALUES_INJECT", ["?a:x"], None, 1)
 
     def test_foreach_missing_args_raises(self) -> None:
         op = self._make_op()
