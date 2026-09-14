@@ -698,38 +698,47 @@ def read_measurements(path: Path) -> list[Measurement]:
         ]
 
 
-def read_validations(path: Path) -> list[Validation]:
+def read_backend_records(path: Path) -> list[dict[str, object]]:
     with path.open(newline="", encoding="utf-8") as file:
         return [
-            Validation(
-                issn=row["issn"],
-                strategy=row["strategy"],
-                status=int(row["status"]),
-                latency_ms=float(row["latency_ms"]),
-                response_bytes=int(row["response_bytes"]),
-                equivalent=row["equivalent"] == "True",
-                backend_requests=int(row["backend_requests"]),
-                backend_request_bytes=int(row["backend_request_bytes"]),
-                backend_response_bytes=int(row["backend_response_bytes"]),
-                backend_latency_ms=float(row["backend_latency_ms"]),
-                backend_errors=int(row["backend_errors"]),
-            )
-            for row in csv.DictReader(file)
+            {**row, "started_ns": int(row["started_ns"]), "status": int(row["status"])} for row in csv.DictReader(file)
         ]
 
 
+def backend_requests_per_call(
+    measurements: list[Measurement], records: list[dict[str, object]]
+) -> dict[tuple[str, str], list[int]]:
+    counts: dict[tuple[str, str], list[int]] = {}
+    for row in measurements:
+        if row.concurrency != 1:
+            continue
+        label = f"measurement:1:{row.repetition}:{row.strategy}"
+        count = sum(
+            record["label"] == label and row.started_ns <= cast("int", record["started_ns"]) <= row.finished_ns
+            for record in records
+        )
+        counts.setdefault((row.issn, row.strategy), []).append(count)
+    return counts
+
+
 def summarize_group(
-    concurrency: int, band: str, rows: list[Measurement], validations: list[Validation]
+    concurrency: int, band: str, rows: list[Measurement], backend_counts: dict[tuple[str, str], list[int]]
 ) -> dict[str, object]:
     result: dict[str, object] = {
         "concurrency": concurrency,
         "band": band,
         "requests_per_strategy": len([row for row in rows if row.strategy == STRATEGIES[0]]),
     }
+    issns = {row.issn for row in rows}
     for strategy in STRATEGIES:
         group = [row for row in rows if row.strategy == strategy]
         latencies = [row.latency_ms for row in group if row.equivalent]
-        backend_requests = [row.backend_requests for row in validations if row.strategy == strategy]
+        backend_requests = [
+            count
+            for (issn, counted), counts in backend_counts.items()
+            if counted == strategy and issn in issns
+            for count in counts
+        ]
         result[f"{strategy}_success_rate"] = len(latencies) / len(group)
         result[f"{strategy}_median_ms"] = statistics.median(latencies) if latencies else ""
         result[f"{strategy}_p95_ms"] = quantile(latencies, 0.95) if latencies else ""
@@ -741,15 +750,14 @@ def summarize_group(
 def summarize(sample_path: Path, result_dir: Path) -> None:
     band_by_issn = {sample.issn: sample.band for sample in read_samples(sample_path)}
     measurements = read_measurements(result_dir / "raw.csv")
-    validations = read_validations(result_dir / "validation.csv")
+    backend_counts = backend_requests_per_call(measurements, read_backend_records(result_dir / "backend.csv"))
     summary = []
     for concurrency in CONCURRENCY_LEVELS:
         level_rows = [row for row in measurements if row.concurrency == concurrency]
         for band in (*BANDS, "all"):
             band_rows = [row for row in level_rows if band in ("all", band_by_issn[row.issn])]
-            band_validations = [row for row in validations if band in ("all", band_by_issn[row.issn])]
             if band_rows:
-                summary.append(summarize_group(concurrency, band, band_rows, band_validations))
+                summary.append(summarize_group(concurrency, band, band_rows, backend_counts))
     with (result_dir / "summary.csv").open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=list(summary[0]))
         writer.writeheader()
