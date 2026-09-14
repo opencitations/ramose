@@ -160,21 +160,23 @@ maps. Use block scalars (`|`) for multi-line fields such as `description`, `outp
 
 ## Supported types
 
-Used in `#field_type` declarations and `#<param>` definitions:
+The table describes how values from `#<param>` definitions are handled before they enter a query or an update.
 
 | Type | Cast behavior | Default for missing values |
 |------|--------------|---------------------------|
-| `str` | Lowercase string | Empty string |
+| `str` | Escaped as a SPARQL string literal | Empty string |
 | `int` | Integer | Minimum integer |
 | `float` | Float | Minimum float |
 | `datetime` | ISO 8601 date | `0001-01-01` |
 | `duration` | XML Schema duration | `P2000Y` |
-| `iri` | String kept verbatim; in write operations the value is validated as an IRI | Empty string |
-| `literal` | String kept verbatim; in write operations the value is escaped as a SPARQL string literal | Empty string |
+| `iri` | Rejects values containing `<`, `>`, `"`, `{`, `}`, `|`, `^`, `` ` ``, `\`, a space, or a control character | Empty string |
+| `literal` | Escaped as a SPARQL string literal | Empty string |
 
-`iri` and `literal` behave like `str` for read operations but skip the lowercasing, and they drive safe value binding for write operations (see below).
+For result columns declared with `#field_type`, `str` converts values to lowercase rather than applying SPARQL escaping.
 
 ## Parameter substitution
+
+For request parameters, a failed IRI check or a failed conversion to `int`, `float`, `datetime`, or `duration` returns HTTP 400. String and literal values are escaped before substitution.
 
 In `#sparql` blocks, `[[param_name]]` placeholders are replaced with the URL parameter value before query execution. The parameter name matches the `{param}` in the operation URL.
 

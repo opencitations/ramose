@@ -201,7 +201,7 @@ cites:
 
 A request to `?filter=identifiers.id:10.1/x,cites:https://example.org/1` fills `[[constraints]]` and `[[federation]]`. Slot names are arbitrary; they only need to match the `[[...]]` placeholders in the operation's `#sparql`. A template containing `@@` directives triggers [multi-source execution](06-multi-source.md), so a parameter can reach a second endpoint without editing the spec. A key absent from the config is rejected; a key mapped to an empty slot map is accepted and adds no constraint.
 
-Each parameter names its own config in its own handler, so one operation can drive several parameters from different files. The `{{value}}` placeholder is replaced with the filter value as received. Write the SPARQL delimiters you need directly in the template, such as `"{{value}}"` for a string literal or `<{{value}}>` for an IRI.
+Each parameter names its own config in its own handler, so one operation can drive several parameters from different files. Write the SPARQL delimiters you need directly in the template, because they decide how `{{value}}` is bound: inside `"..."` or `'...'` the value is escaped as a string literal; inside `<...>` it is validated as an IRI and a request whose value contains a character that cannot appear in an IRI is rejected with HTTP 400; in any other position, such as the local part of a prefixed name in `ex:{{value}}`, the value must consist of letters, digits, `_`, `-`, `.`, `:`, or `%`, and is rejected otherwise.
 
 A slot can also select its template from the value, which validates the value against the listed set:
 

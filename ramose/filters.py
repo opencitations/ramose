@@ -6,9 +6,11 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from pathlib import Path
-from re import sub
+from re import Match, sub
 
 import yaml
+
+from ramose.escaping import escape_iri, escape_literal, escape_local_name
 
 FiltersConfig = Mapping[str, Mapping[str, "str | dict[str, str]"]]
 
@@ -17,7 +19,16 @@ _ALWAYS_EMPTY_FILTER = "FILTER(false)"
 
 
 def render(template: str, value: str) -> str:
-    return sub(_VALUE_PATTERN, value, template)
+    def bind(placeholder: Match[str]) -> str:
+        before = template[placeholder.start() - 1 : placeholder.start()]
+        after = template[placeholder.end() : placeholder.end() + 1]
+        if before in ('"', "'") and after == before:
+            return escape_literal(value)
+        if before == "<" and after == ">":
+            return escape_iri(value)
+        return escape_local_name(value)
+
+    return sub(_VALUE_PATTERN, bind, template)
 
 
 def _select_template(key: str, spec: str | dict[str, str], value: str) -> str:

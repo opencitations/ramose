@@ -41,6 +41,7 @@ from ramose._constants import (
     media_type_for_format,
 )
 from ramose.datatype import DataType
+from ramose.escaping import InvalidParameterValueError, escape_iri, escape_literal
 from ramose.filters import apply_filters
 from ramose.paging import PaginationInfo, build_link_header, build_pagination_info
 
@@ -85,7 +86,6 @@ _SPARQL_ANYTHING_NETWORK_MARKERS = frozenset(
         "connection refused",
     }
 )
-_IRI_FORBIDDEN = r'[<>"{}|^`\\\x00-\x20]'
 _UNPROCESSABLE_CONTENT = 422
 _JSON_TRANSFORM_RE = r'^(?P<op_type>array|dict)\((?P<separator>"[^"]+"),(?P<entries>[^)]+)\)$'
 _DICT_TRANSFORM_MIN_FIELD_COUNT = 2
@@ -1368,23 +1368,26 @@ class Operation:
             raise ValueError(msg)
         par_man = url_match.groups()
         for idx, par in enumerate(findall("{([^{}]+)}", self.i["url"])):
-            try:
-                par_type = self.i[par].split("(")[0]
-                if par_type in ("str", "iri", "literal"):
-                    par_value = par_man[idx]
-                else:
-                    par_value = self.dt.get_func(par_type)(par_man[idx])
-            except KeyError:
-                par_value = par_man[idx]
-            par_dict[par] = par_value
-        if body_params:
-            par_dict.update(body_params)
+            par_dict[par] = self._bind_value(par, par_man[idx])
+        for par, val in (body_params or {}).items():
+            par_dict[par] = self._bind_value(par, val)
         return par_dict
+
+    def _bind_value(self, param: str, value: object) -> object:
+        kind = self.i[param].split("(")[0] if param in self.i else "str"
+        text = "" if value is None else str(value)
+        if kind == "iri":
+            return escape_iri(text)
+        if kind in ("str", "literal"):
+            return escape_literal(text)
+        return self.dt.get_func(kind)(text)
 
     @staticmethod
     def _apply_config_filters(config: FiltersConfig, values: list[str]) -> dict[str, str]:
         try:
             return apply_filters(config, values)
+        except InvalidParameterValueError as exc:
+            raise HttpError(HTTPStatus.BAD_REQUEST, f"HTTP status code 400: {exc}") from exc
         except ValueError as exc:
             Operation._raise_unprocessable(str(exc))
 
@@ -1662,27 +1665,6 @@ class Operation:
     def _is_write(method: str) -> bool:
         return method.lower() in _WRITE_METHODS
 
-    @staticmethod
-    def _escape_literal(value: str) -> str:
-        value = value.replace("\\", "\\\\").replace('"', '\\"')
-        return value.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
-
-    @staticmethod
-    def _escape_iri(value: str) -> str:
-        if search(_IRI_FORBIDDEN, value):
-            msg = f"invalid IRI value: {value!r}"
-            raise ValueError(msg)
-        return value
-
-    def _bind_sparql_value(self, param: str, value: object) -> str:
-        kind = self.i[param].split("(")[0] if param in self.i else "literal"
-        text = "" if value is None else str(value)
-        if kind == "iri":
-            return Operation._escape_iri(text)
-        if kind in ("int", "float"):
-            return str(self.dt.get_func(kind)(text))
-        return Operation._escape_literal(text)
-
     def _format_write_success(self, content_type: str) -> OperationResponse:
         if content_type == "text/csv":
             return OperationResponse(HTTPStatus.OK, "status,message\r\n200,operation completed\r\n", "text/csv", {})
@@ -1697,7 +1679,7 @@ class Operation:
         """Send a SPARQL 1.1 Update to the update endpoint and return a confirmation with no result set."""
         update_text = self.i["sparql"]
         for param, val in par_dict.items():
-            update_text = update_text.replace(f"[[{param}]]", self._bind_sparql_value(param, val))
+            update_text = update_text.replace(f"[[{param}]]", str(val))
 
         unresolved = findall(r"\[\[(\w+)\]\]", update_text)
         if unresolved:

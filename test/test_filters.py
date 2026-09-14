@@ -65,8 +65,22 @@ CONFIG_ALWAYS_EMPTY = {
 }
 
 
-def test_render_replaces_value_raw() -> None:
-    assert render("name {{value}} .", 'Zenodo "community"') == 'name Zenodo "community" .'
+def test_render_escapes_quoted_value() -> None:
+    assert render('name "{{value}}" .', 'Zenodo "community"') == 'name "Zenodo \\"community\\"" .'
+
+
+def test_render_escapes_single_quoted_value() -> None:
+    assert render("name '{{value}}' .", "O'Neil") == "name 'O\\'Neil' ."
+
+
+def test_render_rejects_iri_injection() -> None:
+    with pytest.raises(ValueError, match=r"^invalid IRI value"):
+        render("?s ex:cites <{{value}}> .", "http://x/> } DROP ALL ; {")
+
+
+def test_render_rejects_prefixed_name_injection() -> None:
+    with pytest.raises(ValueError, match=r"^invalid prefixed name value"):
+        render("?s ex:scheme ex:{{value}} .", "doi } DROP ALL ; {")
 
 
 def test_apply_filters_inline_constraint() -> None:
