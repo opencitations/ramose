@@ -10,7 +10,7 @@ RAMOSE can combine results from multiple SPARQL endpoints in a single operation.
 
 When no directives are present, the query runs against the default endpoint as usual. When directives appear, RAMOSE splits the block into steps and executes them in sequence, building up an accumulator of rows.
 
-SPARQL read retries apply per HTTP SPARQL step and per SPARQL Anything read step. In an `@@foreach` block, RAMOSE retries only the failed iteration. It does not restart the whole multi-source pipeline. Write operations are not retried by this policy.
+SPARQL read retries apply per HTTP SPARQL step and per SPARQL Anything read step. In a batched `@@values` block, RAMOSE retries only the failed batch. It does not restart the whole multi-source pipeline. Write operations are not retried by this policy.
 
 ## Setup
 
@@ -33,9 +33,9 @@ Parameters can be passed positionally or by name using `key=value` syntax, like 
 A token with `=` is treated as a keyword argument only if the key matches a known parameter name. This allows values containing `=` (such as URLs with query strings) to be passed positionally without ambiguity.
 
 ```
-@@foreach ?br item wait=0.5
-@@foreach ?br placeholder=item wait=0.5
-@@foreach variable=?br placeholder=item wait=0.5
+@@join ?br ?br type=left
+@@join ?br right_var=?br type=left
+@@join left_var=?br right_var=?br type=left
 ```
 
 These three forms are equivalent.
@@ -99,28 +99,6 @@ SELECT ?doi ?abstract WHERE { ... }
 Takes one or more `?variable` names. RAMOSE collects distinct values for the listed variables from the accumulator and inserts a `VALUES` block into the next query's `WHERE` clause. Literal values are quoted; IRIs (starting with `http://` or `https://`) are wrapped in angle brackets.
 
 When `batch_size` is present, RAMOSE splits the distinct tuples into blocks and runs the next query once per block. `workers` sets how many blocks run at the same time; the default is 1, so blocks run in sequence. RAMOSE collects every block's rows, in block order, before applying the following join. A failed block fails the operation. Each input value must be processable independently.
-
-### @@foreach
-
-Iterate the next query once per distinct value of a variable from the accumulator.
-
-Syntax: `@@foreach <variable> <placeholder> [wait=<seconds>]`
-
-```
-@@foreach ?br item wait=0.5
-SELECT ?result WHERE {
-  BIND(<[[item]]> as ?br)
-  ...
-}
-```
-
-| Parameter | Required | Default | Description |
-|-----------|----------|---------|-------------|
-| `variable` | yes | | Column from the accumulator to iterate over (must start with `?`) |
-| `placeholder` | yes | | Name used as `[[placeholder]]` in the query text |
-| `wait` | no | `0` | Pause in seconds (float) between iterations |
-
-Results from all iterations are concatenated.
 
 ### @@remove
 

@@ -34,11 +34,8 @@ OC_META_BR = [
     {"doi": "10.1038/nature12373", "br": "https://w3id.org/oc/meta/br/06120344846"},
 ]
 
-OC_INDEX_CITATIONS_BR1 = [
+OC_INDEX_CITATIONS = [
     {"br": "https://w3id.org/oc/meta/br/06180334099", "oc_citation_count": "39"},
-]
-
-OC_INDEX_CITATIONS_BR2 = [
     {"br": "https://w3id.org/oc/meta/br/06120344846", "oc_citation_count": "1515"},
 ]
 
@@ -105,9 +102,9 @@ def _get_operation(am: APIManager, dois_param: str) -> Operation:
     return op
 
 
-class TestMultiSourceJoinEndpointForeachRemove:
+class TestMultiSourceJoinEndpointValuesRemove:
     """Full pipeline test for test_scholarly_multi-sources.hf:
-    Wikidata -> @@join OC Meta -> @@foreach OC Index -> @@remove @@join -> result."""
+    Wikidata -> @@join OC Meta -> @@values OC Index -> @@remove @@join -> result."""
 
     def test_full_multi_source_pipeline_json(self) -> None:
         am = _load_api_manager("test_scholarly_multi-sources.hf")
@@ -120,11 +117,7 @@ class TestMultiSourceJoinEndpointForeachRemove:
             if "opencitations.net/meta" in endpoint_url:
                 return list(OC_META_BR)
             if "opencitations.net/index" in endpoint_url:
-                if "06180334099" in query_text:
-                    return list(OC_INDEX_CITATIONS_BR1)
-                if "06120344846" in query_text:
-                    return list(OC_INDEX_CITATIONS_BR2)
-                return []
+                return list(OC_INDEX_CITATIONS)
             return []
 
         with patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql):
@@ -155,7 +148,7 @@ class TestMultiSourceJoinEndpointForeachRemove:
 
 class TestMultiSourceWithSparqlAnything:
     """Full pipeline test for mixed_scholarly_crossref.hf:
-    Wikidata SPARQL -> OC Meta -> OC Index (foreach) -> Crossref via SPARQL Anything -> merged result."""
+    Wikidata SPARQL -> OC Meta -> OC Index (values) -> Crossref via SPARQL Anything -> merged result."""
 
     def test_mixed_sparql_and_sparql_anything(self) -> None:
         am = _load_api_manager("mixed_scholarly_crossref.hf")
@@ -166,11 +159,7 @@ class TestMultiSourceWithSparqlAnything:
             if "opencitations.net/meta" in endpoint_url:
                 return list(OC_META_BR)
             if "opencitations.net/index" in endpoint_url:
-                if "06180334099" in query_text:
-                    return list(OC_INDEX_CITATIONS_BR1)
-                if "06120344846" in query_text:
-                    return list(OC_INDEX_CITATIONS_BR2)
-                return []
+                return list(OC_INDEX_CITATIONS)
             return list(WIKIDATA_DOI_QID)
 
         def mock_run_sa(query_text: str, values: dict[str, str] | None = None) -> list[dict[str, str]]:
@@ -492,50 +481,6 @@ class TestMultiSourceRetry:
         assert ctype == "application/json"
         assert mock_session.get.call_count == 3
 
-    @patch("ramose.operation._http_session")
-    def test_foreach_retries_only_failed_iteration(self, mock_session: MagicMock) -> None:
-        op_item = {
-            "url": "/test/{id}",
-            "id": "str(.+)",
-            "sparql": "SELECT ?id WHERE { }\n@@foreach ?id item\nSELECT ?id ?value WHERE { }",
-            "method": "get",
-            "field_type": "str(id) str(value)",
-        }
-        op = Operation(
-            "/api/test/A",
-            r"/api/test/(.+)",
-            op_item,
-            OperationConfig(sparql_endpoint="http://ep1/sparql", retry_wait=0),
-        )
-        mock_session.get.side_effect = [
-            _csv_response(text="id\nA\nB\n"),
-            _csv_response(text="id,value\nA,one\n"),
-            _csv_response(status_code=503, text="error", reason="Service Unavailable"),
-            _csv_response(text="id,value\nB,two\n"),
-        ]
-
-        def mock_parse_steps(text: str, tp: str, par_dict: dict[str, object]) -> list[tuple[str, ...]]:
-            return [
-                ("QUERY", "http://ep1/sparql", "sparql", "SELECT ?id WHERE { }"),
-                ("JOIN", "?id", "?id", "inner"),
-                ("FOREACH", "?id", "item", 0.0),  # type: ignore[list-item]
-                ("QUERY", "http://ep2/sparql", "sparql", "SELECT ?id ?value WHERE { BIND([[item]] AS ?id) }"),
-            ]
-
-        with patch.object(op, "_parse_steps", side_effect=mock_parse_steps):
-            _response = op.exec(method="get", content_type="application/json")
-            sc = _response.status_code
-            body = _response.body
-            ctype = _response.content_type
-
-        assert sc == 200
-        assert json.loads(body) == [{"id": "A", "value": "one"}, {"id": "B", "value": "two"}]
-        assert ctype == "application/json"
-        assert mock_session.get.call_count == 4
-        called_urls = [call.args[0] for call in mock_session.get.call_args_list]
-        assert called_urls[0].startswith("http://ep1/sparql?")
-        assert all(url.startswith("http://ep2/sparql?") for url in called_urls[1:])
-
     def test_sparql_anything_endpoint_retries_before_join(self) -> None:
         op_item = {
             "url": "/test/{id}",
@@ -571,54 +516,6 @@ class TestMultiSourceRetry:
         assert mock_session.get.call_count == 1
         assert select.call_count == 2
 
-    def test_sparql_anything_foreach_retries_only_failed_iteration(self) -> None:
-        op_item = {
-            "url": "/test/{id}",
-            "id": "str(.+)",
-            "sparql": (
-                "SELECT ?id WHERE { }\n"
-                "@@join ?id ?id\n"
-                "@@foreach ?id item\n"
-                "@@with engine=sparql-anything\n"
-                'SELECT ?id ?value WHERE { BIND("[[item]]" AS ?id) }'
-            ),
-            "method": "get",
-            "field_type": "str(id) str(value)",
-        }
-        op = Operation(
-            "/api/test/A",
-            r"/api/test/(.+)",
-            op_item,
-            OperationConfig(sparql_endpoint="http://ep1/sparql", retry_wait=0),
-        )
-        error = Exception("HTTP/1.0 503 Service Unavailable - URL was: https://example.org/B.csv")
-        with (
-            patch("ramose.operation._http_session") as mock_session,
-            patch("ramose.operation.SparqlAnything") as mock_sa,
-        ):
-            mock_session.get.return_value = _csv_response(text="id\nA\nB\n")
-            select = mock_sa.return_value.select
-            select.side_effect = [
-                [{"id": "A", "value": "one"}],
-                error,
-                [{"id": "B", "value": "two"}],
-            ]
-            _response = op.exec(method="get", content_type="application/json")
-            sc = _response.status_code
-            body = _response.body
-            ctype = _response.content_type
-
-        assert sc == 200
-        assert json.loads(body) == [{"id": "A", "value": "one"}, {"id": "B", "value": "two"}]
-        assert ctype == "application/json"
-        assert mock_session.get.call_count == 1
-        assert select.call_count == 3
-        assert [call.kwargs["query"] for call in select.call_args_list] == [
-            'SELECT ?id ?value WHERE { BIND("A" AS ?id) }',
-            'SELECT ?id ?value WHERE { BIND("B" AS ?id) }',
-            'SELECT ?id ?value WHERE { BIND("B" AS ?id) }',
-        ]
-
 
 class TestMultiSourceMissingJoin:
     def test_multiple_queries_without_join_returns_400(self) -> None:
@@ -645,35 +542,6 @@ class TestMultiSourceMissingJoin:
 
         assert sc == 400
         assert msg == "HTTP status code 400: Multiple QUERY steps without an explicit @@join directive"
-
-
-class TestMultiSourceForeachNoMatchingColumn:
-    def test_foreach_missing_column_returns_empty(self) -> None:
-        am = _load_api_manager("test_scholarly_multi-sources.hf")
-        op = _get_operation(am, "10.1108/jd-12-2013-0166")
-
-        def mock_run_sparql(endpoint_url: str, query_text: str) -> list[dict[str, str]]:
-            return [{"x": "1"}]
-
-        def mock_parse_steps(text: str, tp: str, par_dict: dict[str, object]) -> list[tuple[str, ...]]:
-            return [
-                ("QUERY", "http://ep/sparql", "sparql", "SELECT ?x WHERE { }"),
-                ("FOREACH", "?nonexistent", "item", 0.0),  # type: ignore[list-item]
-                ("JOIN", "?x", "?x", "inner"),
-                ("QUERY", "http://ep/sparql", "sparql", "SELECT ?x WHERE { }"),
-            ]
-
-        with (
-            patch.object(op, "_parse_steps", side_effect=mock_parse_steps),
-            patch.object(op, "_run_sparql_dicts", side_effect=mock_run_sparql),
-        ):
-            _response = op.exec(method="get", content_type="application/json")
-            sc = _response.status_code
-            body = _response.body
-            _ct = _response.content_type
-
-        assert sc == 200
-        assert json.loads(body) == []
 
 
 class TestParseSteps:
@@ -761,18 +629,6 @@ class TestParseSteps:
         op = self._make_op()
         with pytest.raises(ValueError, match="Unexpected argument 'threads=2'"):
             op._parse_steps("@@values ?a threads=2\nSELECT ?a WHERE { }", "http://ep/sparql", {})
-
-    def test_foreach_directive(self) -> None:
-        op = self._make_op()
-        text = (
-            "SELECT ?br WHERE { }\n@@join ?br ?br type=left\n"
-            "@@foreach ?br item wait=0.5\nSELECT ?br ?count WHERE { BIND(<[[item]]> AS ?br) }"
-        )
-        steps = op._parse_steps(text, "http://ep/sparql", {})
-        tags = [s[0] for s in steps]
-        assert tags == ["QUERY", "JOIN", "FOREACH", "QUERY"]
-        foreach_step = next(s for s in steps if s[0] == "FOREACH")
-        assert foreach_step == ("FOREACH", "?br", "item", 0.5)
 
     def test_remove_directive(self) -> None:
         op = self._make_op()
@@ -890,24 +746,6 @@ class TestParseSteps:
         steps = op._parse_steps(text, "http://ep/sparql", {})
         assert steps[0] == ("VALUES_INJECT", ["?a:x"], None, 1)
 
-    def test_foreach_missing_args_raises(self) -> None:
-        op = self._make_op()
-        text = "@@foreach\nSELECT ?a WHERE { }"
-        with pytest.raises(ValueError, match="Missing required parameter"):
-            op._parse_steps(text, "http://ep/sparql", {})
-
-    def test_foreach_invalid_delay_raises(self) -> None:
-        op = self._make_op()
-        text = "@@foreach ?br item wait=notanumber\nSELECT ?a WHERE { }"
-        with pytest.raises(ValueError, match="Invalid wait value"):
-            op._parse_steps(text, "http://ep/sparql", {})
-
-    def test_foreach_without_question_mark_raises(self) -> None:
-        op = self._make_op()
-        text = "@@foreach br item wait=0.1\nSELECT ?a WHERE { }"
-        with pytest.raises(ValueError, match="must start with '\\?'"):
-            op._parse_steps(text, "http://ep/sparql", {})
-
     def test_page_directive(self) -> None:
         op = self._make_op()
         text = "SELECT ?a WHERE { }\n@@page ?a default_size=10 max_size=100\nSELECT ?a ?b WHERE { }"
@@ -960,32 +798,6 @@ class TestParseSteps:
     def test_join_positional_after_keyword_raises(self) -> None:
         op = self._make_op()
         text = "SELECT ?a WHERE { }\n@@join left_var=?a ?b\nSELECT ?b WHERE { }"
-        with pytest.raises(ValueError, match=r"Positional argument.*cannot follow keyword"):
-            op._parse_steps(text, "http://ep/sparql", {})
-
-    # @@foreach: positional, keyword, mixed, wrong order
-
-    def test_foreach_keyword_syntax(self) -> None:
-        op = self._make_op()
-        text = "@@foreach variable=?br placeholder=item wait=0.5\nSELECT ?br WHERE { BIND(<[[item]]> AS ?br) }"
-        steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[0] == ("FOREACH", "?br", "item", 0.5)
-
-    def test_foreach_mixed_positional_keyword(self) -> None:
-        op = self._make_op()
-        text = "@@foreach ?br placeholder=item\nSELECT ?br WHERE { }"
-        steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[0] == ("FOREACH", "?br", "item", 0.0)
-
-    def test_foreach_keyword_reversed_order(self) -> None:
-        op = self._make_op()
-        text = "@@foreach wait=0.5 placeholder=item variable=?br\nSELECT ?br WHERE { BIND(<[[item]]> AS ?br) }"
-        steps = op._parse_steps(text, "http://ep/sparql", {})
-        assert steps[0] == ("FOREACH", "?br", "item", 0.5)
-
-    def test_foreach_positional_after_keyword_raises(self) -> None:
-        op = self._make_op()
-        text = "@@foreach variable=?br item\nSELECT ?a WHERE { }"
         with pytest.raises(ValueError, match=r"Positional argument.*cannot follow keyword"):
             op._parse_steps(text, "http://ep/sparql", {})
 

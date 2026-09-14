@@ -67,11 +67,10 @@ SELECT ?doi ?title ?br WHERE {
 
 @@join ?br ?br type=left
 @@with endpoint=https://sparql.opencitations.net/index
-@@foreach ?br item wait=0
+@@values ?br
 PREFIX cito: <http://purl.org/spar/cito/>
 
 SELECT ?br (COUNT(?cited) AS ?oc_reference_count) WHERE {
-  BIND(<[[item]]> AS ?br)
   ?cit a cito:Citation ;
        cito:hasCitingEntity ?br ;
        cito:hasCitedEntity  ?cited .
@@ -106,11 +105,10 @@ SELECT ?doi ?br WHERE {
 
 @@join ?br ?br type=left
 @@with endpoint=https://sparql.opencitations.net/index
-@@foreach ?br item wait=0
+@@values ?br
 PREFIX cito: <http://purl.org/spar/cito/>
 
 SELECT ?br ?cited WHERE {
-  BIND(<[[item]]> AS ?br)
   ?cit a cito:Citation ;
        cito:hasCitingEntity ?br ;
        cito:hasCitedEntity  ?cited .

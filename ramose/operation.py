@@ -836,20 +836,6 @@ class Operation:
         return None, None, ("VALUES_INJECT", variables, batch_size, workers)
 
     @staticmethod
-    def _handle_directive_foreach(parts: list[str]) -> tuple[None, None, tuple[str, str, str, float]]:
-        args = Operation._parse_directive_args(parts[1:], ["variable", "placeholder"], defaults={"wait": "0"})
-        var_name = args["variable"]
-        if not var_name.startswith("?"):
-            msg = f"@@foreach variable must start with '?', got {var_name!r}"
-            raise ValueError(msg)
-        try:
-            delay = float(args["wait"])
-        except ValueError:
-            msg = f"Invalid wait value in @@foreach: {args['wait']!r}"
-            raise ValueError(msg) from None
-        return None, None, ("FOREACH", var_name, args["placeholder"], delay)
-
-    @staticmethod
     def _handle_directive_page(parts: list[str]) -> tuple[None, None, tuple[str, str, str, str]]:
         args = Operation._parse_directive_args(parts[1:], ["variable"], defaults={"default_size": "", "max_size": ""})
         var_name = args["variable"]
@@ -892,7 +878,6 @@ class Operation:
           - ("JOIN", left_var, right_var, how)       # how in {"inner","left"}
           - ("REMOVE", [vars])
           - ("VALUES_INJECT", [vars], batch_size, workers)    # @@values ?var1 ... [batch_size=N] [workers=N]
-          - ("FOREACH", var_name, placeholder, delay)  # @@foreach ?var placeholder [wait=N]
           - ("PAGE", var_name, default_size, max_size)  # @@page ?var [default_size=N] [max_size=M]
         """
         for p, v in params.items():
@@ -907,7 +892,6 @@ class Operation:
             "join": self._handle_directive_join,
             "remove": lambda parts: (None, None, ("REMOVE", parts[1:])),
             "values": self._handle_directive_values,
-            "foreach": self._handle_directive_foreach,
             "page": self._handle_directive_page,
         }
 
@@ -1460,62 +1444,24 @@ class Operation:
 
         return self._finalize_result(list(reader(list_of_res)), content_type)
 
-    def _exec_foreach_query(
-        self,
-        endpoint_url: str,
-        engine: str,
-        qtxt: str,
-        foreach: tuple[str, str, float],
-        acc: list[dict[str, object]] | None,
-    ) -> list[dict[str, object]]:
-        """Run one query per distinct value collected from the accumulator (@@foreach)."""
-        var_name, placeholder, delay = foreach
-        column = var_name.lstrip("?")
-
-        values = []
-        seen = set()
-        for row in acc or []:
-            v = row.get(column)
-            if v and v not in seen:
-                seen.add(v)
-                values.append(v)
-
-        all_rows = []
-        for idx_val, val in enumerate(values):
-            q_one = qtxt.replace(f"[[{placeholder}]]", str(val))
-            sub_rows = self._run_query_dicts(endpoint_url, engine, q_one)
-            if sub_rows:
-                all_rows.extend(sub_rows)
-            if delay and idx_val + 1 < len(values):
-                time.sleep(delay)
-
-        return all_rows
-
     def _exec_multi_source_query_step(
         self, endpoint_url: str, engine: str, qtxt: str, state: dict[str, object]
     ) -> None:
         """Handle a QUERY step in the multi-source pipeline."""
-        if state["pending_foreach"] is not None:
-            rows = self._exec_foreach_query(endpoint_url, engine, qtxt, state["pending_foreach"], state["acc"])  # type: ignore[arg-type]
-            state["pending_foreach"] = None
+        pending_values = state["pending_values"]
+        if pending_values:
+            variables, batch_size, workers = pending_values  # type: ignore[misc]
+            value_batches = self._values_batches(variables, state["acc"], batch_size)  # type: ignore[arg-type]
+            batch_queries = [self._inject_values_clause(qtxt, variables, value_batch) for value_batch in value_batches]
+            rows = []
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                for batch_rows in executor.map(
+                    lambda batch_query: self._run_query_dicts(endpoint_url, engine, batch_query), batch_queries
+                ):
+                    rows.extend(batch_rows)
             state["pending_values"] = None
         else:
-            pending_values = state["pending_values"]
-            if pending_values:
-                variables, batch_size, workers = pending_values  # type: ignore[misc]
-                value_batches = self._values_batches(variables, state["acc"], batch_size)  # type: ignore[arg-type]
-                batch_queries = [
-                    self._inject_values_clause(qtxt, variables, value_batch) for value_batch in value_batches
-                ]
-                rows = []
-                with ThreadPoolExecutor(max_workers=workers) as executor:
-                    for batch_rows in executor.map(
-                        lambda batch_query: self._run_query_dicts(endpoint_url, engine, batch_query), batch_queries
-                    ):
-                        rows.extend(batch_rows)
-                state["pending_values"] = None
-            else:
-                rows = self._run_query_dicts(endpoint_url, engine, qtxt)
+            rows = self._run_query_dicts(endpoint_url, engine, qtxt)
 
         if state["acc"] is None:
             state["acc"] = rows
@@ -1596,7 +1542,6 @@ class Operation:
             "acc": None,
             "pending_join": None,
             "pending_values": None,
-            "pending_foreach": None,
         }
 
         for st in steps:
@@ -1610,8 +1555,6 @@ class Operation:
                 state["acc"] = self._drop_columns(state["acc"] or [], st[1])  # type: ignore[arg-type]
             elif tag == "VALUES_INJECT":
                 state["pending_values"] = (st[1], st[2], st[3])
-            elif tag == "FOREACH":
-                state["pending_foreach"] = (st[1], st[2], st[3])
             elif tag == "PAGE":
                 self._exec_page_step(st[1], st[2], st[3], state)
             else:
