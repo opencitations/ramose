@@ -17,6 +17,7 @@ import statistics
 import subprocess
 import sys
 import time
+from bisect import bisect_left, bisect_right
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -708,15 +709,17 @@ def read_backend_records(path: Path) -> list[dict[str, object]]:
 def backend_requests_per_call(
     measurements: list[Measurement], records: list[dict[str, object]]
 ) -> dict[tuple[str, str], list[int]]:
+    started_by_label: dict[str, list[int]] = {}
+    for record in records:
+        started_by_label.setdefault(cast("str", record["label"]), []).append(cast("int", record["started_ns"]))
+    for started in started_by_label.values():
+        started.sort()
     counts: dict[tuple[str, str], list[int]] = {}
     for row in measurements:
         if row.concurrency != 1:
             continue
-        label = f"measurement:1:{row.repetition}:{row.strategy}"
-        count = sum(
-            record["label"] == label and row.started_ns <= cast("int", record["started_ns"]) <= row.finished_ns
-            for record in records
-        )
+        started = started_by_label[f"measurement:1:{row.repetition}:{row.strategy}"]
+        count = bisect_right(started, row.finished_ns) - bisect_left(started, row.started_ns)
         counts.setdefault((row.issn, row.strategy), []).append(count)
     return counts
 
