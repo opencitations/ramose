@@ -886,6 +886,29 @@ class TestJoin:
         assert len(result) == 1
         assert result[0]["extra"] == "y"
 
+    def test_join_empty_string_key_skipped(self) -> None:
+        op = self._make_op()
+        left = [{"doi": "", "title": "A"}, {"doi": "10.1", "title": "B"}]
+        right = [{"doi": "", "extra": "x"}, {"doi": "10.1", "extra": "y"}]
+        result = op._join(left, right, "?doi", "?doi", "left")  # type: ignore[arg-type]
+        assert result == [{"doi": "", "title": "A"}, {"doi": "10.1", "title": "B", "extra": "y"}]
+
+    def test_join_one_to_many_emits_one_row_per_match(self) -> None:
+        op = self._make_op()
+        left = [{"doi": "10.1", "title": "A"}]
+        right = [{"doi": "10.1", "citing": "c1"}, {"doi": "10.1", "citing": "c2"}]
+        result = op._join(left, right, "?doi", "?doi", "inner")  # type: ignore[arg-type]
+        assert result == [
+            {"doi": "10.1", "title": "A", "citing": "c1"},
+            {"doi": "10.1", "title": "A", "citing": "c2"},
+        ]
+
+    def test_join_is_case_sensitive(self) -> None:
+        op = self._make_op()
+        left = [{"doi": "10.1/ABC"}]
+        right = [{"doi": "10.1/abc", "extra": "x"}]
+        assert op._join(left, right, "?doi", "?doi", "inner") == []  # type: ignore[arg-type]
+
 
 class TestDropColumns:
     def test_removes_specified_columns(self) -> None:

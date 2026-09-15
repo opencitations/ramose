@@ -81,7 +81,9 @@ SELECT ?doi ?citation_count WHERE { ... }
 | `right_var` | yes | | Join key from the next query |
 | `type` | no | `inner` | `inner` keeps only matches; `left` preserves all accumulator rows |
 
-Join keys are normalized (http/https unification, trailing slash removal) to handle minor URL differences between endpoints.
+Join keys are compared as strings, using the bare text of an IRI or the lexical form of a literal. Datatypes and language tags are ignored, so an IRI and a literal with the same text match. Before comparing keys, RAMOSE trims surrounding whitespace, rewrites `http://` to `https://`, and drops one trailing slash; the comparison is otherwise exact and case-sensitive. Keys that are missing or empty after trimming never match, including empty literals represented as empty CSV cells. When a key occurs in several rows on either side, each accumulated row is paired with every matching row. With `type=left`, rows without a match are kept, and their right-side columns are empty in the output.
+
+If a datatype or language tag matters for the join, include it in the key string returned by each query. Use the same encoding on both sides so that these details take part in the string comparison.
 
 When a right-side column name collides with an existing column, it gets a `_r` suffix.
 

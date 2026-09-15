@@ -1160,6 +1160,8 @@ class Operation:
         if v is None:
             return None
         s = str(v).strip()
+        if not s:
+            return None
         # unify scheme for w3id IRIs (and similar)
         if s.startswith("http://"):
             s = "https://" + s[len("http://") :]

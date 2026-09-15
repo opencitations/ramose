@@ -22,6 +22,8 @@ To use the [SPARQL Anything](https://sparql-anything.cc/) engine, install the op
 pip install ramose[sparql-anything]
 ```
 
+The extra installs PySPARQL-Anything, which runs SPARQL Anything in a Java virtual machine within the RAMOSE process. PySPARQL-Anything requires [Java 17 or later](https://github.com/SPARQL-Anything/sparql.anything/blob/v1.0.0/pom.xml).
+
 ## Create a spec file
 
 Save this as `meta_v1.hf`. RAMOSE also accepts the same spec as `.yaml` or `.yml`; see the spec reference for the
