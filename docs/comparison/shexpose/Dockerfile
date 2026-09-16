@@ -12,7 +12,7 @@ WORKDIR /app
 RUN git clone https://github.com/chgoe/ShExpose-REST-API-Generation-from-Shapes.git . \
  && git checkout ${SHEXPOSE_COMMIT}
 
-RUN npm install
+RUN npm install && npm install --no-save @shexjs/parser@1.0.0-alpha.28
 
 RUN python3 -m venv venv && venv/bin/pip install --no-cache-dir linkml
 

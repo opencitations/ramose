@@ -6,7 +6,7 @@ x-walder-resources:
   root: ./
   views: views
 x-walder-datasources:
-  - https://sparql.opencitations.net/meta
+  - http://meta:3030/sparql
 paths:
   /articles:
     get:
@@ -67,7 +67,7 @@ paths:
         datasources:
           additional: true
           sources:
-            - https://sparql.opencitations.net/index
+            - http://index:3030/sparql
       responses:
         200:
           description: the article and the resources it cites

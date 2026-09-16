@@ -15,7 +15,7 @@ logger = logging.getLogger("register")
 BASE = os.environ["BASIL_BASE"]
 USER = "demo"
 PASS = "demo"  # noqa: S105
-ENDPOINT = "https://sparql.opencitations.net/meta"
+ENDPOINT = "http://meta:3030/sparql"
 
 QUERIES = [("meta.rq", "api-id"), ("meta-rdf.rq", "api-id-rdf")]
 

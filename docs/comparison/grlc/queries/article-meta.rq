@@ -1,5 +1,5 @@
 #+ summary: Title of a bibliographic resource in OpenCitations Meta, by DOI
-#+ endpoint: https://sparql.opencitations.net/meta
+#+ endpoint: http://meta:3030/sparql
 #+ method: GET
 #+ tags:
 #+   - meta

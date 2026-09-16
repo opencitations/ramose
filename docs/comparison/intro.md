@@ -13,10 +13,7 @@ One bibliographic resource, looked up by DOI, with data that lives in two indepe
 | Title (from OpenCitations Meta) | Identifying And Correcting Invalid Citations Due To DOI Errors In Crossref Data |
 | References (from OpenCitations Index) | 30 |
 
-Endpoints:
-
-- Meta: `https://sparql.opencitations.net/meta`
-- Index: `https://sparql.opencitations.net/index`
+The data comes from two local snapshots in `data/`. `meta.nt` holds the OpenCitations Meta subgraph of this resource (identifiers, authors, venue) plus two more journal articles, while `index.nt` holds its 30 references from OpenCitations Index. The Docker stack loads each file into its own Fuseki endpoint, `http://meta:3030/sparql` and `http://index:3030/sparql`, so every tool queries the same fixed data.
 
 All tools are tested across six dimensions: join, output, pagination, versioning, API description, and consumer authentication. The RAMOSE notebook additionally demonstrates reading a non-RDF CSV source.
 

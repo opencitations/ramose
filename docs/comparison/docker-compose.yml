@@ -1,12 +1,41 @@
+x-fuseki: &fuseki
+  build: ./fuseki
+  volumes:
+    - ./data:/data:ro
+  healthcheck:
+    test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/3030'"]
+    interval: 2s
+    timeout: 2s
+    retries: 30
+
+x-endpoints: &endpoints
+  depends_on:
+    meta:
+      condition: service_healthy
+    index:
+      condition: service_healthy
+
 services:
+  meta:
+    <<: *fuseki
+    command: ["--file=/data/meta.nt", "/sparql"]
+
+  index:
+    <<: *fuseki
+    command: ["--file=/data/index.nt", "/sparql"]
+
   ramose:
-    build: ./ramose
+    <<: *endpoints
+    build:
+      context: ../..
+      dockerfile: docs/comparison/ramose/Dockerfile
     ports:
       - "8081:8081"
     volumes:
       - ./ramose/state:/app/state
 
   grlc:
+    <<: *endpoints
     build: ./grlc
     ports:
       - "8082:8082"
@@ -14,55 +43,74 @@ services:
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
 
   basil:
+    <<: *endpoints
     build: ./basil
     ports:
       - "8080:8080"
 
+  # R4R sends its GET queries with a JSON Content-Type header, which Fuseki rejects with 415,
+  # so its requests pass through a proxy that drops the header.
+  r4r-proxy:
+    <<: *endpoints
+    image: nginx@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+    volumes:
+      - ./r4r/proxy.conf:/etc/nginx/conf.d/default.conf:ro
+
   r4r:
     build: ./r4r
+    depends_on:
+      - r4r-proxy
     ports:
       - "8083:7777"
     environment:
-      SPARQL_ENDPOINT: https://sparql.opencitations.net/meta
+      SPARQL_ENDPOINT: http://r4r-proxy/sparql
       RESOURCE_NAMESPACE: https://w3id.org/oc/meta/br/
       GRAPH_IRI: ""
 
   r4r-auth:
     build: ./r4r
+    depends_on:
+      - r4r-proxy
     ports:
       - "8084:7777"
     environment:
-      SPARQL_ENDPOINT: https://sparql.opencitations.net/meta
+      SPARQL_ENDPOINT: http://r4r-proxy/sparql
       RESOURCE_NAMESPACE: https://w3id.org/oc/meta/br/
       GRAPH_IRI: ""
       API_USERS: "demo:demo"
 
   crafts:
+    <<: *endpoints
     build: ./crafts
     ports:
       - "8085:8888"
 
   rdfproxy:
+    <<: *endpoints
     build: ./rdfproxy
     ports:
       - "8086:8086"
 
   oba:
+    <<: *endpoints
     build: ./oba
     ports:
       - "8087:8080"
 
   elda:
+    <<: *endpoints
     build: ./elda
     ports:
       - "8088:8080"
 
   walder:
+    <<: *endpoints
     build: ./walder
     ports:
       - "8089:8089"
 
   shexpose:
+    <<: *endpoints
     build: ./shexpose
     ports:
       - "8090:3000"

@@ -3,12 +3,12 @@
   "endpoints": [
     {
       "id": "meta",
-      "sparqlURI": "https://sparql.opencitations.net/meta",
+      "sparqlURI": "http://meta:3030/sparql",
       "httpMethod": "GET"
     },
     {
       "id": "index",
-      "sparqlURI": "https://sparql.opencitations.net/index",
+      "sparqlURI": "http://index:3030/sparql",
       "httpMethod": "GET"
     }
   ],

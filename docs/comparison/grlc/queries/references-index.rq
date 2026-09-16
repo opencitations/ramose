@@ -1,5 +1,5 @@
 #+ summary: Reference count for an OpenCitations br (OMID), from OpenCitations Index
-#+ endpoint: https://sparql.opencitations.net/index
+#+ endpoint: http://index:3030/sparql
 #+ method: GET
 #+ tags:
 #+   - index

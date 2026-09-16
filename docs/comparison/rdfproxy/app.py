@@ -11,7 +11,7 @@ from rdfproxy import (
     SPARQLModelAdapter,
 )
 
-META = "https://sparql.opencitations.net/meta"
+META = "http://meta:3030/sparql"
 CLIENT: dict = {"timeout": 60.0}
 
 app = FastAPI(title="OpenCitations Meta (RDFProxy demo)", version="1.0.0")

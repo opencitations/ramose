@@ -2,7 +2,7 @@ app:
   port: 3000
 
 rdf:
-  sparql_endpoint: https://sparql.opencitations.net/meta
+  sparql_endpoint: http://meta:3030/sparql
 
 data:
   base_uri: https://w3id.org/oc/meta/

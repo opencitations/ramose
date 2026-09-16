@@ -7,7 +7,7 @@
 #version 1.0.0
 #contacts arcangelo.massari@unibo.it
 #license ISC
-#endpoint https://sparql.opencitations.net/meta
+#endpoint http://meta:3030/sparql
 
 #url /articles/{doi}
 #type operation
@@ -25,12 +25,10 @@
 #sparql PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?doi ?title WHERE {
-  VALUES ?doi_value { "[[doi]]" "[[doi]]"^^xsd:string }
   ?id datacite:usesIdentifierScheme datacite:doi ;
-      literal:hasLiteralValue ?doi_value .
+      literal:hasLiteralValue "[[doi]]" .
   ?br datacite:hasIdentifier ?id ;
       dcterms:title ?title .
   BIND("[[doi]]" AS ?doi)
@@ -54,19 +52,17 @@ SELECT ?doi ?title WHERE {
 #sparql PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?doi ?title ?br WHERE {
-  VALUES ?doi_value { "[[doi]]" "[[doi]]"^^xsd:string }
   ?id datacite:usesIdentifierScheme datacite:doi ;
-      literal:hasLiteralValue ?doi_value .
+      literal:hasLiteralValue "[[doi]]" .
   ?br datacite:hasIdentifier ?id ;
       dcterms:title ?title .
   BIND("[[doi]]" AS ?doi)
 }
 
 @@join ?br ?br type=left
-@@with endpoint=https://sparql.opencitations.net/index
+@@with endpoint=http://index:3030/sparql
 @@values ?br
 PREFIX cito: <http://purl.org/spar/cito/>
 
@@ -93,18 +89,16 @@ GROUP BY ?br
 ]
 #sparql PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?doi ?br WHERE {
-  VALUES ?doi_value { "[[doi]]" "[[doi]]"^^xsd:string }
   ?id datacite:usesIdentifierScheme datacite:doi ;
-      literal:hasLiteralValue ?doi_value .
+      literal:hasLiteralValue "[[doi]]" .
   ?br datacite:hasIdentifier ?id .
   BIND("[[doi]]" AS ?doi)
 }
 
 @@join ?br ?br type=left
-@@with endpoint=https://sparql.opencitations.net/index
+@@with endpoint=http://index:3030/sparql
 @@values ?br
 PREFIX cito: <http://purl.org/spar/cito/>
 
@@ -131,12 +125,10 @@ SELECT ?br ?cited WHERE {
 #sparql PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 SELECT ?doi ?title WHERE {
-  VALUES ?doi_value { "[[doi]]" "[[doi]]"^^xsd:string }
   ?id datacite:usesIdentifierScheme datacite:doi ;
-      literal:hasLiteralValue ?doi_value .
+      literal:hasLiteralValue "[[doi]]" .
   ?br datacite:hasIdentifier ?id ;
       dcterms:title ?title .
   BIND("[[doi]]" AS ?doi)

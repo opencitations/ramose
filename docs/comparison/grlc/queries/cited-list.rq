@@ -1,5 +1,5 @@
 #+ summary: References of an OpenCitations br (OMID), one row per cited resource, from OpenCitations Index
-#+ endpoint: https://sparql.opencitations.net/index
+#+ endpoint: http://index:3030/sparql
 #+ method: GET
 #+ pagination: 2
 #+ transform: {
