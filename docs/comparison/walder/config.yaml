@@ -64,6 +64,14 @@ paths:
             ?cit cito:hasCitingEntity ?br ;
                  cito:hasCitedEntity ?cited .
           }
+        json-ld-frame: >
+          {
+            "@context": {
+              "title": "http://purl.org/dc/terms/title",
+              "cites": {"@id": "http://purl.org/spar/cito/cites", "@type": "@id"}
+            },
+            "title": {}
+          }
         datasources:
           additional: true
           sources:
@@ -71,4 +79,60 @@ paths:
       responses:
         200:
           description: the article and the resources it cites
+          x-walder-input-text/html: article.html
+  /references:
+    get:
+      summary: One page of the entities cited by an article, by DOI
+      parameters:
+        - name: doi
+          in: query
+          required: true
+          description: the DOI to look up
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: true
+          description: the page to return, counting from zero
+          schema:
+            type: integer
+            minimum: 0
+        - name: limit
+          in: query
+          required: true
+          description: how many cited entities the page holds
+          schema:
+            type: integer
+            minimum: 1
+        - name: offset
+          in: query
+          description: where the page starts, computed by Walder as page times limit
+          schema:
+            type: integer
+            minimum: 0
+      x-walder-query:
+        sparql-query: >
+          PREFIX datacite: <http://purl.org/spar/datacite/>
+          PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+          PREFIX cito: <http://purl.org/spar/cito/>
+          CONSTRUCT {
+            ?br cito:cites ?cited .
+          }
+          WHERE {
+            ?id datacite:usesIdentifierScheme datacite:doi ;
+                literal:hasLiteralValue ?doi .
+            ?br datacite:hasIdentifier ?id .
+            ?cit cito:hasCitingEntity ?br ;
+                 cito:hasCitedEntity ?cited .
+          }
+          ORDER BY ?cited
+          LIMIT ?limit
+          OFFSET ?offset
+        datasources:
+          additional: true
+          sources:
+            - http://index:3030/sparql
+      responses:
+        200:
+          description: one page of the cited resources
           x-walder-input-text/html: article.html
