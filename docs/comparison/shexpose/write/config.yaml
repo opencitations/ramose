@@ -1,0 +1,11 @@
+app:
+  port: 3000
+
+rdf:
+  sparql_endpoint: http://meta-write-counted:7001/sparql
+
+data:
+  base_uri: https://w3id.org/oc/meta/
+
+debug:
+  do_sparql_update: true

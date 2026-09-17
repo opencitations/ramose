@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir ".[sparql-anything]" \
 WORKDIR /app
 COPY docs/comparison/ramose/oc.hf /app/oc.hf
 COPY docs/comparison/ramose/articles.csv /app/articles.csv
+COPY docs/comparison/ramose/addon.py /app/addon.py
 COPY docs/comparison/ramose/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 

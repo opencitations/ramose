@@ -18,6 +18,12 @@ x-endpoints: &endpoints
       condition: service_healthy
     meta-digest:
       condition: service_healthy
+    meta-write:
+      condition: service_healthy
+    meta-counted:
+      condition: service_healthy
+    meta-write-counted:
+      condition: service_healthy
 
 services:
   meta:
@@ -43,6 +49,48 @@ services:
   index:
     <<: *fuseki
     command: ["--file=/data/index.nt", "/sparql"]
+
+  meta-write:
+    <<: *fuseki
+    ports:
+      - "3031:3030"
+    command: ["--update", "--file=/data/meta.nt", "/sparql"]
+
+  meta-counted:
+    build: ./counter
+    depends_on:
+      meta:
+        condition: service_healthy
+    volumes:
+      - ../../benchmarks/federation/proxy.py:/proxy.py:ro
+    environment:
+      PROXY_UPSTREAM: http://meta:3030
+      PROXY_BACKEND: meta
+    ports:
+      - "7002:7002"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 7002), timeout=2).close()"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  meta-write-counted:
+    build: ./counter
+    depends_on:
+      meta-write:
+        condition: service_healthy
+    volumes:
+      - ../../benchmarks/federation/proxy.py:/proxy.py:ro
+    environment:
+      PROXY_UPSTREAM: http://meta-write:3030
+      PROXY_BACKEND: meta
+    ports:
+      - "7003:7002"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('127.0.0.1', 7002), timeout=2).close()"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
 
   ramose:
     <<: *endpoints
@@ -99,9 +147,18 @@ services:
       GRAPH_IRI: ""
       API_USERS: "demo:demo"
 
-  crafts:
+  # CRAFTS sends a SPARQL Update in the query parameter, as Virtuoso accepts, while Fuseki follows
+  # the SPARQL protocol and expects the update parameter, so its updates pass through a proxy that renames it.
+  crafts-update-proxy:
     <<: *endpoints
+    image: nginx@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+    volumes:
+      - ./crafts/update-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+
+  crafts:
     build: ./crafts
+    depends_on:
+      - crafts-update-proxy
     ports:
       - "8085:8888"
 
@@ -116,6 +173,15 @@ services:
     build: ./oba
     ports:
       - "8087:8080"
+
+  oba-write:
+    <<: *endpoints
+    build:
+      context: ./oba
+      args:
+        OBA_CONFIG: config-write.yaml
+    ports:
+      - "8092:8080"
 
   elda:
     <<: *endpoints
@@ -134,6 +200,14 @@ services:
     build: ./shexpose
     ports:
       - "8090:3000"
+
+  shexpose-write:
+    <<: *endpoints
+    build: ./shexpose
+    ports:
+      - "8091:3000"
+    volumes:
+      - ./shexpose/write/config.yaml:/app/config/config.yaml:ro
 
   basil-init:
     image: python:3.13-alpine@sha256:420cd0bf0f3998275875e02ecd5808168cf0843cbb4d3c536432f729247b2acc

@@ -15,7 +15,26 @@
       "id": "metaBasic",
       "sparqlURI": "http://meta-basic:3030/sparql",
       "httpMethod": "GET",
-      "authInfo": { "type": "basic", "user": "demo", "password": "demo" }
+      "authInfo": {
+        "type": "basic",
+        "user": "demo",
+        "password": "demo"
+      }
+    },
+    {
+      "id": "metaWrite",
+      "sparqlURI": "http://meta-write:3030/sparql",
+      "httpMethod": "GET",
+      "sparqlUpdate": {
+        "id": "metaWriteUpdate",
+        "sparqlURI": "http://crafts-update-proxy/sparql",
+        "httpMethod": "POST"
+      }
+    },
+    {
+      "id": "metaCounted",
+      "sparqlURI": "http://meta-counted:7001/sparql",
+      "httpMethod": "GET"
     }
   ],
   "model": [
@@ -37,6 +56,30 @@
           "inv": true
         }
       ]
+    },
+    {
+      "id": "writableArticle",
+      "types": [],
+      "dprops": [
+        {
+          "label": "title",
+          "endpoint": "metaWrite",
+          "iri": "http://purl.org/dc/terms/title"
+        }
+      ],
+      "oprops": []
+    },
+    {
+      "id": "countedArticle",
+      "types": [],
+      "dprops": [
+        {
+          "label": "title",
+          "endpoint": "metaCounted",
+          "iri": "http://purl.org/dc/terms/title"
+        }
+      ],
+      "oprops": []
     }
   ],
   "queryTemplates": [
@@ -45,9 +88,15 @@
       "endpoint": "meta",
       "description": "Resolve a DOI to the OpenCitations OMID of the bibliographic resource and its title",
       "template": "SELECT ?br ?title WHERE { ?id <http://purl.org/spar/datacite/usesIdentifierScheme> <http://purl.org/spar/datacite/doi> ; <http://www.essepuntato.it/2010/06/literalreification/hasLiteralValue> \"{{{doi}}}\" . ?br <http://purl.org/spar/datacite/hasIdentifier> ?id ; <http://purl.org/dc/terms/title> ?title . }",
-      "variables": ["br", "title"],
+      "variables": [
+        "br",
+        "title"
+      ],
       "parameters": [
-        { "label": "doi", "type": "string" }
+        {
+          "label": "doi",
+          "type": "string"
+        }
       ]
     },
     {
@@ -55,9 +104,14 @@
       "endpoint": "metaBasic",
       "description": "Resolve a DOI to its title on the copy of Meta that requires HTTP Basic credentials",
       "template": "SELECT ?title WHERE { ?id <http://www.essepuntato.it/2010/06/literalreification/hasLiteralValue> \"{{{doi}}}\" . ?br <http://purl.org/spar/datacite/hasIdentifier> ?id ; <http://purl.org/dc/terms/title> ?title . }",
-      "variables": ["title"],
+      "variables": [
+        "title"
+      ],
       "parameters": [
-        { "label": "doi", "type": "string" }
+        {
+          "label": "doi",
+          "type": "string"
+        }
       ]
     }
   ]

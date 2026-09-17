@@ -15,7 +15,7 @@ logger = logging.getLogger("register")
 BASE = os.environ["BASIL_BASE"]
 USER = "demo"
 PASS = "demo"  # noqa: S105
-ENDPOINT = "http://meta:3030/sparql"
+ENDPOINT = "http://meta-counted:7001/sparql"
 BASIC_ENDPOINT = "http://meta-basic:3030/sparql"
 
 QUERIES = [

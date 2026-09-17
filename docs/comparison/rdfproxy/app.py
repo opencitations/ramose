@@ -11,7 +11,7 @@ from rdfproxy import (
     SPARQLModelAdapter,
 )
 
-META = "http://meta:3030/sparql"
+META = "http://meta-counted:7001/sparql"
 CLIENT: dict = {"timeout": 60.0}
 META_BASIC = "http://meta-basic:3030/sparql"
 BASIC_CLIENT: dict = {**CLIENT, "auth": httpx.BasicAuth("demo", "demo")}

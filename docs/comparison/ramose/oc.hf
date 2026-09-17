@@ -8,6 +8,8 @@
 #contacts arcangelo.massari@unibo.it
 #license ISC
 #endpoint http://meta:3030/sparql
+#update_endpoint http://meta-write:3030/sparql
+#addon addon
 
 #url /articles/{doi}
 #type operation
@@ -80,6 +82,7 @@ GROUP BY ?br
 #description Given a DOI, resolve its OMID in OpenCitations Meta and list its references from OpenCitations Index, one cited resource per row.
 #call /references/10.1007/s11192-022-04367-w
 #field_type str(doi) str(br) str(cited)
+#format nested,to_nested,application/json
 #output_json [
     {
         "doi": "10.1007/s11192-022-04367-w",
@@ -212,3 +215,92 @@ SELECT ?doi ?title ?venue WHERE {
   }
   FILTER(?doi = "[[doi]]")
 }
+
+#url /cached/{doi}
+#type operation
+#doi str(.+)
+#method get
+#description Given a DOI, return its title from OpenCitations Meta, reached through a proxy that counts the SPARQL requests, to showcase the cache.
+#call /cached/10.1007/s11192-022-04367-w
+#field_type str(doi) str(title)
+#output_json [
+    {
+        "doi": "10.1007/s11192-022-04367-w",
+        "title": "Identifying And Correcting Invalid Citations Due To DOI Errors In Crossref Data"
+    }
+]
+#sparql @@with endpoint=http://meta-counted:7001/sparql
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+SELECT ?doi ?title WHERE {
+  ?id datacite:usesIdentifierScheme datacite:doi ;
+      literal:hasLiteralValue "[[doi]]" .
+  ?br datacite:hasIdentifier ?id ;
+      dcterms:title ?title .
+  BIND("[[doi]]" AS ?doi)
+}
+
+#url /titles/{omid}
+#type operation
+#omid str([0-9]+)
+#method get
+#description Given the number of an OMID, return the title of that resource from the writable copy of OpenCitations Meta.
+#call /titles/0699
+#field_type str(br) str(title)
+#output_json [
+    {
+        "br": "https://w3id.org/oc/meta/br/0699",
+        "title": "A Title"
+    }
+]
+#sparql @@with endpoint=http://meta-write:3030/sparql
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+SELECT ?br ?title WHERE {
+  BIND(<https://w3id.org/oc/meta/br/[[omid]]> AS ?br)
+  ?br dcterms:title ?title .
+}
+
+#url /titles/{omid}
+#type operation
+#omid str([0-9]+)
+#title literal(.+)
+#method post
+#auth required
+#description Create a bibliographic resource with a title in the writable copy of OpenCitations Meta.
+#call /titles/0699
+#field_type str(x)
+#sparql PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX fabio: <http://purl.org/spar/fabio/>
+
+INSERT DATA {
+  <https://w3id.org/oc/meta/br/[[omid]]> a fabio:Expression ;
+      dcterms:title "[[title]]" .
+}
+
+#url /titles/{omid}
+#type operation
+#omid str([0-9]+)
+#title literal(.+)
+#method put
+#auth required
+#description Replace the title of a bibliographic resource in the writable copy of OpenCitations Meta.
+#call /titles/0699
+#field_type str(x)
+#sparql PREFIX dcterms: <http://purl.org/dc/terms/>
+
+DELETE { <https://w3id.org/oc/meta/br/[[omid]]> dcterms:title ?old }
+INSERT { <https://w3id.org/oc/meta/br/[[omid]]> dcterms:title "[[title]]" }
+WHERE  { <https://w3id.org/oc/meta/br/[[omid]]> dcterms:title ?old }
+
+#url /titles/{omid}
+#type operation
+#omid str([0-9]+)
+#method delete
+#auth required
+#description Delete a bibliographic resource from the writable copy of OpenCitations Meta.
+#call /titles/0699
+#field_type str(x)
+#sparql DELETE WHERE { <https://w3id.org/oc/meta/br/[[omid]]> ?p ?o }

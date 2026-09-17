@@ -6,7 +6,7 @@ x-walder-resources:
   root: ./
   views: views
 x-walder-datasources:
-  - http://meta:3030/sparql
+  - http://meta-counted:7001/sparql
 paths:
   /articles:
     get:

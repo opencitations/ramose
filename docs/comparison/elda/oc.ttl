@@ -15,7 +15,7 @@
 
 oc:api a api:API
   ; rdfs:label "OpenCitations Meta (LDA)"@en
-  ; api:sparqlEndpoint <http://meta:3030/sparql>
+  ; api:sparqlEndpoint <http://meta-counted:7001/sparql>
   ; api:defaultViewer oc:articleView
   ; api:variable [api:name "_resourceRoot"; api:value "/"]
   ; api:variable [api:name "_velocityPath"; api:value "velocity/"]

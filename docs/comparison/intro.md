@@ -13,9 +13,11 @@ One bibliographic resource, looked up by DOI, with data that lives in two indepe
 | Title (from OpenCitations Meta) | Identifying And Correcting Invalid Citations Due To DOI Errors In Crossref Data |
 | References (from OpenCitations Index) | 30 |
 
-The data comes from two local snapshots in `data/`. `meta.nt` holds the OpenCitations Meta subgraph of this resource (identifiers, authors, venue) plus two more journal articles, while `index.nt` holds its 30 references from OpenCitations Index. The Docker stack loads each file into its own Fuseki endpoint, `http://meta:3030/sparql` and `http://index:3030/sparql`, so every tool queries the same fixed data. A third endpoint, `http://meta-basic:3030/sparql`, loads the Meta file again behind HTTP Basic credentials for the endpoint authentication tests.
+The data comes from two local snapshots in `data/`. `meta.nt` holds the OpenCitations Meta subgraph of this resource (identifiers, authors, venue) plus two more journal articles, while `index.nt` holds its 30 references from OpenCitations Index. The Docker stack loads each file into its own Fuseki endpoint, `http://meta:3030/sparql` and `http://index:3030/sparql`, so every tool queries the same fixed data. Two more endpoints, `http://meta-basic:3030/sparql` and `http://meta-digest:3030/sparql`, load the Meta file again and ask for HTTP Basic and HTTP Digest credentials. A last copy, `http://meta-write:3030/sparql`, accepts SPARQL Update. It lives in memory, so the first data come back when the stack restarts.
 
-All tools are tested across seven dimensions: join, output, pagination, versioning, API description, consumer authentication, and endpoint authentication. The RAMOSE notebook additionally demonstrates reading a non-RDF CSV source.
+One more service helps the tests. A proxy stands between the tools and Meta and records every request that passes through it. In this way the caching tests can count the SPARQL requests behind two calls that are the same.
+
+All tools are tested across ten dimensions: join, output, pagination, versioning, API description, consumer authentication, endpoint authentication, operations, caching, and control over JSON. The RAMOSE notebook also reads a non-RDF CSV source; for the other tools, the lack of this feature comes from their documentation.
 
 ## The comparison map
 
@@ -38,7 +40,7 @@ Functional comparison of the generators. `✓` supported, `✗` not supported, `
 | Non-RDF sources | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Join across queries | ✓ | ✗ | ✗ | ✗ | ✗ | ∼ | ✗ | ✗ | ∼ | ✗ |
 | Pagination | ✓ | ✓ | ✗ | ∼ | ∼ | ✗ | ✓ | ✓ | ∼ | ✗ |
-| Caching | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ | ✓ | ✗ |
+| Caching | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✓ | ✗ | ✗ |
 
 Resources: `S` single resource, `M` flat collection, `N` nested resources. Authentication splits in two: consumer auth. is whether the generated API challenges its own clients for credentials; endpoint auth. is whether the tool can authenticate to the upstream SPARQL endpoint. Pagination counts as supported only when all three are present: a request parameter for a bounded window, navigation to adjacent pages, and a termination signal. OBA, R4R, and Walder offer only windowing, hence `∼`.
 
@@ -46,7 +48,7 @@ Resources: `S` single resource, `M` flat collection, `N` nested resources. Authe
 
 The notebooks on the following pages ship with their committed outputs, so the
 documentation builds without running anything. To re-run the calls yourself, bring
-up the ten-service stack with Docker from the repository root:
+up the stack with Docker from the repository root:
 
 ```sh
 docker compose -f docs/comparison/docker-compose.yml up -d --build

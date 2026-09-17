@@ -18,7 +18,16 @@ DATA_PORT = 7001
 CONTROL_PORT = 7002
 UPSTREAM_TIMEOUT_SECONDS = 600
 MAX_REQUEST_LINE_BYTES = 64 * 1024 * 1024
-HOP_BY_HOP_HEADERS = {"connection", "keep-alive", "transfer-encoding", "content-length", "content-encoding", "host"}
+HOP_BY_HOP_HEADERS = {
+    "connection",
+    "keep-alive",
+    "transfer-encoding",
+    "content-length",
+    "content-encoding",
+    "host",
+    "upgrade",
+    "http2-settings",
+}
 
 
 class State:

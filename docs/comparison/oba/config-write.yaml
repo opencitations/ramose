@@ -1,0 +1,38 @@
+name: oba
+output_dir: outputs
+
+openapi:
+  openapi: 3.0.1
+  info:
+    description: OBA demo over OpenCitations Meta
+    title: OpenCitations OBA demo
+    version: v1.0.0
+  servers:
+    - url: http://localhost:8092/v1.0.0
+
+ontologies:
+  - ontology.ttl
+
+endpoint:
+  url: http://meta-write-counted:7001/sparql
+  prefix: https://w3id.org/oc/meta/br/
+  graph_base: https://w3id.org/oc/meta/br/
+
+classes:
+  - http://purl.org/spar/fabio/JournalArticle
+
+enable_get_paths: true
+enable_post_paths: true
+enable_delete_paths: true
+enable_put_paths: true
+
+auth:
+  enable: true
+  provider: firebase
+
+firebase:
+  key: unused
+
+follow_references: false
+
+custom_queries_directory: custom

@@ -6,7 +6,7 @@ import requests
 from IPython.display import IFrame
 
 
-def call(url, *, method="GET", headers=None, data=None, basic_auth=None, show_headers=False, max_lines=40):
+def call(url, *, method="GET", headers=None, data=None, form=None, basic_auth=None, show_headers=False, max_lines=40):
     parts = ["curl"]
     if show_headers:
         parts.append("-i")
@@ -16,12 +16,14 @@ def call(url, *, method="GET", headers=None, data=None, basic_auth=None, show_he
         parts += ["-u", f"{basic_auth[0]}:{basic_auth[1]}"]
     if data is not None:
         parts += ["-H", "Content-type: application/json", "--data", json.dumps(data)]
+    for key, value in (form or {}).items():
+        parts += ["--data-urlencode", f"{key}={value}"]
     for key, value in (headers or {}).items():
         parts += ["-H", f"{key}: {value}"]
     parts.append(url)
     print(" ".join(shlex.quote(part) for part in parts), "\n")
 
-    response = requests.request(method, url, headers=headers, json=data, auth=basic_auth, timeout=120)
+    response = requests.request(method, url, headers=headers, json=data, data=form, auth=basic_auth, timeout=120)
     print(f"# {response.status_code} {response.reason}")
     if show_headers:
         for key, value in response.headers.items():
@@ -51,3 +53,11 @@ def embed_swagger(spec, *, base_url, height=600):
     )
     src = "data:text/html;base64," + base64.b64encode(page.encode()).decode()
     return IFrame(src, width="100%", height=height)
+
+
+def count_endpoint_requests(url, *, headers=None, control="http://localhost:7002"):
+    requests.get(f"{control}/records", timeout=10).raise_for_status()
+    for attempt in ("First", "Second"):
+        response = requests.get(url, headers=headers, timeout=120)
+        reached = len(requests.get(f"{control}/records", timeout=10).json())
+        print(f"{attempt} call: {response.status_code} {response.reason}, SPARQL requests that reached the endpoint: {reached}")
