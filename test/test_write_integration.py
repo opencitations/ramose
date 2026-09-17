@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from base64 import b64encode
 from http import HTTPStatus
 from json import loads
 from pathlib import Path
@@ -96,6 +97,28 @@ class TestWriteIntegration:
             status, response_body = _exec(api_manager, "/bibliography/v1/resources", "post", body)
             assert status == HTTPStatus.OK
             assert loads(response_body) == {"status": 200, "message": "operation completed"}
+        finally:
+            _backend_auth.pop(endpoint, None)
+
+    def test_digest_backend_credential(self, fuseki_digest_endpoint: tuple[str, str, str]) -> None:
+        endpoint, user, password = fuseki_digest_endpoint
+        api_manager = APIManager([str(FIXTURES_DIR / "write_api.hf")], endpoint_override=endpoint)
+        body = _resource_body("A Digest Article", "10.0000/digest")
+
+        try:
+            # A fixed Basic header cannot answer Fuseki's Digest challenge.
+            _backend_auth[endpoint] = "Basic " + b64encode(f"{user}:{password}".encode()).decode()
+            status, _ = _exec(api_manager, "/bibliography/v1/resources", "post", body)
+            assert status == HTTPStatus.UNAUTHORIZED
+
+            _backend_auth[endpoint] = f"Digest {user}:wrong"
+            status, _ = _exec(api_manager, "/bibliography/v1/resources", "post", body)
+            assert status == HTTPStatus.UNAUTHORIZED
+
+            _backend_auth[endpoint] = f"Digest {user}:{password}"
+            status, _ = _exec(api_manager, "/bibliography/v1/resources", "post", body)
+            assert status == HTTPStatus.OK
+            assert _read_resource(api_manager, NEW_RESOURCE_IRI)[0]["title"] == "A Digest Article"
         finally:
             _backend_auth.pop(endpoint, None)
 

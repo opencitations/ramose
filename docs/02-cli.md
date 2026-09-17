@@ -37,7 +37,7 @@ python -m ramose -s <spec.hf|spec.yaml> [options]
 | `--token-ttl` | Token lifetime in seconds for `--token-create`. Default: no expiry. |
 | `--token-list` | List stored tokens (labels, timestamps, revoked flag) and exit. |
 | `--token-revoke` | Revoke the given token and exit. |
-| `--backend-auth` | Per-endpoint backend credential as `endpoint_url=header` (e.g. `https://host/sparql=Bearer <token>`). Repeatable. Merged with `RAMOSE_BACKEND_AUTH`. |
+| `--backend-auth` | Per-endpoint backend credential as `endpoint_url=header` (e.g. `https://host/sparql=Bearer <token>`), or `endpoint_url=Digest user:password` for HTTP Digest. Repeatable. Merged with `RAMOSE_BACKEND_AUTH`. |
 
 ## Local mode
 
@@ -196,4 +196,11 @@ Set several backends with newline-separated entries in the environment variable,
 python -m ramose -s apis.hf -w 127.0.0.1:8080 \
   --backend-auth 'https://qlever.example/sparql=Bearer <token>' \
   --backend-auth 'https://fuseki.example/ds/update=Basic <base64>'
+```
+
+HTTP Digest is the one scheme that a fixed header cannot serve, because the backend sends a new challenge that each answer must match. For such a backend, write the entry as `Digest user:password`, and RAMOSE computes the answer to every challenge from that user and password:
+
+```sh
+python -m ramose -s apis.hf -w 127.0.0.1:8080 \
+  --backend-auth 'https://fuseki.example/ds/sparql=Digest <user>:<password>'
 ```

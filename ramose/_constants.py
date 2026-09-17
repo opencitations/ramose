@@ -7,8 +7,12 @@
 #
 # SPDX-License-Identifier: ISC
 
+from functools import cache
+
+from requests import PreparedRequest
 from requests import Session as _RequestsSession
 from requests.adapters import HTTPAdapter
+from requests.auth import AuthBase, HTTPDigestAuth
 
 FIELD_TYPE_RE = r"([^\(\s]+)\(([^\)]+)\)"
 PARAM_NAME = r"{([^{}\(\)]+)}"
@@ -33,7 +37,25 @@ for _scheme in ("http://", "https://"):
 _backend_auth: dict[str, str] = {}
 
 
-def backend_auth_header(endpoint_url: str) -> dict[str, str]:
-    """Return the Authorization header configured for a specific SPARQL endpoint, or an empty dict."""
+class _FixedAuthorization(AuthBase):
+    def __init__(self, value: str) -> None:
+        self.value = value
+
+    def __call__(self, r: PreparedRequest) -> PreparedRequest:
+        r.headers["Authorization"] = self.value
+        return r
+
+
+@cache
+def _auth_for(value: str) -> AuthBase:
+    scheme, _, credentials = value.partition(" ")
+    if scheme.lower() == "digest":
+        username, _, password = credentials.partition(":")
+        return HTTPDigestAuth(username, password)
+    return _FixedAuthorization(value)
+
+
+def backend_auth(endpoint_url: str) -> AuthBase | None:
+    """Return the credential configured for a specific SPARQL endpoint, or None."""
     value = _backend_auth.get(endpoint_url)
-    return {"Authorization": value} if value else {}
+    return _auth_for(value) if value else None

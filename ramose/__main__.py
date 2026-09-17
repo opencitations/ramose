@@ -195,7 +195,8 @@ def _parse_args() -> Namespace:  # pragma: no cover
         metavar="ENDPOINT=HEADER",
         help="Per-endpoint credential sent to a SPARQL backend, as 'endpoint_url=header', e.g. "
         "'https://host/sparql=Bearer <token>' or 'https://host/sparql=Basic <base64>'. The header is the "
-        "full Authorization value, whatever scheme the backend expects. Repeatable for several backends. "
+        "full Authorization value, whatever scheme the backend expects, except for HTTP Digest, written as "
+        "'Digest user:password' and answered per challenge. Repeatable for several backends. "
         "Merged with the RAMOSE_BACKEND_AUTH environment variable (newline-separated entries), which is "
         "preferred for secrets since CLI arguments are visible in the process list. The credential is sent "
         "only to its endpoint, never to any other.",

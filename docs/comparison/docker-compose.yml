@@ -16,6 +16,8 @@ x-endpoints: &endpoints
       condition: service_healthy
     meta-basic:
       condition: service_healthy
+    meta-digest:
+      condition: service_healthy
 
 services:
   meta:
@@ -29,6 +31,14 @@ services:
       - ./data:/data:ro
       - ./fuseki/shiro.ini:/shiro.ini:ro
     command: ["--shiro=/shiro.ini", "--file=/data/meta.nt", "/sparql"]
+
+  # A copy of Meta that asks for HTTP Digest credentials (demo:demo), used by the endpoint authentication tests.
+  meta-digest:
+    <<: *fuseki
+    volumes:
+      - ./data:/data:ro
+      - ./fuseki/passwd:/passwd:ro
+    command: ["--passwd=/passwd", "--auth=digest", "--file=/data/meta.nt", "/sparql"]
 
   index:
     <<: *fuseki

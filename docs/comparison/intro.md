@@ -30,7 +30,7 @@ Functional comparison of the generators. `✓` supported, `✗` not supported, `
 | Configuration format | .hf/.yaml | .rq, YAML | REST API | YAML | .sparql, .vm | JSON | Pydantic model | RDF/Turtle | YAML | LinkML YAML |
 | Configurable queries | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
 | Consumer auth. | Bearer | ✗ | ✗ | Bearer | Basic | Basic, Bearer | ✗ | ✗ | ✗ | ✗ |
-| Endpoint auth. | Basic, Bearer | Basic | Basic | Basic | ✗ | Basic, Digest | Basic, Digest | Basic | ✗ | Basic, token |
+| Endpoint auth. | Basic, Bearer, Digest | Basic | Basic | Basic | ✗ | Basic, Digest | Basic, Digest | Basic | ✗ | Basic, token |
 | Resources | S, M, N | S, M, N | S, M | S, M, N | S, M, N | S, M, N | S, M, N | S, M, N | S, M, N | S, N |
 | Versioning | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Control over JSON | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ∼ |

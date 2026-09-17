@@ -37,7 +37,7 @@ from ramose._constants import (
     DEFAULT_HTTP_TIMEOUT,
     FIELD_TYPE_RE,
     _http_session,
-    backend_auth_header,
+    backend_auth,
     media_type_for_format,
 )
 from ramose.datatype import DataType
@@ -931,12 +931,13 @@ class Operation:
         headers = {
             "Accept": "text/csv",
             "User-Agent": "RAMOSE/2.0.0",
-            **backend_auth_header(endpoint_url),
         }
+        auth = backend_auth(endpoint_url)
         if self.sparql_http_method == "get":
             return _http_session.get(
                 endpoint_url + "?query=" + quote(query_text),
                 headers=headers,
+                auth=auth,
                 timeout=self.sparql_timeout,
             )
         return _http_session.post(
@@ -946,6 +947,7 @@ class Operation:
                 **headers,
                 "Content-Type": "application/sparql-query",
             },
+            auth=auth,
             timeout=self.sparql_timeout,
         )
 
@@ -1694,7 +1696,8 @@ class Operation:
             response = _http_session.post(
                 endpoint,
                 data={"update": update_text},
-                headers={"Accept": "application/json", **backend_auth_header(endpoint)},
+                headers={"Accept": "application/json"},
+                auth=backend_auth(endpoint),
                 timeout=self.sparql_timeout,
             )
         except RequestException as exc:
