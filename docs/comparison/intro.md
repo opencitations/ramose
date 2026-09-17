@@ -35,7 +35,7 @@ Functional comparison of the generators. `✓` supported, `✗` not supported, `
 | Endpoint auth. | Basic, Bearer, Digest | Basic | Basic | Basic | ✗ | Basic, Digest | Basic, Digest | Basic | ✗ | Basic, token |
 | Resources | S, M, N | S, M, N | S, M | S, M, N | S, M, N | S, M, N | S, M, N | S, M, N | S, M, N | S, N |
 | Versioning | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Control over JSON | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ∼ |
+| Control over JSON | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
 | Multiple endpoints | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ | ✓ | ✗ |
 | Non-RDF sources | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Join across queries | ✓ | ✗ | ✗ | ✗ | ✗ | ∼ | ✗ | ✗ | ∼ | ✗ |
