@@ -1,8 +1,8 @@
 from typing import Annotated
 
+import httpx
 from fastapi import FastAPI, Query
 from pydantic import BaseModel
-
 from rdfproxy import (
     ConfigDict,
     Page,
@@ -13,6 +13,8 @@ from rdfproxy import (
 
 META = "http://meta:3030/sparql"
 CLIENT: dict = {"timeout": 60.0}
+META_BASIC = "http://meta-basic:3030/sparql"
+BASIC_CLIENT: dict = {**CLIENT, "auth": httpx.BasicAuth("demo", "demo")}
 
 app = FastAPI(title="OpenCitations Meta (RDFProxy demo)", version="1.0.0")
 
@@ -67,16 +69,19 @@ class Author(BaseModel):
 @app.get("/articles/{doi:path}/authors")
 def authors(doi: str, params: Annotated[QueryParameters, Query()]) -> Page[Author]:
     query = AUTHORS_QUERY.format(doi=sparql_string(doi))
-    adapter = SPARQLModelAdapter(
-        target=META, query=query, model=Author, aclient_config=CLIENT
-    )
+    adapter = SPARQLModelAdapter(target=META, query=query, model=Author, aclient_config=CLIENT)
     return adapter.get_page(params)
 
 
 @app.get("/articles/{doi:path}")
 def article(doi: str, params: Annotated[QueryParameters, Query()]) -> Page[Article]:
     query = ARTICLE_QUERY.format(doi=sparql_string(doi))
-    adapter = SPARQLModelAdapter(
-        target=META, query=query, model=Article, aclient_config=CLIENT
-    )
+    adapter = SPARQLModelAdapter(target=META, query=query, model=Article, aclient_config=CLIENT)
+    return adapter.get_page(params)
+
+
+@app.get("/basic/articles/{doi:path}")
+def basic_article(doi: str, params: Annotated[QueryParameters, Query()]) -> Page[Article]:
+    query = ARTICLE_QUERY.format(doi=sparql_string(doi))
+    adapter = SPARQLModelAdapter(target=META_BASIC, query=query, model=Article, aclient_config=BASIC_CLIENT)
     return adapter.get_page(params)

@@ -51,6 +51,32 @@ oc:api a api:API
       ]
   .
 
+oc:basicApi a api:API
+  ; rdfs:label "OpenCitations Meta behind HTTP Basic (LDA)"@en
+  ; api:sparqlEndpoint <http://meta-basic:3030/sparql>
+  ; api:defaultViewer oc:articleView
+  ; api:variable [api:name "_resourceRoot"; api:value "/"]
+  ; api:endpoint oc:basicArticles
+  .
+
+<http://meta-basic:3030/sparql>
+    elda:authKey "meta-basic"
+  ; elda:authAllowInsecure true
+  .
+
+oc:basicArticles a api:ListEndpoint
+  ; rdfs:label "article by DOI, from the store behind HTTP Basic"
+  ; api:uriTemplate "/basic/articles?doi={doi}"
+  ; api:variable [api:name "doi"; api:type xsd:string]
+  ; api:selector
+      [ api:where """
+          ?id literal:hasLiteralValue ?doi .
+          ?item datacite:hasIdentifier ?id ;
+                a fabio:JournalArticle .
+        """ ]
+  ; api:viewer oc:articleView
+  .
+
 oc:articles a api:ListEndpoint
   ; rdfs:label "article by DOI"
   ; api:uriTemplate "/articles?doi={doi}"

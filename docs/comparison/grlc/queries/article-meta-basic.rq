@@ -1,0 +1,15 @@
+#+ summary: Title of a bibliographic resource, by DOI, from the Basic-protected copy of OpenCitations Meta (the default endpoint of config.ini)
+#+ method: GET
+#+ tags:
+#+   - meta
+
+PREFIX datacite: <http://purl.org/spar/datacite/>
+PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+SELECT ?title ?br WHERE {
+  ?id datacite:usesIdentifierScheme datacite:doi ;
+      literal:hasLiteralValue ?_doi .
+  ?br datacite:hasIdentifier ?id ;
+      dcterms:title ?title .
+}

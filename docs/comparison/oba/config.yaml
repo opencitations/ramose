@@ -14,7 +14,7 @@ ontologies:
   - ontology.ttl
 
 endpoint:
-  url: http://meta:3030/sparql
+  url: http://meta-basic:3030/sparql
   prefix: https://w3id.org/oc/meta/br/
   graph_base: https://w3id.org/oc/meta/br/
 

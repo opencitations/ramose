@@ -32,6 +32,8 @@ RUN cp ../openapi.yaml . \
 FROM python:3.9-slim
 WORKDIR /app
 COPY --from=generate /gen/outputs/oba/servers/python/server/ /app/
+# OBA's config.yaml has no field for endpoint credentials; the generated server reads them from this file.
+COPY config.ini /app/config.ini
 
 RUN pip install --no-cache-dir -r requirements.txt "pyld==2.0.3"
 

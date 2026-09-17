@@ -9,6 +9,7 @@ COPY --from=build /src/elda-standalone/target/elda-standalone/ /usr/local/tomcat
 COPY web.xml /usr/local/tomcat/webapps/ROOT/WEB-INF/web.xml
 COPY oc.ttl /usr/local/tomcat/webapps/ROOT/specs/oc.ttl
 COPY xslt/skg.xsl /usr/local/tomcat/webapps/ROOT/xslt/skg.xsl
+COPY meta-basic.auth /etc/elda/conf.d/ROOT/meta-basic.auth
 
 EXPOSE 8080
 CMD ["catalina.sh", "run"]

@@ -14,11 +14,21 @@ x-endpoints: &endpoints
       condition: service_healthy
     index:
       condition: service_healthy
+    meta-basic:
+      condition: service_healthy
 
 services:
   meta:
     <<: *fuseki
     command: ["--file=/data/meta.nt", "/sparql"]
+
+  # A copy of Meta that asks for HTTP Basic credentials (demo:demo), used by the endpoint authentication tests.
+  meta-basic:
+    <<: *fuseki
+    volumes:
+      - ./data:/data:ro
+      - ./fuseki/shiro.ini:/shiro.ini:ro
+    command: ["--shiro=/shiro.ini", "--file=/data/meta.nt", "/sparql"]
 
   index:
     <<: *fuseki

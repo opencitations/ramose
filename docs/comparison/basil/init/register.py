@@ -16,8 +16,13 @@ BASE = os.environ["BASIL_BASE"]
 USER = "demo"
 PASS = "demo"  # noqa: S105
 ENDPOINT = "http://meta:3030/sparql"
+BASIC_ENDPOINT = "http://meta-basic:3030/sparql"
 
-QUERIES = [("meta.rq", "api-id"), ("meta-rdf.rq", "api-id-rdf")]
+QUERIES = [
+    ("meta.rq", "api-id", ENDPOINT),
+    ("meta-rdf.rq", "api-id-rdf", ENDPOINT),
+    ("meta.rq", "api-id-basic", BASIC_ENDPOINT),
+]
 
 opener = urllib.request.build_opener(
     urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()),
@@ -42,10 +47,10 @@ def reachable(url: str) -> bool:
     return True
 
 
-def register(query: str) -> str:
+def register(query: str, endpoint: str) -> str:
     resp = (
         request(
-            f"{BASE}/basil/?endpoint={ENDPOINT}",
+            f"{BASE}/basil/?endpoint={endpoint}",
             data=Path(f"/init/{query}").read_bytes(),
             method="PUT",
             headers={"Content-type": "application/sparql-query"},
@@ -76,13 +81,20 @@ request(
     headers={"Content-type": "application/json"},
 )
 
-for query, state_name in QUERIES:
+for query, state_name, endpoint in QUERIES:
     state = Path(f"/state/{state_name}")
     if state.exists():
         api_id = state.read_text().strip()
         if reachable(f"{BASE}/basil/{api_id}/spec"):
             logger.info("%s already registered: %s", query, api_id)
             continue
-    api_id = register(query)
+    api_id = register(query, endpoint)
+    if endpoint == BASIC_ENDPOINT:
+        request(
+            f"{BASE}/basil/{api_id}/auth",
+            data=b"demo\ndemo",
+            method="PUT",
+            headers={"Content-type": "text/plain"},
+        )
     state.write_text(api_id)
     logger.info("%s registered: %s", query, api_id)

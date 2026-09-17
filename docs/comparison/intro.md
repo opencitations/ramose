@@ -13,9 +13,9 @@ One bibliographic resource, looked up by DOI, with data that lives in two indepe
 | Title (from OpenCitations Meta) | Identifying And Correcting Invalid Citations Due To DOI Errors In Crossref Data |
 | References (from OpenCitations Index) | 30 |
 
-The data comes from two local snapshots in `data/`. `meta.nt` holds the OpenCitations Meta subgraph of this resource (identifiers, authors, venue) plus two more journal articles, while `index.nt` holds its 30 references from OpenCitations Index. The Docker stack loads each file into its own Fuseki endpoint, `http://meta:3030/sparql` and `http://index:3030/sparql`, so every tool queries the same fixed data.
+The data comes from two local snapshots in `data/`. `meta.nt` holds the OpenCitations Meta subgraph of this resource (identifiers, authors, venue) plus two more journal articles, while `index.nt` holds its 30 references from OpenCitations Index. The Docker stack loads each file into its own Fuseki endpoint, `http://meta:3030/sparql` and `http://index:3030/sparql`, so every tool queries the same fixed data. A third endpoint, `http://meta-basic:3030/sparql`, loads the Meta file again behind HTTP Basic credentials for the endpoint authentication tests.
 
-All tools are tested across six dimensions: join, output, pagination, versioning, API description, and consumer authentication. The RAMOSE notebook additionally demonstrates reading a non-RDF CSV source.
+All tools are tested across seven dimensions: join, output, pagination, versioning, API description, consumer authentication, and endpoint authentication. The RAMOSE notebook additionally demonstrates reading a non-RDF CSV source.
 
 ## The comparison map
 
@@ -29,8 +29,8 @@ Functional comparison of the generators. `✓` supported, `✗` not supported, `
 | Operations | CRUD | GET, POST | GET, POST | CRUD | GET | CRUD, PATCH | GET | GET | GET | CRUD |
 | Configuration format | .hf/.yaml | .rq, YAML | REST API | YAML | .sparql, .vm | JSON | Pydantic model | RDF/Turtle | YAML | LinkML YAML |
 | Configurable queries | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
-| Consumer auth. | Bearer | ✗ | Basic | Bearer | Basic | Basic, Bearer | ✗ | ✗ | ✗ | ✗ |
-| Endpoint auth. | Any | Basic | Basic | ✗ | ✗ | Basic, Digest | ✗ | Basic | ✗ | Basic, token |
+| Consumer auth. | Bearer | ✗ | ✗ | Bearer | Basic | Basic, Bearer | ✗ | ✗ | ✗ | ✗ |
+| Endpoint auth. | Basic, Bearer | Basic | Basic | Basic | ✗ | Basic, Digest | Basic, Digest | Basic | ✗ | Basic, token |
 | Resources | S, M, N | S, M, N | S, M | S, M, N | S, M, N | S, M, N | S, M, N | S, M, N | S, M, N | S, N |
 | Versioning | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Control over JSON | ✓ | ✓ | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ∼ |
