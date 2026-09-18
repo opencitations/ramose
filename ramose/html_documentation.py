@@ -84,47 +84,57 @@ class HTMLDocumentationHandler(DocumentationHandler):
     _BUILTIN_PARAM_DOCS: tuple[tuple[str, str], ...] = (
         (
             "require",
-            "`require=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are "
-            "removed from the result set - e.g. `require=given_name` removes all the rows that do not have any "
-            "string specified in the `given_name` field.",
+            (
+                "`require=<field_name>`: all the rows that have an empty value in the `<field_name>` specified are "
+                "removed from the result set - e.g. `require=given_name` removes all the rows that do not have any "
+                "string specified in the `given_name` field."
+            ),
         ),
         (
             "filter",
-            "`filter=<field_name>:<operator><value>`: only the rows compliant with `<value>` are kept in the "
-            "result set. The parameter `<operation>` is not mandatory. If `<operation>` is not specified, "
-            "`<value>` is interpreted as a regular expression, otherwise it is compared by means of the specified "
-            'operation. Possible operators are "=", "<", and ">". For instance, `filter=title:semantics?` returns '
-            'all the rows that contain the string "semantic" or "semantics" in the field `title`, while '
-            "`filter=date:>2016-05` returns all the rows that have a `date` greater than May 2016.",
+            (
+                "`filter=<field_name>:<operator><value>`: only the rows compliant with `<value>` are kept in the "
+                "result set. The parameter `<operation>` is not mandatory. If `<operation>` is not specified, "
+                "`<value>` is interpreted as a regular expression, otherwise it is compared by means of the specified "
+                'operation. Possible operators are "=", "<", and ">". For instance, `filter=title:semantics?` returns '
+                'all the rows that contain the string "semantic" or "semantics" in the field `title`, while '
+                "`filter=date:>2016-05` returns all the rows that have a `date` greater than May 2016."
+            ),
         ),
         (
             "sort",
-            '`sort=<order>(<field_name>)`: sort in ascending (`<order>` set to "asc") or descending (`<order>` '
-            'set to "desc") order the rows in the result set according to the values in `<field_name>`. For '
-            "instance, `sort=desc(date)` sorts all the rows according to the value specified in the field `date` "
-            "in descending order.",
+            (
+                '`sort=<order>(<field_name>)`: sort in ascending (`<order>` set to "asc") or descending (`<order>` '
+                'set to "desc") order the rows in the result set according to the values in `<field_name>`. For '
+                "instance, `sort=desc(date)` sorts all the rows according to the value specified in the field `date` "
+                "in descending order."
+            ),
         ),
         (
             "format",
-            "`format=<format_type>`: the final table is returned in the format specified in `<format_type>` that "
-            'can be either "csv" or "json" - e.g. `format=csv` returns the final table in CSV format. This '
-            'parameter has higher priority of the type specified through the "Accept" header of the request. Thus, '
-            "if the header of a request to the API specifies `Accept: text/csv` and the URL of such request "
-            "includes `format=json`, the final table is returned in JSON.",
+            (
+                "`format=<format_type>`: the final table is returned in the format specified in `<format_type>` that "
+                'can be either "csv" or "json" - e.g. `format=csv` returns the final table in CSV format. This '
+                'parameter has higher priority of the type specified through the "Accept" header of the request. Thus, '
+                "if the header of a request to the API specifies `Accept: text/csv` and the URL of such request "
+                "includes `format=json`, the final table is returned in JSON."
+            ),
         ),
         (
             "json",
-            '`json=<operation_type>("<separator>",<field>,<new_field_1>,<new_field_2>,...)`: in case a JSON format '
-            "is requested in return, tranform each row of the final JSON table according to the rule specified. "
-            'If `<operation_type>` is set to "array", the string value associated to the field name `<field>` is '
-            "converted into an array by splitting the various textual parts by means of `<separator>`. For "
-            'instance, considering the JSON table `[ { "names": "Doe, John; Doe, Jane" }, ... ]`, the execution '
-            'of `array("; ",names)` returns `[ { "names": [ "Doe, John", "Doe, Jane" ], ... ]`. Instead, if '
-            '`<operation_type>` is set to "dict", the string value associated to the field name `<field>` is '
-            "converted into a dictionary by splitting the various textual parts by means of `<separator>` and by "
-            "associating the new fields `<new_field_1>`, `<new_field_2>`, etc., to these new parts. For instance, "
-            'considering the JSON table `[ { "name": "Doe, John" }, ... ]`, the execution of '
-            '`dict(", ",name,fname,gname)` returns `[ { "name": { "fname": "Doe", "gname": "John" }, ... ]`.',
+            (
+                '`json=<operation_type>("<separator>",<field>,<new_field_1>,<new_field_2>,...)`: in case a JSON format '
+                "is requested in return, tranform each row of the final JSON table according to the rule specified. "
+                'If `<operation_type>` is set to "array", the string value associated to the field name `<field>` is '
+                "converted into an array by splitting the various textual parts by means of `<separator>`. For "
+                'instance, considering the JSON table `[ { "names": "Doe, John; Doe, Jane" }, ... ]`, the execution '
+                'of `array("; ",names)` returns `[ { "names": [ "Doe, John", "Doe, Jane" ], ... ]`. Instead, if '
+                '`<operation_type>` is set to "dict", the string value associated to the field name `<field>` is '
+                "converted into a dictionary by splitting the various textual parts by means of `<separator>` and by "
+                "associating the new fields `<new_field_1>`, `<new_field_2>`, etc., to these new parts. For instance, "
+                'considering the JSON table `[ { "name": "Doe, John" }, ... ]`, the execution of '
+                '`dict(", ",name,fname,gname)` returns `[ { "name": { "fname": "Doe", "gname": "John" }, ... ]`.'
+            ),
         ),
     )
 

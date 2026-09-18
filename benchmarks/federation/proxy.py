@@ -123,7 +123,7 @@ class DataHandler(QuietHandler):
         except (BrokenPipeError, ConnectionResetError):
             self.close_connection = True
 
-    def record(  # noqa: PLR0913
+    def record(  # noqa: PLR0913, PLR0917
         self, label: str, started_ns: int, request_bytes: int, status: int, response_bytes: int, error: str
     ) -> None:
         STATE.finish(

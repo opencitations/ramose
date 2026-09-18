@@ -136,9 +136,11 @@ class TestSkgifJournalArticle:
         assert product["product_type"] == "literature"
         assert product["titles"] == {
             "none": [
-                "Response To The Letter Of Hanley Et Al. "
-                "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
-                "([1998] Teratology 58:62-68)",
+                (
+                    "Response To The Letter Of Hanley Et Al. "
+                    "([1999] Teratology 59:323-324), Concerning The Article By Roy Et Al. "
+                    "([1998] Teratology 58:62-68)"
+                ),
             ],
         }
         assert "abstracts" not in product

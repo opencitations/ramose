@@ -114,7 +114,7 @@ class APIManager:
             "conf_file": conf_file,
         }
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         conf_files: list[str],
         endpoint_override: str | None = None,

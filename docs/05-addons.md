@@ -78,7 +78,7 @@ The result table is a list where the first element is a header tuple and each su
         (datetime(2024, 1, 1), "2024"),
         ("journal article", "journal article"),
     ),
-    ...
+    ...,
 ]
 ```
 
@@ -124,10 +124,7 @@ A preprocessing handler returns a `dict[str, str]` mapping placeholder names to 
 
 ```python
 def handle_title_filter(values: list[str]) -> dict[str, str]:
-    clauses = [
-        f'FILTER(CONTAINS(LCASE(?title), LCASE("{v}")))'
-        for v in values
-    ]
+    clauses = [f'FILTER(CONTAINS(LCASE(?title), LCASE("{v}")))' for v in values]
     return {"filter": "\n".join(clauses)}
 ```
 
@@ -175,7 +172,7 @@ A postprocessing handler transforms the result table after built-in filters have
 ```python
 def handle_limit(table: list[list], values: list[str]) -> list[list]:
     limit = int(values[0])
-    return [table[0], *table[1:limit + 1]]
+    return [table[0], *table[1 : limit + 1]]
 ```
 
 (config-driven-parameters)=

@@ -21,6 +21,7 @@ from bisect import bisect_left, bisect_right
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from http import HTTPStatus
 from pathlib import Path
 from typing import cast
 from urllib.parse import quote, unquote
@@ -317,7 +318,7 @@ def download_part(part: ArchivePart, destination: Path) -> None:
         headers = {"Range": f"bytes={downloaded}-"} if downloaded else {}
         mode = "ab" if downloaded else "wb"
         with requests.get(part.url, headers=headers, stream=True, timeout=(30, 60)) as response:
-            if downloaded and response.status_code != requests.codes.partial_content:
+            if downloaded and response.status_code != HTTPStatus.PARTIAL_CONTENT:
                 message = f"The server did not resume {part.url}"
                 raise RuntimeError(message)
             response.raise_for_status()
@@ -400,7 +401,7 @@ def backend_totals(records: list[dict[str, object]]) -> tuple[int, int, int, flo
         sum(cast("int", record["request_bytes"]) for record in records),
         sum(cast("int", record["response_bytes"]) for record in records),
         sum(cast("float", record["latency_ms"]) for record in records),
-        sum(cast("int", record["status"]) >= requests.codes.bad_request for record in records),
+        sum(cast("int", record["status"]) >= HTTPStatus.BAD_REQUEST for record in records),
     )
 
 
