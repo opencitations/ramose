@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from pathlib import Path
-from re import Match, sub
+from re import Match, findall, sub
 
 import yaml
 
@@ -15,6 +15,7 @@ from ramose.escaping import escape_iri, escape_literal, escape_local_name
 FiltersConfig = Mapping[str, Mapping[str, "str | dict[str, str]"]]
 
 _VALUE_PATTERN = r"\{\{\s*value\s*\}\}"
+_QLEVER_HAS_WORD = ("ql:has-word", "<http://qlever.cs.uni-freiburg.de/builtin-functions/has-word>")
 _ALWAYS_EMPTY_FILTER = "FILTER(false)"
 
 
@@ -40,6 +41,15 @@ def _select_template(key: str, spec: str | dict[str, str], value: str) -> str:
     return spec[value]
 
 
+def _render_fragments(template: str, value: str) -> list[str]:
+    if not any(predicate in template for predicate in _QLEVER_HAS_WORD):
+        return [render(template, value)]
+    words = findall(r"[^\W_]+", value.lower())
+    if not words:
+        return [_ALWAYS_EMPTY_FILTER]
+    return [render(template, word) for word in words]
+
+
 def _is_always_empty(fragment: str) -> bool:
     return fragment.strip().upper() == _ALWAYS_EMPTY_FILTER.upper()
 
@@ -60,8 +70,8 @@ def apply_filters(config: FiltersConfig, values: list[str]) -> dict[str, str]:
             msg = f"The filter '{key}' is not configured, configured filters are {', '.join(sorted(config))}"
             raise ValueError(msg)
         for slot, spec in config[key].items():
-            fragment = render(_select_template(key, spec, value), value)
-            fragments.append((slot, fragment))
+            template = _select_template(key, spec, value)
+            fragments.extend((slot, fragment) for fragment in _render_fragments(template, value))
 
     always_empty_slots = {slot for slot, fragment in fragments if _is_always_empty(fragment)}
     if always_empty_slots:

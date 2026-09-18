@@ -88,9 +88,9 @@ class TestWriteIntegration:
         api_manager = APIManager([str(FIXTURES_DIR / "write_api.hf")], endpoint_override=endpoint)
         body = _resource_body("A Secured Article", "10.0000/secured")
 
-        # QLever rejects an update with no access token; RAMOSE propagates its 500.
+        # QLever rejects an update with no access token; RAMOSE propagates its 403.
         status, _ = _exec(api_manager, "/bibliography/v1/resources", "post", body)
-        assert status == HTTPStatus.INTERNAL_SERVER_ERROR
+        assert status == HTTPStatus.FORBIDDEN
 
         _backend_auth[endpoint] = f"Bearer {access_token}"
         try:

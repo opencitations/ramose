@@ -11,4 +11,4 @@ name:
   filter: "?local_identifier foaf:name '{{value}}'. "
 cf.search.name:
   filter: |-
-    FILTER(CONTAINS(LCASE(?name), LCASE("{{value}}")))
+    FILTER EXISTS { ?name <http://qlever.cs.uni-freiburg.de/builtin-functions/has-word> ?_word . FILTER STRSTARTS(?_word, "{{value}}") }

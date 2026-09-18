@@ -127,6 +127,18 @@ def test_apply_filters_splits_repeated_param_values() -> None:
     }
 
 
+def test_apply_filters_applies_qlever_has_word_template_once_per_word() -> None:
+    config = {"search.title": {"constraints": '?title ql:has-word "{{value}}" .'}}
+    assert apply_filters(config, ["search.title:Covid-19 M\u00fcller"]) == {
+        "constraints": '?title ql:has-word "covid" .\n?title ql:has-word "19" .\n?title ql:has-word "m\u00fcller" .',
+    }
+
+
+def test_apply_filters_qlever_has_word_value_without_words_matches_nothing() -> None:
+    config = {"search.title": {"constraints": '?title ql:has-word "{{value}}" .'}}
+    assert apply_filters(config, ["search.title:--"]) == {"constraints": "FILTER(false)"}
+
+
 def test_apply_filters_rejects_unconfigured_filter() -> None:
     expected = "The filter 'funding.grant_number' is not configured, configured filters are cf.cites, identifiers.id"
     with pytest.raises(ValueError, match=f"^{escape(expected)}$"):

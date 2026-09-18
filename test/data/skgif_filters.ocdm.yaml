@@ -12,7 +12,7 @@ contributions.by.local_identifier:
 cf.search.title:
   filter: |-
     ?local_identifier dcterm:title ?title .
-    FILTER(CONTAINS(LCASE(?title), LCASE("{{value}}")))
+    FILTER EXISTS { ?title <http://qlever.cs.uni-freiburg.de/builtin-functions/has-word> ?_word . FILTER STRSTARTS(?_word, "{{value}}") }
 contributions.by.family_name:
   filter: |-
     ?local_identifier pro:isDocumentContextFor [ pro:isHeldBy ?_filter_agent ] .

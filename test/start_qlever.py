@@ -14,7 +14,7 @@ from pathlib import Path
 
 import requests
 
-QLEVER_IMAGE = "adfreiburg/qlever@sha256:4672a53f0ff4e55ac921d25832a21ec0bb3ca08f54d7c1950d04ebf6af7b8c21"
+QLEVER_IMAGE = "adfreiburg/qlever@sha256:37d5ede193f1bffb6aebf734d15d2a4c2a3228ee102858b0c6c2e65c149a78ec"
 INDEX_NAME = "ramose-test"
 DATA_DIR = Path(__file__).resolve().parent / "data"
 QLEVER_PORT = 7019
@@ -60,6 +60,8 @@ def start_qlever_server(
     if user:
         run_args += ["-u", user]
     mount = f"{DATA_DIR}:/index{':ro' if read_only else ''}"
+    if read_only:
+        server_flags += " --no-metrics-log --no-resource-usage-log"
     cmd = f"qlever-server -i {INDEX_NAME} -j 4 -p {port} -m 1G -c 500M -e 500M -k 50 -s 30s {server_flags}".strip()
     run_args += ["-v", mount, "-w", "/index", "-p", f"{port}:{port}", QLEVER_IMAGE, "-c", cmd]
     _docker(*run_args)
