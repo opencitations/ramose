@@ -6,14 +6,16 @@
 type:
   filter:
     journal: |-
-      FILTER(?type = "journal")
+      ?local_identifier a fabio:Journal .
     conference: |-
-      FILTER(?type = "conference")
+      ?local_identifier a fabio:AcademicProceedings .
     book: |-
-      FILTER(?type = "book")
+      VALUES ?_book_type { fabio:Book fabio:ReferenceBook }
+      ?local_identifier a ?_book_type .
     repository: "FILTER(false)"
     other: |-
-      FILTER(?type = "other")
+      ?local_identifier a ?_other_type .
+      FILTER(?_other_type NOT IN (fabio:Expression, fabio:Journal, fabio:AcademicProceedings, fabio:Book, fabio:ReferenceBook))
     unknown: "FILTER(false)"
 identifiers.value:
   filter: '?local_identifier datacite:hasIdentifier [ literal:hasLiteralValue "{{value}}"^^<http://www.w3.org/2001/XMLSchema#string> ] .'
@@ -23,4 +25,5 @@ name:
   filter: "?local_identifier dcterms:title '{{value}}'. "
 cf.search.name:
   filter: |-
-    FILTER(CONTAINS(LCASE(?name), LCASE("{{value}}")))
+    ?local_identifier dcterms:title ?name .
+    { SELECT DISTINCT ?name WHERE { ?name <http://qlever.cs.uni-freiburg.de/builtin-functions/has-word> ?_word . FILTER STRSTARTS(?_word, "{{value}}") } }

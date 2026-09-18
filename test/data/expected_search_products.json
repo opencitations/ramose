@@ -87,16 +87,16 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06160781188",
               "identifiers": [
                 {
-                  "value": "S110615584",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "1432-1300",
                   "scheme": "issn"
                 },
                 {
                   "value": "1432-5012",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S110615584",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -212,16 +212,16 @@
               "local_identifier": "https://w3id.org/oc/meta/br/0626055628",
               "identifiers": [
                 {
-                  "value": "S148561398",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "0138-9130",
                   "scheme": "issn"
                 },
                 {
                   "value": "1588-2861",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S148561398",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -367,12 +367,12 @@
               "local_identifier": "https://w3id.org/oc/meta/br/062501778099",
               "identifiers": [
                 {
-                  "value": "S4210195326",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "2641-3337",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S4210195326",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -471,12 +471,12 @@
               "local_identifier": "https://w3id.org/oc/meta/br/062501778099",
               "identifiers": [
                 {
-                  "value": "S4210195326",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "2641-3337",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S4210195326",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -599,16 +599,16 @@
               "local_identifier": "https://w3id.org/oc/meta/br/0626055628",
               "identifiers": [
                 {
-                  "value": "S148561398",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "0138-9130",
                   "scheme": "issn"
                 },
                 {
                   "value": "1588-2861",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S148561398",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -627,12 +627,12 @@
       },
       "identifiers": [
         {
-          "value": "W4285173206",
-          "scheme": "openalex"
-        },
-        {
           "value": "10.1007/978-3-031-06981-9_18",
           "scheme": "doi"
+        },
+        {
+          "value": "W4285173206",
+          "scheme": "openalex"
         }
       ],
       "contributions": [
@@ -716,11 +716,11 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06401297735",
               "identifiers": [
                 {
-                  "value": "9783031069819",
+                  "value": "9783031069802",
                   "scheme": "isbn"
                 },
                 {
-                  "value": "9783031069802",
+                  "value": "9783031069819",
                   "scheme": "isbn"
                 }
               ]
@@ -879,12 +879,12 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06160186133",
               "identifiers": [
                 {
-                  "value": "S4210240912",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "2059-481X",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S4210240912",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -905,15 +905,15 @@
       },
       "identifiers": [
         {
-          "value": "9783319580685",
-          "scheme": "isbn"
-        },
-        {
           "value": "10.1007/978-3-319-58068-5",
           "scheme": "doi"
         },
         {
           "value": "9783319580678",
+          "scheme": "isbn"
+        },
+        {
+          "value": "9783319580685",
           "scheme": "isbn"
         },
         {
@@ -1002,10 +1002,10 @@
         {
           "type": {
             "class": "http://purl.org/spar/fabio/Book",
-            "defined_in": "http://purl.org/spar/fabio",
             "labels": {
               "en": "book"
-            }
+            },
+            "defined_in": "http://purl.org/spar/fabio"
           },
           "dates": {
             "publication": [
@@ -1019,10 +1019,6 @@
               "local_identifier": "https://w3id.org/oc/meta/br/069066063",
               "identifiers": [
                 {
-                  "value": "1861-2059",
-                  "scheme": "issn"
-                },
-                {
                   "value": "0302-9743",
                   "scheme": "issn"
                 },
@@ -1031,15 +1027,15 @@
                   "scheme": "issn"
                 },
                 {
-                  "value": "1861-2040",
-                  "scheme": "issn"
-                },
-                {
                   "value": "1861-2032",
                   "scheme": "issn"
                 },
                 {
-                  "value": "1867-7754",
+                  "value": "1861-2040",
+                  "scheme": "issn"
+                },
+                {
+                  "value": "1861-2059",
                   "scheme": "issn"
                 },
                 {
@@ -1048,6 +1044,10 @@
                 },
                 {
                   "value": "1864-3035",
+                  "scheme": "issn"
+                },
+                {
+                  "value": "1867-7754",
                   "scheme": "issn"
                 }
               ]
@@ -1067,16 +1067,16 @@
       },
       "identifiers": [
         {
+          "value": "10.1007/978-3-319-47602-5",
+          "scheme": "doi"
+        },
+        {
           "value": "9783319476018",
           "scheme": "isbn"
         },
         {
           "value": "9783319476025",
           "scheme": "isbn"
-        },
-        {
-          "value": "10.1007/978-3-319-47602-5",
-          "scheme": "doi"
         },
         {
           "value": "W4245488324",
@@ -1176,10 +1176,10 @@
         {
           "type": {
             "class": "http://purl.org/spar/fabio/Book",
-            "defined_in": "http://purl.org/spar/fabio",
             "labels": {
               "en": "book"
-            }
+            },
+            "defined_in": "http://purl.org/spar/fabio"
           },
           "dates": {
             "publication": [
@@ -1193,10 +1193,6 @@
               "local_identifier": "https://w3id.org/oc/meta/br/069066063",
               "identifiers": [
                 {
-                  "value": "1861-2059",
-                  "scheme": "issn"
-                },
-                {
                   "value": "0302-9743",
                   "scheme": "issn"
                 },
@@ -1205,15 +1201,15 @@
                   "scheme": "issn"
                 },
                 {
-                  "value": "1861-2040",
-                  "scheme": "issn"
-                },
-                {
                   "value": "1861-2032",
                   "scheme": "issn"
                 },
                 {
-                  "value": "1867-7754",
+                  "value": "1861-2040",
+                  "scheme": "issn"
+                },
+                {
+                  "value": "1861-2059",
                   "scheme": "issn"
                 },
                 {
@@ -1222,6 +1218,10 @@
                 },
                 {
                   "value": "1864-3035",
+                  "scheme": "issn"
+                },
+                {
+                  "value": "1867-7754",
                   "scheme": "issn"
                 }
               ]
@@ -1241,16 +1241,16 @@
       },
       "identifiers": [
         {
+          "value": "10.1007/978-3-319-11955-7",
+          "scheme": "doi"
+        },
+        {
           "value": "9783319119540",
           "scheme": "isbn"
         },
         {
           "value": "9783319119557",
           "scheme": "isbn"
-        },
-        {
-          "value": "10.1007/978-3-319-11955-7",
-          "scheme": "doi"
         },
         {
           "value": "W2784292677",
@@ -1338,10 +1338,10 @@
         {
           "type": {
             "class": "http://purl.org/spar/fabio/Book",
-            "defined_in": "http://purl.org/spar/fabio",
             "labels": {
               "en": "book"
-            }
+            },
+            "defined_in": "http://purl.org/spar/fabio"
           },
           "dates": {
             "publication": [
@@ -1355,10 +1355,6 @@
               "local_identifier": "https://w3id.org/oc/meta/br/069066063",
               "identifiers": [
                 {
-                  "value": "1861-2059",
-                  "scheme": "issn"
-                },
-                {
                   "value": "0302-9743",
                   "scheme": "issn"
                 },
@@ -1367,15 +1363,15 @@
                   "scheme": "issn"
                 },
                 {
-                  "value": "1861-2040",
-                  "scheme": "issn"
-                },
-                {
                   "value": "1861-2032",
                   "scheme": "issn"
                 },
                 {
-                  "value": "1867-7754",
+                  "value": "1861-2040",
+                  "scheme": "issn"
+                },
+                {
+                  "value": "1861-2059",
                   "scheme": "issn"
                 },
                 {
@@ -1384,6 +1380,10 @@
                 },
                 {
                   "value": "1864-3035",
+                  "scheme": "issn"
+                },
+                {
+                  "value": "1867-7754",
                   "scheme": "issn"
                 }
               ]
@@ -1403,20 +1403,20 @@
       },
       "identifiers": [
         {
-          "value": "W4249829199",
-          "scheme": "openalex"
-        },
-        {
-          "value": "9789048127108",
-          "scheme": "isbn"
+          "value": "10.1007/978-1-4020-9632-7",
+          "scheme": "doi"
         },
         {
           "value": "9781402096327",
           "scheme": "isbn"
         },
         {
-          "value": "10.1007/978-1-4020-9632-7",
-          "scheme": "doi"
+          "value": "9789048127108",
+          "scheme": "isbn"
+        },
+        {
+          "value": "W4249829199",
+          "scheme": "openalex"
         }
       ],
       "contributions": [
@@ -1462,10 +1462,10 @@
         {
           "type": {
             "class": "http://purl.org/spar/fabio/Book",
-            "defined_in": "http://purl.org/spar/fabio",
             "labels": {
               "en": "book"
-            }
+            },
+            "defined_in": "http://purl.org/spar/fabio"
           },
           "dates": {
             "publication": [
@@ -1486,20 +1486,20 @@
       },
       "identifiers": [
         {
-          "value": "9783642308598",
-          "scheme": "isbn"
-        },
-        {
-          "value": "W2221102889",
-          "scheme": "openalex"
-        },
-        {
           "value": "10.1007/978-3-642-30859-8",
           "scheme": "doi"
         },
         {
           "value": "9783642308581",
           "scheme": "isbn"
+        },
+        {
+          "value": "9783642308598",
+          "scheme": "isbn"
+        },
+        {
+          "value": "W2221102889",
+          "scheme": "openalex"
         }
       ],
       "contributions": [
@@ -1573,10 +1573,10 @@
         {
           "type": {
             "class": "http://purl.org/spar/fabio/Book",
-            "defined_in": "http://purl.org/spar/fabio",
             "labels": {
               "en": "book"
-            }
+            },
+            "defined_in": "http://purl.org/spar/fabio"
           },
           "dates": {
             "publication": [
@@ -1590,11 +1590,11 @@
               "local_identifier": "https://w3id.org/oc/meta/br/061102460211",
               "identifiers": [
                 {
-                  "value": "2194-5365",
+                  "value": "2194-5357",
                   "scheme": "issn"
                 },
                 {
-                  "value": "2194-5357",
+                  "value": "2194-5365",
                   "scheme": "issn"
                 },
                 {
@@ -1618,11 +1618,11 @@
       },
       "identifiers": [
         {
-          "value": "9783319681306",
+          "value": "9783319681290",
           "scheme": "isbn"
         },
         {
-          "value": "9783319681290",
+          "value": "9783319681306",
           "scheme": "isbn"
         }
       ],
@@ -1630,10 +1630,10 @@
         {
           "type": {
             "class": "http://purl.org/spar/fabio/Book",
-            "defined_in": "http://purl.org/spar/fabio",
             "labels": {
               "en": "book"
-            }
+            },
+            "defined_in": "http://purl.org/spar/fabio"
           }
         }
       ],
@@ -1661,10 +1661,10 @@
         {
           "type": {
             "class": "http://purl.org/spar/fabio/Book",
-            "defined_in": "http://purl.org/spar/fabio",
             "labels": {
               "en": "book"
-            }
+            },
+            "defined_in": "http://purl.org/spar/fabio"
           }
         }
       ],
@@ -1692,10 +1692,10 @@
         {
           "type": {
             "class": "http://purl.org/spar/fabio/Book",
-            "defined_in": "http://purl.org/spar/fabio",
             "labels": {
               "en": "book"
-            }
+            },
+            "defined_in": "http://purl.org/spar/fabio"
           }
         }
       ],
@@ -1711,12 +1711,16 @@
       },
       "identifiers": [
         {
-          "value": "W4221051054",
-          "scheme": "openalex"
-        },
-        {
           "value": "10.1787/b0e499cf-en",
           "scheme": "doi"
+        },
+        {
+          "value": "9789264597587",
+          "scheme": "isbn"
+        },
+        {
+          "value": "9789264759596",
+          "scheme": "isbn"
         },
         {
           "value": "9789264799318",
@@ -1727,12 +1731,8 @@
           "scheme": "isbn"
         },
         {
-          "value": "9789264597587",
-          "scheme": "isbn"
-        },
-        {
-          "value": "9789264759596",
-          "scheme": "isbn"
+          "value": "W4221051054",
+          "scheme": "openalex"
         }
       ],
       "contributions": [
@@ -1759,10 +1759,10 @@
         {
           "type": {
             "class": "http://purl.org/spar/fabio/Book",
-            "defined_in": "http://purl.org/spar/fabio",
             "labels": {
               "en": "book"
-            }
+            },
+            "defined_in": "http://purl.org/spar/fabio"
           },
           "dates": {
             "publication": [
@@ -1802,16 +1802,16 @@
       },
       "identifiers": [
         {
-          "value": "9789048127108",
-          "scheme": "isbn"
+          "value": "10.1007/978-1-4020-9632-7",
+          "scheme": "doi"
         },
         {
           "value": "9781402096327",
           "scheme": "isbn"
         },
         {
-          "value": "10.1007/978-1-4020-9632-7",
-          "scheme": "doi"
+          "value": "9789048127108",
+          "scheme": "isbn"
         },
         {
           "value": "W4249829199",
@@ -1861,10 +1861,10 @@
         {
           "type": {
             "class": "http://purl.org/spar/fabio/Book",
-            "defined_in": "http://purl.org/spar/fabio",
             "labels": {
               "en": "book"
-            }
+            },
+            "defined_in": "http://purl.org/spar/fabio"
           },
           "dates": {
             "publication": [
@@ -1964,16 +1964,16 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06160781188",
               "identifiers": [
                 {
-                  "value": "S110615584",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "1432-1300",
                   "scheme": "issn"
                 },
                 {
                   "value": "1432-5012",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S110615584",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -2089,16 +2089,16 @@
               "local_identifier": "https://w3id.org/oc/meta/br/0626055628",
               "identifiers": [
                 {
-                  "value": "S148561398",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "0138-9130",
                   "scheme": "issn"
                 },
                 {
                   "value": "1588-2861",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S148561398",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -2244,12 +2244,12 @@
               "local_identifier": "https://w3id.org/oc/meta/br/062501778099",
               "identifiers": [
                 {
-                  "value": "S4210195326",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "2641-3337",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S4210195326",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -2348,12 +2348,12 @@
               "local_identifier": "https://w3id.org/oc/meta/br/062501778099",
               "identifiers": [
                 {
-                  "value": "S4210195326",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "2641-3337",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S4210195326",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -2476,16 +2476,16 @@
               "local_identifier": "https://w3id.org/oc/meta/br/0626055628",
               "identifiers": [
                 {
-                  "value": "S148561398",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "0138-9130",
                   "scheme": "issn"
                 },
                 {
                   "value": "1588-2861",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S148561398",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -2504,12 +2504,12 @@
       },
       "identifiers": [
         {
-          "value": "W4285173206",
-          "scheme": "openalex"
-        },
-        {
           "value": "10.1007/978-3-031-06981-9_18",
           "scheme": "doi"
+        },
+        {
+          "value": "W4285173206",
+          "scheme": "openalex"
         }
       ],
       "contributions": [
@@ -2593,11 +2593,11 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06401297735",
               "identifiers": [
                 {
-                  "value": "9783031069819",
+                  "value": "9783031069802",
                   "scheme": "isbn"
                 },
                 {
-                  "value": "9783031069802",
+                  "value": "9783031069819",
                   "scheme": "isbn"
                 }
               ]
@@ -2756,12 +2756,12 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06160186133",
               "identifiers": [
                 {
-                  "value": "S4210240912",
-                  "scheme": "openalex"
-                },
-                {
                   "value": "2059-481X",
                   "scheme": "issn"
+                },
+                {
+                  "value": "S4210240912",
+                  "scheme": "openalex"
                 }
               ]
             }
@@ -2846,16 +2846,16 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06101018",
               "identifiers": [
                 {
-                  "value": "1096-9926",
-                  "scheme": "issn"
+                  "value": "10.1002/(issn)1096-9926",
+                  "scheme": "doi"
                 },
                 {
                   "value": "0040-3709",
                   "scheme": "issn"
                 },
                 {
-                  "value": "10.1002/(issn)1096-9926",
-                  "scheme": "doi"
+                  "value": "1096-9926",
+                  "scheme": "issn"
                 }
               ]
             }
@@ -2945,16 +2945,16 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06101018",
               "identifiers": [
                 {
-                  "value": "1096-9926",
-                  "scheme": "issn"
+                  "value": "10.1002/(issn)1096-9926",
+                  "scheme": "doi"
                 },
                 {
                   "value": "0040-3709",
                   "scheme": "issn"
                 },
                 {
-                  "value": "10.1002/(issn)1096-9926",
-                  "scheme": "doi"
+                  "value": "1096-9926",
+                  "scheme": "issn"
                 }
               ]
             }
@@ -3365,16 +3365,16 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06101018",
               "identifiers": [
                 {
-                  "value": "1096-9926",
-                  "scheme": "issn"
+                  "value": "10.1002/(issn)1096-9926",
+                  "scheme": "doi"
                 },
                 {
                   "value": "0040-3709",
                   "scheme": "issn"
                 },
                 {
-                  "value": "10.1002/(issn)1096-9926",
-                  "scheme": "doi"
+                  "value": "1096-9926",
+                  "scheme": "issn"
                 }
               ]
             }
@@ -3502,10 +3502,10 @@
         {
           "type": {
             "class": "http://purl.org/spar/fabio/JournalArticle",
-            "defined_in": "http://purl.org/spar/fabio",
             "labels": {
               "en": "journal article"
-            }
+            },
+            "defined_in": "http://purl.org/spar/fabio"
           },
           "dates": {
             "publication": [
@@ -3525,16 +3525,16 @@
               "local_identifier": "https://w3id.org/oc/meta/br/0622015443",
               "identifiers": [
                 {
-                  "value": "1097-0215",
-                  "scheme": "issn"
+                  "value": "10.1002/(issn)1097-0215",
+                  "scheme": "doi"
                 },
                 {
                   "value": "0020-7136",
                   "scheme": "issn"
                 },
                 {
-                  "value": "10.1002/(issn)1097-0215",
-                  "scheme": "doi"
+                  "value": "1097-0215",
+                  "scheme": "issn"
                 }
               ]
             }
@@ -3624,16 +3624,16 @@
               "local_identifier": "https://w3id.org/oc/meta/br/06101018",
               "identifiers": [
                 {
-                  "value": "1096-9926",
-                  "scheme": "issn"
+                  "value": "10.1002/(issn)1096-9926",
+                  "scheme": "doi"
                 },
                 {
                   "value": "0040-3709",
                   "scheme": "issn"
                 },
                 {
-                  "value": "10.1002/(issn)1096-9926",
-                  "scheme": "doi"
+                  "value": "1096-9926",
+                  "scheme": "issn"
                 }
               ]
             }
@@ -3650,12 +3650,85 @@
   ],
   "identifiers.scheme:orcid": [
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0617010294917",
-      "family_name": "Persson",
-      "given_name": "Bengt",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06011403627",
+      "family_name": "Goble",
+      "given_name": "Carole",
       "identifiers": [
         {
-          "value": "0000-0003-3165-5344",
+          "value": "0000-0003-1219-2137",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06011405026",
+      "family_name": "Groth",
+      "given_name": "Paul",
+      "identifiers": [
+        {
+          "value": "0000-0003-0183-6910",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061010626791",
+      "family_name": "Grethe",
+      "given_name": "Jeffery S.",
+      "identifiers": [
+        {
+          "value": "0000-0001-5212-7052",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061010626792",
+      "family_name": "Martone",
+      "given_name": "Maryann E.",
+      "identifiers": [
+        {
+          "value": "0000-0002-8406-3871",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061011762682",
+      "name": "Stefano Zacchiroli",
+      "family_name": "Zacchiroli",
+      "given_name": "Stefano",
+      "identifiers": [
+        {
+          "value": "0000-0002-4576-136X",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061012740050",
+      "family_name": "Haak",
+      "given_name": "Laurel",
+      "identifiers": [
+        {
+          "value": "0000-0001-5109-3700",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061012768625",
+      "family_name": "’T Hoen",
+      "given_name": "Peter A C",
+      "identifiers": [
+        {
+          "value": "0000-0003-4450-3112",
           "scheme": "orcid"
         }
       ],
@@ -3698,60 +3771,12 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/061010626791",
-      "family_name": "Grethe",
-      "given_name": "Jeffery S.",
-      "identifiers": [
-        {
-          "value": "0000-0001-5212-7052",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
       "local_identifier": "https://w3id.org/oc/meta/ra/061041976",
       "family_name": "Packer",
       "given_name": "Abel L.",
       "identifiers": [
         {
           "value": "0000-0001-9610-5728",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/061012740050",
-      "family_name": "Haak",
-      "given_name": "Laurel",
-      "identifiers": [
-        {
-          "value": "0000-0001-5109-3700",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/061012768625",
-      "family_name": "’T Hoen",
-      "given_name": "Peter A C",
-      "identifiers": [
-        {
-          "value": "0000-0003-4450-3112",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/061107327",
-      "family_name": "Porter",
-      "given_name": "Alan",
-      "identifiers": [
-        {
-          "value": "0000-0002-4520-6518",
           "scheme": "orcid"
         }
       ],
@@ -3770,12 +3795,24 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0611016894",
-      "family_name": "Lacoste",
-      "given_name": "Vincent",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0611011366962",
+      "family_name": "Prieta",
+      "given_name": "Fernando De La",
       "identifiers": [
         {
-          "value": "0000-0002-3173-4053",
+          "value": "0000-0002-8239-5020",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0611011841907",
+      "family_name": "Wilkinson",
+      "given_name": "Mark D",
+      "identifiers": [
+        {
+          "value": "0000-0001-6960-357X",
           "scheme": "orcid"
         }
       ],
@@ -3788,6 +3825,42 @@
       "identifiers": [
         {
           "value": "0000-0003-4155-5910",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0611016894",
+      "family_name": "Lacoste",
+      "given_name": "Vincent",
+      "identifiers": [
+        {
+          "value": "0000-0002-3173-4053",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061107327",
+      "family_name": "Porter",
+      "given_name": "Alan",
+      "identifiers": [
+        {
+          "value": "0000-0002-4520-6518",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0612019943",
+      "family_name": "Mietchen",
+      "given_name": "Daniel",
+      "identifiers": [
+        {
+          "value": "0000-0001-9488-1870",
           "scheme": "orcid"
         }
       ],
@@ -3830,24 +3903,24 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/061209664359",
-      "family_name": "Bourne",
-      "given_name": "Philip E",
-      "identifiers": [
-        {
-          "value": "0000-0002-7618-7292",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
       "local_identifier": "https://w3id.org/oc/meta/ra/061208240",
       "family_name": "Tekaia",
       "given_name": "Fredj",
       "identifiers": [
         {
           "value": "0000-0003-1934-2396",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061209664359",
+      "family_name": "Bourne",
+      "given_name": "Philip E",
+      "identifiers": [
+        {
+          "value": "0000-0002-7618-7292",
           "scheme": "orcid"
         }
       ],
@@ -3890,18 +3963,6 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/061308112",
-      "family_name": "Eisenbach",
-      "given_name": "Lea",
-      "identifiers": [
-        {
-          "value": "0000-0002-4816-1968",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
       "local_identifier": "https://w3id.org/oc/meta/ra/0613061168",
       "family_name": "Tkaczyk",
       "given_name": "Dominika",
@@ -3920,6 +3981,55 @@
       "identifiers": [
         {
           "value": "0000-0001-9613-6639",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061308112",
+      "family_name": "Eisenbach",
+      "given_name": "Lea",
+      "identifiers": [
+        {
+          "value": "0000-0002-4816-1968",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/061309573725",
+      "family_name": "Mora-Cantallops",
+      "given_name": "Marçal",
+      "identifiers": [
+        {
+          "value": "0000-0002-2480-1078",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
+      "name": "Peroni Silvio",
+      "family_name": "Peroni",
+      "given_name": "Silvio",
+      "identifiers": [
+        {
+          "value": "0000-0003-0530-4305",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0614010898726",
+      "family_name": "Evelo",
+      "given_name": "Chris T",
+      "identifiers": [
+        {
+          "value": "0000-0002-5301-3142",
           "scheme": "orcid"
         }
       ],
@@ -3950,12 +4060,13 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06011403627",
-      "family_name": "Goble",
-      "given_name": "Carole",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0615010617330",
+      "name": "Christoph Lange",
+      "family_name": "Lange",
+      "given_name": "Christoph",
       "identifiers": [
         {
-          "value": "0000-0003-1219-2137",
+          "value": "0000-0001-9879-3827",
           "scheme": "orcid"
         }
       ],
@@ -3974,25 +4085,24 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06011405026",
-      "family_name": "Groth",
-      "given_name": "Paul",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0616010651610",
+      "family_name": "Zhang",
+      "given_name": "Ziqi",
       "identifiers": [
         {
-          "value": "0000-0003-0183-6910",
+          "value": "0000-0002-8587-8618",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0615010617330",
-      "name": "Christoph Lange",
-      "family_name": "Lange",
-      "given_name": "Christoph",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0616011223137",
+      "family_name": "Van Mulligen",
+      "given_name": "Erik M",
       "identifiers": [
         {
-          "value": "0000-0001-9879-3827",
+          "value": "0000-0003-1377-9386",
           "scheme": "orcid"
         }
       ],
@@ -4011,24 +4121,73 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0623011679409",
-      "family_name": "Swertz",
-      "given_name": "Morris A",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0617010138137",
+      "family_name": "Axton",
+      "given_name": "Myles",
       "identifiers": [
         {
-          "value": "0000-0002-0979-3401",
+          "value": "0000-0002-8042-4131",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0619081600",
-      "family_name": "Pranckutė",
-      "given_name": "Raminta",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0617010294917",
+      "family_name": "Persson",
+      "given_name": "Bengt",
       "identifiers": [
         {
-          "value": "0000-0003-0095-3568",
+          "value": "0000-0003-3165-5344",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0618011111225",
+      "name": "Mannocci Andrea",
+      "family_name": "Mannocci",
+      "given_name": "Andrea",
+      "identifiers": [
+        {
+          "value": "0000-0002-5193-7851",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0618031021",
+      "family_name": "Gray",
+      "given_name": "Alasdair J. G.",
+      "identifiers": [
+        {
+          "value": "0000-0002-5711-4872",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0618033885",
+      "family_name": "Edmunds",
+      "given_name": "Scott",
+      "identifiers": [
+        {
+          "value": "0000-0001-6444-1436",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0619011562087",
+      "family_name": "Corchado",
+      "given_name": "Juan Manuel",
+      "identifiers": [
+        {
+          "value": "0000-0002-2829-1829",
           "scheme": "orcid"
         }
       ],
@@ -4072,24 +4231,36 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0616010651610",
-      "family_name": "Zhang",
-      "given_name": "Ziqi",
-      "identifiers": [
-        {
-          "value": "0000-0002-8587-8618",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
       "local_identifier": "https://w3id.org/oc/meta/ra/0619049849",
       "family_name": "Pentz",
       "given_name": "Ed",
       "identifiers": [
         {
           "value": "0000-0002-5993-8592",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0619081600",
+      "family_name": "Pranckutė",
+      "given_name": "Raminta",
+      "identifiers": [
+        {
+          "value": "0000-0003-0095-3568",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/062010666227",
+      "family_name": "Kuhn",
+      "given_name": "Tobias",
+      "identifiers": [
+        {
+          "value": "0000-0002-1267-0234",
           "scheme": "orcid"
         }
       ],
@@ -4120,18 +4291,6 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/065011897946",
-      "family_name": "Crosas",
-      "given_name": "Mercè",
-      "identifiers": [
-        {
-          "value": "0000-0003-1304-1939",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
       "local_identifier": "https://w3id.org/oc/meta/ra/062041437",
       "family_name": "Sengstag",
       "given_name": "Thierry",
@@ -4156,12 +4315,26 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0616011223137",
-      "family_name": "Van Mulligen",
-      "given_name": "Erik M",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621010775619",
+      "name": "Shotton David",
+      "family_name": "Shotton",
+      "given_name": "D M",
       "identifiers": [
         {
-          "value": "0000-0003-1377-9386",
+          "value": "0000-0001-5506-523X",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621011878607",
+      "name": "Willighagen Egon",
+      "family_name": "Willighagen",
+      "given_name": "Egon",
+      "identifiers": [
+        {
+          "value": "0000-0001-7542-0286",
           "scheme": "orcid"
         }
       ],
@@ -4216,12 +4389,36 @@
       "entity_type": "person"
     },
     {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621020333",
+      "family_name": "Zurian",
+      "given_name": "Juan Carlos Valderrama",
+      "identifiers": [
+        {
+          "value": "0000-0001-5787-6853",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
       "local_identifier": "https://w3id.org/oc/meta/ra/0621055597",
       "family_name": "Lopez",
       "given_name": "Federico",
       "identifiers": [
         {
           "value": "0000-0002-7138-3542",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0621065344",
+      "family_name": "Bucheli",
+      "given_name": "Victor A.",
+      "identifiers": [
+        {
+          "value": "0000-0002-0885-8699",
           "scheme": "orcid"
         }
       ],
@@ -4240,60 +4437,12 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06350929684",
-      "family_name": "Heringa",
-      "given_name": "Jaap",
-      "identifiers": [
-        {
-          "value": "0000-0001-8641-4930",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06220110984",
-      "family_name": "Shahidzadeh",
-      "given_name": "Nooshin",
-      "identifiers": [
-        {
-          "value": "0000-0003-4114-074X",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
       "local_identifier": "https://w3id.org/oc/meta/ra/0622010479355",
       "family_name": "Dillo",
       "given_name": "Ingrid",
       "identifiers": [
         {
           "value": "0000-0001-5654-2392",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0611011841907",
-      "family_name": "Wilkinson",
-      "given_name": "Mark D",
-      "identifiers": [
-        {
-          "value": "0000-0001-6960-357X",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0617010138137",
-      "family_name": "Axton",
-      "given_name": "Myles",
-      "identifiers": [
-        {
-          "value": "0000-0002-8042-4131",
           "scheme": "orcid"
         }
       ],
@@ -4307,6 +4456,18 @@
       "identifiers": [
         {
           "value": "0000-0002-7562-5203",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06220110984",
+      "family_name": "Shahidzadeh",
+      "given_name": "Nooshin",
+      "identifiers": [
+        {
+          "value": "0000-0003-4114-074X",
           "scheme": "orcid"
         }
       ],
@@ -4349,24 +4510,24 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0619011562087",
-      "family_name": "Corchado",
-      "given_name": "Juan Manuel",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0623011051",
+      "family_name": "Schroeder",
+      "given_name": "Aaron",
       "identifiers": [
         {
-          "value": "0000-0002-2829-1829",
+          "value": "0000-0003-4372-2241",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06230457",
-      "family_name": "Harris",
-      "given_name": "Adrian",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0623011679409",
+      "family_name": "Swertz",
+      "given_name": "Morris A",
       "identifiers": [
         {
-          "value": "0000-0003-1376-8409",
+          "value": "0000-0002-0979-3401",
           "scheme": "orcid"
         }
       ],
@@ -4397,12 +4558,12 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0623011051",
-      "family_name": "Schroeder",
-      "given_name": "Aaron",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0623026045",
+      "family_name": "Clark",
+      "given_name": "Timothy",
       "identifiers": [
         {
-          "value": "0000-0003-4372-2241",
+          "value": "0000-0003-4060-7360",
           "scheme": "orcid"
         }
       ],
@@ -4421,87 +4582,25 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/062401463",
-      "family_name": "Ria",
-      "given_name": "Roberto",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06230457",
+      "family_name": "Harris",
+      "given_name": "Adrian",
       "identifiers": [
         {
-          "value": "0000-0002-1515-0090",
+          "value": "0000-0003-1376-8409",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0621065344",
-      "family_name": "Bucheli",
-      "given_name": "Victor A.",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0624010958207",
+      "name": "Hendricks Ginny",
+      "family_name": "Hendricks",
+      "given_name": "Ginny",
       "identifiers": [
         {
-          "value": "0000-0002-0885-8699",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0621010775619",
-      "name": "Shotton David",
-      "family_name": "Shotton",
-      "given_name": "D M",
-      "identifiers": [
-        {
-          "value": "0000-0001-5506-523X",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/065012229219",
-      "name": "Fenner Martin",
-      "family_name": "Fenner",
-      "given_name": "Martin",
-      "identifiers": [
-        {
-          "value": "0000-0003-1419-2405",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0625095048",
-      "family_name": "Dhakal",
-      "given_name": "Kerry",
-      "identifiers": [
-        {
-          "value": "0000-0001-7782-5922",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0618011111225",
-      "name": "Mannocci Andrea",
-      "family_name": "Mannocci",
-      "given_name": "Andrea",
-      "identifiers": [
-        {
-          "value": "0000-0002-5193-7851",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/062010666227",
-      "family_name": "Kuhn",
-      "given_name": "Tobias",
-      "identifiers": [
-        {
-          "value": "0000-0002-1267-0234",
+          "value": "0000-0002-0353-2702",
           "scheme": "orcid"
         }
       ],
@@ -4514,6 +4613,42 @@
       "identifiers": [
         {
           "value": "0000-0001-5568-2684",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/062401463",
+      "family_name": "Ria",
+      "given_name": "Roberto",
+      "identifiers": [
+        {
+          "value": "0000-0002-1515-0090",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/062409589977",
+      "family_name": "Schultes",
+      "given_name": "Erik",
+      "identifiers": [
+        {
+          "value": "0000-0001-8888-635X",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06250110138",
+      "family_name": "Massari",
+      "given_name": "Arcangelo",
+      "identifiers": [
+        {
+          "value": "0000-0002-8420-0696",
           "scheme": "orcid"
         }
       ],
@@ -4538,6 +4673,43 @@
       "identifiers": [
         {
           "value": "0000-0003-0327-638X",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0625095048",
+      "family_name": "Dhakal",
+      "given_name": "Kerry",
+      "identifiers": [
+        {
+          "value": "0000-0001-7782-5922",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0626010701",
+      "family_name": "Waagmeester",
+      "given_name": "Andra",
+      "identifiers": [
+        {
+          "value": "0000-0001-9773-4008",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/0626010742587",
+      "name": "Laura A D Paglione",
+      "family_name": "Paglione",
+      "given_name": "Laura",
+      "identifiers": [
+        {
+          "value": "0000-0003-3188-6273",
           "scheme": "orcid"
         }
       ],
@@ -4604,30 +4776,6 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06460319812",
-      "family_name": "Feeney",
-      "given_name": "Patricia",
-      "identifiers": [
-        {
-          "value": "0000-0002-4011-3590",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06302019",
-      "family_name": "De Rossi",
-      "given_name": "Anita",
-      "identifiers": [
-        {
-          "value": "0000-0001-6435-7509",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
       "local_identifier": "https://w3id.org/oc/meta/ra/063011864088",
       "name": "Heibi Ivan",
       "family_name": "Heibi",
@@ -4641,25 +4789,24 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
-      "name": "Peroni Silvio",
-      "family_name": "Peroni",
-      "given_name": "Silvio",
+      "local_identifier": "https://w3id.org/oc/meta/ra/063012677601",
+      "family_name": "Mons",
+      "given_name": "Barend",
       "identifiers": [
         {
-          "value": "0000-0003-0530-4305",
+          "value": "0000-0003-3934-0072",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/061309573725",
-      "family_name": "Mora-Cantallops",
-      "given_name": "Marçal",
+      "local_identifier": "https://w3id.org/oc/meta/ra/063012677602",
+      "family_name": "Roos",
+      "given_name": "M.",
       "identifiers": [
         {
-          "value": "0000-0002-2480-1078",
+          "value": "0000-0002-8691-772X",
           "scheme": "orcid"
         }
       ],
@@ -4672,6 +4819,18 @@
       "identifiers": [
         {
           "value": "0000-0002-1164-1351",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06302019",
+      "family_name": "De Rossi",
+      "given_name": "Anita",
+      "identifiers": [
+        {
+          "value": "0000-0001-6435-7509",
           "scheme": "orcid"
         }
       ],
@@ -4726,25 +4885,12 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0626010742587",
-      "name": "Laura A D Paglione",
-      "family_name": "Paglione",
-      "given_name": "Laura",
+      "local_identifier": "https://w3id.org/oc/meta/ra/063068066",
+      "family_name": "Ratner",
+      "given_name": "Howard",
       "identifiers": [
         {
-          "value": "0000-0003-3188-6273",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0621020333",
-      "family_name": "Zurian",
-      "given_name": "Juan Carlos Valderrama",
-      "identifiers": [
-        {
-          "value": "0000-0001-5787-6853",
+          "value": "0000-0002-2123-6317",
           "scheme": "orcid"
         }
       ],
@@ -4763,74 +4909,48 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/061011762682",
-      "name": "Stefano Zacchiroli",
-      "family_name": "Zacchiroli",
-      "given_name": "Stefano",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06350929684",
+      "family_name": "Heringa",
+      "given_name": "Jaap",
       "identifiers": [
         {
-          "value": "0000-0002-4576-136X",
+          "value": "0000-0001-8641-4930",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0626010701",
-      "family_name": "Waagmeester",
-      "given_name": "Andra",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06370488090",
+      "family_name": "Sikos",
+      "given_name": "Leslie F.",
       "identifiers": [
         {
-          "value": "0000-0001-9773-4008",
+          "value": "0000-0003-3368-2215",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0614010898726",
-      "family_name": "Evelo",
-      "given_name": "Chris T",
+      "local_identifier": "https://w3id.org/oc/meta/ra/064013186641",
+      "family_name": "Soricetti",
+      "given_name": "Marta",
       "identifiers": [
         {
-          "value": "0000-0002-5301-3142",
+          "value": "0009-0008-1466-7742",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0621011878607",
-      "name": "Willighagen Egon",
-      "family_name": "Willighagen",
-      "given_name": "Egon",
+      "local_identifier": "https://w3id.org/oc/meta/ra/064013186645",
+      "family_name": "Rizzetto",
+      "given_name": "Elia",
       "identifiers": [
         {
-          "value": "0000-0001-7542-0286",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0640943",
-      "family_name": "Fischhoff",
-      "given_name": "Baruch",
-      "identifiers": [
-        {
-          "value": "0000-0002-3030-6874",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06408386",
-      "family_name": "Thorsen",
-      "given_name": "Frits",
-      "identifiers": [
-        {
-          "value": "0000-0002-7762-3703",
+          "value": "0009-0003-7161-9310",
           "scheme": "orcid"
         }
       ],
@@ -4861,36 +4981,85 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/064013186641",
-      "family_name": "Soricetti",
-      "given_name": "Marta",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06408386",
+      "family_name": "Thorsen",
+      "given_name": "Frits",
       "identifiers": [
         {
-          "value": "0009-0008-1466-7742",
+          "value": "0000-0002-7762-3703",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06250110138",
-      "family_name": "Massari",
-      "given_name": "Arcangelo",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0640943",
+      "family_name": "Fischhoff",
+      "given_name": "Baruch",
       "identifiers": [
         {
-          "value": "0000-0002-8420-0696",
+          "value": "0000-0002-3030-6874",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/064013186645",
-      "family_name": "Rizzetto",
-      "given_name": "Elia",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06460319812",
+      "family_name": "Feeney",
+      "given_name": "Patricia",
       "identifiers": [
         {
-          "value": "0009-0003-7161-9310",
+          "value": "0000-0002-4011-3590",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06480570090",
+      "family_name": "Finkers",
+      "given_name": "Richard",
+      "identifiers": [
+        {
+          "value": "0000-0002-4368-8058",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/065011897946",
+      "family_name": "Crosas",
+      "given_name": "Mercè",
+      "identifiers": [
+        {
+          "value": "0000-0003-1304-1939",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/065011897947",
+      "family_name": "Dumontier",
+      "given_name": "Michel",
+      "identifiers": [
+        {
+          "value": "0000-0003-4727-9435",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/065012229219",
+      "name": "Fenner Martin",
+      "family_name": "Fenner",
+      "given_name": "Martin",
+      "identifiers": [
+        {
+          "value": "0000-0003-1419-2405",
           "scheme": "orcid"
         }
       ],
@@ -4933,54 +5102,6 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/065011897947",
-      "family_name": "Dumontier",
-      "given_name": "Michel",
-      "identifiers": [
-        {
-          "value": "0000-0003-4727-9435",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0612019943",
-      "family_name": "Mietchen",
-      "given_name": "Daniel",
-      "identifiers": [
-        {
-          "value": "0000-0001-9488-1870",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/066088364",
-      "family_name": "Pellissier Tanon",
-      "given_name": "Thomas",
-      "identifiers": [
-        {
-          "value": "0000-0002-0620-6486",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/063068066",
-      "family_name": "Ratner",
-      "given_name": "Howard",
-      "identifiers": [
-        {
-          "value": "0000-0002-2123-6317",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
       "local_identifier": "https://w3id.org/oc/meta/ra/066074697",
       "family_name": "Appleton",
       "given_name": "Gaby",
@@ -4993,13 +5114,12 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0624010958207",
-      "name": "Hendricks Ginny",
-      "family_name": "Hendricks",
-      "given_name": "Ginny",
+      "local_identifier": "https://w3id.org/oc/meta/ra/066088364",
+      "family_name": "Pellissier Tanon",
+      "given_name": "Thomas",
       "identifiers": [
         {
-          "value": "0000-0002-0353-2702",
+          "value": "0000-0002-0620-6486",
           "scheme": "orcid"
         }
       ],
@@ -5042,150 +5162,6 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06370488090",
-      "family_name": "Sikos",
-      "given_name": "Leslie F.",
-      "identifiers": [
-        {
-          "value": "0000-0003-3368-2215",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/063012677602",
-      "family_name": "Roos",
-      "given_name": "M.",
-      "identifiers": [
-        {
-          "value": "0000-0002-8691-772X",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06908359558",
-      "family_name": "Boente",
-      "given_name": "Ricarda",
-      "identifiers": [
-        {
-          "value": "0000-0002-2133-8735",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06908359559",
-      "family_name": "Tural",
-      "given_name": "Deniz",
-      "identifiers": [
-        {
-          "value": "0000-0002-6391-4198",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0690346",
-      "family_name": "Somasundaram",
-      "given_name": "Rajasekharan",
-      "identifiers": [
-        {
-          "value": "0000-0002-8444-8472",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06480570090",
-      "family_name": "Finkers",
-      "given_name": "Richard",
-      "identifiers": [
-        {
-          "value": "0000-0002-4368-8058",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/063012677601",
-      "family_name": "Mons",
-      "given_name": "Barend",
-      "identifiers": [
-        {
-          "value": "0000-0003-3934-0072",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06906860",
-      "family_name": "Buell",
-      "given_name": "Duncan",
-      "identifiers": [
-        {
-          "value": "0000-0002-4668-5848",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/069012996",
-      "family_name": "Allan",
-      "given_name": "Catherine",
-      "identifiers": [
-        {
-          "value": "0000-0003-2098-4759",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/062409589977",
-      "family_name": "Schultes",
-      "given_name": "Erik",
-      "identifiers": [
-        {
-          "value": "0000-0001-8888-635X",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/069014933",
-      "family_name": "Hooft",
-      "given_name": "Rob",
-      "identifiers": [
-        {
-          "value": "0000-0001-6825-9439",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0618031021",
-      "family_name": "Gray",
-      "given_name": "Alasdair J. G.",
-      "identifiers": [
-        {
-          "value": "0000-0002-5711-4872",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
       "local_identifier": "https://w3id.org/oc/meta/ra/069011237391",
       "family_name": "Rocca-Serra",
       "given_name": "Philippe",
@@ -5210,48 +5186,36 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0623026045",
-      "family_name": "Clark",
-      "given_name": "Timothy",
+      "local_identifier": "https://w3id.org/oc/meta/ra/069012996",
+      "family_name": "Allan",
+      "given_name": "Catherine",
       "identifiers": [
         {
-          "value": "0000-0003-4060-7360",
+          "value": "0000-0003-2098-4759",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0618033885",
-      "family_name": "Edmunds",
-      "given_name": "Scott",
+      "local_identifier": "https://w3id.org/oc/meta/ra/069014933",
+      "family_name": "Hooft",
+      "given_name": "Rob",
       "identifiers": [
         {
-          "value": "0000-0001-6444-1436",
+          "value": "0000-0001-6825-9439",
           "scheme": "orcid"
         }
       ],
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/061010626792",
-      "family_name": "Martone",
-      "given_name": "Maryann E.",
+      "local_identifier": "https://w3id.org/oc/meta/ra/0690346",
+      "family_name": "Somasundaram",
+      "given_name": "Rajasekharan",
       "identifiers": [
         {
-          "value": "0000-0002-8406-3871",
-          "scheme": "orcid"
-        }
-      ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/0611011366962",
-      "family_name": "Prieta",
-      "given_name": "Fernando De La",
-      "identifiers": [
-        {
-          "value": "0000-0002-8239-5020",
+          "value": "0000-0002-8444-8472",
           "scheme": "orcid"
         }
       ],
@@ -5276,6 +5240,42 @@
       "identifiers": [
         {
           "value": "0000-0002-9188-8716",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06906860",
+      "family_name": "Buell",
+      "given_name": "Duncan",
+      "identifiers": [
+        {
+          "value": "0000-0002-4668-5848",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06908359558",
+      "family_name": "Boente",
+      "given_name": "Ricarda",
+      "identifiers": [
+        {
+          "value": "0000-0002-2133-8735",
+          "scheme": "orcid"
+        }
+      ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06908359559",
+      "family_name": "Tural",
+      "given_name": "Deniz",
+      "identifiers": [
+        {
+          "value": "0000-0002-6391-4198",
           "scheme": "orcid"
         }
       ],
@@ -5329,69 +5329,9 @@
   ],
   "cf.search.family_name:o'": [
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150115060",
-      "family_name": "O'Brien",
-      "given_name": "Gregory",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114283",
-      "family_name": "O'Connor",
-      "given_name": "John",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150115270",
-      "family_name": "O'Connor",
-      "given_name": "John",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114982",
-      "family_name": "O'Connor",
-      "given_name": "John",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150115126",
-      "family_name": "O'Connor",
-      "given_name": "John",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114201",
-      "family_name": "O'Hara",
-      "given_name": "F. M.",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150115250",
-      "family_name": "O'Hara",
-      "given_name": "F. M.",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150115304",
-      "family_name": "O'Haver",
-      "given_name": "Thomas C.",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/060109",
-      "family_name": "Ochiai",
-      "given_name": "Kazunori",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06403975073",
-      "family_name": "Oelen",
-      "given_name": "Allard",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06095",
-      "family_name": "Ohmoto",
-      "given_name": "Yasukazu",
+      "local_identifier": "https://w3id.org/oc/meta/ra/060101",
+      "family_name": "Okamoto",
+      "given_name": "Aikou",
       "entity_type": "person"
     },
     {
@@ -5401,9 +5341,87 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/060101",
-      "family_name": "Okamoto",
-      "given_name": "Aikou",
+      "local_identifier": "https://w3id.org/oc/meta/ra/060109",
+      "family_name": "Ochiai",
+      "given_name": "Kazunori",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/060156",
+      "family_name": "Ometto",
+      "given_name": "Lucia",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06052",
+      "family_name": "Oram",
+      "given_name": "David H.",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06092",
+      "family_name": "Ono",
+      "given_name": "Mayumi",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06095",
+      "family_name": "Ohmoto",
+      "given_name": "Yasukazu",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114010",
+      "family_name": "Ozkarahan",
+      "given_name": "Esen A.",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114033",
+      "family_name": "Ozog",
+      "given_name": "Stanley",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114141",
+      "family_name": "Oppenheim",
+      "given_name": "C.",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114201",
+      "family_name": "O'Hara",
+      "given_name": "F. M.",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114283",
+      "family_name": "O'Connor",
+      "given_name": "John",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114493",
+      "family_name": "Ozkarahan",
+      "given_name": "Esen A.",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114528",
+      "family_name": "Oromaner",
+      "given_name": "Mark",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114595",
+      "family_name": "Onuigbo",
+      "given_name": "Wilson I. B.",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114624",
+      "family_name": "Olafsen",
+      "given_name": "T.",
       "entity_type": "person"
     },
     {
@@ -5413,9 +5431,81 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114624",
-      "family_name": "Olafsen",
-      "given_name": "T.",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114810",
+      "family_name": "Olsgaard",
+      "given_name": "John N.",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114859",
+      "family_name": "Oppenheim",
+      "given_name": "C.",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114982",
+      "family_name": "O'Connor",
+      "given_name": "John",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150114984",
+      "family_name": "Oppenheim",
+      "given_name": "Charles",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115047",
+      "family_name": "Olivastro",
+      "given_name": "Dominic",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115060",
+      "family_name": "O'Brien",
+      "given_name": "Gregory",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115126",
+      "family_name": "O'Connor",
+      "given_name": "John",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115250",
+      "family_name": "O'Hara",
+      "given_name": "F. M.",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115270",
+      "family_name": "O'Connor",
+      "given_name": "John",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115271",
+      "family_name": "Otten",
+      "given_name": "Klaus",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115294",
+      "family_name": "Olle",
+      "given_name": "T. William",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115304",
+      "family_name": "O'Haver",
+      "given_name": "Thomas C.",
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06150115355",
+      "family_name": "Olden",
+      "given_name": "Anthony",
       "entity_type": "person"
     },
     {
@@ -5431,103 +5521,19 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150115355",
-      "family_name": "Olden",
-      "given_name": "Anthony",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150115047",
-      "family_name": "Olivastro",
-      "given_name": "Dominic",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150115294",
-      "family_name": "Olle",
-      "given_name": "T. William",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114810",
-      "family_name": "Olsgaard",
-      "given_name": "John N.",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/060156",
-      "family_name": "Ometto",
-      "given_name": "Lucia",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06092",
-      "family_name": "Ono",
-      "given_name": "Mayumi",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114595",
-      "family_name": "Onuigbo",
-      "given_name": "Wilson I. B.",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114141",
-      "family_name": "Oppenheim",
-      "given_name": "C.",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114859",
-      "family_name": "Oppenheim",
-      "given_name": "C.",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114984",
-      "family_name": "Oppenheim",
-      "given_name": "Charles",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06052",
-      "family_name": "Oram",
-      "given_name": "David H.",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114528",
-      "family_name": "Oromaner",
-      "given_name": "Mark",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150115271",
-      "family_name": "Otten",
-      "given_name": "Klaus",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114010",
-      "family_name": "Ozkarahan",
-      "given_name": "Esen A.",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114493",
-      "family_name": "Ozkarahan",
-      "given_name": "Esen A.",
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06150114033",
-      "family_name": "Ozog",
-      "given_name": "Stanley",
+      "local_identifier": "https://w3id.org/oc/meta/ra/06403975073",
+      "family_name": "Oelen",
+      "given_name": "Allard",
       "entity_type": "person"
     }
   ],
   "cf.search.given_name:Silvio,cf.search.family_name:Peroni": [
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06028914347",
+      "family_name": "Peroni",
+      "given_name": "Silvio",
+      "entity_type": "person"
+    },
     {
       "local_identifier": "https://w3id.org/oc/meta/ra/0614010840729",
       "name": "Peroni Silvio",
@@ -5539,12 +5545,6 @@
           "scheme": "orcid"
         }
       ],
-      "entity_type": "person"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06028914347",
-      "family_name": "Peroni",
-      "given_name": "Silvio",
       "entity_type": "person"
     },
     {
@@ -5560,12 +5560,6 @@
       "entity_type": "person"
     },
     {
-      "local_identifier": "https://w3id.org/oc/meta/ra/06609658687",
-      "family_name": "Peroni",
-      "given_name": "Silvio",
-      "entity_type": "person"
-    },
-    {
       "local_identifier": "https://w3id.org/oc/meta/ra/062901363346",
       "family_name": "Peroni",
       "given_name": "Silvio",
@@ -5575,6 +5569,12 @@
           "scheme": "orcid"
         }
       ],
+      "entity_type": "person"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/ra/06609658687",
+      "family_name": "Peroni",
+      "given_name": "Silvio",
       "entity_type": "person"
     }
   ],
@@ -5895,41 +5895,21 @@
   ],
   "identifiers.scheme:issn": [
     {
-      "local_identifier": "https://w3id.org/oc/meta/br/062502076212",
-      "name": "Data Technologies And Applications",
-      "type": "journal",
-      "identifiers": [
-        {
-          "value": "2514-9318",
-          "scheme": "issn"
-        },
-        {
-          "value": "S4210171756",
-          "scheme": "openalex"
-        },
-        {
-          "value": "2514-9288",
-          "scheme": "issn"
-        }
-      ],
-      "entity_type": "venue"
-    },
-    {
       "local_identifier": "https://w3id.org/oc/meta/br/06101018",
       "name": "Teratology",
       "type": "journal",
       "identifiers": [
         {
-          "value": "1096-9926",
-          "scheme": "issn"
+          "value": "10.1002/(issn)1096-9926",
+          "scheme": "doi"
         },
         {
           "value": "0040-3709",
           "scheme": "issn"
         },
         {
-          "value": "10.1002/(issn)1096-9926",
-          "scheme": "doi"
+          "value": "1096-9926",
+          "scheme": "issn"
         }
       ],
       "entity_type": "venue"
@@ -5960,16 +5940,16 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "S2486411021",
-          "scheme": "openalex"
+          "value": "2364-1185",
+          "scheme": "issn"
         },
         {
           "value": "2364-1541",
           "scheme": "issn"
         },
         {
-          "value": "2364-1185",
-          "scheme": "issn"
+          "value": "S2486411021",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -5980,16 +5960,16 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "S146304353",
-          "scheme": "openalex"
+          "value": "1536-5050",
+          "scheme": "issn"
         },
         {
           "value": "1558-9439",
           "scheme": "issn"
         },
         {
-          "value": "1536-5050",
-          "scheme": "issn"
+          "value": "S146304353",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -6000,16 +5980,16 @@
       "type": "other",
       "identifiers": [
         {
-          "value": "S2764905038",
-          "scheme": "openalex"
-        },
-        {
           "value": "2194-5357",
           "scheme": "issn"
         },
         {
           "value": "2194-5365",
           "scheme": "issn"
+        },
+        {
+          "value": "S2764905038",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -6020,16 +6000,16 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "1521-3757",
-          "scheme": "issn"
+          "value": "10.1002/(issn)1521-3757",
+          "scheme": "doi"
         },
         {
           "value": "0044-8249",
           "scheme": "issn"
         },
         {
-          "value": "10.1002/(issn)1521-3757",
-          "scheme": "doi"
+          "value": "1521-3757",
+          "scheme": "issn"
         }
       ],
       "entity_type": "venue"
@@ -6056,12 +6036,12 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "S4210172589",
-          "scheme": "openalex"
-        },
-        {
           "value": "1556-5068",
           "scheme": "issn"
+        },
+        {
+          "value": "S4210172589",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -6072,12 +6052,12 @@
       "type": "other",
       "identifiers": [
         {
-          "value": "S4210223649",
-          "scheme": "openalex"
-        },
-        {
           "value": "2072-5027",
           "scheme": "issn"
+        },
+        {
+          "value": "S4210223649",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -6088,12 +6068,12 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "S2738007992",
-          "scheme": "openalex"
-        },
-        {
           "value": "2304-6775",
           "scheme": "issn"
+        },
+        {
+          "value": "S2738007992",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -6108,31 +6088,11 @@
           "scheme": "doi"
         },
         {
-          "value": "1096-987X",
-          "scheme": "issn"
-        },
-        {
           "value": "0192-8651",
           "scheme": "issn"
-        }
-      ],
-      "entity_type": "venue"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/br/061503030632",
-      "name": "The Australian Library Journal",
-      "type": "journal",
-      "identifiers": [
-        {
-          "value": "S165931258",
-          "scheme": "openalex"
         },
         {
-          "value": "2201-4276",
-          "scheme": "issn"
-        },
-        {
-          "value": "0004-9670",
+          "value": "1096-987X",
           "scheme": "issn"
         }
       ],
@@ -6144,16 +6104,36 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "S134668137",
-          "scheme": "openalex"
+          "value": "0305-1048",
+          "scheme": "issn"
         },
         {
           "value": "1362-4962",
           "scheme": "issn"
         },
         {
-          "value": "0305-1048",
+          "value": "S134668137",
+          "scheme": "openalex"
+        }
+      ],
+      "entity_type": "venue"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/061503030632",
+      "name": "The Australian Library Journal",
+      "type": "journal",
+      "identifiers": [
+        {
+          "value": "0004-9670",
           "scheme": "issn"
+        },
+        {
+          "value": "2201-4276",
+          "scheme": "issn"
+        },
+        {
+          "value": "S165931258",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -6200,11 +6180,11 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "1432-5012",
+          "value": "1432-1300",
           "scheme": "issn"
         },
         {
-          "value": "1432-1300",
+          "value": "1432-5012",
           "scheme": "issn"
         },
         {
@@ -6220,11 +6200,11 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "1741-4857",
+          "value": "0953-1513",
           "scheme": "issn"
         },
         {
-          "value": "0953-1513",
+          "value": "1741-4857",
           "scheme": "issn"
         },
         {
@@ -6240,16 +6220,16 @@
       "type": "journal",
       "identifiers": [
         {
+          "value": "2288-7474",
+          "scheme": "issn"
+        },
+        {
           "value": "2288-8063",
           "scheme": "issn"
         },
         {
           "value": "S2739153651",
           "scheme": "openalex"
-        },
-        {
-          "value": "2288-7474",
-          "scheme": "issn"
         }
       ],
       "entity_type": "venue"
@@ -6260,12 +6240,12 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "0002-8231",
-          "scheme": "issn"
-        },
-        {
           "value": "10.1002/(issn)1097-4571",
           "scheme": "doi"
+        },
+        {
+          "value": "0002-8231",
+          "scheme": "issn"
         },
         {
           "value": "1097-4571",
@@ -6280,16 +6260,16 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "S205292342",
-          "scheme": "openalex"
+          "value": "1751-1577",
+          "scheme": "issn"
         },
         {
           "value": "1875-5879",
           "scheme": "issn"
         },
         {
-          "value": "1751-1577",
-          "scheme": "issn"
+          "value": "S205292342",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -6316,15 +6296,15 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "1097-0215",
-          "scheme": "issn"
-        },
-        {
           "value": "10.1002/(issn)1097-0215",
           "scheme": "doi"
         },
         {
           "value": "0020-7136",
+          "scheme": "issn"
+        },
+        {
+          "value": "1097-0215",
           "scheme": "issn"
         }
       ],
@@ -6336,12 +6316,12 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "S4210206302",
-          "scheme": "openalex"
-        },
-        {
           "value": "2662-9992",
           "scheme": "issn"
+        },
+        {
+          "value": "S4210206302",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -6372,12 +6352,32 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "S4210195326",
-          "scheme": "openalex"
-        },
-        {
           "value": "2641-3337",
           "scheme": "issn"
+        },
+        {
+          "value": "S4210195326",
+          "scheme": "openalex"
+        }
+      ],
+      "entity_type": "venue"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/062502076212",
+      "name": "Data Technologies And Applications",
+      "type": "journal",
+      "identifiers": [
+        {
+          "value": "2514-9288",
+          "scheme": "issn"
+        },
+        {
+          "value": "2514-9318",
+          "scheme": "issn"
+        },
+        {
+          "value": "S4210171756",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -6404,16 +6404,16 @@
       "type": "journal",
       "identifiers": [
         {
+          "value": "0138-9130",
+          "scheme": "issn"
+        },
+        {
           "value": "1588-2861",
           "scheme": "issn"
         },
         {
           "value": "S148561398",
           "scheme": "openalex"
-        },
-        {
-          "value": "0138-9130",
-          "scheme": "issn"
         }
       ],
       "entity_type": "venue"
@@ -6424,16 +6424,16 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "S89564548",
-          "scheme": "openalex"
+          "value": "0341-4183",
+          "scheme": "issn"
         },
         {
           "value": "1865-7648",
           "scheme": "issn"
         },
         {
-          "value": "0341-4183",
-          "scheme": "issn"
+          "value": "S89564548",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -6444,12 +6444,12 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "S1983995261",
-          "scheme": "openalex"
-        },
-        {
           "value": "2167-8359",
           "scheme": "issn"
+        },
+        {
+          "value": "S1983995261",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
@@ -6464,11 +6464,11 @@
           "scheme": "doi"
         },
         {
-          "value": "1097-0142",
+          "value": "0008-543X",
           "scheme": "issn"
         },
         {
-          "value": "0008-543X",
+          "value": "1097-0142",
           "scheme": "issn"
         }
       ],
@@ -6480,16 +6480,16 @@
       "type": "journal",
       "identifiers": [
         {
+          "value": "0001-0782",
+          "scheme": "issn"
+        },
+        {
           "value": "1557-7317",
           "scheme": "issn"
         },
         {
           "value": "S103482838",
           "scheme": "openalex"
-        },
-        {
-          "value": "0001-0782",
-          "scheme": "issn"
         }
       ],
       "entity_type": "venue"
@@ -6500,16 +6500,16 @@
       "type": "journal",
       "identifiers": [
         {
+          "value": "10.1002/(issn)1097-4628",
+          "scheme": "doi"
+        },
+        {
           "value": "0021-8995",
           "scheme": "issn"
         },
         {
           "value": "1097-4628",
           "scheme": "issn"
-        },
-        {
-          "value": "10.1002/(issn)1097-4628",
-          "scheme": "doi"
         }
       ],
       "entity_type": "venue"
@@ -6524,51 +6524,11 @@
           "scheme": "doi"
         },
         {
-          "value": "1521-4095",
-          "scheme": "issn"
-        },
-        {
           "value": "0935-9648",
           "scheme": "issn"
-        }
-      ],
-      "entity_type": "venue"
-    },
-    {
-      "local_identifier": "https://w3id.org/oc/meta/br/069066063",
-      "name": "Journal On Data Semantics",
-      "type": "journal",
-      "identifiers": [
-        {
-          "value": "1861-2032",
-          "scheme": "issn"
         },
         {
-          "value": "1611-3349",
-          "scheme": "issn"
-        },
-        {
-          "value": "0302-9743",
-          "scheme": "issn"
-        },
-        {
-          "value": "1861-2040",
-          "scheme": "issn"
-        },
-        {
-          "value": "1864-3035",
-          "scheme": "issn"
-        },
-        {
-          "value": "1861-2059",
-          "scheme": "issn"
-        },
-        {
-          "value": "1861-2067",
-          "scheme": "issn"
-        },
-        {
-          "value": "1867-7754",
+          "value": "1521-4095",
           "scheme": "issn"
         }
       ],
@@ -6584,15 +6544,55 @@
           "scheme": "doi"
         },
         {
-          "value": "0374-6577",
-          "scheme": "issn"
-        },
-        {
           "value": "0014-8962",
           "scheme": "issn"
         },
         {
+          "value": "0374-6577",
+          "scheme": "issn"
+        },
+        {
           "value": "1522-239X",
+          "scheme": "issn"
+        }
+      ],
+      "entity_type": "venue"
+    },
+    {
+      "local_identifier": "https://w3id.org/oc/meta/br/069066063",
+      "name": "Journal On Data Semantics",
+      "type": "journal",
+      "identifiers": [
+        {
+          "value": "0302-9743",
+          "scheme": "issn"
+        },
+        {
+          "value": "1611-3349",
+          "scheme": "issn"
+        },
+        {
+          "value": "1861-2032",
+          "scheme": "issn"
+        },
+        {
+          "value": "1861-2040",
+          "scheme": "issn"
+        },
+        {
+          "value": "1861-2059",
+          "scheme": "issn"
+        },
+        {
+          "value": "1861-2067",
+          "scheme": "issn"
+        },
+        {
+          "value": "1864-3035",
+          "scheme": "issn"
+        },
+        {
+          "value": "1867-7754",
           "scheme": "issn"
         }
       ],
@@ -6612,16 +6612,16 @@
       "type": "journal",
       "identifiers": [
         {
-          "value": "S110615584",
-          "scheme": "openalex"
-        },
-        {
           "value": "1432-1300",
           "scheme": "issn"
         },
         {
           "value": "1432-5012",
           "scheme": "issn"
+        },
+        {
+          "value": "S110615584",
+          "scheme": "openalex"
         }
       ],
       "entity_type": "venue"
