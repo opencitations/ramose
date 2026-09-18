@@ -1,3 +1,32 @@
+# [2.10.0](https://github.com/opencitations/ramose/compare/v2.9.1...v2.10.0) (2026-09-18)
+
+
+### Bug Fixes
+
+* **benchmarks:** reuse the venue sample across runs ([64102ec](https://github.com/opencitations/ramose/commit/64102ec1a8ba4c50c7310212437cd8c5ce70c395))
+* bind client values before sparql substitution ([8bc8133](https://github.com/opencitations/ramose/commit/8bc813327a2bbd2612b2e8e5c92665844cb1f147))
+* **docs:** adapt navigation to available space and align operation cards ([d8cd04f](https://github.com/opencitations/ramose/commit/d8cd04fd05258d8c73ba16003bba829e879d5d86))
+* **docs:** hide the parameters sidebar link when no built-in params apply ([b43341d](https://github.com/opencitations/ramose/commit/b43341dd78536ecd87bb1310b330966b5495768e))
+* **docs:** keep sidebar links from shifting on hover ([6efa5f5](https://github.com/opencitations/ramose/commit/6efa5f5d96d7d8fd931923bc5f271e8abac01f69))
+* **docs:** left-align text on small screens to avoid stretched word spacing ([4102842](https://github.com/opencitations/ramose/commit/4102842e18c8bb4c8dbb9699a7d82c1100246c4d))
+* **docs:** preserve code casing and wrap long headings ([6a59e65](https://github.com/opencitations/ramose/commit/6a59e65a611bf338b56986492a279eedd3c86f27))
+* **docs:** reduce horizontal margins on small screens ([b972d2c](https://github.com/opencitations/ramose/commit/b972d2c57d0d06993a6f629bcf91b599a603babc))
+* **docs:** reduce nested list indentation on small screens ([a654354](https://github.com/opencitations/ramose/commit/a65435469ed15ebaa6344c02909e2baaa551edbc))
+* **docs:** size operation cards to content ([2ae49a2](https://github.com/opencitations/ramose/commit/2ae49a25e141515e5df4c30684bb758498cbd8dd))
+* **docs:** up to 850px give labels and values the full available width ([50f1af5](https://github.com/opencitations/ramose/commit/50f1af51c53ffde5b5a1fd96ba8d150a934fa224))
+* drop the @[@foreach](https://github.com/foreach) directive ([943f83f](https://github.com/opencitations/ramose/commit/943f83fbd7d762a46274df12b99840e0beb86d91))
+* **join:** exclude empty keys from row matching ([9c89bdf](https://github.com/opencitations/ramose/commit/9c89bdf18000481d289c6308f6fc04a9ec559dfa))
+* keep unmatched left-join rows in VALUES batches ([053357c](https://github.com/opencitations/ramose/commit/053357ccca0de963dc3dd32c82a02baad4c963e3))
+
+
+### Features
+
+* **auth:** answer HTTP Digest challenges from SPARQL endpoints ([90fbcf2](https://github.com/opencitations/ramose/commit/90fbcf29228a36e8dc495c0fa4c9f4fc6afeb00c))
+* batch multi-source VALUES queries ([bf565fb](https://github.com/opencitations/ramose/commit/bf565fbb2f660cdc911f5c0b17d2ba8e22a9d79e))
+* **docs:** expand JSON examples in a full-screen dialog ([1245622](https://github.com/opencitations/ramose/commit/12456227bc94d5993908e2bb8b0e61deec782dd2))
+* **filters:** automatically split searched values like the QLever tokenizer does if ql:has-word is found in the query ([bddabc5](https://github.com/opencitations/ramose/commit/bddabc5894754da213517ed5ba294ad47b21bce9))
+* make the SPARQL request timeout configurable ([a4bc4d1](https://github.com/opencitations/ramose/commit/a4bc4d1680f75981b311b3022a60ca09c83b4702))
+
 ## [2.9.1](https://github.com/opencitations/ramose/compare/v2.9.0...v2.9.1) (2026-09-09)
 
 
