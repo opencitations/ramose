@@ -8,7 +8,7 @@ import json
 import threading
 from pathlib import Path
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -405,6 +405,63 @@ class TestMultiSourceValuesInject:
                 "SELECT ?work ?title WHERE {\nVALUES (?citing) {\n  (<https://w3id.org/oc/meta/br/1>)\n}\n }",
             ),
         ]
+
+    def test_postprocess_sees_undeclared_step_columns(self) -> None:
+        class FakeAddon:
+            @staticmethod
+            def add_citing_date(res: list[list[tuple[object, str]]]) -> tuple[list[list[str]], bool]:
+                header = cast("list[str]", res[0])
+                work, citing_date = header.index("work"), header.index("citing_date")
+                rows = [[row[work][1], f"{row[work][1]} {row[citing_date][1]}".strip()] for row in res[1:]]
+                return [["work", "description"], *rows], True
+
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": ("SELECT ?work WHERE { }\n@@join ?work ?work type=left\nSELECT ?work ?citing_date WHERE { }"),
+            "method": "get",
+            "field_type": "str(work) str(description)",
+            "postprocess": "add_citing_date()",
+        }
+        op = Operation(
+            "/api/test/value",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(sparql_endpoint="http://endpoint/sparql", addon=FakeAddon),  # type: ignore[arg-type]
+        )
+
+        with patch.object(
+            op,
+            "_run_sparql_dicts",
+            side_effect=[[{"work": "A"}, {"work": "B"}], [{"work": "A", "citing_date": "2020"}]],
+        ):
+            response = op.exec(method="get", content_type="application/json")
+
+        assert response.status_code == 200
+        assert json.loads(response.body) == [
+            {"work": "A", "description": "A 2020"},
+            {"work": "B", "description": "B"},
+        ]
+
+    def test_output_keeps_only_declared_fields(self) -> None:
+        op_item = {
+            "url": "/test/{id}",
+            "id": "str(.+)",
+            "sparql": "SELECT ?work WHERE { }\n@@join ?work ?work\nSELECT ?work ?helper WHERE { }",
+            "method": "get",
+            "field_type": "str(work)",
+        }
+        op = Operation(
+            "/api/test/value",
+            r"/api/test/(.+)",
+            op_item,
+            OperationConfig(sparql_endpoint="http://endpoint/sparql"),
+        )
+
+        with patch.object(op, "_run_sparql_dicts", side_effect=[[{"work": "A"}], [{"work": "A", "helper": "x"}]]):
+            response = op.exec(method="get", content_type="application/json")
+
+        assert json.loads(response.body) == [{"work": "A"}]
 
     def test_batched_values_failure_fails_operation(self) -> None:
         op_item = {

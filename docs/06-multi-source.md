@@ -130,6 +130,10 @@ The directive counts the distinct values of `<variable>` in first-appearance ord
 
 One way to use it: place `@@page` after a cheap query that returns just the variable to paginate (and any sort key), and before the queries that resolve full per-item data. The page is fixed first, so the expensive resolution runs for one page instead of every match.
 
+## Postprocessing
+
+The functions listed in `#postprocess` receive every column produced by the steps. The columns declared in `#field_type` come first, in their declared order, and the other step columns follow them. After postprocessing, RAMOSE keeps only the columns declared in `#field_type`.
+
 ## Full example
 
 A query that fetches metadata from OpenCitations Meta and joins citation counts from the OpenCitations Index:

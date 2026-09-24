@@ -1332,13 +1332,19 @@ class Operation:
         return self._paginate_and_format(entry["rows"], q_string, content_type)
 
     def _finalize_result(
-        self, csv_rows: list[list[str]] | list[list[str | object]], content_type: str
+        self,
+        csv_rows: list[list[str]] | list[list[str | object]],
+        content_type: str,
+        output_fields: list[str] | None = None,
     ) -> OperationResponse:
-        """Run the shared pipeline: type fields, postprocess, filter, remove types, cache, paginate, format."""
+        """Run the shared pipeline: type fields, postprocess, select the output fields, filter, remove types,
+        cache, paginate, format."""
         q_string = parse_qs(quote(self.url_parsed.query, safe="&="))
         res = self.type_fields(csv_rows, self.i)  # type: ignore[arg-type]
         if self.addon is not None:
             res = self.postprocess(res, self.i, self.addon)
+        if output_fields is not None:
+            res = Operation._select_columns(res, output_fields)
         res = self.handling_params(q_string, res)
         res = self.remove_types(res)
         if self.custom_params:
@@ -1355,6 +1361,14 @@ class Operation:
             return [f for (_, f) in findall(FIELD_TYPE_RE, op_item["field_type"])]
         # fallback to keys of first row
         return list(acc[0].keys()) if acc else []
+
+    @staticmethod
+    def _select_columns(
+        res: list[list[str] | list[tuple[object, str]]], fields: list[str]
+    ) -> list[list[str] | list[tuple[object, str]]]:
+        header = cast("list[str]", res[0])
+        indexes = [header.index(field) for field in fields]
+        return [fields, *([row[idx] for idx in indexes] for row in res[1:])]  # type: ignore[list-item]
 
     @staticmethod
     def _to_csv_rows(header: list[str], acc: list[dict[str, object]]) -> list[list[object]]:
@@ -1568,9 +1582,13 @@ class Operation:
                 msg = f"Unknown step tag {tag}"
                 raise RuntimeError(msg)
 
-        header = self._header_from_field_type(self.i, state["acc"] or [])  # type: ignore[arg-type]
-        csv_rows = self._to_csv_rows(header, state["acc"] or [])  # type: ignore[arg-type]
-        return self._finalize_result(csv_rows, content_type)
+        acc = cast("list[dict[str, object]]", state["acc"] or [])
+        output_fields = self._header_from_field_type(self.i, acc)
+        # Postprocess functions also see the step columns missing from #field_type;
+        # the output keeps only the declared ones.
+        step_fields = [key for key in dict.fromkeys(key for row in acc for key in row) if key not in output_fields]
+        csv_rows = self._to_csv_rows(output_fields + step_fields, acc)
+        return self._finalize_result(csv_rows, content_type, output_fields)
 
     @staticmethod
     def _format_error(sc: int, e: Exception, prefix: str = "") -> OperationResponse:
