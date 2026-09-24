@@ -26,9 +26,9 @@ authors:
     orcid: https://orcid.org/0000-0002-8420-0696
 repository-code: https://github.com/opencitations/ramose/
 license: ISC
-version: 2.10.0
+version: 2.10.1
 doi: 10.5281/zenodo.19399602
-date-released: '2026-09-18'
+date-released: '2026-09-24'
 preferred-citation:
   type: article
   title: Creating RESTful APIs over SPARQL endpoints using RAMOSE
@@ -52,4 +52,4 @@ preferred-citation:
   end: 213
   year: 2022
   doi: 10.3233/SW-210439
-url: https://archive.softwareheritage.org/swh:1:snp:f0fc1d6dfcfbe2dea057feaeff462afe400994b7;origin=https://github.com/opencitations/ramose
+url: https://archive.softwareheritage.org/swh:1:snp:7b4f6057e833a84b07b503841d594620cb60fe91;origin=https://github.com/opencitations/ramose
