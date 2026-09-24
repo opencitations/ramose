@@ -1,3 +1,10 @@
+## [2.10.1](https://github.com/opencitations/ramose/compare/v2.10.0...v2.10.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* **multi-source:** expose undeclared step columns to postprocess functions [release] ([c47e48c](https://github.com/opencitations/ramose/commit/c47e48c491f6ff0019d2d7c82e42ae331a548268)), closes [#field_type](https://github.com/opencitations/ramose/issues/field_type)
+
 # [2.10.0](https://github.com/opencitations/ramose/compare/v2.9.1...v2.10.0) (2026-09-18)
 
 
