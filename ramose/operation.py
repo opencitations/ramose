@@ -296,37 +296,40 @@ class Operation:
                 media_type_to_token.setdefault(media_type, token)
         return media_type_to_token
 
-    def _format_response(
-        self, s: str, query_string: dict[str, list[str]], c_type: str = "text/csv"
-    ) -> tuple[ConversionResult, str]:
-        content_type = Operation.get_content_type(c_type)
-
+    def _check_requested_formats(self, query_string: dict[str, list[str]]) -> None:
         if "format" in query_string and self._is_builtin_param_active("format"):
             self._validate_format_values(query_string["format"])
 
-        resolved = self._resolve_format(s, query_string)
-        if resolved is not None:
-            return resolved
-
+    def _builtin_content_type(self, query_string: dict[str, list[str]], c_type: str) -> str:
+        content_type = Operation.get_content_type(c_type)
         if "format" in query_string and self._is_builtin_param_active("format"):
             for req_format in query_string["format"]:
                 content_type = Operation.get_content_type(req_format)
         elif "default_format" in self.i:
             content_type = Operation.get_content_type(self.i["default_format"].strip())
-
         if content_type not in ("text/csv", "application/json"):
             content_type = "text/csv"
+        return content_type
 
-        if "application/json" in content_type:
+    def _json_body(self, rows: list[dict[str, object]], query_string: dict[str, list[str]]) -> str:
+        if self._is_builtin_param_active("json"):
+            rows = Operation.structured(query_string, rows)
+        return dumps(rows, ensure_ascii=False, indent=4)
+
+    def _format_response(
+        self, s: str, query_string: dict[str, list[str]], c_type: str = "text/csv"
+    ) -> tuple[ConversionResult, str]:
+        self._check_requested_formats(query_string)
+        resolved = self._resolve_format(s, query_string)
+        if resolved is not None:
+            return resolved
+
+        content_type = self._builtin_content_type(query_string, c_type)
+        if content_type == "application/json":
             with StringIO(s) as f:
-                r = [dict(i) for i in DictReader(f)]
-
-                if self._is_builtin_param_active("json"):
-                    r = Operation.structured(query_string, r)  # type: ignore[arg-type]
-
-                return ConversionResult(HTTPStatus.OK, dumps(r, ensure_ascii=False, indent=4)), content_type
-        else:
-            return ConversionResult(HTTPStatus.OK, s), content_type
+                rows: list[dict[str, object]] = [dict(i) for i in DictReader(f)]
+            return ConversionResult(HTTPStatus.OK, self._json_body(rows, query_string)), content_type
+        return ConversionResult(HTTPStatus.OK, s), content_type
 
     def conv(self, s: str, query_string: dict[str, list[str]], c_type: str = "text/csv") -> OperationResponse:
         """This method takes a string representing a CSV document and converts it in the requested format according
@@ -708,13 +711,18 @@ class Operation:
             for f, p in findall(FIELD_TYPE_RE, op_item["field_type"]):
                 cast_func[p] = self.dt.get_func(f)
 
+        # One typed value per distinct cell value: a value repeated across rows is cast once and shared.
+        typed_by_column: list[dict[object, object]] = [{} for _ in header]
         for row in res[1:]:
             new_row = []
             for idx, heading in enumerate(header):
                 cur_value = row[idx]
                 if isinstance(cur_value, tuple):
                     cur_value = cur_value[1]
-                new_row.append((cast_func[heading](cur_value), cur_value))
+                typed_values = typed_by_column[idx]
+                if cur_value not in typed_values:
+                    typed_values[cur_value] = cast_func[heading](cur_value)
+                new_row.append((typed_values[cur_value], cur_value))
             result.append(new_row)
 
         return [header, *result]  # type: ignore[return-value]
@@ -1296,6 +1304,18 @@ class Operation:
                 self.pagination_info = build_pagination_info(self.op_url, q_string, page, page_size, total_items)
             else:
                 self.pagination_info = None
+
+        self._check_requested_formats(q_string)
+        if (
+            not self._has_custom_converter(q_string)
+            and self._builtin_content_type(q_string, content_type) == "application/json"
+        ):
+            # Built from the table, not from its CSV text, so cells keep sharing their strings across rows.
+            header = table[0]
+            rows: list[dict[str, object]] = [
+                dict(zip(header, ("" if cell is None else str(cell) for cell in row), strict=True)) for row in table[1:]
+            ]
+            return OperationResponse(HTTPStatus.OK, self._json_body(rows, q_string), "application/json", {})
 
         s_res = StringIO()
         writer(s_res).writerows(table)
