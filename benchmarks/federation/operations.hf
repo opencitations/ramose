@@ -2,7 +2,6 @@
 #type api
 #base http://localhost:8080
 #method post
-#addon addon
 #title Enriched incoming citations of a venue
 #description Compare one federated SERVICE query with the RAMOSE orchestrator: resolve an ISSN to its articles on Meta, fetch their incoming citations from Index, and enrich each citing work with its Meta metadata.
 #version 1.0.0
@@ -15,7 +14,6 @@
 #type operation
 #issn str(.+)
 #method get
-#preprocess decode_issn(issn)
 #cache_disable true
 #sparql_timeout 600
 #field_type str(omid) str(citation) str(citing) str(metadata)
@@ -107,7 +105,6 @@ GROUP BY ?omid ?citation ?citing
 #type operation
 #issn str(.+)
 #method get
-#preprocess decode_issn(issn)
 #cache_disable true
 #sparql_timeout 600
 #field_type str(omid) str(citation) str(citing) str(metadata)

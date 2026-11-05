@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from ramose import Operation
+from ramose.escaping import InvalidParameterValueError
 from test.conftest import execute_operation
 
 if TYPE_CHECKING:
@@ -419,3 +421,11 @@ def test_author_order_in_metadata(api_manager: APIManager) -> None:
         "Yilmazlar, Sel\u00e7uk [omid:ra/06802276622]",
         "Korfali, G\u00fclsen [omid:ra/06802276623]",
     ]
+
+
+def test_id_search_rejects_omid_that_breaks_the_iri(api_manager: APIManager) -> None:
+    op = api_manager.get_op("/v1/metadata/omid:br/0601")
+    assert isinstance(op, Operation)
+    assert op.addon is not None
+    with pytest.raises(InvalidParameterValueError):
+        op.addon.generate_id_search("omid:br/0601> } ; <x")

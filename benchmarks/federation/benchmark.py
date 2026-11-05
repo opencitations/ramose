@@ -408,7 +408,7 @@ def backend_totals(records: list[dict[str, object]]) -> tuple[int, int, int, flo
 def request_strategy(
     strategy: str, sample: Sample, timeout: int = REQUEST_TIMEOUT_SECONDS
 ) -> tuple[int, bytes, float, int, int]:
-    url = f"{BASE_URL}/{strategy}/{quote(quote(sample.issn, safe=''), safe='')}"
+    url = f"{BASE_URL}/{strategy}/{quote(sample.issn, safe='')}"
     started_ns = time.perf_counter_ns()
     try:
         response = requests.get(url, headers={"Accept": "application/json"}, timeout=timeout)

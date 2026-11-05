@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from oc_constants import FABIO_TYPE_LABELS
 
+from ramose.escaping import escape_iri
+
 
 def generate_id_search(ids: str) -> tuple[str]:
     id_searches = []
@@ -18,7 +20,7 @@ def generate_id_search(ids: str) -> tuple[str]:
         literal_value = scheme_literal_value[1]
         literal_value = literal_value.lower() if scheme == "doi" else literal_value
         if scheme == "omid":
-            omid_values.append("<https://w3id.org/oc/meta/" + literal_value + ">")
+            omid_values.append("<https://w3id.org/oc/meta/" + escape_iri(literal_value) + ">")
         elif scheme in {"doi", "issn", "isbn", "openalex", "pmid", "pmcid", "url", "wikidata", "wikipedia"}:
             other_values.append(
                 '''

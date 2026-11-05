@@ -15,6 +15,7 @@ import pytest
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from ramose import APIManager, HttpError, Operation, OperationConfig
+from ramose.escaping import InvalidParameterValueError
 from ramose.paging import build_pagination_info
 
 if TYPE_CHECKING:
@@ -280,6 +281,16 @@ class TestMultiSourceValuesInject:
             _ctype = _response.content_type
 
         assert sc == 200
+
+    def test_values_inject_escapes_literals(self) -> None:
+        op = _get_operation(_load_api_manager("test_scholarly_multi-sources.hf"), "10.1108/jd-12-2013-0166")
+        query = op._inject_values_clause("SELECT ?doi WHERE { }", ["?doi"], [{"doi": 'a" } ; x\nb'}])
+        assert '("a\\" } ; x\\nb")' in query
+
+    def test_values_inject_rejects_unsafe_iri(self) -> None:
+        op = _get_operation(_load_api_manager("test_scholarly_multi-sources.hf"), "10.1108/jd-12-2013-0166")
+        with pytest.raises(InvalidParameterValueError):
+            op._inject_values_clause("SELECT ?s WHERE { }", ["?s"], [{"s": "http://x> } ; <http://y"}])
 
     def test_batched_values_pipeline_deduplicates_and_preserves_left_rows(self) -> None:
         op_item = {

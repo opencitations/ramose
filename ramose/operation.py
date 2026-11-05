@@ -1133,12 +1133,11 @@ class Operation:
                 seen.add(tup)
                 tuples.append(tup)
 
-        # format literals vs IRIs
         def fmt(x: object) -> str:
             s = str(x)
             if s.startswith(("http://", "https://")):
-                return f"<{s}>"
-            return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+                return f"<{escape_iri(s)}>"
+            return f'"{escape_literal(s)}"'
 
         head = "VALUES (" + " ".join(vars_) + ") {\n"
         body = "\n".join("  (" + " ".join(fmt(v) for v in tup) + ")" for tup in tuples)
