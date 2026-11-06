@@ -56,7 +56,6 @@ SAMPLE_QUERY_PAGE_SIZE = 100
 BAND_BOUNDS = (10, 100, 1000)
 BANDS = ("1-9", "10-99", "100-999", "1000-9999")
 MAX_VENUE_OMIDS = 10000
-MAX_VENUE_WORKS = 100_000
 PREFIXES = """PREFIX cito: <http://purl.org/spar/cito/>
 PREFIX datacite: <http://purl.org/spar/datacite/>
 PREFIX literal: <http://www.essepuntato.it/2010/06/literalreification/>
@@ -264,7 +263,7 @@ def select_samples(progress_path: Path) -> tuple[Sample, ...]:
         counts = incoming_counts(candidates) if candidates else {}
         for issn, omids in candidates.items():
             sample = Sample(issn, "|".join(sorted(omids)), counts[issn])
-            if len(selected[sample.band]) < SAMPLES_PER_BAND and sample.expected_work_count < MAX_VENUE_WORKS:
+            if len(selected[sample.band]) < SAMPLES_PER_BAND:
                 selected[sample.band].append(sample)
         offset += len(issns)
         after = issns[-1]
