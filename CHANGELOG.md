@@ -1,3 +1,15 @@
+## [2.10.2](https://github.com/opencitations/ramose/compare/v2.10.1...v2.10.2) (2026-11-07)
+
+
+### Bug Fixes
+
+* check IRIs and escape literals injected through @[@values](https://github.com/values) ([d40877c](https://github.com/opencitations/ramose/commit/d40877c5f11fe9cc1752298dbf6397ac9622f666))
+
+
+### Performance Improvements
+
+* share repeated cell values when typing and serialising results ([72747fc](https://github.com/opencitations/ramose/commit/72747fc0c119ba4242811b4a2811bcd9479f8bfe))
+
 ## [2.10.1](https://github.com/opencitations/ramose/compare/v2.10.0...v2.10.1) (2026-09-24)
 
 
