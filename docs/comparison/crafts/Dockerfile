@@ -1,6 +1,6 @@
-FROM node:18-bookworm-slim
+FROM node:22-bookworm-slim
 
-ARG CRAFTS_COMMIT=f800304d0db1fb4674b2cf17978dba338717f6c1
+ARG CRAFTS_COMMIT=30b8d69de803bc33853795c2b68af44d15fe4096
 
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
     && rm -rf /var/lib/apt/lists/*

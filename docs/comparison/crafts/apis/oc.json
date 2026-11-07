@@ -1,5 +1,6 @@
 {
   "apiId": "oc",
+  "versionCode": 1,
   "endpoints": [
     {
       "id": "meta",
@@ -26,9 +27,8 @@
       "sparqlURI": "http://meta-write:3030/sparql",
       "httpMethod": "GET",
       "sparqlUpdate": {
-        "id": "metaWriteUpdate",
         "sparqlURI": "http://crafts-update-proxy/sparql",
-        "httpMethod": "POST"
+        "httpMethod": "GET"
       }
     },
     {
@@ -41,45 +41,66 @@
     {
       "id": "article",
       "types": [],
-      "dprops": [
+      "props": [
         {
           "label": "title",
           "endpoint": "meta",
-          "iri": "http://purl.org/dc/terms/title"
-        }
-      ],
-      "oprops": [
+          "proptype": "datatype",
+          "propiri": "http://purl.org/dc/terms/title"
+        },
         {
           "label": "references",
           "endpoint": "index",
-          "iri": "http://purl.org/spar/cito/hasCitingEntity",
-          "inv": true
+          "proptype": "object",
+          "propexpr": "^<http://purl.org/spar/cito/hasCitingEntity>"
         }
       ]
     },
     {
       "id": "writableArticle",
       "types": [],
-      "dprops": [
+      "props": [
         {
           "label": "title",
           "endpoint": "metaWrite",
-          "iri": "http://purl.org/dc/terms/title"
+          "proptype": "datatype",
+          "propiri": "http://purl.org/dc/terms/title"
         }
-      ],
-      "oprops": []
+      ]
     },
     {
       "id": "countedArticle",
       "types": [],
-      "dprops": [
+      "props": [
         {
           "label": "title",
           "endpoint": "metaCounted",
-          "iri": "http://purl.org/dc/terms/title"
+          "proptype": "datatype",
+          "propiri": "http://purl.org/dc/terms/title"
+        }
+      ]
+    },
+    {
+      "id": "identifiedArticle",
+      "types": [],
+      "props": [
+        {
+          "label": "identifiers",
+          "endpoint": "meta",
+          "proptype": "datatype",
+          "propexpr": "<http://purl.org/spar/datacite/hasIdentifier>/<http://www.essepuntato.it/2010/06/literalreification/hasLiteralValue>"
         }
       ],
-      "oprops": []
+      "joins": [
+        {
+          "label": "titleByIdentifier",
+          "endpoint": "metaBasic",
+          "source": "identifiers",
+          "inputTransform": "\"{{{input}}}\"",
+          "proptype": "datatype",
+          "propexpr": "^<http://www.essepuntato.it/2010/06/literalreification/hasLiteralValue>/^<http://purl.org/spar/datacite/hasIdentifier>/<http://purl.org/dc/terms/title>"
+        }
+      ]
     }
   ],
   "queryTemplates": [
