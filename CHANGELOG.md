@@ -1,3 +1,10 @@
+## [2.10.3](https://github.com/opencitations/ramose/compare/v2.10.2...v2.10.3) (2026-11-25)
+
+### Bug Fixes
+
+* **deps:** keep pysparql-anything below 1.3 ([4dd2edf](https://github.com/opencitations/ramose/commit/4dd2edfe25d40587ce3071359902418e8c166ece))
+* **filters:** search has-word templates through the longest word only [release] ([8042570](https://github.com/opencitations/ramose/commit/8042570b2cc5e624e152cccdf3a799995d5fe401))
+
 ## [2.10.2](https://github.com/opencitations/ramose/compare/v2.10.1...v2.10.2) (2026-11-07)
 
 
