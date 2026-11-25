@@ -127,10 +127,36 @@ def test_apply_filters_splits_repeated_param_values() -> None:
     }
 
 
-def test_apply_filters_applies_qlever_has_word_template_once_per_word() -> None:
+def test_apply_filters_applies_qlever_has_word_template_to_longest_word_only() -> None:
     config = {"search.title": {"constraints": '?title ql:has-word "{{value}}" .'}}
     assert apply_filters(config, ["search.title:Covid-19 M\u00fcller"]) == {
-        "constraints": '?title ql:has-word "covid" .\n?title ql:has-word "19" .\n?title ql:has-word "m\u00fcller" .',
+        "constraints": (
+            '?title ql:has-word "m\u00fcller" .\n'
+            'FILTER REGEX(?title, "(^|[^\\\\p{L}\\\\p{N}])covid($|[^\\\\p{L}\\\\p{N}])", "i")\n'
+            'FILTER REGEX(?title, "(^|[^\\\\p{L}\\\\p{N}])19($|[^\\\\p{L}\\\\p{N}])", "i")'
+        ),
+    }
+
+
+def test_apply_filters_qlever_has_word_prefix_template_matches_other_words_by_prefix() -> None:
+    subquery = "{ SELECT DISTINCT ?t WHERE { ?t <http://qlever.cs.uni-freiburg.de/builtin-functions/has-word> ?_w . "
+    config = {"search.title": {"constraints": subquery + 'FILTER STRSTARTS(?_w, "{{value}}") } }'}}
+    assert apply_filters(config, ["search.title:Journal Of Epidemiology"]) == {
+        "constraints": (
+            subquery + 'FILTER STRSTARTS(?_w, "epidemiology") } }\n'
+            'FILTER REGEX(?t, "(^|[^\\\\p{L}\\\\p{N}])journal", "i")\n'
+            'FILTER REGEX(?t, "(^|[^\\\\p{L}\\\\p{N}])of", "i")'
+        ),
+    }
+
+
+def test_apply_filters_qlever_has_word_other_form_renders_template_once_per_word() -> None:
+    config = {"search.title": {"constraints": '?t ql:has-word ?_w . FILTER CONTAINS(?_w, "{{value}}")'}}
+    assert apply_filters(config, ["search.title:Journal Epidemiology"]) == {
+        "constraints": (
+            '?t ql:has-word ?_w . FILTER CONTAINS(?_w, "journal")\n'
+            '?t ql:has-word ?_w . FILTER CONTAINS(?_w, "epidemiology")'
+        ),
     }
 
 
